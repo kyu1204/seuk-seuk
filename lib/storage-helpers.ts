@@ -244,7 +244,7 @@ export async function generateSignedDocument(
 // Clean up temporary signature files (admin function)
 export async function cleanupSignatureFiles(): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabaseAdmin = createServiceRoleClient()
+    const supabaseAdmin = await createClient()
     
     const { error } = await supabaseAdmin.rpc('cleanup_old_signatures')
     

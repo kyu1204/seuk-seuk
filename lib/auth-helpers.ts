@@ -100,26 +100,9 @@ export async function updateUserProfile(updates: { name?: string; email?: string
   }
 }
 
-export async function resetPassword(email: string) {
-  try {
-    const { error } = await (await createClient()).auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    })
-
-    if (error) {
-      throw error
-    }
-
-    return { error: null }
-  } catch (error) {
-    return { error: error as AuthError }
-  }
-}
 
 // Server-side auth functions
 export async function getServerUser() {
-  const supabase = createClient()
-  
   try {
     const { data: { user }, error } = await (await createClient()).auth.getUser()
     if (error) {
@@ -133,8 +116,6 @@ export async function getServerUser() {
 }
 
 export async function getServerSession() {
-  const supabase = createClient()
-  
   try {
     const { data: { session }, error } = await (await createClient()).auth.getSession()
     if (error) {
@@ -147,44 +128,6 @@ export async function getServerSession() {
   }
 }
 
-// Social auth functions
-export async function signInWithGoogle() {
-  try {
-    const { data, error } = await (await createClient()).auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-
-    if (error) {
-      throw error
-    }
-
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: error as AuthError }
-  }
-}
-
-export async function signInWithGithub() {
-  try {
-    const { data, error } = await (await createClient()).auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-
-    if (error) {
-      throw error
-    }
-
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: error as AuthError }
-  }
-}
 
 // Utility function to check if user is authenticated
 export function isAuthenticated(user: User | null): boolean {
