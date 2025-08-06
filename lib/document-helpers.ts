@@ -1,5 +1,4 @@
-import { supabase } from './supabase'
-import { createClient } from './supabase-server'
+import { createClient } from './supabase/server'
 import type { Database } from './database-types'
 
 type Document = Database['public']['Tables']['documents']['Row']
@@ -37,7 +36,7 @@ export async function getUserDocuments(
   status?: Document['status']
 ): Promise<{ documents: DocumentWithAreas[]; error?: string }> {
   try {
-    let query = supabase
+    let query = (await createClient())
       .from('documents')
       .select(`
         *,
@@ -72,7 +71,7 @@ export async function getDocument(
   userId?: string
 ): Promise<{ document: DocumentWithAreas | null; error?: string }> {
   try {
-    let query = supabase
+    let query = (await createClient())
       .from('documents')
       .select(`
         *,
@@ -106,7 +105,7 @@ export async function createDocument(
   userId: string
 ): Promise<{ document: Document | null; error?: string }> {
   try {
-    const { data: document, error } = await supabase
+    const { data: document, error } = await (await createClient())
       .from('documents')
       .insert({
         user_id: userId,
@@ -140,7 +139,7 @@ export async function updateDocument(
   userId: string
 ): Promise<{ document: Document | null; error?: string }> {
   try {
-    const { data: document, error } = await supabase
+    const { data: document, error } = await (await createClient())
       .from('documents')
       .update(updates)
       .eq('id', documentId)
@@ -167,7 +166,7 @@ export async function deleteDocument(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
+    const { error } = await (await createClient())
       .from('documents')
       .delete()
       .eq('id', documentId)
@@ -191,7 +190,7 @@ export async function createSignatureArea(
   data: CreateSignatureAreaData
 ): Promise<{ signatureArea: SignatureArea | null; error?: string }> {
   try {
-    const { data: signatureArea, error } = await supabase
+    const { data: signatureArea, error } = await (await createClient())
       .from('signature_areas')
       .insert({
         document_id: data.documentId,
@@ -226,7 +225,7 @@ export async function updateSignatureArea(
   updates: Partial<SignatureArea>
 ): Promise<{ signatureArea: SignatureArea | null; error?: string }> {
   try {
-    const { data: signatureArea, error } = await supabase
+    const { data: signatureArea, error } = await (await createClient())
       .from('signature_areas')
       .update(updates)
       .eq('id', areaId)
@@ -251,7 +250,7 @@ export async function deleteSignatureArea(
   areaId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
+    const { error } = await (await createClient())
       .from('signature_areas')
       .delete()
       .eq('id', areaId)
@@ -281,7 +280,7 @@ export async function createSignature(
   }
 ): Promise<{ signature: Signature | null; error?: string }> {
   try {
-    const { data: signature, error } = await supabase
+    const { data: signature, error } = await (await createClient())
       .from('signatures')
       .insert({
         document_id: documentId,
@@ -314,7 +313,7 @@ export async function checkDocumentComplete(
 ): Promise<{ complete: boolean; error?: string }> {
   try {
     // Get required signature areas count
-    const { count: requiredCount, error: areasError } = await supabase
+    const { count: requiredCount, error: areasError } = await (await createClient())
       .from('signature_areas')
       .select('*', { count: 'exact', head: true })
       .eq('document_id', documentId)
@@ -325,13 +324,13 @@ export async function checkDocumentComplete(
     }
 
     // Get signed areas count
-    const { count: signedCount, error: signaturesError } = await supabase
+    const { count: signedCount, error: signaturesError } = await (await createClient())
       .from('signatures')
       .select('signature_area_id', { count: 'exact', head: true })
       .eq('document_id', documentId)
       .eq('status', 'signed')
       .in('signature_area_id', 
-        supabase
+        (await createClient())
           .from('signature_areas')
           .select('id')
           .eq('document_id', documentId)
@@ -367,7 +366,7 @@ export async function getDocumentStats(
   error?: string
 }> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (await createClient())
       .from('documents')
       .select('status')
       .eq('user_id', userId)

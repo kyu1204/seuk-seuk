@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { createClient } from './supabase/server'
 import bcrypt from 'bcryptjs'
 import type { Database } from './database-types'
 
@@ -45,7 +45,7 @@ async function generateUniqueShortUrl(): Promise<string> {
     }
 
     // Check if URL already exists
-    const { data } = await supabase
+    const { data } = await (await createClient())
       .from('document_shares')
       .select('id')
       .eq('short_url', shortUrl)
@@ -89,7 +89,7 @@ export async function createShareLink(
     }
 
     // Create share record
-    const { data: shareLink, error } = await supabase
+    const { data: shareLink, error } = await (await createClient())
       .from('document_shares')
       .insert({
         document_id: data.documentId,
@@ -120,7 +120,7 @@ export async function getShareLink(
   shortUrl: string
 ): Promise<{ share: ShareLinkWithDocument | null; error?: string }> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (await createClient())
       .from('document_shares')
       .select(`
         *,
@@ -224,10 +224,10 @@ export async function incrementShareUsage(
   shortUrl: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
+    const { error } = await (await createClient())
       .from('document_shares')
       .update({ 
-        used_count: supabase.sql`used_count + 1` 
+        used_count: (await createClient()).sql`used_count + 1` 
       })
       .eq('short_url', shortUrl)
 
@@ -250,7 +250,7 @@ export async function getDocumentShares(
   userId: string
 ): Promise<{ shares: DocumentShare[]; error?: string }> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (await createClient())
       .from('document_shares')
       .select('*')
       .eq('document_id', documentId)
@@ -295,7 +295,7 @@ export async function updateShareLink(
       updateData.expires_at = updates.expiresAt
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (await createClient())
       .from('document_shares')
       .update(updateData)
       .eq('id', shareId)
@@ -322,7 +322,7 @@ export async function deleteShareLink(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
+    const { error } = await (await createClient())
       .from('document_shares')
       .delete()
       .eq('id', shareId)
@@ -354,7 +354,7 @@ export async function getShareStats(
   error?: string
 }> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (await createClient())
       .from('document_shares')
       .select('expires_at, used_count')
       .eq('document_id', documentId)

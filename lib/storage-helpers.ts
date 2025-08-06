@@ -1,5 +1,4 @@
-import { supabase } from './supabase'
-import { createServiceRoleClient } from './supabase-server'
+import { createClient } from './supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 
 export interface FileUploadResult {
@@ -47,7 +46,7 @@ export async function uploadFile(
     }
 
     // Upload file
-    const { data, error } = await supabase.storage
+    const { data, error } = await (await createClient()).storage
       .from(bucket)
       .upload(path, file, {
         cacheControl: '3600',
@@ -61,7 +60,7 @@ export async function uploadFile(
     // Get public URL if needed
     let publicUrl: string | undefined
     if (isPublic) {
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = (await createClient()).storage
         .from(bucket)
         .getPublicUrl(path)
       publicUrl = urlData.publicUrl
@@ -86,7 +85,7 @@ export async function getSignedUrl(
   expiresIn: number = 3600
 ): Promise<{ url: string | null; error?: string }> {
   try {
-    const { data, error } = await supabase.storage
+    const { data, error } = await (await createClient()).storage
       .from(bucket)
       .createSignedUrl(path, expiresIn)
 
@@ -109,7 +108,7 @@ export async function deleteFile(
   path: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase.storage
+    const { error } = await (await createClient()).storage
       .from(bucket)
       .remove([path])
 
@@ -245,7 +244,7 @@ export async function generateSignedDocument(
 // Clean up temporary signature files (admin function)
 export async function cleanupSignatureFiles(): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabaseAdmin = createServiceRoleClient()
+    const supabaseAdmin = await createClient()
     
     const { error } = await supabaseAdmin.rpc('cleanup_old_signatures')
     

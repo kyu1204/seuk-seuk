@@ -1,5 +1,4 @@
-import { supabase } from './supabase'
-import { createClient } from './supabase-server'
+import { createClient } from './supabase/server'
 import type { User, AuthError } from '@supabase/supabase-js'
 
 export interface AuthUser {
@@ -23,7 +22,7 @@ export interface SignInData {
 // Client-side auth functions
 export async function signUp({ email, password, name }: SignUpData) {
   try {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await (await createClient()).auth.signUp({
       email,
       password,
       options: {
@@ -45,7 +44,7 @@ export async function signUp({ email, password, name }: SignUpData) {
 
 export async function signIn({ email, password }: SignInData) {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await (await createClient()).auth.signInWithPassword({
       email,
       password
     })
@@ -62,7 +61,7 @@ export async function signIn({ email, password }: SignInData) {
 
 export async function signOut() {
   try {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await (await createClient()).auth.signOut()
     if (error) {
       throw error
     }
@@ -74,7 +73,7 @@ export async function signOut() {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const { data: { user }, error } = await (await createClient()).auth.getUser()
     if (error) {
       throw error
     }
@@ -87,7 +86,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
 export async function updateUserProfile(updates: { name?: string; email?: string }) {
   try {
-    const { data, error } = await supabase.auth.updateUser({
+    const { data, error } = await (await createClient()).auth.updateUser({
       data: updates
     })
 
@@ -101,28 +100,11 @@ export async function updateUserProfile(updates: { name?: string; email?: string
   }
 }
 
-export async function resetPassword(email: string) {
-  try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    })
-
-    if (error) {
-      throw error
-    }
-
-    return { error: null }
-  } catch (error) {
-    return { error: error as AuthError }
-  }
-}
 
 // Server-side auth functions
 export async function getServerUser() {
-  const supabase = createClient()
-  
   try {
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const { data: { user }, error } = await (await createClient()).auth.getUser()
     if (error) {
       throw error
     }
@@ -134,10 +116,8 @@ export async function getServerUser() {
 }
 
 export async function getServerSession() {
-  const supabase = createClient()
-  
   try {
-    const { data: { session }, error } = await supabase.auth.getSession()
+    const { data: { session }, error } = await (await createClient()).auth.getSession()
     if (error) {
       throw error
     }
@@ -148,44 +128,6 @@ export async function getServerSession() {
   }
 }
 
-// Social auth functions
-export async function signInWithGoogle() {
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-
-    if (error) {
-      throw error
-    }
-
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: error as AuthError }
-  }
-}
-
-export async function signInWithGithub() {
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-
-    if (error) {
-      throw error
-    }
-
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: error as AuthError }
-  }
-}
 
 // Utility function to check if user is authenticated
 export function isAuthenticated(user: User | null): boolean {
