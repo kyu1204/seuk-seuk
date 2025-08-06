@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { createClient } from './supabase/server'
 import bcrypt from 'bcryptjs'
 import type { Database } from './database-types'
 
@@ -227,7 +227,7 @@ export async function incrementShareUsage(
     const { error } = await supabase
       .from('document_shares')
       .update({ 
-        used_count: supabase.sql`used_count + 1` 
+        used_count: (await createClient()).sql`used_count + 1` 
       })
       .eq('short_url', shortUrl)
 

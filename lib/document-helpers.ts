@@ -1,5 +1,4 @@
-import { supabase } from './supabase'
-import { createClient } from './supabase-server'
+import { createClient } from './supabase/server'
 import type { Database } from './database-types'
 
 type Document = Database['public']['Tables']['documents']['Row']
