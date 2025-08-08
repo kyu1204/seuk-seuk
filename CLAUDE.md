@@ -61,3 +61,5 @@ This is a Next.js 14 document signing application with the following key archite
 - 작업 시작될 때에는 항상 git branch를 만들어서 진행
 - 작업 종료될 때에는 항상 git commit 및 PR 생성을 해서 변경사항을 저장
 - supabase 관련 동작은 supabase mcp를 활용
+
+- 작업 시작전 plan 계획 시 techspec/techspec.md 파일을 읽고 작업 계획을 세운다
