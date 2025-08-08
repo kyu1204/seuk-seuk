@@ -91,6 +91,12 @@ export async function signIn(formData: FormData) {
   }
 
   const { email, password } = validatedFields.data;
+  
+  // Validate redirect URL to prevent open redirects
+  const allowedRedirects = ['/dashboard', '/'];
+  const redirectTo = rawData.redirect && allowedRedirects.includes(rawData.redirect) 
+    ? rawData.redirect 
+    : "/dashboard";
 
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -111,7 +117,6 @@ export async function signIn(formData: FormData) {
   }
 
   // If we get here, login was successful
-  const redirectTo = rawData.redirect || "/dashboard";
   revalidatePath("/", "layout");
   redirect(redirectTo);
 }

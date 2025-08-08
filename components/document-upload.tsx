@@ -302,7 +302,7 @@ export default function DocumentUpload() {
               <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
                 <img
                   src={document || "/placeholder.svg"}
-                  alt="Document"
+                  alt={t("upload.documentAlt")}
                   className="w-full h-auto object-contain"
                   draggable="false"
                 />

@@ -35,7 +35,7 @@ const translations: Record<Language, Record<string, string>> = {
 // Server-side translation function
 export async function getServerTranslation(key: string, lang?: Language): Promise<string> {
   // Get language from cookies or default to Korean
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
   const selectedLanguage = lang || (cookieStore.get('docSignLanguage')?.value as Language) || 'ko'
   
   return translations[selectedLanguage][key] || key
@@ -43,6 +43,6 @@ export async function getServerTranslation(key: string, lang?: Language): Promis
 
 // Get language from cookies (for server actions)
 export async function getServerLanguage(): Promise<Language> {
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
   return (cookieStore.get('docSignLanguage')?.value as Language) || 'ko'
 }

@@ -253,7 +253,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                    onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
                     placeholder={t("sign.enterPassword")}
                   />
                 </div>
@@ -355,7 +355,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
         <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
           <img
             src={documentUrl}
-            alt="Document"
+            alt={t("sign.documentAlt")}
             className="w-full h-auto object-contain"
             draggable="false"
             style={{ userSelect: "none" }}
@@ -455,7 +455,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
             <div className="border rounded-lg overflow-hidden mb-4">
               <img
                 src={signedDocumentUrl}
-                alt="Signed Document"
+                alt={t("sign.signedDocumentAlt")}
                 className="max-w-full h-auto"
                 style={{ maxWidth: "100%" }}
               />
