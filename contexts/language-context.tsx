@@ -1,23 +1,29 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 
 // Define available languages
-export type Language = "ko" | "en"
+export type Language = "ko" | "en";
 
 // Define the context type
 type LanguageContextType = {
-  language: Language
-  setLanguage: (language: Language) => void
-  t: (key: string) => string
-}
+  language: Language;
+  setLanguage: (language: Language) => void;
+  t: (key: string, params?: Record<string, string>) => string;
+};
 
 // Create the context with default values
 const LanguageContext = createContext<LanguageContextType>({
   language: "ko",
   setLanguage: () => {},
-  t: (key) => key,
-})
+  t: (key, params) => key,
+});
 
 // Translation data
 const translations: Record<Language, Record<string, string>> = {
@@ -63,9 +69,15 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.title": "문서 관리",
     "dashboard.description": "문서를 업로드하고 서명 영역을 지정하세요",
     "dashboard.backToHome": "홈으로 돌아가기",
+    "dashboard.loading": "로딩 중...",
+    "dashboard.welcome": "안녕하세요, {name}님!",
+    "dashboard.profile": "프로필",
+    "dashboard.settings": "설정",
+    "dashboard.signOut": "로그아웃",
 
     // Homepage
-    "home.notification": "🎉 새로운 기능이 출시되었습니다! 지금 바로 확인해보세요.",
+    "home.notification":
+      "🎉 새로운 기능이 출시되었습니다! 지금 바로 확인해보세요.",
     "home.nav.features": "기능",
     "home.nav.pricing": "가격",
     "home.nav.testimonials": "고객 후기",
@@ -78,15 +90,20 @@ const translations: Record<Language, Record<string, string>> = {
     "home.hero.learnMore": "더 알아보기",
     "home.hero.trustedBy": "수천 명의 사용자가 신뢰하는 서비스",
     "home.featuresTitle": "강력한 기능",
-    "home.featuresDescription": "DocSign은 문서 서명 프로세스를 간소화하는 다양한 기능을 제공합니다.",
+    "home.featuresDescription":
+      "DocSign은 문서 서명 프로세스를 간소화하는 다양한 기능을 제공합니다.",
     "home.features.easy.title": "간편한 사용",
-    "home.features.easy.description": "직관적인 인터페이스로 누구나 쉽게 사용할 수 있습니다.",
+    "home.features.easy.description":
+      "직관적인 인터페이스로 누구나 쉽게 사용할 수 있습니다.",
     "home.features.secure.title": "안전한 보안",
-    "home.features.secure.description": "모든 문서와 서명은 암호화되어 안전하게 보호됩니다.",
+    "home.features.secure.description":
+      "모든 문서와 서명은 암호화되어 안전하게 보호됩니다.",
     "home.features.fast.title": "빠른 처리",
-    "home.features.fast.description": "몇 초 만에 문서를 업로드하고 서명할 수 있습니다.",
+    "home.features.fast.description":
+      "몇 초 만에 문서를 업로드하고 서명할 수 있습니다.",
     "home.testimonialsTitle": "고객 후기",
-    "home.testimonialsDescription": "DocSign을 사용하는 고객들의 생생한 후기를 확인해보세요.",
+    "home.testimonialsDescription":
+      "DocSign을 사용하는 고객들의 생생한 후기를 확인해보세요.",
     "home.testimonials.quote1":
       "DocSign은 우리 회사의 계약 프로세스를 완전히 바꿔놓았습니다. 이전에는 서류 작업에 며칠이 걸렸지만, 이제는 몇 분 만에 완료됩니다.",
     "home.testimonials.author1": "김민수",
@@ -125,7 +142,8 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.popular": "인기",
     "pricing.perMonth": "월",
     "home.cta.title": "지금 바로 시작하세요",
-    "home.cta.description": "DocSign으로 문서 서명 프로세스를 간소화하고 시간과 비용을 절약하세요.",
+    "home.cta.description":
+      "DocSign으로 문서 서명 프로세스를 간소화하고 시간과 비용을 절약하세요.",
     "home.cta.button": "지금 시작하기",
     "home.footer.rights": "모든 권리 보유.",
 
@@ -187,7 +205,8 @@ const translations: Record<Language, Record<string, string>> = {
     // Sign Page
     "sign.loading": "Loading document...",
     "sign.notFound": "Document Not Found",
-    "sign.notFoundDesc": "The document you're looking for doesn't exist or has expired.",
+    "sign.notFoundDesc":
+      "The document you're looking for doesn't exist or has expired.",
     "sign.returnHome": "Return to Home",
     "sign.clickAreas": "Click on the highlighted areas to add your signature",
     "sign.clickToSign": "Click to sign",
@@ -199,7 +218,8 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Signature Modal
     "signature.title": "Add Your Signature",
-    "signature.instruction": "Draw your signature above using your mouse or finger",
+    "signature.instruction":
+      "Draw your signature above using your mouse or finger",
     "signature.clear": "Clear",
     "signature.sign": "Sign Document",
 
@@ -211,6 +231,11 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.title": "Document Management",
     "dashboard.description": "Upload documents and define signature areas",
     "dashboard.backToHome": "Back to Home",
+    "dashboard.loading": "Loading...",
+    "dashboard.welcome": "Hello, {name}!",
+    "dashboard.profile": "Profile",
+    "dashboard.settings": "Settings",
+    "dashboard.signOut": "Sign Out",
 
     // Homepage
     "home.notification": "🎉 New features just released! Check them out now.",
@@ -226,15 +251,20 @@ const translations: Record<Language, Record<string, string>> = {
     "home.hero.learnMore": "Learn More",
     "home.hero.trustedBy": "Trusted by thousands of users",
     "home.featuresTitle": "Powerful Features",
-    "home.featuresDescription": "DocSign offers a range of features to streamline your document signing process.",
+    "home.featuresDescription":
+      "DocSign offers a range of features to streamline your document signing process.",
     "home.features.easy.title": "Easy to Use",
-    "home.features.easy.description": "Intuitive interface that anyone can use without training.",
+    "home.features.easy.description":
+      "Intuitive interface that anyone can use without training.",
     "home.features.secure.title": "Secure & Protected",
-    "home.features.secure.description": "All documents and signatures are encrypted and securely stored.",
+    "home.features.secure.description":
+      "All documents and signatures are encrypted and securely stored.",
     "home.features.fast.title": "Lightning Fast",
-    "home.features.fast.description": "Upload and sign documents in seconds, not minutes.",
+    "home.features.fast.description":
+      "Upload and sign documents in seconds, not minutes.",
     "home.testimonialsTitle": "Customer Testimonials",
-    "home.testimonialsDescription": "See what our customers are saying about DocSign.",
+    "home.testimonialsDescription":
+      "See what our customers are saying about DocSign.",
     "home.testimonials.quote1":
       "DocSign completely transformed our contract process. What used to take days now takes minutes.",
     "home.testimonials.author1": "John Smith",
@@ -263,7 +293,8 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.pro.feature4": "Email notifications",
     "pricing.pro.cta": "Go Pro",
     "pricing.enterprise.name": "Enterprise",
-    "pricing.enterprise.description": "Custom solutions for large organizations",
+    "pricing.enterprise.description":
+      "Custom solutions for large organizations",
     "pricing.enterprise.price": "Contact Us",
     "pricing.enterprise.feature1": "Unlimited documents",
     "pricing.enterprise.feature2": "Custom workflows",
@@ -273,7 +304,8 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.popular": "Popular",
     "pricing.perMonth": "/month",
     "home.cta.title": "Get Started Today",
-    "home.cta.description": "Streamline your document signing process and save time and money with DocSign.",
+    "home.cta.description":
+      "Streamline your document signing process and save time and money with DocSign.",
     "home.cta.button": "Get Started",
     "home.footer.rights": "All rights reserved.",
 
@@ -317,41 +349,52 @@ const translations: Record<Language, Record<string, string>> = {
       "Sign up for DocSign to start signing and managing your documents. We provide a simple and secure signing experience.",
     "register.kakaoTalk": "Kakao",
   },
-}
+};
 
 // Provider component
 export function LanguageProvider({ children }: { children: ReactNode }) {
   // Initialize with Korean as default
-  const [language, setLanguageState] = useState<Language>("ko")
+  const [language, setLanguageState] = useState<Language>("ko");
 
   // Load saved language preference on mount
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("docSignLanguage") as Language
+    const savedLanguage = localStorage.getItem("docSignLanguage") as Language;
     if (savedLanguage && (savedLanguage === "ko" || savedLanguage === "en")) {
-      setLanguageState(savedLanguage)
+      setLanguageState(savedLanguage);
     }
-  }, [])
+  }, []);
 
   // Save language preference when it changes
   const setLanguage = (newLanguage: Language) => {
-    setLanguageState(newLanguage)
-    localStorage.setItem("docSignLanguage", newLanguage)
-  }
+    setLanguageState(newLanguage);
+    localStorage.setItem("docSignLanguage", newLanguage);
+  };
 
-  // Translation function
-  const t = (key: string): string => {
-    return translations[language][key] || key
-  }
+  // Translation function with placeholder support
+  const t = (key: string, params?: Record<string, string>): string => {
+    let translation = translations[language][key] || key;
 
-  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        translation = translation.replace(`{${paramKey}}`, paramValue);
+      });
+    }
+
+    return translation;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
 }
 
 // Custom hook for using the language context
 export function useLanguage() {
-  const context = useContext(LanguageContext)
+  const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error("useLanguage must be used within a LanguageProvider")
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
-  return context
+  return context;
 }
-

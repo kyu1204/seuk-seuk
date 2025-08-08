@@ -60,8 +60,7 @@ export async function mergeImagesClient(images: MergeImageOptions[]): Promise<st
             }
 
             img.onerror = () => {
-              console.error(`Failed to load image at index ${i}`)
-              imgReject(new Error(`Failed to load image at index ${i}`))
+imgReject(new Error(`Failed to load image at index ${i}`))
             }
 
             img.src = images[i].src
