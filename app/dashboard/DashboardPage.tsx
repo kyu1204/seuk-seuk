@@ -1,64 +1,55 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import DocumentUpload from "@/components/document-upload"
-import LanguageSelector from "@/components/language-selector"
-import { useLanguage } from "@/contexts/language-context"
-import { useAuth } from "@/contexts/auth-context"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ArrowLeft, LogOut, Settings, User } from "lucide-react"
-import Link from "next/link"
+import { useEffect, useState } from "react";
+import DocumentUpload from "@/components/document-upload";
+import LanguageSelector from "@/components/language-selector";
+import { useLanguage } from "@/contexts/language-context";
+import { signOut as serverSignOut } from "@/app/auth/actions";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, LogOut, Settings, User } from "lucide-react";
+import Link from "next/link";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-export default function DashboardPage() {
-  const { t } = useLanguage()
-  const { user, loading, signOut } = useAuth()
-  const router = useRouter()
+interface DashboardPageProps {
+  user: SupabaseUser;
+}
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login?redirect=/dashboard')
-    }
-  }, [user, loading, router])
+export default function DashboardPage({ user }: DashboardPageProps) {
+  const { t } = useLanguage();
 
   const handleSignOut = async () => {
-    await signOut()
-    router.push('/')
-  }
+    // Use server action for sign out - it handles redirect automatically
+    const formData = new FormData();
+    await serverSignOut(formData);
+  };
 
   const getUserDisplayName = () => {
-    if (!user) return 'User'
-    return user.user_metadata?.name || 
-           user.user_metadata?.full_name || 
-           user.email?.split('@')[0] || 
-           'User'
-  }
+    return (
+      user.user_metadata?.name ||
+      user.user_metadata?.full_name ||
+      user.email?.split("@")[0] ||
+      "User"
+    );
+  };
 
   const getUserInitials = () => {
-    const name = getUserDisplayName()
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-  }
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">{t("dashboard.loading")}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null // Will redirect to login
-  }
+    const name = getUserDisplayName();
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -70,15 +61,21 @@ export default function DashboardPage() {
               <span>{t("dashboard.backToHome")}</span>
             </Button>
           </Link>
-          
+
           <div className="flex items-center gap-4">
             <LanguageSelector />
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-10 w-10 rounded-full"
+                >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.user_metadata?.avatar_url} alt={getUserDisplayName()} />
+                    <AvatarImage
+                      src={user.user_metadata?.avatar_url}
+                      alt={getUserDisplayName()}
+                    />
                     <AvatarFallback>{getUserInitials()}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -86,8 +83,12 @@ export default function DashboardPage() {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    <p className="text-sm font-medium leading-none">
+                      {getUserDisplayName()}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -119,6 +120,5 @@ export default function DashboardPage() {
         <DocumentUpload />
       </div>
     </div>
-  )
+  );
 }
-

@@ -39,8 +39,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
         setDocumentData(parsedData)
       }
     } catch (error) {
-      console.error("Error loading document:", error)
-    } finally {
+} finally {
       setIsLoading(false)
     }
   }, [params.id])
@@ -186,8 +185,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
       setSignedImageUrl(dataUrl)
       setShowDownloadModal(true)
     } catch (err) {
-      console.error("Error generating signed document:", err)
-      setError(err instanceof Error ? err.message : "Failed to generate signed document")
+setError(err instanceof Error ? err.message : "Failed to generate signed document")
     } finally {
       setIsGenerating(false)
     }
@@ -211,8 +209,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
       link.click()
       document.body.removeChild(link)
     } catch (err) {
-      console.error("Error downloading document:", err)
-      setError("Failed to download document")
+setError("Failed to download document")
     }
   }
 

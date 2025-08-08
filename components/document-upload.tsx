@@ -99,8 +99,7 @@ export default function DocumentUpload() {
         // Redirect to the signing page
         router.push(`/sign/${shortUrl}`)
       } catch (error) {
-        console.error("Error generating signature link:", error)
-      } finally {
+} finally {
         setIsLoading(false)
       }
     }

@@ -46,8 +46,7 @@ export async function generateSignedDocument(documentImage: string, signatures: 
           const signatureImage = await loadImage(signature.signature)
           ctx.drawImage(signatureImage, area.x, area.y, area.width, area.height)
         } catch (err) {
-          console.error("Error loading signature:", err)
-          // Continue with other signatures even if one fails
+// Continue with other signatures even if one fails
         }
       }
     }
@@ -57,8 +56,7 @@ export async function generateSignedDocument(documentImage: string, signatures: 
 
     return { success: true, signedDocument: dataUrl }
   } catch (error) {
-    console.error("Error in server action:", error)
-    return {
+return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to generate signed document",
     }

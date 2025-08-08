@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { FileSignature, Github, KeyRound, Mail, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,42 +12,21 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useLanguage } from "@/contexts/language-context"
-import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
+import { signIn } from "@/app/auth/actions"
 
 export default function LoginPage() {
   const { t } = useLanguage()
-  const { signIn, loading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
 
+  const error = searchParams.get('error')
+  const message = searchParams.get('message')
   const redirectTo = searchParams.get('redirect') || '/dashboard'
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
-
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
-    const { error } = await signIn(email, password)
-
-    if (error) {
-      setError(error)
-      setIsLoading(false)
-    } else {
-      router.push(redirectTo)
-    }
-  }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
-    setError("")
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -57,14 +36,12 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setError(error.message)
-      setIsLoading(false)
+setIsLoading(false)
     }
   }
 
   const handleGithubSignIn = async () => {
     setIsLoading(true)
-    setError("")
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
@@ -74,8 +51,7 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setError(error.message)
-      setIsLoading(false)
+setIsLoading(false)
     }
   }
 
@@ -122,8 +98,15 @@ export default function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            
+            {message && (
+              <Alert>
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form action={signIn} className="space-y-6">
+              <input type="hidden" name="redirect" value={redirectTo} />
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">{t("login.email")}</Label>
@@ -136,7 +119,7 @@ export default function LoginPage() {
                       placeholder="name@example.com" 
                       className="pl-10" 
                       required 
-                      disabled={isLoading || authLoading}
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -157,7 +140,7 @@ export default function LoginPage() {
                       placeholder="••••••••" 
                       className="pl-10" 
                       required 
-                      disabled={isLoading || authLoading}
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -166,9 +149,9 @@ export default function LoginPage() {
               <Button 
                 type="submit" 
                 className="w-full bg-primary hover:bg-primary/90" 
-                disabled={isLoading || authLoading}
+                disabled={isLoading}
               >
-                {isLoading || authLoading ? t("login.loggingIn") : t("login.logIn")}
+                {isLoading ? t("login.loggingIn") : t("login.logIn")}
               </Button>
 
               <div className="relative">
@@ -186,7 +169,7 @@ export default function LoginPage() {
                   type="button" 
                   className="w-full"
                   onClick={handleGoogleSignIn}
-                  disabled={isLoading || authLoading}
+                  disabled={isLoading}
                 >
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path
@@ -213,7 +196,7 @@ export default function LoginPage() {
                   type="button" 
                   className="w-full"
                   onClick={handleGithubSignIn}
-                  disabled={isLoading || authLoading}
+                  disabled={isLoading}
                 >
                   <Github className="mr-2 h-4 w-4" />
                   Github

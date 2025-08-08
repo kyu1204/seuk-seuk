@@ -27,12 +27,14 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
-  const { data: { session }, error } = await supabase.auth.getSession()
+  // IMPORTANT: DO NOT REMOVE auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
 
-  // Define protected routes
+// Define protected routes
   const protectedRoutes = ['/dashboard']
   const authRoutes = ['/login', '/register']
   const publicRoutes = ['/sign'] // Share links are public
@@ -53,15 +55,15 @@ export async function middleware(request: NextRequest) {
   )
 
   // If user is not authenticated and trying to access protected route
-  if (isProtectedRoute && !session) {
-    const redirectUrl = new URL('/login', request.url)
+  if (isProtectedRoute && !user) {
+const redirectUrl = new URL('/login', request.url)
     redirectUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
   // If user is authenticated and trying to access auth routes, redirect to dashboard
-  if (isAuthRoute && session) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  if (isAuthRoute && user) {
+return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   // Handle auth callback
@@ -69,7 +71,7 @@ export async function middleware(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const redirectTo = searchParams.get('redirect') || '/dashboard'
     
-    if (session) {
+    if (user) {
       return NextResponse.redirect(new URL(redirectTo, request.url))
     }
   }

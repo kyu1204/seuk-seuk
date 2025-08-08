@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { FileSignature, Github, KeyRound, Mail, User, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,61 +12,20 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useLanguage } from "@/contexts/language-context"
-import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
+import { signUp } from "@/app/auth/actions"
 
 export default function RegisterPage() {
   const { t } = useLanguage()
-  const { signUp, loading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
-
-    const formData = new FormData(e.currentTarget)
-    const name = formData.get('name') as string
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-    const confirmPassword = formData.get('confirmPassword') as string
-
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError(t("register.passwordsDoNotMatch"))
-      setIsLoading(false)
-      return
-    }
-
-    // Validate password strength
-    if (password.length < 6) {
-      setError(t("register.passwordTooShort"))
-      setIsLoading(false)
-      return
-    }
-
-    const { error } = await signUp(email, password, name)
-
-    if (error) {
-      setError(error)
-      setIsLoading(false)
-    } else {
-      setSuccess(true)
-      setIsLoading(false)
-      // Redirect to login page after successful registration
-      setTimeout(() => {
-        router.push('/login?message=registration_success')
-      }, 2000)
-    }
-  }
+  const error = searchParams.get('error')
+  const message = searchParams.get('message')
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true)
-    setError("")
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -76,14 +35,12 @@ export default function RegisterPage() {
     })
 
     if (error) {
-      setError(error.message)
-      setIsLoading(false)
+setIsLoading(false)
     }
   }
 
   const handleGithubSignUp = async () => {
     setIsLoading(true)
-    setError("")
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
@@ -93,8 +50,7 @@ export default function RegisterPage() {
     })
 
     if (error) {
-      setError(error.message)
-      setIsLoading(false)
+setIsLoading(false)
     }
   }
 
@@ -142,16 +98,31 @@ export default function RegisterPage() {
               </Alert>
             )}
 
-            {success && (
-              <Alert className="border-green-200 bg-green-50 text-green-800">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {t("register.registrationSuccess")} {t("register.redirectingToLogin")}
-                </AlertDescription>
+            {message && (
+              <Alert>
+                <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form 
+              action={(formData) => {
+                const password = formData.get('password') as string
+                const confirmPassword = formData.get('confirmPassword') as string
+                
+                if (password !== confirmPassword) {
+                  alert(t("register.passwordsDoNotMatch"))
+                  return
+                }
+                
+                if (password.length < 6) {
+                  alert(t("register.passwordTooShort"))
+                  return
+                }
+                
+                signUp(formData)
+              }}
+              className="space-y-6"
+            >
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">{t("register.name")}</Label>
@@ -164,7 +135,7 @@ export default function RegisterPage() {
                       placeholder="John Doe" 
                       className="pl-10" 
                       required 
-                      disabled={isLoading || authLoading || success}
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -180,7 +151,7 @@ export default function RegisterPage() {
                       placeholder="name@example.com"
                       className="pl-10"
                       required
-                      disabled={isLoading || authLoading || success}
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -196,7 +167,7 @@ export default function RegisterPage() {
                       placeholder="••••••••" 
                       className="pl-10" 
                       required 
-                      disabled={isLoading || authLoading || success}
+                      disabled={isLoading}
                       minLength={6}
                     />
                   </div>
@@ -214,7 +185,7 @@ export default function RegisterPage() {
                       placeholder="••••••••" 
                       className="pl-10" 
                       required 
-                      disabled={isLoading || authLoading || success}
+                      disabled={isLoading}
                       minLength={6}
                     />
                   </div>
@@ -224,13 +195,12 @@ export default function RegisterPage() {
               <Button 
                 type="submit" 
                 className="w-full bg-primary hover:bg-primary/90" 
-                disabled={isLoading || authLoading || success}
+                disabled={isLoading}
               >
-                {isLoading || authLoading ? t("register.registering") : t("register.createAccount")}
+                {isLoading ? t("register.registering") : t("register.createAccount")}
               </Button>
 
-              {!success && (
-                <>
+              <>
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <Separator className="w-full" />
@@ -246,7 +216,7 @@ export default function RegisterPage() {
                       type="button" 
                       className="w-full"
                       onClick={handleGoogleSignUp}
-                      disabled={isLoading || authLoading}
+                      disabled={isLoading}
                     >
                       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -273,14 +243,13 @@ export default function RegisterPage() {
                       type="button" 
                       className="w-full"
                       onClick={handleGithubSignUp}
-                      disabled={isLoading || authLoading}
+                      disabled={isLoading}
                     >
                       <Github className="mr-2 h-4 w-4" />
                       Github
                     </Button>
                   </div>
                 </>
-              )}
 
               <div className="text-center text-sm">
                 <span className="text-muted-foreground">{t("register.alreadyHaveAccount")}</span>{" "}
