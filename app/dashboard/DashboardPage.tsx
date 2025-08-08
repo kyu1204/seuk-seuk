@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import DocumentUpload from "@/components/document-upload";
 import LanguageSelector from "@/components/language-selector";
 import { useLanguage } from "@/contexts/language-context";

@@ -3,18 +3,24 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getServerTranslation } from "@/lib/translations";
 import { z } from "zod";
 
-const signUpSchema = z.object({
-  email: z.string().email("유효한 이메일을 입력해주세요"),
-  password: z.string().min(6, "비밀번호는 6자 이상이어야 합니다"),
-  name: z.string().optional(),
-});
+// Create dynamic schemas with translations
+async function createSignUpSchema() {
+  return z.object({
+    email: z.string().email(await getServerTranslation("auth.validEmail")),
+    password: z.string().min(6, await getServerTranslation("auth.passwordLength")),
+    name: z.string().optional(),
+  });
+}
 
-const signInSchema = z.object({
-  email: z.string().email("유효한 이메일을 입력해주세요"),
-  password: z.string().min(1, "비밀번호를 입력해주세요"),
-});
+async function createSignInSchema() {
+  return z.object({
+    email: z.string().email(await getServerTranslation("auth.validEmail")),
+    password: z.string().min(1, await getServerTranslation("auth.passwordRequired")),
+  });
+}
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
@@ -26,9 +32,11 @@ export async function signUp(formData: FormData) {
   };
 
   // Validate input
+  const signUpSchema = await createSignUpSchema();
   const validatedFields = signUpSchema.safeParse(rawData);
   if (!validatedFields.success) {
-    redirect("/register?error=" + encodeURIComponent("입력값을 확인해주세요"));
+    const errorMessage = await getServerTranslation("auth.invalidInput");
+    redirect("/register?error=" + encodeURIComponent(errorMessage));
   }
 
   const { email, password, name } = validatedFields.data;
@@ -50,16 +58,18 @@ export async function signUp(formData: FormData) {
 
     // Success - redirect outside try-catch to avoid catching the redirect error
   } catch (error: any) {
+    const errorMessage = await getServerTranslation("auth.signUpError");
     redirect(
-      "/register?error=" + encodeURIComponent("회원가입 중 오류가 발생했습니다")
+      "/register?error=" + encodeURIComponent(errorMessage)
     );
   }
 
   // If we get here, signup was successful
   revalidatePath("/", "layout");
+  const successMessage = await getServerTranslation("auth.signUpSuccess");
   redirect(
     "/login?message=" +
-      encodeURIComponent("회원가입이 완료되었습니다. 로그인해주세요.")
+      encodeURIComponent(successMessage)
   );
 }
 
@@ -73,9 +83,11 @@ export async function signIn(formData: FormData) {
   };
 
   // Validate input
+  const signInSchema = await createSignInSchema();
   const validatedFields = signInSchema.safeParse(rawData);
   if (!validatedFields.success) {
-    redirect("/login?error=" + encodeURIComponent("입력값을 확인해주세요"));
+    const errorMessage = await getServerTranslation("auth.invalidInput");
+    redirect("/login?error=" + encodeURIComponent(errorMessage));
   }
 
   const { email, password } = validatedFields.data;
@@ -92,8 +104,9 @@ export async function signIn(formData: FormData) {
 
     // Success - redirect outside try-catch to avoid catching the redirect error
   } catch (error: any) {
+    const errorMessage = await getServerTranslation("auth.signInError");
     redirect(
-      "/login?error=" + encodeURIComponent("로그인 중 오류가 발생했습니다")
+      "/login?error=" + encodeURIComponent(errorMessage)
     );
   }
 
@@ -109,10 +122,14 @@ export async function signOut(formData: FormData) {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      throw error;
+      console.error('Sign out error:', error);
+      const errorMessage = await getServerTranslation("auth.signOutError");
+      redirect("/?error=" + encodeURIComponent(errorMessage));
     }
   } catch (error) {
-    // Handle error if needed
+    console.error('Unexpected sign out error:', error);
+    const errorMessage = await getServerTranslation("auth.signOutError");
+    redirect("/?error=" + encodeURIComponent(errorMessage));
   }
   
   redirect("/");

@@ -18,6 +18,7 @@ import { signIn } from "@/app/auth/actions"
 export default function LoginPage() {
   const { t } = useLanguage()
   const [isLoading, setIsLoading] = useState(false)
+  const [oauthError, setOauthError] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const supabase = createClient()
 
@@ -27,6 +28,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
+    setOauthError(null)
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -36,12 +38,14 @@ export default function LoginPage() {
     })
 
     if (error) {
-setIsLoading(false)
+      setIsLoading(false)
+      setOauthError(error.message)
     }
   }
 
   const handleGithubSignIn = async () => {
     setIsLoading(true)
+    setOauthError(null)
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
@@ -51,7 +55,8 @@ setIsLoading(false)
     })
 
     if (error) {
-setIsLoading(false)
+      setIsLoading(false)
+      setOauthError(error.message)
     }
   }
 
@@ -102,6 +107,13 @@ setIsLoading(false)
             {message && (
               <Alert>
                 <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            )}
+
+            {oauthError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{oauthError}</AlertDescription>
               </Alert>
             )}
 
