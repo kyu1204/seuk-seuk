@@ -3,233 +3,285 @@
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import SignatureModal from "@/components/signature-modal"
 import { Card, CardContent } from "@/components/ui/card"
-import { Download, RefreshCw } from "lucide-react"
+import { Download, RefreshCw, Lock, Loader2 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSelector from "@/components/language-selector"
+import { toast } from "sonner"
+import { 
+  getSharedDocument, 
+  submitSignature, 
+  generateFinalDocument, 
+  checkDocumentStatus,
+  type DocumentWithAreas 
+} from "@/app/actions/signing"
 
-interface DocumentData {
-  image: string
-  areas: Array<{ x: number; y: number; width: number; height: number }>
-  fileName: string
-  signatures?: Array<{ areaIndex: number; signature: string }>
+interface SignerInfo {
+  name?: string
+  email?: string
 }
 
 export default function SignPage({ params }: { params: { id: string } }) {
   const { t } = useLanguage()
   const router = useRouter()
-  const [documentData, setDocumentData] = useState<DocumentData | null>(null)
+  
+  // Document state
+  const [documentData, setDocumentData] = useState<DocumentWithAreas | null>(null)
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [selectedArea, setSelectedArea] = useState<number | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
-  const [isGenerating, setIsGenerating] = useState<boolean>(false)
-  const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  
+  // Password state
+  const [requiresPassword, setRequiresPassword] = useState<boolean>(false)
+  const [password, setPassword] = useState<string>("")
+  const [isCheckingPassword, setIsCheckingPassword] = useState<boolean>(false)
+  
+  // Signature state
+  const [selectedArea, setSelectedArea] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const [signerInfo, setSignerInfo] = useState<SignerInfo>({})
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  
+  // Document generation state
+  const [isGenerating, setIsGenerating] = useState<boolean>(false)
+  const [signedDocumentUrl, setSignedDocumentUrl] = useState<string | null>(null)
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false)
+  
+  // Document status
+  const [documentStatus, setDocumentStatus] = useState<{
+    status: string
+    totalAreas: number
+    signedAreas: number
+    isComplete: boolean
+  } | null>(null)
+  
   const documentContainerRef = useRef<HTMLDivElement>(null)
 
+  // Load document on mount
   useEffect(() => {
-    // In a real app, you would fetch the document data from an API
-    // using the ID from params. For this demo, we'll use localStorage.
-    try {
-      const storedData = localStorage.getItem("documentToSign")
-      if (storedData) {
-        const parsedData = JSON.parse(storedData) as DocumentData
-        setDocumentData(parsedData)
-      }
-    } catch (error) {
-} finally {
-      setIsLoading(false)
-    }
+    loadDocument()
   }, [params.id])
 
-  const handleAreaClick = (index: number) => {
-    setSelectedArea(index)
+  // Check document status periodically
+  useEffect(() => {
+    if (documentData?.id) {
+      const interval = setInterval(() => {
+        checkStatus()
+      }, 5000) // Check every 5 seconds
+
+      return () => clearInterval(interval)
+    }
+  }, [documentData?.id])
+
+  const loadDocument = async (passwordAttempt?: string) => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const result = await getSharedDocument(params.id, passwordAttempt)
+      
+      if (!result.success) {
+        if (result.requiresPassword) {
+          setRequiresPassword(true)
+          setIsLoading(false)
+          if (passwordAttempt) {
+            toast.error(result.error || t("sign.invalidPassword"))
+          }
+          return
+        }
+        
+        setError(result.error || t("sign.documentNotFound"))
+        setIsLoading(false)
+        return
+      }
+
+      if (result.data) {
+        setDocumentData(result.data)
+        setDocumentUrl(result.data.signedUrl)
+        await checkStatus(result.data.id)
+      }
+    } catch (err) {
+      console.error('Load document error:', err)
+      setError(t("sign.loadError"))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const checkStatus = async (docId?: string) => {
+    const documentId = docId || documentData?.id
+    if (!documentId) return
+
+    try {
+      const result = await checkDocumentStatus(documentId)
+      if (result.success && result.data) {
+        setDocumentStatus(result.data)
+      }
+    } catch (err) {
+      console.error('Check status error:', err)
+    }
+  }
+
+  const handlePasswordSubmit = async () => {
+    if (!password.trim()) {
+      toast.error(t("sign.passwordRequired"))
+      return
+    }
+
+    setIsCheckingPassword(true)
+    await loadDocument(password.trim())
+    setIsCheckingPassword(false)
+  }
+
+  const handleAreaClick = (areaId: string) => {
+    // Check if area is already signed
+    const isAlreadySigned = documentData?.signatures?.some(
+      sig => sig.signature_area_id === areaId
+    )
+    
+    if (isAlreadySigned) {
+      toast.info(t("sign.alreadySigned"))
+      return
+    }
+
+    setSelectedArea(areaId)
     setIsModalOpen(true)
   }
 
-  const handleSignatureComplete = (signatureData: string) => {
-    if (documentData && selectedArea !== null) {
-      const updatedData = { ...documentData }
-      if (!updatedData.signatures) {
-        updatedData.signatures = []
-      }
+  const handleSignatureComplete = async (signatureData: string) => {
+    if (!documentData || !selectedArea) return
 
-      // Add or update signature
-      const existingIndex = updatedData.signatures.findIndex((s) => s.areaIndex === selectedArea)
-      if (existingIndex >= 0) {
-        updatedData.signatures[existingIndex].signature = signatureData
+    setIsSubmitting(true)
+    
+    try {
+      const result = await submitSignature(
+        documentData.id,
+        selectedArea,
+        signatureData,
+        signerInfo
+      )
+
+      if (result.success) {
+        toast.success(t("sign.signatureSubmitted"))
+        setIsModalOpen(false)
+        setSelectedArea(null)
+        
+        // Reload document to get updated signatures
+        await loadDocument(password)
+        await checkStatus()
       } else {
-        updatedData.signatures.push({
-          areaIndex: selectedArea,
-          signature: signatureData,
-        })
+        toast.error(result.error || t("sign.signatureError"))
       }
-
-      setDocumentData(updatedData)
-      localStorage.setItem("documentToSign", JSON.stringify(updatedData))
-      setIsModalOpen(false)
+    } catch (err) {
+      console.error('Submit signature error:', err)
+      toast.error(t("sign.signatureError"))
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleGenerateDocument = async () => {
-    if (!documentData || !documentData.signatures || isGenerating) return
+    if (!documentData || !documentStatus?.isComplete) return
 
     setIsGenerating(true)
-    setError(null)
-
+    
     try {
-      // Get the current document container dimensions
-      if (!documentContainerRef.current) {
-        throw new Error("Document container not found")
+      const result = await generateFinalDocument(documentData.id)
+      
+      if (result.success && result.data) {
+        setSignedDocumentUrl(result.data.downloadUrl)
+        setShowDownloadModal(true)
+        toast.success(t("sign.documentGenerated"))
+      } else {
+        toast.error(result.error || t("sign.generationError"))
       }
-
-      const docImage = documentContainerRef.current.querySelector("img")
-      if (!docImage) {
-        throw new Error("Document image not found")
-      }
-
-      // Get the natural dimensions of the document image
-      const naturalWidth = (docImage as HTMLImageElement).naturalWidth
-      const naturalHeight = (docImage as HTMLImageElement).naturalHeight
-
-      // Get the displayed dimensions
-      const displayedWidth = docImage.clientWidth
-      const displayedHeight = docImage.clientHeight
-
-      // Calculate the scale ratio between natural and displayed size
-      const scaleX = naturalWidth / displayedWidth
-      const scaleY = naturalHeight / displayedHeight
-
-      // Create a new image element with the original document
-      const originalImage = new Image()
-      originalImage.crossOrigin = "anonymous"
-
-      // Wait for the original image to load
-      await new Promise((resolve, reject) => {
-        originalImage.onload = resolve
-        originalImage.onerror = reject
-        originalImage.src = documentData.image
-      })
-
-      // Create a canvas with the original image dimensions
-      const canvas = document.createElement("canvas")
-      canvas.width = originalImage.naturalWidth
-      canvas.height = originalImage.naturalHeight
-      const ctx = canvas.getContext("2d")
-
-      if (!ctx) {
-        throw new Error("Could not get canvas context")
-      }
-
-      // Draw the original document
-      ctx.drawImage(originalImage, 0, 0)
-
-      // Draw each signature at the correct position
-      for (const signature of documentData.signatures) {
-        if (signature.areaIndex === undefined) continue
-
-        const area = documentData.areas[signature.areaIndex]
-        if (!area) continue
-
-        // Create a new image for the signature
-        const signatureImage = new Image()
-        signatureImage.crossOrigin = "anonymous"
-
-        // Wait for the signature image to load
-        await new Promise((resolve, reject) => {
-          signatureImage.onload = resolve
-          signatureImage.onerror = reject
-          signatureImage.src = signature.signature
-        })
-
-        // Calculate the actual position and size in the original image
-        const actualX = area.x * scaleX
-        const actualY = area.y * scaleY
-        const actualWidth = area.width * scaleX
-        const actualHeight = area.height * scaleY
-
-        // Calculate the signature's aspect ratio
-        const signatureAspectRatio = signatureImage.width / signatureImage.height
-
-        // Calculate dimensions that maintain the signature's aspect ratio
-        // while fitting within the designated area
-        let drawWidth,
-          drawHeight,
-          offsetX = 0,
-          offsetY = 0
-
-        const areaAspectRatio = actualWidth / actualHeight
-
-        if (signatureAspectRatio > areaAspectRatio) {
-          // Signature is wider than the area (relative to height)
-          drawWidth = actualWidth
-          drawHeight = drawWidth / signatureAspectRatio
-          offsetY = (actualHeight - drawHeight) / 2 // Center vertically
-        } else {
-          // Signature is taller than the area (relative to width)
-          drawHeight = actualHeight
-          drawWidth = drawHeight * signatureAspectRatio
-          offsetX = (actualWidth - drawWidth) / 2 // Center horizontally
-        }
-
-        // Draw the signature at the correct position and size, maintaining aspect ratio
-        ctx.drawImage(signatureImage, actualX + offsetX, actualY + offsetY, drawWidth, drawHeight)
-      }
-
-      // Convert to data URL
-      const dataUrl = canvas.toDataURL("image/png")
-
-      // Set the signed image URL and show download modal
-      setSignedImageUrl(dataUrl)
-      setShowDownloadModal(true)
     } catch (err) {
-setError(err instanceof Error ? err.message : "Failed to generate signed document")
+      console.error('Generate document error:', err)
+      toast.error(t("sign.generationError"))
     } finally {
       setIsGenerating(false)
     }
   }
 
-  // Handle download
   const handleDownload = () => {
-    if (!signedImageUrl || !documentData) return
+    if (!signedDocumentUrl || !documentData) return
 
     try {
       const link = document.createElement("a")
-      link.href = signedImageUrl
-
-      // Use the original filename if available
-      const filename = documentData.fileName
-        ? `signed_${documentData.fileName.replace(/\.[^/.]+$/, "")}.png`
-        : "signed_document.png"
-
-      link.download = filename
+      link.href = signedDocumentUrl
+      link.download = `signed_${documentData.title}.png`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      toast.success(t("sign.downloadStarted"))
     } catch (err) {
-setError("Failed to download document")
+      console.error('Download error:', err)
+      toast.error(t("sign.downloadError"))
     }
   }
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-16 flex justify-center">
-        <p>{t("sign.loading")}</p>
+      <div className="container mx-auto px-4 py-16 flex justify-center items-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>{t("sign.loading")}</p>
+        </div>
       </div>
     )
   }
 
-  if (!documentData) {
+  if (requiresPassword) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <Lock className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-semibold mb-2">{t("sign.passwordRequired")}</h2>
+                <p className="text-muted-foreground">{t("sign.passwordRequiredDesc")}</p>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="password">{t("sign.password")}</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                    placeholder={t("sign.enterPassword")}
+                  />
+                </div>
+                <Button 
+                  onClick={handlePasswordSubmit}
+                  disabled={isCheckingPassword || !password.trim()}
+                  className="w-full"
+                >
+                  {isCheckingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isCheckingPassword ? t("sign.checking") : t("sign.submit")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
     return (
       <div className="container mx-auto px-4 py-16">
         <Card>
           <CardContent className="p-6">
             <div className="text-center py-8">
               <h2 className="text-2xl font-semibold mb-4">{t("sign.notFound")}</h2>
-              <p className="text-muted-foreground mb-6">{t("sign.notFoundDesc")}</p>
-              <Button onClick={() => router.push("/dashboard")}>{t("sign.returnHome")}</Button>
+              <p className="text-muted-foreground mb-6">{error}</p>
+              <Button onClick={() => router.push("/")}>{t("sign.returnHome")}</Button>
             </div>
           </CardContent>
         </Card>
@@ -237,108 +289,172 @@ setError("Failed to download document")
     )
   }
 
-  const allAreasSigned =
-    documentData.signatures &&
-    documentData.areas.every((_, index) => documentData.signatures!.some((s) => s.areaIndex === index))
+  if (!documentData || !documentUrl) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center py-8">
+              <h2 className="text-2xl font-semibold mb-4">{t("sign.notFound")}</h2>
+              <p className="text-muted-foreground mb-6">{t("sign.notFoundDesc")}</p>
+              <Button onClick={() => router.push("/")}>{t("sign.returnHome")}</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{documentData.title}</h1>
+          <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
+          {documentStatus && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {t("sign.progress", {
+                signed: documentStatus.signedAreas.toString(),
+                total: documentStatus.totalAreas.toString()
+              })}
+            </p>
+          )}
+        </div>
         <LanguageSelector />
       </div>
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{documentData.fileName}</h1>
-          <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
-        </div>
 
-        <div className="relative border rounded-lg overflow-hidden mb-6">
-          <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
-            <img
-              src={documentData.image || "/placeholder.svg"}
-              alt="Document"
-              className="w-full h-auto object-contain"
-              draggable="false"
-              style={{ userSelect: "none" }}
-            />
-
-            {documentData.areas.map((area, index) => {
-              const isSigned = documentData.signatures?.some((s) => s.areaIndex === index)
-
-              return (
-                <div
-                  key={index}
-                  className={`absolute cursor-pointer ${
-                    isSigned
-                      ? "border-green-500 bg-green-500/10"
-                      : "border-2 border-red-500 bg-red-500/10 animate-pulse"
-                  }`}
-                  style={{
-                    left: `${area.x}px`,
-                    top: `${area.y}px`,
-                    width: `${area.width}px`,
-                    height: `${area.height}px`,
-                  }}
-                  onClick={() => handleAreaClick(index)}
-                >
-                  {isSigned ? (
-                    <div className="w-full h-full relative">
-                      <img
-                        src={
-                          documentData.signatures!.find((s) => s.areaIndex === index)!.signature || "/placeholder.svg"
-                        }
-                        alt="Signature"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-red-600">{t("sign.clickToSign")}</span>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+      {/* Signer Info Form */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="signer-name">{t("sign.signerName")}</Label>
+              <Input
+                id="signer-name"
+                value={signerInfo.name || ""}
+                onChange={(e) => setSignerInfo(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={t("sign.signerNamePlaceholder")}
+              />
+            </div>
+            <div>
+              <Label htmlFor="signer-email">{t("sign.signerEmail")}</Label>
+              <Input
+                id="signer-email"
+                type="email"
+                value={signerInfo.email || ""}
+                onChange={(e) => setSignerInfo(prev => ({ ...prev, email: e.target.value }))}
+                placeholder={t("sign.signerEmailPlaceholder")}
+              />
+            </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="flex justify-end gap-2">
-          <Button onClick={handleGenerateDocument} disabled={!allAreasSigned || isGenerating}>
-            {isGenerating ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                {t("sign.generating")}
-              </>
-            ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                {t("sign.saveDocument")}
-              </>
-            )}
-          </Button>
-        </div>
+      {/* Document with signature areas */}
+      <div className="relative border rounded-lg overflow-hidden mb-6">
+        <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
+          <img
+            src={documentUrl}
+            alt="Document"
+            className="w-full h-auto object-contain"
+            draggable="false"
+            style={{ userSelect: "none" }}
+          />
 
-        {error && <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600">{error}</div>}
+          {documentData.signature_areas.map((area) => {
+            const isSigned = documentData.signatures?.some(sig => sig.signature_area_id === area.id)
+
+            return (
+              <div
+                key={area.id}
+                className={`absolute cursor-pointer transition-all ${
+                  isSigned
+                    ? "border-2 border-green-500 bg-green-500/10"
+                    : "border-2 border-red-500 bg-red-500/10 animate-pulse hover:bg-red-500/20"
+                }`}
+                style={{
+                  left: `${area.x}px`,
+                  top: `${area.y}px`,
+                  width: `${area.width}px`,
+                  height: `${area.height}px`,
+                }}
+                onClick={() => handleAreaClick(area.id)}
+                title={isSigned ? t("sign.signedArea") : t("sign.clickToSign")}
+              >
+                {isSigned ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
+                      ✓ {t("sign.signed")}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-xs font-medium text-red-600 bg-white/80 px-2 py-1 rounded">
+                      {t("sign.clickToSign")}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
-      {isModalOpen && selectedArea !== null && (
+      {/* Action buttons */}
+      <div className="flex justify-end gap-2">
+        <Button 
+          onClick={handleGenerateDocument} 
+          disabled={!documentStatus?.isComplete || isGenerating}
+          variant={documentStatus?.isComplete ? "default" : "secondary"}
+        >
+          {isGenerating ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              {t("sign.generating")}
+            </>
+          ) : (
+            <>
+              <Download className="mr-2 h-4 w-4" />
+              {t("sign.downloadDocument")}
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Status indicator */}
+      {documentStatus && !documentStatus.isComplete && (
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-blue-800 text-sm">
+            {t("sign.completionStatus", {
+              signed: documentStatus.signedAreas.toString(),
+              total: documentStatus.totalAreas.toString()
+            })}
+          </p>
+        </div>
+      )}
+
+      {/* Signature Modal */}
+      {isModalOpen && selectedArea && (
         <SignatureModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false)
+            setSelectedArea(null)
+          }}
           onComplete={handleSignatureComplete}
-          existingSignature={documentData.signatures?.find((s) => s.areaIndex === selectedArea)?.signature}
+          isSubmitting={isSubmitting}
         />
       )}
 
       {/* Download Modal */}
-      {showDownloadModal && signedImageUrl && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
+      {showDownloadModal && signedDocumentUrl && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
             <h2 className="text-2xl font-bold mb-4">{t("sign.signedDocument")}</h2>
 
             <div className="border rounded-lg overflow-hidden mb-4">
               <img
-                src={signedImageUrl || "/placeholder.svg"}
+                src={signedDocumentUrl}
                 alt="Signed Document"
                 className="max-w-full h-auto"
                 style={{ maxWidth: "100%" }}
@@ -360,4 +476,3 @@ setError("Failed to download document")
     </div>
   )
 }
-
