@@ -235,8 +235,7 @@ export async function validateDocumentShare(
     const { error: updateError } = await supabase
       .from('document_shares')
       .update({ 
-        used_count: (share.used_count || 0) + 1,
-        updated_at: new Date().toISOString()
+        used_count: (share.used_count || 0) + 1
       })
       .eq('id', share.id)
 
@@ -310,7 +309,7 @@ export async function updateDocumentShare(
         : options.expiresAt?.toISOString()
     }
 
-    updateData.updated_at = new Date().toISOString()
+    // Note: document_shares table doesn't have updated_at column
 
     // Update share
     const { data: updatedShare, error: updateError } = await supabase

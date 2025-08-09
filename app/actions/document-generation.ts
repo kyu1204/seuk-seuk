@@ -289,8 +289,7 @@ export async function generateFinalDocumentEnhanced(
       await supabase
         .from('documents')
         .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
+          status: 'completed'
         })
         .eq('id', documentId)
     }
