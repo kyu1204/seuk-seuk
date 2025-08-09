@@ -59,6 +59,7 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.linkGenerated": "서명 링크가 생성되었습니다",
     "upload.linkGenerationFailed": "링크 생성에 실패했습니다",
     "upload.clickToRemove": "클릭하여 제거",
+    "upload.documentAlt": "업로드된 문서",
 
     // Sign Page
     "sign.loading": "문서 로딩 중...",
@@ -97,6 +98,8 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.signed": "서명됨",
     "sign.downloadDocument": "서명된 문서 다운로드",
     "sign.completionStatus": "서명 진행 상황: {signed}/{total} 영역 완료",
+    "sign.documentAlt": "서명할 문서",
+    "sign.signedDocumentAlt": "서명 완료된 문서",
 
     // Signature Modal
     "signature.title": "서명 추가",
@@ -275,6 +278,7 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.linkGenerated": "Signing link generated successfully",
     "upload.linkGenerationFailed": "Failed to generate link",
     "upload.clickToRemove": "Click to remove",
+    "upload.documentAlt": "Uploaded document",
 
     // Sign Page
     "sign.loading": "Loading document...",
@@ -314,6 +318,8 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.signed": "Signed",
     "sign.downloadDocument": "Download Signed Document",
     "sign.completionStatus": "Signing progress: {signed}/{total} areas completed",
+    "sign.documentAlt": "Document to sign",
+    "sign.signedDocumentAlt": "Signed document",
 
     // Signature Modal
     "signature.title": "Add Your Signature",

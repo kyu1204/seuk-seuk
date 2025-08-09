@@ -150,8 +150,8 @@ export async function submitSignature(
     }
 
     // Get client IP (for audit trail)
-    // Note: In a real app, you'd want to get the actual client IP
-    const clientIP = '127.0.0.1' // Placeholder
+    // Note: This is a simplified approach - in production you'd want to handle proxies properly
+    const clientIP = process.env.NODE_ENV === 'development' ? '127.0.0.1' : 'unknown'
 
     // Insert signature
     const { error: signError } = await supabase
@@ -238,8 +238,9 @@ export async function generateFinalDocument(
     }
 
     // Prepare signature data for merging
+    const areaIndexById = new Map((document as any).signature_areas.map((area: any, index: number) => [area.id, index]))
     const signatureData = (document as any).signatures.map((sig: any) => ({
-      areaIndex: (document as any).signature_areas.findIndex((area: any) => area.id === sig.signature_area_id),
+      areaIndex: areaIndexById.get(sig.signature_area_id) ?? -1,
       signature: sig.signature_data
     }))
 
