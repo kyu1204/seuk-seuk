@@ -77,7 +77,9 @@ class DocumentRealtimeManager {
         
         if (status === 'SUBSCRIBED') {
           // Reset reconnect attempts on successful connection
-          this.reconnectAttempts.delete(channelName)
+          if (this.reconnectAttempts) {
+            this.reconnectAttempts.delete(channelName)
+          }
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           // Attempt to reconnect
           this.handleChannelError(channelName, () => 
@@ -86,7 +88,10 @@ class DocumentRealtimeManager {
         }
       })
 
-    this.channels.set(channelName, channel)
+    // Store channel safely
+    if (this.channels) {
+      this.channels.set(channelName, channel)
+    }
 
     // Initial status load
     this.refreshDocumentStatus(documentId, callback)
@@ -139,7 +144,10 @@ class DocumentRealtimeManager {
         }
       })
 
-    this.channels.set(channelName, channel)
+    // Store channel safely
+    if (this.channels) {
+      this.channels.set(channelName, channel)
+    }
 
     return () => this.unsubscribeChannel(channelName)
   }
@@ -210,7 +218,7 @@ class DocumentRealtimeManager {
    * Handle channel connection errors with exponential backoff
    */
   private handleChannelError(channelName: string, reconnectFn: () => void) {
-    const attempts = this.reconnectAttempts.get(channelName) || 0
+    const attempts = (this.reconnectAttempts?.get(channelName)) || 0
     
     if (attempts >= this.maxReconnectAttempts) {
       console.error(`Max reconnection attempts reached for ${channelName}`)
@@ -218,7 +226,11 @@ class DocumentRealtimeManager {
     }
 
     const delay = this.reconnectDelay * Math.pow(2, attempts) // Exponential backoff
-    this.reconnectAttempts.set(channelName, attempts + 1)
+    
+    // Safely update reconnect attempts
+    if (this.reconnectAttempts) {
+      this.reconnectAttempts.set(channelName, attempts + 1)
+    }
 
     console.log(`Reconnecting ${channelName} in ${delay}ms (attempt ${attempts + 1})`)
     
@@ -232,11 +244,22 @@ class DocumentRealtimeManager {
    * Unsubscribe from a specific channel
    */
   private unsubscribeChannel(channelName: string) {
+    if (!this.channels) {
+      console.warn('Channels map not initialized')
+      return
+    }
+    
     const channel = this.channels.get(channelName)
     if (channel) {
-      this.supabase.removeChannel(channel)
-      this.channels.delete(channelName)
-      this.reconnectAttempts.delete(channelName)
+      try {
+        this.supabase.removeChannel(channel)
+        this.channels.delete(channelName)
+        if (this.reconnectAttempts) {
+          this.reconnectAttempts.delete(channelName)
+        }
+      } catch (error) {
+        console.warn(`Failed to unsubscribe from channel ${channelName}:`, error)
+      }
     }
   }
 
@@ -245,11 +268,27 @@ class DocumentRealtimeManager {
    */
   disconnect() {
     console.log('Disconnecting all realtime channels')
+    
+    // Safety check - ensure channels map exists
+    if (!this.channels) {
+      console.warn('Channels map not initialized')
+      return
+    }
+
     this.channels.forEach((channel, name) => {
-      this.supabase.removeChannel(channel)
+      try {
+        this.supabase.removeChannel(channel)
+      } catch (error) {
+        console.warn(`Failed to remove channel ${name}:`, error)
+      }
     })
+    
     this.channels.clear()
-    this.reconnectAttempts.clear()
+    
+    // Safety check for reconnectAttempts
+    if (this.reconnectAttempts) {
+      this.reconnectAttempts.clear()
+    }
   }
 
   /**
@@ -257,8 +296,8 @@ class DocumentRealtimeManager {
    */
   getStatus() {
     return {
-      activeChannels: Array.from(this.channels.keys()),
-      reconnectAttempts: Object.fromEntries(this.reconnectAttempts)
+      activeChannels: this.channels ? Array.from(this.channels.keys()) : [],
+      reconnectAttempts: this.reconnectAttempts ? Object.fromEntries(this.reconnectAttempts) : {}
     }
   }
 }
