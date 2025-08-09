@@ -40,5 +40,5 @@ export async function GET(request: Request) {
   }
 
   // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('인증 처리 중 오류가 발생했습니다')}`)
+  return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Authentication processing error occurred')}`)
 }

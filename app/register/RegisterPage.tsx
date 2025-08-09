@@ -18,6 +18,8 @@ import { signUp } from "@/app/auth/actions"
 export default function RegisterPage() {
   const { t } = useLanguage()
   const [isLoading, setIsLoading] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [oauthError, setOauthError] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const supabase = createClient()
 
@@ -26,6 +28,7 @@ export default function RegisterPage() {
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true)
+    setOauthError(null)
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -35,12 +38,14 @@ export default function RegisterPage() {
     })
 
     if (error) {
-setIsLoading(false)
+      setIsLoading(false)
+      setOauthError(error.message)
     }
   }
 
   const handleGithubSignUp = async () => {
     setIsLoading(true)
+    setOauthError(null)
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
@@ -50,7 +55,8 @@ setIsLoading(false)
     })
 
     if (error) {
-setIsLoading(false)
+      setIsLoading(false)
+      setOauthError(error.message)
     }
   }
 
@@ -104,18 +110,33 @@ setIsLoading(false)
               </Alert>
             )}
 
+            {validationError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{validationError}</AlertDescription>
+              </Alert>
+            )}
+
+            {oauthError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{oauthError}</AlertDescription>
+              </Alert>
+            )}
+
             <form 
               action={(formData) => {
+                setValidationError(null)
                 const password = formData.get('password') as string
                 const confirmPassword = formData.get('confirmPassword') as string
                 
                 if (password !== confirmPassword) {
-                  alert(t("register.passwordsDoNotMatch"))
+                  setValidationError(t("register.passwordsDoNotMatch"))
                   return
                 }
                 
                 if (password.length < 6) {
-                  alert(t("register.passwordTooShort"))
+                  setValidationError(t("register.passwordTooShort"))
                   return
                 }
                 
