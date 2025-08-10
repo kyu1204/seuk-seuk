@@ -14,6 +14,7 @@ import AreaSelector from "@/components/area-selector"
 import { useLanguage } from "@/contexts/language-context"
 import { createDocument, saveSignatureAreas, createDocumentShare, getDocumentSignedUrl } from "@/app/actions/document"
 import { Tables } from "@/lib/database-types"
+import SignatureRequestDialog from "@/components/signature-request-dialog"
 
 type Document = Tables<'documents'>
 
@@ -37,6 +38,7 @@ export default function DocumentUpload() {
   // UI states
   const [isUploading, setIsUploading] = useState<boolean>(false)
   const [isGeneratingLink, setIsGeneratingLink] = useState<boolean>(false)
+  const [showSignatureRequestDialog, setShowSignatureRequestDialog] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const documentContainerRef = useRef<HTMLDivElement>(null)
   const [scrollPosition, setScrollPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
@@ -75,10 +77,19 @@ export default function DocumentUpload() {
   }
 
   const handleUploadDocument = async () => {
+    console.log('🚀 [UI] handleUploadDocument 시작')
+    
     if (!selectedFile || !documentTitle.trim()) {
+      console.error('❌ [UI] 필수 필드 누락:', { hasFile: !!selectedFile, title: documentTitle })
       toast.error(t("upload.missingRequiredFields"))
       return
     }
+
+    console.log('📄 [UI] 업로드 정보:', {
+      fileName: selectedFile.name,
+      fileSize: selectedFile.size,
+      title: documentTitle.trim()
+    })
 
     setIsUploading(true)
     
@@ -87,18 +98,28 @@ export default function DocumentUpload() {
       formData.append('file', selectedFile)
       formData.append('title', documentTitle.trim())
 
+      console.log('📞 [UI] createDocument 서버 액션 호출 중...')
       const result = await createDocument(formData)
       
+      console.log('📊 [UI] 서버 액션 결과:', {
+        success: result.success,
+        hasData: !!result.data,
+        error: result.error
+      })
+      
       if (result.success && result.data) {
+        console.log('✅ [UI] currentDocument 설정:', result.data.id)
         setCurrentDocument(result.data)
         toast.success(t("upload.success"))
       } else {
+        console.error('❌ [UI] 업로드 실패:', result.error)
         toast.error(result.error || t("upload.failed"))
       }
     } catch (error) {
-      console.error('Upload error:', error)
+      console.error('❌ [UI] 업로드 예외:', error)
       toast.error(t("upload.failed"))
     } finally {
+      console.log('🏁 [UI] setIsUploading(false)')
       setIsUploading(false)
     }
   }
@@ -123,43 +144,61 @@ export default function DocumentUpload() {
   }
 
   const handleAreaSelected = async (area: { x: number; y: number; width: number; height: number }) => {
+    console.log('🎯 [UI] handleAreaSelected 호출됨:', area)
+    console.log('📊 [UI] 현재 signatureAreas:', signatureAreas)
+    console.log('📄 [UI] currentDocument:', currentDocument?.id)
+    
+    // 좌표를 정수로 변환 (데이터베이스가 integer 타입이므로)
+    const newArea = {
+      x: Math.round(area.x),
+      y: Math.round(area.y),
+      width: Math.round(area.width),
+      height: Math.round(area.height),
+    }
+    console.log('🔢 [UI] 정수 변환된 영역:', newArea)
+    
     const newAreas = [
       ...signatureAreas,
-      {
-        x: area.x,
-        y: area.y,
-        width: area.width,
-        height: area.height,
-      },
+      newArea,
     ]
     
+    console.log('🔄 [UI] newAreas 로컬 상태에만 설정:', newAreas)
     setSignatureAreas(newAreas)
     setIsSelecting(false)
-
-    // Save to database immediately
-    if (currentDocument) {
-      const result = await saveSignatureAreas(currentDocument.id, newAreas)
-      if (!result.success) {
-        toast.error(result.error || t("upload.saveAreasFailed"))
-        // Rollback local state
-        setSignatureAreas(signatureAreas)
-      }
-    }
+    
+    // 로컬 상태에만 저장, 데이터베이스 저장은 "저장하기" 버튼으로 분리
+    console.log('📝 [UI] 서명 영역을 로컬에 임시 저장했습니다. "저장하기" 버튼을 누르면 데이터베이스에 저장됩니다.')
   }
 
   const handleRemoveArea = async (index: number) => {
     const newAreas = [...signatureAreas]
     newAreas.splice(index, 1)
     setSignatureAreas(newAreas)
+    console.log('🗑️ [UI] 서명 영역을 로컬에서 제거했습니다. "저장하기" 버튼을 누르면 데이터베이스에 반영됩니다.')
+  }
 
-    // Save to database immediately
-    if (currentDocument) {
-      const result = await saveSignatureAreas(currentDocument.id, newAreas)
-      if (!result.success) {
+  const handleSaveSignatureAreas = async () => {
+    if (!currentDocument) {
+      toast.error(t("upload.uploadFirst"))
+      return
+    }
+
+    console.log('💾 [UI] 서명 영역 저장 시작:', signatureAreas)
+    
+    try {
+      const result = await saveSignatureAreas(currentDocument.id, signatureAreas)
+      console.log('📊 [UI] saveSignatureAreas 결과:', result)
+      
+      if (result.success) {
+        console.log('✅ [UI] 서명 영역 저장 성공!')
+        toast.success(t("upload.signatureAreasSaved"))
+      } else {
+        console.error('❌ [UI] 서명 영역 저장 실패:', result.error)
         toast.error(result.error || t("upload.saveAreasFailed"))
-        // Rollback local state
-        setSignatureAreas([...signatureAreas])
       }
+    } catch (error) {
+      console.error('❌ [UI] 서명 영역 저장 예외:', error)
+      toast.error(t("upload.saveAreasFailed"))
     }
   }
 
@@ -177,34 +216,30 @@ export default function DocumentUpload() {
     }
   }
 
-  const handleGenerateSigningLink = async () => {
+  const handleOpenSignatureRequest = async () => {
+    console.log('🚀 [UI] handleOpenSignatureRequest 시작')
+    
     if (!currentDocument || signatureAreas.length === 0) {
       toast.error(t("upload.noSignatureAreas"))
       return
     }
 
-    setIsGeneratingLink(true)
-
+    // 서명 영역이 데이터베이스에 저장되어 있는지 확인하고, 필요시 자동 저장
+    console.log('💾 [UI] 서명 영역 자동 저장 확인 중...')
     try {
-      // Create document share
-      const shareResult = await createDocumentShare(currentDocument.id, {
-        expiresInDays: 30 // Default 30 days expiry
-      })
-
-      if (shareResult.success && shareResult.data) {
-        const shortUrl = shareResult.data
-        toast.success(t("upload.linkGenerated"))
-        
-        // Redirect to signing page
-        router.push(`/sign/${shortUrl}`)
+      const result = await saveSignatureAreas(currentDocument.id, signatureAreas)
+      console.log('📊 [UI] 서명 영역 자동 저장 결과:', result)
+      
+      if (result.success) {
+        console.log('✅ [UI] 서명 영역 자동 저장 성공, 다이얼로그 열기')
+        setShowSignatureRequestDialog(true)
       } else {
-        toast.error(shareResult.error || t("upload.linkGenerationFailed"))
+        console.error('❌ [UI] 서명 영역 자동 저장 실패:', result.error)
+        toast.error(result.error || t("upload.saveAreasFailed"))
       }
     } catch (error) {
-      console.error('Generate link error:', error)
-      toast.error(t("upload.linkGenerationFailed"))
-    } finally {
-      setIsGeneratingLink(false)
+      console.error('❌ [UI] 서명 영역 자동 저장 예외:', error)
+      toast.error(t("upload.saveAreasFailed"))
     }
   }
 
@@ -339,17 +374,35 @@ export default function DocumentUpload() {
               >
                 {t("upload.addSignatureArea")}
               </Button>
+              {signatureAreas.length > 0 && (
+                <Button
+                  onClick={handleSaveSignatureAreas}
+                  disabled={isSelecting}
+                  variant="default"
+                >
+                  {t("upload.saveSignatureAreas")}
+                </Button>
+              )}
               <Button
-                onClick={handleGenerateSigningLink}
-                disabled={signatureAreas.length === 0 || isGeneratingLink}
+                onClick={handleOpenSignatureRequest}
+                disabled={signatureAreas.length === 0}
                 className="ml-auto"
               >
-                {isGeneratingLink && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isGeneratingLink ? t("upload.generating") : t("upload.getSignature")}
+                {t("upload.getSignature")}
               </Button>
             </div>
           )}
         </div>
+      )}
+      
+      {/* Signature Request Dialog */}
+      {currentDocument && (
+        <SignatureRequestDialog
+          isOpen={showSignatureRequestDialog}
+          onClose={() => setShowSignatureRequestDialog(false)}
+          document={currentDocument}
+          signatureAreas={signatureAreas}
+        />
       )}
     </div>
   )
