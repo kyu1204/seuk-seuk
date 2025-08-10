@@ -8,7 +8,7 @@ import { LanguageProvider } from "@/contexts/language-context"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "DocSign - Online Document Signing",
+  title: "Seuk - Online Document Signing",
   description: "Upload, sign, and share documents online with ease",
     generator: 'v0.dev'
 }

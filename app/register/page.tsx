@@ -3,8 +3,8 @@ import { Suspense } from "react"
 import RegisterPage from "./RegisterPage"
 
 export const metadata: Metadata = {
-  title: "DocSign - Register",
-  description: "Create a new DocSign account",
+  title: "Seuk - Register",
+  description: "Create a new Seuk account",
 }
 
 export default function Register() {

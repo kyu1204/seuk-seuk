@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import DashboardPage from "./DashboardPage"
 
 export const metadata: Metadata = {
-  title: "DocSign - Dashboard",
+  title: "Seuk - Dashboard",
   description: "Manage your documents and signatures",
 }
 
