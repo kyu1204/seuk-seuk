@@ -395,7 +395,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // Header
-    "app.title": "슥슥",
+    "app.title": "Seuk",
     "app.description": "Upload, sign, and share documents online with ease",
 
     // Document Upload
@@ -645,13 +645,13 @@ const translations: Record<Language, Record<string, string>> = {
     "home.getStarted": "Get Started",
     "home.hero.title": "Document Signing Made Simple",
     "home.hero.description":
-      "Experience paperless document workflows with 슥슥. Sign and share documents securely from anywhere.",
+      "Experience paperless document workflows with Seuk. Sign and share documents securely from anywhere.",
     "home.hero.cta": "Start Now",
     "home.hero.learnMore": "Learn More",
     "home.hero.trustedBy": "Trusted by thousands of users",
     "home.featuresTitle": "Powerful Features",
     "home.featuresDescription":
-      "슥슥 offers a range of features to streamline your document signing process.",
+      "Seuk offers a range of features to streamline your document signing process.",
     "home.features.easy.title": "Easy to Use",
     "home.features.easy.description":
       "Intuitive interface that anyone can use without training.",
@@ -663,17 +663,17 @@ const translations: Record<Language, Record<string, string>> = {
       "Upload and sign documents in seconds, not minutes.",
     "home.testimonialsTitle": "Customer Testimonials",
     "home.testimonialsDescription":
-      "See what our customers are saying about 슥슥.",
+      "See what our customers are saying about Seuk.",
     "home.testimonials.quote1":
-      "슥슥 completely transformed our contract process. What used to take days now takes minutes.",
+      "Seuk completely transformed our contract process. What used to take days now takes minutes.",
     "home.testimonials.author1": "John Smith",
     "home.testimonials.role1": "Startup CEO",
     "home.testimonials.quote2":
-      "I was looking for an easy-to-use and secure signing solution, and 슥슥 was perfect. My clients love how easy it is to use.",
+      "I was looking for an easy-to-use and secure signing solution, and Seuk was perfect. My clients love how easy it is to use.",
     "home.testimonials.author2": "Sarah Johnson",
     "home.testimonials.role2": "Freelance Designer",
     "home.testimonials.quote3":
-      "Document signing was a major pain point in our remote work environment, but 슥슥 solved that. Highly recommended!",
+      "Document signing was a major pain point in our remote work environment, but Seuk solved that. Highly recommended!",
     "home.testimonials.author3": "Michael Chen",
     "home.testimonials.role3": "HR Manager",
     "home.pricingTitle": "Simple Pricing",
@@ -704,7 +704,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.perMonth": "/month",
     "home.cta.title": "Get Started Today",
     "home.cta.description":
-      "Streamline your document signing process and save time and money with 슥슥.",
+      "Streamline your document signing process and save time and money with Seuk.",
     "home.cta.button": "Get Started",
     "home.footer.rights": "All rights reserved.",
 
@@ -727,7 +727,7 @@ const translations: Record<Language, Record<string, string>> = {
     "login.backToHome": "Back to home",
     "login.welcomeBack": "Welcome Back",
     "login.welcomeMessage":
-      "Sign in to 슥슥 to start signing and managing your documents. We provide a secure and fast signing experience.",
+      "Sign in to Seuk to start signing and managing your documents. We provide a secure and fast signing experience.",
     "login.kakaoTalk": "Kakao",
 
     // Register Page
@@ -743,9 +743,9 @@ const translations: Record<Language, Record<string, string>> = {
     "register.alreadyHaveAccount": "Already have an account?",
     "register.login": "Log in",
     "register.backToHome": "Back to home",
-    "register.joinUs": "Join 슥슥 Today",
+    "register.joinUs": "Join Seuk Today",
     "register.joinMessage":
-      "Sign up for 슥슥 to start signing and managing your documents. We provide a simple and secure signing experience.",
+      "Sign up for Seuk to start signing and managing your documents. We provide a simple and secure signing experience.",
     "register.kakaoTalk": "Kakao",
     
     // Auth Errors - Server Actions
