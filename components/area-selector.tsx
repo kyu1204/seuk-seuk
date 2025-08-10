@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
+import { Button } from "@/components/ui/button"
 
 // Import the useLanguage hook at the top of the file
 import { useLanguage } from "@/contexts/language-context"
@@ -200,8 +201,82 @@ export default function AreaSelector({
     }
   }, [isSelecting])
 
+  // ESC key handler to cancel area selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        console.log('🔑 [AreaSelector] ESC key pressed, canceling selection')
+        
+        // Reset selection state
+        if (isSelecting) {
+          setIsSelecting(false)
+          setStartPos(null)
+          setCurrentPos(null)
+          
+          // Re-enable container scrolling
+          if (containerRef.current) {
+            containerRef.current.style.overflow = originalOverflow
+          }
+          document.body.style.overflow = "auto"
+        }
+        
+        // Call onCancel to exit area selection mode
+        onCancel()
+      }
+    }
+
+    // Add event listener
+    window.addEventListener('keydown', handleKeyDown)
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onCancel, isSelecting, originalOverflow])
+
+  // Handle cancel button click
+  const handleCancel = () => {
+    console.log('❌ [AreaSelector] Cancel button clicked')
+    
+    // Reset selection state
+    if (isSelecting) {
+      setIsSelecting(false)
+      setStartPos(null)
+      setCurrentPos(null)
+      
+      // Re-enable container scrolling
+      if (containerRef.current) {
+        containerRef.current.style.overflow = originalOverflow
+      }
+      document.body.style.overflow = "auto"
+    }
+    
+    // Call onCancel to exit area selection mode
+    onCancel()
+  }
+
   return (
     <div className="relative">
+      {/* Cancel button and instructions */}
+      <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">
+            {t("upload.areaSelectorInstructions")}
+          </p>
+          <p className="text-xs text-gray-500">
+            {t("upload.areaSelectorEscHint")}
+          </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleCancel}
+            className="w-full"
+          >
+            {t("upload.cancel")}
+          </Button>
+        </div>
+      </div>
+
       <div
         ref={containerRef}
         className="relative cursor-crosshair overflow-auto"

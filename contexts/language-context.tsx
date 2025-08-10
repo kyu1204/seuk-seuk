@@ -62,6 +62,9 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.documentAlt": "업로드된 문서",
     "upload.saveSignatureAreas": "저장하기",
     "upload.signatureAreasSaved": "서명 영역이 저장되었습니다",
+    "upload.areaSelectorInstructions": "클릭 후 드래그하여 서명 영역을 선택하세요",
+    "upload.areaSelectorEscHint": "ESC 키 또는 취소 버튼으로 종료할 수 있습니다",
+    "upload.cancel": "취소",
     
     // Signature Request
     "signatureRequest.title": "서명 요청 생성",
@@ -91,6 +94,8 @@ const translations: Record<Language, Record<string, string>> = {
     "signatureRequest.passwordMismatch": "비밀번호가 일치하지 않습니다",
     "signatureRequest.invalidEmail": "올바른 이메일을 입력해주세요",
     "signatureRequest.success": "서명 요청이 성공적으로 생성되었습니다",
+    "signatureRequest.linkCopied": "서명 링크가 클립보드에 복사되었습니다",
+    "signatureRequest.linkGenerated": "서명 링크가 생성되었습니다",
     "signatureRequest.error": "서명 요청 생성에 실패했습니다",
     "signatureRequest.assignToArea": "영역에 서명자 지정",
     "signatureRequest.unassigned": "지정되지 않음",
@@ -315,6 +320,9 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.documentAlt": "Uploaded document",
     "upload.saveSignatureAreas": "Save",
     "upload.signatureAreasSaved": "Signature areas saved successfully",
+    "upload.areaSelectorInstructions": "Click and drag to select signature area",
+    "upload.areaSelectorEscHint": "Press ESC or click Cancel to exit",
+    "upload.cancel": "Cancel",
     
     // Signature Request
     "signatureRequest.title": "Create Signature Request",
@@ -344,6 +352,8 @@ const translations: Record<Language, Record<string, string>> = {
     "signatureRequest.passwordMismatch": "Passwords do not match",
     "signatureRequest.invalidEmail": "Please enter a valid email",
     "signatureRequest.success": "Signature request created successfully",
+    "signatureRequest.linkCopied": "Signature link copied to clipboard",
+    "signatureRequest.linkGenerated": "Signature link generated",
     "signatureRequest.error": "Failed to create signature request",
     "signatureRequest.assignToArea": "Assign signer to area",
     "signatureRequest.unassigned": "Unassigned",

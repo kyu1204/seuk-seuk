@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef, useTransition } from "react"
+import { useState, useRef, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Upload, FileImage, Trash2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import AreaSelector from "@/components/area-selector"
 import { useLanguage } from "@/contexts/language-context"
-import { createDocument, saveSignatureAreas, createDocumentShare, getDocumentSignedUrl } from "@/app/actions/document"
+import { createDocument, saveSignatureAreas, createDocumentShare, getDocumentSignedUrl, getDocumentById } from "@/app/actions/document"
 import { Tables } from "@/lib/database-types"
 import SignatureRequestDialog from "@/components/signature-request-dialog"
 
@@ -42,6 +42,60 @@ export default function DocumentUpload() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const documentContainerRef = useRef<HTMLDivElement>(null)
   const [scrollPosition, setScrollPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+
+  // Load existing document if there's a document ID in localStorage or URL
+  useEffect(() => {
+    const loadExistingDocument = async () => {
+      // Try to get document ID from localStorage (for demo purposes)
+      const storedDocumentId = localStorage.getItem('currentDocumentId')
+      if (storedDocumentId) {
+        console.log('🔄 [UI] Loading existing document:', storedDocumentId)
+        
+        try {
+          const result = await getDocumentById(storedDocumentId)
+          console.log('📊 [UI] getDocumentById 결과:', result)
+          
+          if (result.success && result.data) {
+            console.log('✅ [UI] 기존 문서 로드 성공:', {
+              documentId: result.data.id,
+              title: result.data.title,
+              signatureAreaCount: result.data.signature_areas.length
+            })
+            
+            setCurrentDocument(result.data)
+            
+            // Load signature areas from database
+            if (result.data.signature_areas && result.data.signature_areas.length > 0) {
+              const areas = result.data.signature_areas.map(area => ({
+                x: area.x,
+                y: area.y,
+                width: area.width,
+                height: area.height
+              }))
+              console.log('📥 [UI] 서명 영역 로드:', areas)
+              setSignatureAreas(areas)
+            }
+            
+            // Get signed URL for document display
+            const signedUrlResult = await getDocumentSignedUrl(result.data.id)
+            if (signedUrlResult.success && signedUrlResult.data) {
+              console.log('🖼️ [UI] 문서 이미지 URL 로드 성공')
+              setDocument(signedUrlResult.data)
+            }
+          } else {
+            console.log('❌ [UI] 기존 문서 로드 실패:', result.error)
+            // Clear invalid document ID from storage
+            localStorage.removeItem('currentDocumentId')
+          }
+        } catch (error) {
+          console.error('❌ [UI] 기존 문서 로드 예외:', error)
+          localStorage.removeItem('currentDocumentId')
+        }
+      }
+    }
+    
+    loadExistingDocument()
+  }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -110,6 +164,11 @@ export default function DocumentUpload() {
       if (result.success && result.data) {
         console.log('✅ [UI] currentDocument 설정:', result.data.id)
         setCurrentDocument(result.data)
+        
+        // Store document ID for persistence
+        localStorage.setItem('currentDocumentId', result.data.id)
+        console.log('💾 [UI] 문서 ID localStorage 저장:', result.data.id)
+        
         toast.success(t("upload.success"))
       } else {
         console.error('❌ [UI] 업로드 실패:', result.error)
@@ -210,6 +269,10 @@ export default function DocumentUpload() {
     setSignatureAreas([])
     setIsSelecting(false)
     
+    // Clear localStorage
+    localStorage.removeItem('currentDocumentId')
+    console.log('🗑️ [UI] localStorage 문서 ID 제거')
+    
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -295,8 +358,17 @@ export default function DocumentUpload() {
                 </div>
                 <div className="flex gap-4">
                   <Button 
-                    onClick={handleUploadDocument}
+                    onClick={() => {
+                      console.log('🎯 [DEBUG] Upload button clicked:', {
+                        hasSelectedFile: !!selectedFile,
+                        documentTitle: documentTitle,
+                        documentTitleTrim: documentTitle.trim(),
+                        isUploading: isUploading
+                      })
+                      handleUploadDocument()
+                    }}
                     disabled={isUploading || !documentTitle.trim()}
+                    className={`${isUploading || !documentTitle.trim() ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isUploading ? t("upload.uploading") : t("upload.uploadDocument")}
