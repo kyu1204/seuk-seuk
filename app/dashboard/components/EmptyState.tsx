@@ -6,6 +6,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useLanguage } from "@/contexts/language-context"
 import { DocumentFilter } from "../types/dashboard"
 
+interface ActionProps {
+  label: string;
+  onClick?: () => void;
+  showIcon: boolean;
+}
+
 interface EmptyStateProps {
   filter: DocumentFilter
   searchQuery: string
@@ -29,7 +35,8 @@ export default function EmptyState({
         description: t("dashboard.noSearchResultsDescription", { query: searchQuery }),
         action: {
           label: t("dashboard.clearSearch"),
-          onClick: onClearFilters
+          onClick: onClearFilters,
+          showIcon: false
         }
       }
     }
@@ -42,7 +49,8 @@ export default function EmptyState({
           description: t("dashboard.noDraftDocumentsDescription"),
           action: {
             label: t("dashboard.createNewDocument"),
-            onClick: onCreateNew
+            onClick: onCreateNew,
+            showIcon: true
           }
         }
       case 'published':
@@ -70,7 +78,8 @@ export default function EmptyState({
           description: t("dashboard.noDocumentsDescription"),
           action: {
             label: t("dashboard.createFirstDocument"),
-            onClick: onCreateNew
+            onClick: onCreateNew,
+            showIcon: true
           }
         }
     }
@@ -98,14 +107,8 @@ export default function EmptyState({
             onClick={action.onClick}
             className="mt-6 gap-2"
           >
-            {action.label === t("dashboard.createNewDocument") || action.label === t("dashboard.createFirstDocument") ? (
-              <>
-                <Plus className="h-4 w-4" />
-                {action.label}
-              </>
-            ) : (
-              action.label
-            )}
+            {action.showIcon && <Plus className="h-4 w-4" />}
+            {action.label}
           </Button>
         )}
       </CardContent>

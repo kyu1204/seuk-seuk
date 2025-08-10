@@ -100,8 +100,8 @@ export interface EmptyStateProps {
 }
 
 // Action result types
-export interface DocumentActionResult {
+export interface DocumentActionResult<T = unknown> {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: T;
 }

@@ -131,7 +131,7 @@ export default function DocumentFilters({
       {/* Status Filter Tabs */}
       <div className="flex items-center justify-between">
         <Tabs value={currentFilter} onValueChange={onFilterChange} className="w-auto">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 overflow-x-auto">
             <TabsTrigger value="all" className="text-xs">
               {getFilterLabel('all')}
               <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0.5 min-w-[20px] h-4">

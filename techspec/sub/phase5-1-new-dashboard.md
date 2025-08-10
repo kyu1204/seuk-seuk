@@ -14,7 +14,7 @@
 - ❌ 서명 진행률 시각화 부재
 
 ### 기존 구조
-```
+```text
 /dashboard/
 ├── page.tsx          # 인증 + DashboardPage 렌더링
 ├── DashboardPage.tsx  # DocumentUpload 컴포넌트만 표시
@@ -32,7 +32,7 @@
 
 ### UI 컴포넌트 스타일
 - **기본 컨테이너**: `container mx-auto px-4 py-8`
-- **최대폭**: `max-w-5xl mx-auto`
+- **최대폭**: `max-w-6xl mx-auto`
 - **카드**: Radix UI Card 컴포넌트
 - **아이콘**: Lucide React
 - **테마**: 다크/라이트 지원
@@ -48,7 +48,7 @@
 
 ### 1. 페이지 구조 개편
 
-```
+```text
 /dashboard/
 ├── page.tsx                    # 기존 유지
 ├── layout.tsx                  # 기존 유지  
@@ -138,7 +138,7 @@ interface DocumentWithStats extends Document {
 ```tsx
 interface DocumentFiltersProps {
   currentFilter: DocumentFilter;
-  documentCounts: Record<DocumentStatus | 'all', number>;
+  counts: Record<DocumentStatus | 'all', number>;
   onFilterChange: (filter: DocumentFilter) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
