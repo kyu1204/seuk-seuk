@@ -236,9 +236,6 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Document Detail
     "dashboard.backToDashboard": "대시보드로 돌아가기",
-    "dashboard.edit": "편집",
-    "dashboard.share": "공유",
-    "dashboard.delete": "삭제",
     "document.details": "문서 정보",
     "document.created": "생성일",
     "document.lastModified": "최종 수정일",
@@ -655,9 +652,6 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Document Detail
     "dashboard.backToDashboard": "Back to Dashboard",
-    "dashboard.edit": "Edit",
-    "dashboard.share": "Share",
-    "dashboard.delete": "Delete",
     "document.details": "Document Details",
     "document.created": "Created",
     "document.lastModified": "Last Modified",
