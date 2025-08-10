@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { Tables } from "@/lib/database-types"
-import { generateSignedDocument } from "./document-actions"
 import bcrypt from 'bcryptjs'
 
 // type DocumentShare = Tables<'document_shares'>
@@ -289,115 +288,6 @@ export async function submitSignature(
   }
 }
 
-export async function generateFinalDocument(
-  documentId: string
-): Promise<{
-  success: boolean;
-  data?: { downloadUrl: string };
-  error?: string;
-}> {
-  try {
-    const supabase = await createClient()
-
-    // Get document with signatures and areas
-    const { data: document, error: docError } = await supabase
-      .from('documents')
-      .select(`
-        *,
-        signature_areas (*),
-        signatures (*)
-      `)
-      .eq('id', documentId)
-      .single()
-
-    if (docError || !document) {
-      return { success: false, error: "Document not found" }
-    }
-
-    // Get original document signed URL
-    const { data: originalUrl, error: urlError } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(document.file_path, 3600)
-
-    if (urlError || !originalUrl) {
-      return { success: false, error: "Failed to access original document" }
-    }
-
-    // Prepare signature data for merging
-    const documentWithRelations = document as DocumentWithRelations
-    const areaIndexById = new Map(documentWithRelations.signature_areas.map((area, index) => [area.id, index]))
-    const signatureData = documentWithRelations.signatures.map((sig) => ({
-      areaIndex: areaIndexById.get(sig.signature_area_id) ?? -1,
-      signature: sig.signature_data
-    }))
-
-    const areas = documentWithRelations.signature_areas.map((area) => ({
-      x: area.x,
-      y: area.y,
-      width: area.width,
-      height: area.height
-    }))
-
-    // Generate signed document using existing server action
-    const result = await generateSignedDocument(
-      originalUrl.signedUrl,
-      signatureData,
-      areas
-    )
-
-    if (!result.success || !result.signedDocument) {
-      return { success: false, error: result.error || "Failed to generate signed document" }
-    }
-
-    // Save signed document to storage
-    const signedDocumentBuffer = Buffer.from(result.signedDocument.split(',')[1], 'base64')
-    const signedPath = `${document.user_id}/signed/${documentId}_signed_${Date.now()}.png`
-
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('signed-documents')
-      .upload(signedPath, signedDocumentBuffer, {
-        contentType: 'image/png',
-        cacheControl: '3600'
-      })
-
-    if (uploadError) {
-      return { success: false, error: `Failed to save signed document: ${uploadError.message}` }
-    }
-
-    // Create document version record
-    await supabase
-      .from('document_versions')
-      .insert({
-        document_id: documentId,
-        version_type: 'signed',
-        file_path: uploadData.path,
-        file_size: signedDocumentBuffer.length,
-        created_by: document.user_id
-      })
-
-    // Generate download URL
-    const { data: downloadUrl, error: downloadError } = await supabase.storage
-      .from('signed-documents')
-      .createSignedUrl(uploadData.path, 86400) // 24 hours
-
-    if (downloadError || !downloadUrl) {
-      return { success: false, error: "Failed to generate download URL" }
-    }
-
-    return {
-      success: true,
-      data: {
-        downloadUrl: downloadUrl.signedUrl
-      }
-    }
-  } catch (error) {
-    console.error('Generate final document error:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
-    }
-  }
-}
 
 export async function checkDocumentStatus(
   documentId: string
