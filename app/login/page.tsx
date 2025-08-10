@@ -3,8 +3,8 @@ import { Suspense } from "react"
 import LoginPage from "./LoginPage"
 
 export const metadata: Metadata = {
-  title: "DocSign - Login",
-  description: "Log in to your DocSign account",
+  title: "Seuk - Login",
+  description: "Log in to your Seuk account",
 }
 
 export default function Login() {
