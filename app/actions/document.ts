@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { Database, Tables, TablesInsert } from "@/lib/database-types"
@@ -45,8 +45,11 @@ export async function createDocument(
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`
     const filePath = `${user.id}/${fileName}`
 
-    // Upload file to storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // Use Service Role client for Storage upload to bypass RLS
+    const serviceRoleSupabase = createServiceRoleClient()
+
+    // Upload file to storage using Service Role client
+    const { data: uploadData, error: uploadError } = await serviceRoleSupabase.storage
       .from('documents')
       .upload(filePath, file, {
         cacheControl: '3600',
@@ -57,7 +60,7 @@ export async function createDocument(
       return { success: false, error: `Upload failed: ${uploadError.message}` }
     }
 
-    // Create document record
+    // Create document record using regular client (user context)
     const documentData: DocumentInsert = {
       user_id: user.id,
       title,
@@ -76,7 +79,7 @@ export async function createDocument(
 
     if (dbError) {
       // Clean up uploaded file if database insert fails
-      await supabase.storage.from('documents').remove([uploadData.path])
+      await serviceRoleSupabase.storage.from('documents').remove([uploadData.path])
       return { success: false, error: `Database error: ${dbError.message}` }
     }
 
@@ -383,8 +386,35 @@ export async function createDocumentShare(
       return { success: false, error: "Document not found or access denied" }
     }
 
-    // Generate unique short URL
-    const shortUrl = Math.random().toString(36).substring(2, 12)
+    // Generate unique short URL using nanoid
+    // Use custom alphabet for URL-safe characters: A-Z, a-z, 0-9, _, -
+    const { customAlphabet } = await import('nanoid')
+    const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-', 12)
+    let shortUrl = nanoid()
+    
+    // Ensure uniqueness by checking existing shares
+    let isUnique = false
+    let attempts = 0
+    const maxAttempts = 5
+    
+    while (!isUnique && attempts < maxAttempts) {
+      const { data: existingShare } = await supabase
+        .from('document_shares')
+        .select('id')
+        .eq('short_url', shortUrl)
+        .single()
+      
+      if (!existingShare) {
+        isUnique = true
+      } else {
+        shortUrl = nanoid()
+        attempts++
+      }
+    }
+    
+    if (!isUnique) {
+      return { success: false, error: "Failed to generate unique URL after multiple attempts" }
+    }
 
     // Hash password if provided
     let passwordHash: string | null = null
@@ -425,9 +455,135 @@ export async function createDocumentShare(
       .eq('id', documentId)
       .eq('user_id', user.id)
 
+    console.log('📋 [createDocumentShare] 단축URL 생성 성공:', {
+      documentId,
+      shortUrl,
+      hasPassword: !!options.password,
+      expiresInDays: options.expiresInDays,
+      maxUses: options.maxUses
+    })
+
     return { success: true, data: shortUrl }
   } catch (error) {
-    console.error('Create document share error:', error)
+    console.error('❌ [createDocumentShare] Create document share error:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
+}
+
+// Get document shares for a user
+export async function getDocumentShares(): Promise<{ 
+  success: boolean; 
+  data?: Array<{
+    id: string;
+    short_url: string;
+    created_at: string;
+    expires_at: string | null;
+    max_uses: number | null;
+    used_count: number;
+    has_password: boolean;
+    document: {
+      id: string;
+      title: string;
+      status: string;
+    };
+  }>; 
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: "Authentication required" }
+    }
+
+    const { data: shares, error } = await supabase
+      .from('document_shares')
+      .select(`
+        id,
+        short_url,
+        created_at,
+        expires_at,
+        max_uses,
+        used_count,
+        password_hash,
+        documents (
+          id,
+          title,
+          status
+        )
+      `)
+      .eq('created_by', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    const formattedShares = shares?.map(share => ({
+      id: share.id,
+      short_url: share.short_url,
+      created_at: share.created_at,
+      expires_at: share.expires_at,
+      max_uses: share.max_uses,
+      used_count: share.used_count || 0,
+      has_password: !!share.password_hash,
+      document: (share as any).documents
+    })) || []
+
+    return { success: true, data: formattedShares }
+  } catch (error) {
+    console.error('Get document shares error:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
+}
+
+// Delete a document share
+export async function deleteDocumentShare(shareId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: "Authentication required" }
+    }
+
+    // Verify ownership
+    const { data: share, error: shareError } = await supabase
+      .from('document_shares')
+      .select('created_by')
+      .eq('id', shareId)
+      .single()
+
+    if (shareError || !share) {
+      return { success: false, error: "Share not found" }
+    }
+
+    if (share.created_by !== user.id) {
+      return { success: false, error: "Access denied" }
+    }
+
+    // Delete the share
+    const { error: deleteError } = await supabase
+      .from('document_shares')
+      .delete()
+      .eq('id', shareId)
+
+    if (deleteError) {
+      return { success: false, error: deleteError.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Delete document share error:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 

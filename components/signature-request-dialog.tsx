@@ -145,12 +145,24 @@ export default function SignatureRequestDialog({
       console.log('📊 [SignatureRequestDialog] createDocumentShare 결과:', result)
 
       if (result.success && result.data) {
-        console.log('✅ [SignatureRequestDialog] 서명 링크 생성 성공:', result.data)
-        toast.success(t("signatureRequest.success"))
+        const signatureUrl = `${window.location.origin}/sign/${result.data}`
+        console.log('✅ [SignatureRequestDialog] 서명 링크 생성 성공:', signatureUrl)
         
-        // Close dialog and redirect to signing page
-        onClose()
-        router.push(`/sign/${result.data}`)
+        // Copy link to clipboard
+        try {
+          await navigator.clipboard.writeText(signatureUrl)
+          toast.success(t("signatureRequest.linkCopied"))
+        } catch (clipboardError) {
+          console.warn('📋 클립보드 복사 실패, 수동 선택으로 대체:', clipboardError)
+          // Fallback: show the link for manual copying
+          toast.success(`${t("signatureRequest.linkGenerated")}: ${signatureUrl}`)
+        }
+        
+        // Close dialog and redirect to signing page after a short delay
+        setTimeout(() => {
+          onClose()
+          router.push(`/sign/${result.data}`)
+        }, 2000) // 2 seconds delay to show the success message
       } else {
         console.error('❌ [SignatureRequestDialog] 서명 링크 생성 실패:', result.error)
         toast.error(result.error || t("signatureRequest.error"))
