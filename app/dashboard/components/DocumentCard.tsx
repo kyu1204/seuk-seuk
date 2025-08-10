@@ -1,18 +1,28 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { FileImage, MoreHorizontal, Edit, Trash2, Share, Eye, Calendar, Clock, Users } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+import { useState } from "react";
+import {
+  FileImage,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Share,
+  Eye,
+  Calendar,
+  Clock,
+  Users,
+} from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,50 +32,62 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { useLanguage } from "@/contexts/language-context"
-import { DocumentWithStats, DocumentAction } from "../types/dashboard"
-import { format, formatDistanceToNow } from "date-fns"
-import { ko, enUS } from "date-fns/locale"
+} from "@/components/ui/alert-dialog";
+import { useLanguage } from "@/contexts/language-context";
+import { DocumentWithStats, DocumentAction } from "../types/dashboard";
+import { format, formatDistanceToNow } from "date-fns";
+import { ko, enUS } from "date-fns/locale";
 
 interface DocumentCardProps {
-  document: DocumentWithStats
-  onAction: (action: DocumentAction, documentId: string) => void
+  document: DocumentWithStats;
+  onAction: (action: DocumentAction, documentId: string) => void;
 }
 
-export default function DocumentCard({ document, onAction }: DocumentCardProps) {
-  const { t, language } = useLanguage()
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  
-  const dateLocale = language === 'ko' ? ko : enUS
+export default function DocumentCard({
+  document,
+  onAction,
+}: DocumentCardProps) {
+  const { t, language } = useLanguage();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const dateLocale = language === "ko" ? ko : enUS;
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+    const variants: Record<
+      string,
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        label: string;
+      }
+    > = {
       draft: { variant: "outline", label: t("dashboard.status.draft") },
       published: { variant: "default", label: t("dashboard.status.published") },
-      completed: { variant: "secondary", label: t("dashboard.status.completed") },
-      expired: { variant: "destructive", label: t("dashboard.status.expired") }
-    }
-    
-    return variants[status] || { variant: "outline", label: status }
-  }
+      completed: {
+        variant: "secondary",
+        label: t("dashboard.status.completed"),
+      },
+      expired: { variant: "destructive", label: t("dashboard.status.expired") },
+    };
+
+    return variants[status] || { variant: "outline", label: status };
+  };
 
   const handleAction = (action: DocumentAction) => {
-    if (action === 'delete') {
-      setShowDeleteDialog(true)
+    if (action === "delete") {
+      setShowDeleteDialog(true);
     } else {
-      onAction(action, document.id)
+      onAction(action, document.id);
     }
-  }
+  };
 
   const confirmDelete = () => {
-    onAction('delete', document.id)
-    setShowDeleteDialog(false)
-  }
+    onAction("delete", document.id);
+    setShowDeleteDialog(false);
+  };
 
-  const statusBadge = getStatusBadge(document.status || 'draft')
-  const createdAt = new Date(document.created_at || '')
-  const updatedAt = new Date(document.updated_at || '')
+  const statusBadge = getStatusBadge(document.status || "draft");
+  const createdAt = new Date(document.created_at || "");
+  const updatedAt = new Date(document.updated_at || "");
 
   return (
     <>
@@ -76,16 +98,19 @@ export default function DocumentCard({ document, onAction }: DocumentCardProps) 
               <div className="flex-shrink-0 w-10 h-10 bg-muted rounded-md flex items-center justify-center">
                 <FileImage className="w-5 h-5 text-muted-foreground" />
               </div>
-              
+
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm leading-5 truncate" title={document.title}>
+                <h3
+                  className="font-semibold text-sm leading-5 truncate"
+                  title={document.title}
+                >
                   {document.title}
                 </h3>
-                <p className="text-xs text-muted-foreground truncate mt-0.5" title={document.file_name}>
-                  {document.file_name}
-                </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant={statusBadge.variant} className="text-xs py-0 px-2">
+                  <Badge
+                    variant={statusBadge.variant}
+                    className="text-xs py-0 px-2"
+                  >
                     {statusBadge.label}
                   </Badge>
                   {document.shareInfo?.hasActiveShare && (
@@ -97,33 +122,33 @@ export default function DocumentCard({ document, onAction }: DocumentCardProps) 
                 </div>
               </div>
             </div>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
                 >
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => handleAction('view')}>
+                <DropdownMenuItem onClick={() => handleAction("view")}>
                   <Eye className="w-4 h-4 mr-2" />
                   {t("dashboard.actions.view")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAction('edit')}>
+                <DropdownMenuItem onClick={() => handleAction("edit")}>
                   <Edit className="w-4 h-4 mr-2" />
                   {t("dashboard.actions.edit")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAction('share')}>
+                <DropdownMenuItem onClick={() => handleAction("share")}>
                   <Share className="w-4 h-4 mr-2" />
                   {t("dashboard.actions.share")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => handleAction('delete')}
+                <DropdownMenuItem
+                  onClick={() => handleAction("delete")}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -133,7 +158,7 @@ export default function DocumentCard({ document, onAction }: DocumentCardProps) 
             </DropdownMenu>
           </div>
         </CardHeader>
-        
+
         <CardContent className="pt-0">
           {/* Signature Progress */}
           {document.signatureStats.total > 0 && (
@@ -143,73 +168,77 @@ export default function DocumentCard({ document, onAction }: DocumentCardProps) 
                   {t("dashboard.signatureProgress")}
                 </span>
                 <span className="font-medium">
-                  {document.signatureStats.completed}/{document.signatureStats.total}
+                  {document.signatureStats.completed}/
+                  {document.signatureStats.total}
                 </span>
               </div>
-              <Progress 
-                value={document.signatureStats.progress} 
+              <Progress
+                value={document.signatureStats.progress}
                 className="h-1.5"
               />
               <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                 <Users className="w-3 h-3" />
                 <span>
-                  {t("dashboard.signaturesRemaining", { 
-                    count: document.signatureStats.pending 
+                  {t("dashboard.signaturesRemaining", {
+                    count: document.signatureStats.pending,
                   })}
                 </span>
               </div>
             </div>
           )}
-          
+
           {/* Metadata */}
           <div className="space-y-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               <span>
-                {t("dashboard.created")}: {format(createdAt, 'MMM dd, yyyy', { locale: dateLocale })}
+                {t("dashboard.created")}:{" "}
+                {format(createdAt, "MMM dd, yyyy", { locale: dateLocale })}
               </span>
             </div>
-            
+
             {updatedAt.getTime() !== createdAt.getTime() && (
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 <span>
-                  {t("dashboard.updated")}: {formatDistanceToNow(updatedAt, { 
-                    addSuffix: true, 
-                    locale: dateLocale 
+                  {t("dashboard.updated")}:{" "}
+                  {formatDistanceToNow(updatedAt, {
+                    addSuffix: true,
+                    locale: dateLocale,
                   })}
                 </span>
               </div>
             )}
-            
+
             {document.shareInfo?.lastAccessed && (
               <div className="flex items-center gap-1">
                 <Share className="w-3 h-3" />
                 <span>
-                  {t("dashboard.lastAccessed")}: {formatDistanceToNow(document.shareInfo.lastAccessed, { 
-                    addSuffix: true, 
-                    locale: dateLocale 
+                  {t("dashboard.lastAccessed")}:{" "}
+                  {formatDistanceToNow(document.shareInfo.lastAccessed, {
+                    addSuffix: true,
+                    locale: dateLocale,
                   })}
                 </span>
               </div>
             )}
           </div>
-          
+
           {/* Quick Actions */}
           <div className="flex gap-1 mt-4">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => handleAction('view')}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleAction("view")}
               className="flex-1 text-xs h-7"
             >
               <Eye className="w-3 h-3 mr-1" />
               {t("dashboard.actions.view")}
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => handleAction('edit')}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleAction("edit")}
               className="flex-1 text-xs h-7"
             >
               <Edit className="w-3 h-3 mr-1" />
@@ -227,14 +256,16 @@ export default function DocumentCard({ document, onAction }: DocumentCardProps) 
               {t("dashboard.deleteDialog.title")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("dashboard.deleteDialog.description", { title: document.title })}
+              {t("dashboard.deleteDialog.description", {
+                title: document.title,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>
               {t("dashboard.deleteDialog.cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
@@ -244,5 +275,5 @@ export default function DocumentCard({ document, onAction }: DocumentCardProps) 
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 }
