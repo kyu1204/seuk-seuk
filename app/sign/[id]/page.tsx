@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -76,42 +76,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
     }
   }, [documentData?.id])
 
-  const loadDocument = async (passwordAttempt?: string) => {
-    setIsLoading(true)
-    setError(null)
-    
-    try {
-      const result = await getSharedDocument(params.id, passwordAttempt)
-      
-      if (!result.success) {
-        if (result.requiresPassword) {
-          setRequiresPassword(true)
-          setIsLoading(false)
-          if (passwordAttempt) {
-            toast.error(result.error || t("sign.invalidPassword"))
-          }
-          return
-        }
-        
-        setError(result.error || t("sign.documentNotFound"))
-        setIsLoading(false)
-        return
-      }
-
-      if (result.data) {
-        setDocumentData(result.data)
-        setDocumentUrl(result.data.signedUrl)
-        await checkStatus(result.data.id)
-      }
-    } catch (err) {
-      console.error('Load document error:', err)
-      setError(t("sign.loadError"))
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const checkStatus = async (docId?: string) => {
+  const checkStatus = useCallback(async (docId?: string) => {
     const documentId = docId || documentData?.id
     if (!documentId) return
 
@@ -123,18 +88,83 @@ export default function SignPage({ params }: { params: { id: string } }) {
     } catch (err) {
       console.error('Check status error:', err)
     }
-  }
+  }, [documentData?.id])
 
-  const handlePasswordSubmit = async () => {
+  const loadDocument = useCallback(async (passwordAttempt?: string) => {
+    console.log('🔄 [loadDocument] 시작:', {
+      shortUrl: params.id,
+      hasPasswordAttempt: !!passwordAttempt,
+      requiresPassword,
+      currentPassword: password
+    })
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const result = await getSharedDocument(params.id, passwordAttempt)
+      console.log('📊 [loadDocument] getSharedDocument 결과:', {
+        success: result.success,
+        requiresPassword: result.requiresPassword,
+        hasData: !!result.data,
+        error: result.error
+      })
+      
+      if (!result.success) {
+        if (result.requiresPassword) {
+          setRequiresPassword(true)
+          setIsLoading(false)
+          if (passwordAttempt) {
+            console.log('❌ [loadDocument] 비밀번호 인증 실패')
+            toast.error(result.error || t("sign.invalidPassword"))
+          }
+          return
+        }
+        
+        setError(result.error || t("sign.documentNotFound"))
+        setIsLoading(false)
+        return
+      }
+
+      if (result.data) {
+        console.log('✅ [loadDocument] 문서 로드 성공, 비밀번호 상태 업데이트')
+        // Password authentication was successful - save the password and clear the requirement
+        if (passwordAttempt) {
+          setPassword(passwordAttempt)
+        }
+        setRequiresPassword(false)
+        
+        setDocumentData(result.data)
+        setDocumentUrl(result.data.signedUrl)
+        await checkStatus(result.data.id)
+      }
+    } catch (err) {
+      console.error('❌ [loadDocument] 예외:', err)
+      setError(t("sign.loadError"))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [params.id, requiresPassword, password, t, checkStatus])
+
+  const handlePasswordSubmit = useCallback(async () => {
+    console.log('🔐 [handlePasswordSubmit] 시작:', {
+      passwordState: password,
+      passwordLength: password.length,
+      trimmedPassword: password.trim(),
+      trimmedLength: password.trim().length
+    })
+    
     if (!password.trim()) {
+      console.log('❌ [handlePasswordSubmit] 비밀번호가 비어있음')
       toast.error(t("sign.passwordRequired"))
       return
     }
 
     setIsCheckingPassword(true)
+    console.log('🚀 [handlePasswordSubmit] loadDocument 호출:', password.trim())
     await loadDocument(password.trim())
     setIsCheckingPassword(false)
-  }
+  }, [password, t, loadDocument])
 
   const handleAreaClick = (areaId: string) => {
     // Check if area is already signed
@@ -157,6 +187,12 @@ export default function SignPage({ params }: { params: { id: string } }) {
     setIsSubmitting(true)
     
     try {
+      console.log('🚀 [SignPage] handleSignatureComplete 시작:', {
+        documentId: documentData.id,
+        selectedArea,
+        signerInfo
+      })
+      
       const result = await submitSignature(
         documentData.id,
         selectedArea,
@@ -165,18 +201,22 @@ export default function SignPage({ params }: { params: { id: string } }) {
       )
 
       if (result.success) {
+        console.log('✅ [SignPage] 서명 제출 성공')
         toast.success(t("sign.signatureSubmitted"))
         setIsModalOpen(false)
         setSelectedArea(null)
         
         // Reload document to get updated signatures
-        await loadDocument(password)
+        // Pass the current password (if any) for reload
+        console.log('🔄 [SignPage] 문서 재로드 시작 (비밀번호 있음:', !!password, ')')
+        await loadDocument(password || undefined)
         await checkStatus()
       } else {
+        console.error('❌ [SignPage] 서명 제출 실패:', result.error)
         toast.error(result.error || t("sign.signatureError"))
       }
     } catch (err) {
-      console.error('Submit signature error:', err)
+      console.error('❌ [SignPage] 서명 제출 예외:', err)
       toast.error(t("sign.signatureError"))
     } finally {
       setIsSubmitting(false)
@@ -252,7 +292,13 @@ export default function SignPage({ params }: { params: { id: string } }) {
                     id="password"
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      console.log('⌨️ [Input] 비밀번호 입력:', {
+                        inputValue: e.target.value,
+                        inputLength: e.target.value.length
+                      })
+                      setPassword(e.target.value)
+                    }}
                     onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
                     placeholder={t("sign.enterPassword")}
                   />

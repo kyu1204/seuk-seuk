@@ -25,6 +25,12 @@ export async function getSharedDocument(
   requiresPassword?: boolean;
 }> {
   try {
+    console.log('🚀 [getSharedDocument] 시작:', { 
+      shortUrl, 
+      hasPassword: !!password,
+      timestamp: new Date().toISOString()
+    })
+    
     const supabase = await createClient()
 
     // Get document share by short URL
@@ -41,23 +47,51 @@ export async function getSharedDocument(
       .eq('short_url', shortUrl)
       .single()
 
+    console.log('📊 [getSharedDocument] Share 쿼리 결과:', {
+      hasShare: !!share,
+      shareError: shareError?.message,
+      shareId: share?.id,
+      hasDocument: !!(share as any)?.documents
+    })
+
     if (shareError || !share) {
+      console.log('❌ [getSharedDocument] Share 조회 실패:', shareError)
       return { success: false, error: "Document not found or has expired" }
     }
 
     // Check if share has expired
     if (share.expires_at && new Date(share.expires_at) < new Date()) {
+      console.log('❌ [getSharedDocument] 만료된 링크:', { 
+        expiresAt: share.expires_at, 
+        now: new Date().toISOString() 
+      })
       return { success: false, error: "Document link has expired" }
     }
 
     // Check usage limits
     if (share.max_uses && share.used_count && share.used_count >= share.max_uses) {
+      console.log('❌ [getSharedDocument] 사용 횟수 초과:', { 
+        maxUses: share.max_uses, 
+        usedCount: share.used_count 
+      })
       return { success: false, error: "Document link usage limit exceeded" }
     }
 
-    // Check if document exists and is published
+    // Check if document exists and is accessible (published or completed)
     const document = (share as any).documents
-    if (!document || document.status !== 'published') {
+    console.log('📋 [getSharedDocument] Document 상태 체크:', {
+      hasDocument: !!document,
+      documentId: document?.id,
+      documentStatus: document?.status,
+      isAccessible: document?.status === 'published' || document?.status === 'completed'
+    })
+    
+    if (!document || (document.status !== 'published' && document.status !== 'completed')) {
+      console.log('❌ [getSharedDocument] 문서 접근 불가:', { 
+        hasDocument: !!document, 
+        status: document?.status,
+        allowedStatuses: ['published', 'completed']
+      })
       return { success: false, error: "Document not available" }
     }
 
@@ -67,26 +101,53 @@ export async function getSharedDocument(
         return { success: false, requiresPassword: true, error: "Password required" }
       }
 
-      const passwordMatch = await bcrypt.compare(password, share.password_hash)
-      if (!passwordMatch) {
-        return { success: false, requiresPassword: true, error: "Invalid password" }
+      try {
+        const passwordMatch = await bcrypt.compare(password, share.password_hash)
+        if (!passwordMatch) {
+          console.log('🔒 [getSharedDocument] 비밀번호 불일치:', { 
+            providedPassword: password, 
+            hasStoredHash: !!share.password_hash 
+          })
+          return { success: false, requiresPassword: true, error: "Invalid password" }
+        }
+        console.log('✅ [getSharedDocument] 비밀번호 인증 성공')
+      } catch (bcryptError) {
+        console.error('❌ [getSharedDocument] bcrypt 오류:', bcryptError)
+        return { success: false, requiresPassword: true, error: "Password verification failed" }
       }
     }
 
     // Generate signed URL for document file
+    console.log('🔗 [getSharedDocument] Signed URL 생성 시작:', { 
+      filePath: document.file_path 
+    })
+    
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from('documents')
       .createSignedUrl(document.file_path, 3600) // 1 hour expiry
 
     if (urlError || !signedUrl) {
+      console.log('❌ [getSharedDocument] Signed URL 생성 실패:', urlError)
       return { success: false, error: "Failed to access document file" }
     }
 
+    console.log('✅ [getSharedDocument] Signed URL 생성 성공')
+
     // Increment used count
-    await supabase
+    const { error: updateError } = await supabase
       .from('document_shares')
       .update({ used_count: (share.used_count || 0) + 1 })
       .eq('id', share.id)
+
+    if (updateError) {
+      console.log('⚠️ [getSharedDocument] Used count 업데이트 실패:', updateError)
+    }
+
+    console.log('✅ [getSharedDocument] 성공적으로 완료:', {
+      documentId: document.id,
+      signatureAreasCount: document.signature_areas?.length || 0,
+      signaturesCount: document.signatures?.length || 0
+    })
 
     return {
       success: true,
