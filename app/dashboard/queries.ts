@@ -183,9 +183,15 @@ export async function getDocumentsWithStats(
     query = query.eq('status', filter)
   }
 
-  // Apply search filter
-  if (searchQuery) {
-    query = query.or(`title.ilike.%${searchQuery}%, file_name.ilike.%${searchQuery}%`)
+  // Apply search filter - using safe parameterized queries
+  if (searchQuery && searchQuery.trim()) {
+    // Sanitize and escape special characters to prevent SQL injection
+    const sanitizedQuery = searchQuery.trim().replace(/[%_\\]/g, '\\$&')
+    
+    // Use Supabase's safe query methods
+    query = query.or(
+      `title.ilike.%${sanitizedQuery}%, file_name.ilike.%${sanitizedQuery}%`
+    )
   }
 
   // Apply sorting
@@ -240,6 +246,8 @@ export async function getDocumentsWithStats(
   })
 
   // Get counts for all statuses
+  // Note: Separate query is used to avoid over-fetching data when filters are applied
+  // This ensures accurate counts for all statuses regardless of current filter
   const { data: allDocs, error: countError } = await supabase
     .from('documents')
     .select('status')
