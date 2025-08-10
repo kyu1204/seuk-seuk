@@ -159,6 +159,78 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.profile": "프로필",
     "dashboard.settings": "설정",
     "dashboard.signOut": "로그아웃",
+    
+    // Dashboard Filters & Actions
+    "dashboard.searchPlaceholder": "문서 제목이나 파일명으로 검색...",
+    "dashboard.activeFilters": "활성 필터",
+    "dashboard.search": "검색",
+    "dashboard.filters.all": "전체",
+    "dashboard.filters.draft": "초안",
+    "dashboard.filters.published": "진행중",
+    "dashboard.filters.completed": "완료",
+    "dashboard.filters.expired": "만료",
+    "dashboard.sort.createdAt": "생성일",
+    "dashboard.sort.updatedAt": "수정일",
+    "dashboard.sort.title": "제목",
+    "dashboard.sort.status": "상태",
+    "dashboard.sort.ascending": "오름차순",
+    "dashboard.sort.descending": "내림차순",
+    
+    // Document Status
+    "dashboard.status.draft": "초안",
+    "dashboard.status.published": "진행중",
+    "dashboard.status.completed": "완료",
+    "dashboard.status.expired": "만료",
+    "dashboard.shared": "공유됨",
+    
+    // Document Actions
+    "dashboard.actions.view": "보기",
+    "dashboard.actions.edit": "편집",
+    "dashboard.actions.share": "공유",
+    "dashboard.actions.delete": "삭제",
+    "dashboard.actions.download": "다운로드",
+    
+    // Document Info
+    "dashboard.signatureProgress": "서명 진행률",
+    "dashboard.signaturesRemaining": "{count}개 서명 대기",
+    "dashboard.created": "생성",
+    "dashboard.updated": "수정",
+    "dashboard.lastAccessed": "최근 접근",
+    
+    // Document List
+    "dashboard.documentsCount": "{count}개 문서",
+    "dashboard.searchResultsCount": "'{query}' 검색 결과: {count}개",
+    
+    // Empty States
+    "dashboard.noDocuments": "문서가 없습니다",
+    "dashboard.noDocumentsDescription": "첫 번째 문서를 업로드하여 서명 프로세스를 시작하세요.",
+    "dashboard.createFirstDocument": "첫 문서 만들기",
+    "dashboard.noDraftDocuments": "초안 문서가 없습니다",
+    "dashboard.noDraftDocumentsDescription": "새 문서를 만들어 작업을 시작하세요.",
+    "dashboard.createNewDocument": "새 문서 만들기",
+    "dashboard.noPublishedDocuments": "진행 중인 문서가 없습니다",
+    "dashboard.noPublishedDocumentsDescription": "서명 요청을 보낸 문서가 여기에 표시됩니다.",
+    "dashboard.noCompletedDocuments": "완료된 문서가 없습니다",
+    "dashboard.noCompletedDocumentsDescription": "모든 서명이 완료된 문서가 여기에 표시됩니다.",
+    "dashboard.noExpiredDocuments": "만료된 문서가 없습니다",
+    "dashboard.noExpiredDocumentsDescription": "만료된 문서가 여기에 표시됩니다.",
+    "dashboard.noSearchResults": "검색 결과가 없습니다",
+    "dashboard.noSearchResultsDescription": "'{query}'에 대한 검색 결과를 찾을 수 없습니다.",
+    "dashboard.clearSearch": "검색 초기화",
+    
+    // Delete Dialog
+    "dashboard.deleteDialog.title": "문서를 삭제하시겠습니까?",
+    "dashboard.deleteDialog.description": "'{title}' 문서와 관련된 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+    "dashboard.deleteDialog.cancel": "취소",
+    "dashboard.deleteDialog.confirm": "삭제",
+    
+    // Dashboard Navigation
+    "dashboard.myDocuments": "내 문서",
+    "dashboard.newDocument": "새 문서",
+    "dashboard.deleting": "삭제 중...",
+    "dashboard.deleteSuccess": "문서가 성공적으로 삭제되었습니다",
+    "dashboard.deleteError": "문서 삭제에 실패했습니다",
+    "dashboard.loadError": "문서 목록을 불러오는데 실패했습니다",
 
     // Homepage
     "home.notification":
@@ -419,6 +491,78 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.profile": "Profile",
     "dashboard.settings": "Settings",
     "dashboard.signOut": "Sign Out",
+    
+    // Dashboard Filters & Actions
+    "dashboard.searchPlaceholder": "Search by document title or filename...",
+    "dashboard.activeFilters": "Active filters",
+    "dashboard.search": "Search",
+    "dashboard.filters.all": "All",
+    "dashboard.filters.draft": "Draft",
+    "dashboard.filters.published": "In Progress",
+    "dashboard.filters.completed": "Completed",
+    "dashboard.filters.expired": "Expired",
+    "dashboard.sort.createdAt": "Created",
+    "dashboard.sort.updatedAt": "Updated",
+    "dashboard.sort.title": "Title",
+    "dashboard.sort.status": "Status",
+    "dashboard.sort.ascending": "Ascending",
+    "dashboard.sort.descending": "Descending",
+    
+    // Document Status
+    "dashboard.status.draft": "Draft",
+    "dashboard.status.published": "In Progress",
+    "dashboard.status.completed": "Completed",
+    "dashboard.status.expired": "Expired",
+    "dashboard.shared": "Shared",
+    
+    // Document Actions
+    "dashboard.actions.view": "View",
+    "dashboard.actions.edit": "Edit",
+    "dashboard.actions.share": "Share",
+    "dashboard.actions.delete": "Delete",
+    "dashboard.actions.download": "Download",
+    
+    // Document Info
+    "dashboard.signatureProgress": "Signature Progress",
+    "dashboard.signaturesRemaining": "{count} signatures pending",
+    "dashboard.created": "Created",
+    "dashboard.updated": "Updated",
+    "dashboard.lastAccessed": "Last accessed",
+    
+    // Document List
+    "dashboard.documentsCount": "{count} documents",
+    "dashboard.searchResultsCount": "Search results for '{query}': {count}",
+    
+    // Empty States
+    "dashboard.noDocuments": "No documents yet",
+    "dashboard.noDocumentsDescription": "Upload your first document to start the signing process.",
+    "dashboard.createFirstDocument": "Create First Document",
+    "dashboard.noDraftDocuments": "No draft documents",
+    "dashboard.noDraftDocumentsDescription": "Create a new document to get started.",
+    "dashboard.createNewDocument": "Create New Document",
+    "dashboard.noPublishedDocuments": "No documents in progress",
+    "dashboard.noPublishedDocumentsDescription": "Documents with signature requests will appear here.",
+    "dashboard.noCompletedDocuments": "No completed documents",
+    "dashboard.noCompletedDocumentsDescription": "Fully signed documents will appear here.",
+    "dashboard.noExpiredDocuments": "No expired documents",
+    "dashboard.noExpiredDocumentsDescription": "Expired documents will appear here.",
+    "dashboard.noSearchResults": "No search results",
+    "dashboard.noSearchResultsDescription": "No results found for '{query}'.",
+    "dashboard.clearSearch": "Clear Search",
+    
+    // Delete Dialog
+    "dashboard.deleteDialog.title": "Delete Document?",
+    "dashboard.deleteDialog.description": "'{title}' and all related data will be permanently deleted. This action cannot be undone.",
+    "dashboard.deleteDialog.cancel": "Cancel",
+    "dashboard.deleteDialog.confirm": "Delete",
+    
+    // Dashboard Navigation
+    "dashboard.myDocuments": "My Documents",
+    "dashboard.newDocument": "New Document",
+    "dashboard.deleting": "Deleting...",
+    "dashboard.deleteSuccess": "Document deleted successfully",
+    "dashboard.deleteError": "Failed to delete document",
+    "dashboard.loadError": "Failed to load documents",
 
     // Homepage
     "home.notification": "🎉 New features just released! Check them out now.",
