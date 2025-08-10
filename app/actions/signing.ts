@@ -1,18 +1,29 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Database, Tables } from "@/lib/database-types"
+import { Tables } from "@/lib/database-types"
 import { generateSignedDocument } from "./document-actions"
 import bcrypt from 'bcryptjs'
 
-type DocumentShare = Tables<'document_shares'>
+// type DocumentShare = Tables<'document_shares'>
 type Document = Tables<'documents'>
 type SignatureArea = Tables<'signature_areas'>
 type Signature = Tables<'signatures'>
 
+// Extended types for documents with relations
+type DocumentWithRelations = Document & {
+  signature_areas: SignatureArea[]
+  signatures: Signature[]
+}
+
 export interface DocumentWithAreas extends Document {
   signature_areas: SignatureArea[]
   signatures?: Signature[]
+}
+
+export interface SignerInfo {
+  name?: string;
+  email?: string;
 }
 
 export async function getSharedDocument(
@@ -23,6 +34,7 @@ export async function getSharedDocument(
   data?: DocumentWithAreas & { signedUrl: string };
   error?: string;
   requiresPassword?: boolean;
+  isSubmitted?: boolean;
 }> {
   try {
     console.log('🚀 [getSharedDocument] 시작:', { 
@@ -77,16 +89,33 @@ export async function getSharedDocument(
       return { success: false, error: "Document link usage limit exceeded" }
     }
 
-    // Check if document exists and is accessible (published or completed)
+    // Check if document exists and is accessible
     const document = (share as any).documents
     console.log('📋 [getSharedDocument] Document 상태 체크:', {
       hasDocument: !!document,
       documentId: document?.id,
       documentStatus: document?.status,
-      isAccessible: document?.status === 'published' || document?.status === 'completed'
+      isAccessible: ['published', 'completed', 'submitted'].includes(document?.status)
     })
     
-    if (!document || (document.status !== 'published' && document.status !== 'completed')) {
+    if (!document) {
+      return { success: false, error: "Document not found" }
+    }
+
+    // Check if document is submitted (block access for signers)
+    if (document.status === 'submitted') {
+      console.log('🚫 [getSharedDocument] 제출된 문서 접근 차단:', { 
+        documentId: document.id, 
+        status: document.status 
+      })
+      return { 
+        success: false, 
+        error: "이 문서는 이미 제출되어 접근할 수 없습니다.",
+        isSubmitted: true 
+      }
+    }
+    
+    if (document.status !== 'published' && document.status !== 'completed') {
       console.log('❌ [getSharedDocument] 문서 접근 불가:', { 
         hasDocument: !!document, 
         status: document?.status,
@@ -104,10 +133,7 @@ export async function getSharedDocument(
       try {
         const passwordMatch = await bcrypt.compare(password, share.password_hash)
         if (!passwordMatch) {
-          console.log('🔒 [getSharedDocument] 비밀번호 불일치:', { 
-            providedPassword: password, 
-            hasStoredHash: !!share.password_hash 
-          })
+          console.warn('🔒 [getSharedDocument] 비밀번호 불일치')
           return { success: false, requiresPassword: true, error: "Invalid password" }
         }
         console.log('✅ [getSharedDocument] 비밀번호 인증 성공')
@@ -133,11 +159,10 @@ export async function getSharedDocument(
 
     console.log('✅ [getSharedDocument] Signed URL 생성 성공')
 
-    // Increment used count
-    const { error: updateError } = await supabase
-      .from('document_shares')
-      .update({ used_count: (share.used_count || 0) + 1 })
-      .eq('id', share.id)
+    // Increment used count atomically
+    const { error: updateError } = await supabase.rpc('increment_share_usage', {
+      share_id: share.id
+    })
 
     if (updateError) {
       console.log('⚠️ [getSharedDocument] Used count 업데이트 실패:', updateError)
@@ -299,13 +324,14 @@ export async function generateFinalDocument(
     }
 
     // Prepare signature data for merging
-    const areaIndexById = new Map((document as any).signature_areas.map((area: any, index: number) => [area.id, index]))
-    const signatureData = (document as any).signatures.map((sig: any) => ({
+    const documentWithRelations = document as DocumentWithRelations
+    const areaIndexById = new Map(documentWithRelations.signature_areas.map((area, index) => [area.id, index]))
+    const signatureData = documentWithRelations.signatures.map((sig) => ({
       areaIndex: areaIndexById.get(sig.signature_area_id) ?? -1,
       signature: sig.signature_data
     }))
 
-    const areas = (document as any).signature_areas.map((area: any) => ({
+    const areas = documentWithRelations.signature_areas.map((area) => ({
       x: area.x,
       y: area.y,
       width: area.width,
@@ -403,14 +429,15 @@ export async function checkDocumentStatus(
       return { success: false, error: "Document not found" }
     }
 
-    const totalAreas = (document as any).signature_areas?.length || 0
-    const signedAreas = (document as any).signatures?.length || 0
-    const requiredAreas = (document as any).signature_areas?.filter((area: any) => area.required).length || 0
+    const documentWithRelations = document as DocumentWithRelations
+    const totalAreas = documentWithRelations.signature_areas?.length || 0
+    const signedAreas = documentWithRelations.signatures?.length || 0
+    const requiredAreas = documentWithRelations.signature_areas?.filter((area) => area.required).length || 0
     const signedRequiredAreas = new Set(
-      (document as any).signatures?.map((sig: any) => sig.signature_area_id) || []
+      documentWithRelations.signatures?.map((sig) => sig.signature_area_id) || []
     )
-    const completedRequiredAreas = (document as any).signature_areas?.filter(
-      (area: any) => area.required && signedRequiredAreas.has(area.id)
+    const completedRequiredAreas = documentWithRelations.signature_areas?.filter(
+      (area) => area.required && signedRequiredAreas.has(area.id)
     ).length || 0
 
     const isComplete = completedRequiredAreas === requiredAreas
@@ -426,6 +453,79 @@ export async function checkDocumentStatus(
     }
   } catch (error) {
     console.error('Check document status error:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
+}
+
+// Submit document (change status to submitted)
+export async function submitDocument(
+  documentId: string,
+  signerInfo: SignerInfo
+): Promise<{
+  success: boolean;
+  data?: { documentId: string };
+  error?: string;
+}> {
+  try {
+    console.log('🚀 [submitDocument] 문서 제출 시작:', { 
+      documentId, 
+      signerInfo: { 
+        name: signerInfo.name, 
+        email: signerInfo.email 
+      } 
+    })
+    
+    const supabase = await createClient()
+
+    // First, get the document to verify it exists and check current status
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('id, status, user_id')
+      .eq('id', documentId)
+      .single()
+
+    if (docError || !document) {
+      console.log('❌ [submitDocument] 문서 찾기 실패:', docError)
+      return { success: false, error: "Document not found" }
+    }
+
+    // Check if document is already submitted
+    if (document.status === 'submitted') {
+      console.log('⚠️ [submitDocument] 이미 제출된 문서:', { documentId, status: document.status })
+      return { success: false, error: "Document is already submitted" }
+    }
+
+    // Update document status to submitted and add submission info
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({
+        status: 'submitted',
+        submitted_at: new Date().toISOString(),
+        submitted_by_name: signerInfo.name || null,
+        submitted_by_email: signerInfo.email || null
+      })
+      .eq('id', documentId)
+
+    if (updateError) {
+      console.error('❌ [submitDocument] 문서 상태 업데이트 실패:', updateError)
+      return { success: false, error: "Failed to submit document" }
+    }
+
+    console.log('✅ [submitDocument] 문서 제출 성공:', { 
+      documentId, 
+      submittedAt: new Date().toISOString(),
+      submittedBy: signerInfo.name || 'Anonymous'
+    })
+
+    return {
+      success: true,
+      data: { documentId }
+    }
+  } catch (error) {
+    console.error('❌ [submitDocument] 제출 중 오류:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 

@@ -15,7 +15,7 @@ export type Language = "ko" | "en";
 type LanguageContextType = {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: string, params?: Record<string, string>) => string;
+  t: (key: string, params?: Record<string, string | number | boolean>) => string;
 };
 
 // Create the context with default values
@@ -145,6 +145,7 @@ const translations: Record<Language, Record<string, string>> = {
     "signature.instruction": "위에 마우스나 손가락으로 서명을 그리세요",
     "signature.clear": "지우기",
     "signature.sign": "문서 서명",
+    "signature.submitting": "제출 중...",
 
     // Language Selector
     "language.ko": "한국어",
@@ -159,6 +160,112 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.profile": "프로필",
     "dashboard.settings": "설정",
     "dashboard.signOut": "로그아웃",
+    
+    // Dashboard Filters & Actions
+    "dashboard.searchPlaceholder": "문서 제목이나 파일명으로 검색...",
+    "dashboard.activeFilters": "활성 필터",
+    "dashboard.search": "검색",
+    "dashboard.filters.all": "전체",
+    "dashboard.filters.draft": "초안",
+    "dashboard.filters.published": "진행중",
+    "dashboard.filters.completed": "완료",
+    "dashboard.filters.expired": "만료",
+    "dashboard.sort.createdAt": "생성일",
+    "dashboard.sort.updatedAt": "수정일",
+    "dashboard.sort.title": "제목",
+    "dashboard.sort.status": "상태",
+    "dashboard.sort.ascending": "오름차순",
+    "dashboard.sort.descending": "내림차순",
+    
+    // Document Status
+    "dashboard.status.draft": "초안",
+    "dashboard.status.published": "진행중",
+    "dashboard.status.completed": "완료",
+    "dashboard.status.expired": "만료",
+    "dashboard.shared": "공유됨",
+    
+    // Document Actions
+    "dashboard.actions.view": "보기",
+    "dashboard.actions.edit": "편집",
+    "dashboard.actions.share": "공유",
+    "dashboard.actions.delete": "삭제",
+    "dashboard.actions.download": "다운로드",
+    
+    // Document Info
+    "dashboard.signatureProgress": "서명 진행률",
+    "dashboard.signaturesRemaining": "{count}개 서명 대기",
+    "dashboard.created": "생성",
+    "dashboard.updated": "수정",
+    "dashboard.lastAccessed": "최근 접근",
+    
+    // Document List
+    "dashboard.documentsCount": "{count}개 문서",
+    "dashboard.searchResultsCount": "'{query}' 검색 결과: {count}개",
+    
+    // Empty States
+    "dashboard.noDocuments": "문서가 없습니다",
+    "dashboard.noDocumentsDescription": "첫 번째 문서를 업로드하여 서명 프로세스를 시작하세요.",
+    "dashboard.createFirstDocument": "첫 문서 만들기",
+    "dashboard.noDraftDocuments": "초안 문서가 없습니다",
+    "dashboard.noDraftDocumentsDescription": "새 문서를 만들어 작업을 시작하세요.",
+    "dashboard.createNewDocument": "새 문서 만들기",
+    "dashboard.noPublishedDocuments": "진행 중인 문서가 없습니다",
+    "dashboard.noPublishedDocumentsDescription": "서명 요청을 보낸 문서가 여기에 표시됩니다.",
+    "dashboard.noCompletedDocuments": "완료된 문서가 없습니다",
+    "dashboard.noCompletedDocumentsDescription": "모든 서명이 완료된 문서가 여기에 표시됩니다.",
+    "dashboard.noExpiredDocuments": "만료된 문서가 없습니다",
+    "dashboard.noExpiredDocumentsDescription": "만료된 문서가 여기에 표시됩니다.",
+    "dashboard.noSearchResults": "검색 결과가 없습니다",
+    "dashboard.noSearchResultsDescription": "'{query}'에 대한 검색 결과를 찾을 수 없습니다.",
+    "dashboard.clearSearch": "검색 초기화",
+    
+    // Delete Dialog
+    "dashboard.deleteDialog.title": "문서를 삭제하시겠습니까?",
+    "dashboard.deleteDialog.description": "'{title}' 문서와 관련된 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+    "dashboard.deleteDialog.cancel": "취소",
+    "dashboard.deleteDialog.confirm": "삭제",
+    
+    // Dashboard Navigation
+    "dashboard.myDocuments": "내 문서",
+    "dashboard.newDocument": "새 문서",
+    "dashboard.deleting": "삭제 중...",
+    "dashboard.deleteSuccess": "문서가 성공적으로 삭제되었습니다",
+    "dashboard.deleteError": "문서 삭제에 실패했습니다",
+    "dashboard.loadError": "문서 목록을 불러오는데 실패했습니다",
+
+    // Signer Onboarding
+    "signer.onboarding.title": "서명 가이드",
+    "signer.onboarding.subtitle": '"{title}" 문서의 서명 과정을 안내해드립니다',
+    "signer.onboarding.step1.title": "문서 검토",
+    "signer.onboarding.step1.description": "먼저 문서 내용을 확인하세요",
+    "signer.onboarding.step1.detail": "서명이 필요한 영역이 빨간색으로 표시됩니다",
+    "signer.onboarding.step2.title": "서명하기",
+    "signer.onboarding.step2.description": "총 {count}개 영역에 서명해주세요",
+    "signer.onboarding.step2.detail": "빨간색 영역을 클릭하면 서명 패드가 열립니다",
+    "signer.onboarding.step3.title": "제출하기",
+    "signer.onboarding.step3.description": "모든 서명 완료 후 문서를 제출합니다",
+    "signer.onboarding.step3.detail": "제출 후에는 문서를 다시 수정할 수 없습니다",
+    "signer.onboarding.skipGuide": "가이드 건너뛰기",
+    "signer.onboarding.startSigning": "서명 시작",
+
+    // Submit Document
+    "submit.confirmTitle": "문서 제출 확인",
+    "submit.confirmDescription": '"{title}" 문서를 제출하시겠습니까?',
+    "submit.signatureStatus": "서명 상태",
+    "submit.completed": "완료",
+    "submit.incompleteWarning": "아직 서명이 완료되지 않았습니다",
+    "submit.incompleteWarningDetail": "일부 영역에 서명하지 않은 상태로 제출하시겠습니까?",
+    "submit.finalWarning": "제출 후 수정 불가",
+    "submit.finalWarningDetail": "문서를 제출하면 더 이상 수정할 수 없습니다. 신중히 결정해 주세요.",
+    "submit.submitting": "제출 중...",
+    "submit.confirm": "제출하기",
+    "submit.success": "문서가 성공적으로 제출되었습니다",
+    "submit.error": "문서 제출에 실패했습니다",
+    "submit.document": "문서 제출",
+    "submit.documentComplete": "모든 서명이 완료되어 문서를 제출할 수 있습니다",
+    "submit.submitted": "제출 완료",
+    "submit.submittedDescription": "문서가 성공적으로 제출되었습니다. 더 이상 수정할 수 없습니다.",
+    "submit.backToHome": "홈으로 돌아가기",
 
     // Homepage
     "home.notification":
@@ -399,12 +506,47 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.documentAlt": "Document to sign",
     "sign.signedDocumentAlt": "Signed document",
 
+    // Signer Onboarding (English)
+    "signer.onboarding.title": "Signing Guide",
+    "signer.onboarding.subtitle": 'We will guide you through the signing process for "{title}" document',
+    "signer.onboarding.step1.title": "Review Document",
+    "signer.onboarding.step1.description": "First, review the document content",
+    "signer.onboarding.step1.detail": "Areas requiring signatures are highlighted in red",
+    "signer.onboarding.step2.title": "Add Signatures",
+    "signer.onboarding.step2.description": "Please sign in {count} areas total",
+    "signer.onboarding.step2.detail": "Click on red areas to open the signature pad",
+    "signer.onboarding.step3.title": "Submit Document",
+    "signer.onboarding.step3.description": "Submit the document after completing all signatures",
+    "signer.onboarding.step3.detail": "The document cannot be modified after submission",
+    "signer.onboarding.skipGuide": "Skip Guide",
+    "signer.onboarding.startSigning": "Start Signing",
+
+    // Submit Document (English)
+    "submit.confirmTitle": "Confirm Document Submission",
+    "submit.confirmDescription": 'Are you sure you want to submit "{title}" document?',
+    "submit.signatureStatus": "Signature Status",
+    "submit.completed": "Completed",
+    "submit.incompleteWarning": "Signatures are not complete yet",
+    "submit.incompleteWarningDetail": "Do you want to submit with some areas unsigned?",
+    "submit.finalWarning": "Cannot modify after submission",
+    "submit.finalWarningDetail": "Once submitted, the document cannot be modified. Please decide carefully.",
+    "submit.submitting": "Submitting...",
+    "submit.confirm": "Submit",
+    "submit.success": "Document submitted successfully",
+    "submit.error": "Failed to submit document",
+    "submit.document": "Submit Document",
+    "submit.documentComplete": "All signatures completed. You can now submit the document",
+    "submit.submitted": "Submitted",
+    "submit.submittedDescription": "Document has been successfully submitted. It can no longer be modified.",
+    "submit.backToHome": "Back to Home",
+
     // Signature Modal
     "signature.title": "Add Your Signature",
     "signature.instruction":
       "Draw your signature above using your mouse or finger",
     "signature.clear": "Clear",
     "signature.sign": "Sign Document",
+    "signature.submitting": "Submitting...",
 
     // Language Selector
     "language.ko": "한국어",
@@ -419,6 +561,78 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.profile": "Profile",
     "dashboard.settings": "Settings",
     "dashboard.signOut": "Sign Out",
+    
+    // Dashboard Filters & Actions
+    "dashboard.searchPlaceholder": "Search by document title or filename...",
+    "dashboard.activeFilters": "Active filters",
+    "dashboard.search": "Search",
+    "dashboard.filters.all": "All",
+    "dashboard.filters.draft": "Draft",
+    "dashboard.filters.published": "In Progress",
+    "dashboard.filters.completed": "Completed",
+    "dashboard.filters.expired": "Expired",
+    "dashboard.sort.createdAt": "Created",
+    "dashboard.sort.updatedAt": "Updated",
+    "dashboard.sort.title": "Title",
+    "dashboard.sort.status": "Status",
+    "dashboard.sort.ascending": "Ascending",
+    "dashboard.sort.descending": "Descending",
+    
+    // Document Status
+    "dashboard.status.draft": "Draft",
+    "dashboard.status.published": "In Progress",
+    "dashboard.status.completed": "Completed",
+    "dashboard.status.expired": "Expired",
+    "dashboard.shared": "Shared",
+    
+    // Document Actions
+    "dashboard.actions.view": "View",
+    "dashboard.actions.edit": "Edit",
+    "dashboard.actions.share": "Share",
+    "dashboard.actions.delete": "Delete",
+    "dashboard.actions.download": "Download",
+    
+    // Document Info
+    "dashboard.signatureProgress": "Signature Progress",
+    "dashboard.signaturesRemaining": "{count} signatures pending",
+    "dashboard.created": "Created",
+    "dashboard.updated": "Updated",
+    "dashboard.lastAccessed": "Last accessed",
+    
+    // Document List
+    "dashboard.documentsCount": "{count} documents",
+    "dashboard.searchResultsCount": "Search results for '{query}': {count}",
+    
+    // Empty States
+    "dashboard.noDocuments": "No documents yet",
+    "dashboard.noDocumentsDescription": "Upload your first document to start the signing process.",
+    "dashboard.createFirstDocument": "Create First Document",
+    "dashboard.noDraftDocuments": "No draft documents",
+    "dashboard.noDraftDocumentsDescription": "Create a new document to get started.",
+    "dashboard.createNewDocument": "Create New Document",
+    "dashboard.noPublishedDocuments": "No documents in progress",
+    "dashboard.noPublishedDocumentsDescription": "Documents with signature requests will appear here.",
+    "dashboard.noCompletedDocuments": "No completed documents",
+    "dashboard.noCompletedDocumentsDescription": "Fully signed documents will appear here.",
+    "dashboard.noExpiredDocuments": "No expired documents",
+    "dashboard.noExpiredDocumentsDescription": "Expired documents will appear here.",
+    "dashboard.noSearchResults": "No search results",
+    "dashboard.noSearchResultsDescription": "No results found for '{query}'.",
+    "dashboard.clearSearch": "Clear Search",
+    
+    // Delete Dialog
+    "dashboard.deleteDialog.title": "Delete Document?",
+    "dashboard.deleteDialog.description": "'{title}' and all related data will be permanently deleted. This action cannot be undone.",
+    "dashboard.deleteDialog.cancel": "Cancel",
+    "dashboard.deleteDialog.confirm": "Delete",
+    
+    // Dashboard Navigation
+    "dashboard.myDocuments": "My Documents",
+    "dashboard.newDocument": "New Document",
+    "dashboard.deleting": "Deleting...",
+    "dashboard.deleteSuccess": "Document deleted successfully",
+    "dashboard.deleteError": "Failed to delete document",
+    "dashboard.loadError": "Failed to load documents",
 
     // Homepage
     "home.notification": "🎉 New features just released! Check them out now.",
@@ -567,12 +781,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   // Translation function with placeholder support
-  const t = (key: string, params?: Record<string, string>): string => {
+  const t = (key: string, params?: Record<string, string | number | boolean>): string => {
     let translation = translations[language][key] || key;
 
     if (params) {
       Object.entries(params).forEach(([paramKey, paramValue]) => {
-        translation = translation.replace(`{${paramKey}}`, paramValue);
+        translation = translation.replace(`{${paramKey}}`, String(paramValue));
       });
     }
 
