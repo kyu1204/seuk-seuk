@@ -167,7 +167,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
       }
     } catch (error) {
       console.error('Document action error:', error);
-      toast.error(`Failed to ${action} document`);
+      toast.error(t('dashboard.actionError', { action }) || `Failed to ${action} document`);
     }
   }, [documentState.documents, router, loadDocuments, t]);
 

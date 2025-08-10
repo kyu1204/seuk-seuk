@@ -217,7 +217,7 @@ export async function getDocumentsWithStats(
     const hasActiveShare = activeShares.length > 0
     const shareCount = documentShares.length
     const lastAccessed = documentShares.length > 0 
-      ? new Date(Math.max(...documentShares.map(share => new Date(share.created_at || '').getTime())))
+      ? new Date(Math.max(...documentShares.map(share => new Date(share.created_at || 0).getTime())))
       : undefined
 
     return {

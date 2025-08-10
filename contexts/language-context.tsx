@@ -231,6 +231,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.deleteSuccess": "문서가 성공적으로 삭제되었습니다",
     "dashboard.deleteError": "문서 삭제에 실패했습니다",
     "dashboard.loadError": "문서 목록을 불러오는데 실패했습니다",
+    "dashboard.actionError": "문서 {action} 실패했습니다",
 
     // Homepage
     "home.notification":
@@ -563,6 +564,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.deleteSuccess": "Document deleted successfully",
     "dashboard.deleteError": "Failed to delete document",
     "dashboard.loadError": "Failed to load documents",
+    "dashboard.actionError": "Failed to {action} document",
 
     // Homepage
     "home.notification": "🎉 New features just released! Check them out now.",
