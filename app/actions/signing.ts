@@ -1,14 +1,20 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Database, Tables } from "@/lib/database-types"
+import { Tables } from "@/lib/database-types"
 import { generateSignedDocument } from "./document-actions"
 import bcrypt from 'bcryptjs'
 
-type DocumentShare = Tables<'document_shares'>
+// type DocumentShare = Tables<'document_shares'>
 type Document = Tables<'documents'>
 type SignatureArea = Tables<'signature_areas'>
 type Signature = Tables<'signatures'>
+
+// Extended types for documents with relations
+type DocumentWithRelations = Document & {
+  signature_areas: SignatureArea[]
+  signatures: Signature[]
+}
 
 export interface DocumentWithAreas extends Document {
   signature_areas: SignatureArea[]
@@ -127,10 +133,7 @@ export async function getSharedDocument(
       try {
         const passwordMatch = await bcrypt.compare(password, share.password_hash)
         if (!passwordMatch) {
-          console.log('🔒 [getSharedDocument] 비밀번호 불일치:', { 
-            providedPassword: password, 
-            hasStoredHash: !!share.password_hash 
-          })
+          console.warn('🔒 [getSharedDocument] 비밀번호 불일치')
           return { success: false, requiresPassword: true, error: "Invalid password" }
         }
         console.log('✅ [getSharedDocument] 비밀번호 인증 성공')
@@ -156,11 +159,10 @@ export async function getSharedDocument(
 
     console.log('✅ [getSharedDocument] Signed URL 생성 성공')
 
-    // Increment used count
-    const { error: updateError } = await supabase
-      .from('document_shares')
-      .update({ used_count: (share.used_count || 0) + 1 })
-      .eq('id', share.id)
+    // Increment used count atomically
+    const { error: updateError } = await supabase.rpc('increment_share_usage', {
+      share_id: share.id
+    })
 
     if (updateError) {
       console.log('⚠️ [getSharedDocument] Used count 업데이트 실패:', updateError)
@@ -322,13 +324,14 @@ export async function generateFinalDocument(
     }
 
     // Prepare signature data for merging
-    const areaIndexById = new Map((document as any).signature_areas.map((area: any, index: number) => [area.id, index]))
-    const signatureData = (document as any).signatures.map((sig: any) => ({
+    const documentWithRelations = document as DocumentWithRelations
+    const areaIndexById = new Map(documentWithRelations.signature_areas.map((area, index) => [area.id, index]))
+    const signatureData = documentWithRelations.signatures.map((sig) => ({
       areaIndex: areaIndexById.get(sig.signature_area_id) ?? -1,
       signature: sig.signature_data
     }))
 
-    const areas = (document as any).signature_areas.map((area: any) => ({
+    const areas = documentWithRelations.signature_areas.map((area) => ({
       x: area.x,
       y: area.y,
       width: area.width,
@@ -426,14 +429,15 @@ export async function checkDocumentStatus(
       return { success: false, error: "Document not found" }
     }
 
-    const totalAreas = (document as any).signature_areas?.length || 0
-    const signedAreas = (document as any).signatures?.length || 0
-    const requiredAreas = (document as any).signature_areas?.filter((area: any) => area.required).length || 0
+    const documentWithRelations = document as DocumentWithRelations
+    const totalAreas = documentWithRelations.signature_areas?.length || 0
+    const signedAreas = documentWithRelations.signatures?.length || 0
+    const requiredAreas = documentWithRelations.signature_areas?.filter((area) => area.required).length || 0
     const signedRequiredAreas = new Set(
-      (document as any).signatures?.map((sig: any) => sig.signature_area_id) || []
+      documentWithRelations.signatures?.map((sig) => sig.signature_area_id) || []
     )
-    const completedRequiredAreas = (document as any).signature_areas?.filter(
-      (area: any) => area.required && signedRequiredAreas.has(area.id)
+    const completedRequiredAreas = documentWithRelations.signature_areas?.filter(
+      (area) => area.required && signedRequiredAreas.has(area.id)
     ).length || 0
 
     const isComplete = completedRequiredAreas === requiredAreas

@@ -15,7 +15,7 @@ export type Language = "ko" | "en";
 type LanguageContextType = {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: string, params?: Record<string, string>) => string;
+  t: (key: string, params?: Record<string, string | number | boolean>) => string;
 };
 
 // Create the context with default values
@@ -781,12 +781,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   // Translation function with placeholder support
-  const t = (key: string, params?: Record<string, string>): string => {
+  const t = (key: string, params?: Record<string, string | number | boolean>): string => {
     let translation = translations[language][key] || key;
 
     if (params) {
       Object.entries(params).forEach(([paramKey, paramValue]) => {
-        translation = translation.replace(`{${paramKey}}`, paramValue);
+        translation = translation.replace(`{${paramKey}}`, String(paramValue));
       });
     }
 
