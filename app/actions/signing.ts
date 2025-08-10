@@ -15,6 +15,11 @@ export interface DocumentWithAreas extends Document {
   signatures?: Signature[]
 }
 
+export interface SignerInfo {
+  name?: string;
+  email?: string;
+}
+
 export async function getSharedDocument(
   shortUrl: string,
   password?: string
@@ -23,6 +28,7 @@ export async function getSharedDocument(
   data?: DocumentWithAreas & { signedUrl: string };
   error?: string;
   requiresPassword?: boolean;
+  isSubmitted?: boolean;
 }> {
   try {
     console.log('🚀 [getSharedDocument] 시작:', { 
@@ -77,16 +83,33 @@ export async function getSharedDocument(
       return { success: false, error: "Document link usage limit exceeded" }
     }
 
-    // Check if document exists and is accessible (published or completed)
+    // Check if document exists and is accessible
     const document = (share as any).documents
     console.log('📋 [getSharedDocument] Document 상태 체크:', {
       hasDocument: !!document,
       documentId: document?.id,
       documentStatus: document?.status,
-      isAccessible: document?.status === 'published' || document?.status === 'completed'
+      isAccessible: ['published', 'completed', 'submitted'].includes(document?.status)
     })
     
-    if (!document || (document.status !== 'published' && document.status !== 'completed')) {
+    if (!document) {
+      return { success: false, error: "Document not found" }
+    }
+
+    // Check if document is submitted (block access for signers)
+    if (document.status === 'submitted') {
+      console.log('🚫 [getSharedDocument] 제출된 문서 접근 차단:', { 
+        documentId: document.id, 
+        status: document.status 
+      })
+      return { 
+        success: false, 
+        error: "이 문서는 이미 제출되어 접근할 수 없습니다.",
+        isSubmitted: true 
+      }
+    }
+    
+    if (document.status !== 'published' && document.status !== 'completed') {
       console.log('❌ [getSharedDocument] 문서 접근 불가:', { 
         hasDocument: !!document, 
         status: document?.status,
@@ -426,6 +449,79 @@ export async function checkDocumentStatus(
     }
   } catch (error) {
     console.error('Check document status error:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }
+  }
+}
+
+// Submit document (change status to submitted)
+export async function submitDocument(
+  documentId: string,
+  signerInfo: SignerInfo
+): Promise<{
+  success: boolean;
+  data?: { documentId: string };
+  error?: string;
+}> {
+  try {
+    console.log('🚀 [submitDocument] 문서 제출 시작:', { 
+      documentId, 
+      signerInfo: { 
+        name: signerInfo.name, 
+        email: signerInfo.email 
+      } 
+    })
+    
+    const supabase = await createClient()
+
+    // First, get the document to verify it exists and check current status
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('id, status, user_id')
+      .eq('id', documentId)
+      .single()
+
+    if (docError || !document) {
+      console.log('❌ [submitDocument] 문서 찾기 실패:', docError)
+      return { success: false, error: "Document not found" }
+    }
+
+    // Check if document is already submitted
+    if (document.status === 'submitted') {
+      console.log('⚠️ [submitDocument] 이미 제출된 문서:', { documentId, status: document.status })
+      return { success: false, error: "Document is already submitted" }
+    }
+
+    // Update document status to submitted and add submission info
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({
+        status: 'submitted',
+        submitted_at: new Date().toISOString(),
+        submitted_by_name: signerInfo.name || null,
+        submitted_by_email: signerInfo.email || null
+      })
+      .eq('id', documentId)
+
+    if (updateError) {
+      console.error('❌ [submitDocument] 문서 상태 업데이트 실패:', updateError)
+      return { success: false, error: "Failed to submit document" }
+    }
+
+    console.log('✅ [submitDocument] 문서 제출 성공:', { 
+      documentId, 
+      submittedAt: new Date().toISOString(),
+      submittedBy: signerInfo.name || 'Anonymous'
+    })
+
+    return {
+      success: true,
+      data: { documentId }
+    }
+  } catch (error) {
+    console.error('❌ [submitDocument] 제출 중 오류:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 

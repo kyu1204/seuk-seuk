@@ -145,6 +145,7 @@ const translations: Record<Language, Record<string, string>> = {
     "signature.instruction": "위에 마우스나 손가락으로 서명을 그리세요",
     "signature.clear": "지우기",
     "signature.sign": "문서 서명",
+    "signature.submitting": "제출 중...",
 
     // Language Selector
     "language.ko": "한국어",
@@ -231,6 +232,40 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.deleteSuccess": "문서가 성공적으로 삭제되었습니다",
     "dashboard.deleteError": "문서 삭제에 실패했습니다",
     "dashboard.loadError": "문서 목록을 불러오는데 실패했습니다",
+
+    // Signer Onboarding
+    "signer.onboarding.title": "서명 가이드",
+    "signer.onboarding.subtitle": '"{title}" 문서의 서명 과정을 안내해드립니다',
+    "signer.onboarding.step1.title": "문서 검토",
+    "signer.onboarding.step1.description": "먼저 문서 내용을 확인하세요",
+    "signer.onboarding.step1.detail": "서명이 필요한 영역이 빨간색으로 표시됩니다",
+    "signer.onboarding.step2.title": "서명하기",
+    "signer.onboarding.step2.description": "총 {count}개 영역에 서명해주세요",
+    "signer.onboarding.step2.detail": "빨간색 영역을 클릭하면 서명 패드가 열립니다",
+    "signer.onboarding.step3.title": "제출하기",
+    "signer.onboarding.step3.description": "모든 서명 완료 후 문서를 제출합니다",
+    "signer.onboarding.step3.detail": "제출 후에는 문서를 다시 수정할 수 없습니다",
+    "signer.onboarding.skipGuide": "가이드 건너뛰기",
+    "signer.onboarding.startSigning": "서명 시작",
+
+    // Submit Document
+    "submit.confirmTitle": "문서 제출 확인",
+    "submit.confirmDescription": '"{title}" 문서를 제출하시겠습니까?',
+    "submit.signatureStatus": "서명 상태",
+    "submit.completed": "완료",
+    "submit.incompleteWarning": "아직 서명이 완료되지 않았습니다",
+    "submit.incompleteWarningDetail": "일부 영역에 서명하지 않은 상태로 제출하시겠습니까?",
+    "submit.finalWarning": "제출 후 수정 불가",
+    "submit.finalWarningDetail": "문서를 제출하면 더 이상 수정할 수 없습니다. 신중히 결정해 주세요.",
+    "submit.submitting": "제출 중...",
+    "submit.confirm": "제출하기",
+    "submit.success": "문서가 성공적으로 제출되었습니다",
+    "submit.error": "문서 제출에 실패했습니다",
+    "submit.document": "문서 제출",
+    "submit.documentComplete": "모든 서명이 완료되어 문서를 제출할 수 있습니다",
+    "submit.submitted": "제출 완료",
+    "submit.submittedDescription": "문서가 성공적으로 제출되었습니다. 더 이상 수정할 수 없습니다.",
+    "submit.backToHome": "홈으로 돌아가기",
 
     // Homepage
     "home.notification":
@@ -471,12 +506,47 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.documentAlt": "Document to sign",
     "sign.signedDocumentAlt": "Signed document",
 
+    // Signer Onboarding (English)
+    "signer.onboarding.title": "Signing Guide",
+    "signer.onboarding.subtitle": 'We will guide you through the signing process for "{title}" document',
+    "signer.onboarding.step1.title": "Review Document",
+    "signer.onboarding.step1.description": "First, review the document content",
+    "signer.onboarding.step1.detail": "Areas requiring signatures are highlighted in red",
+    "signer.onboarding.step2.title": "Add Signatures",
+    "signer.onboarding.step2.description": "Please sign in {count} areas total",
+    "signer.onboarding.step2.detail": "Click on red areas to open the signature pad",
+    "signer.onboarding.step3.title": "Submit Document",
+    "signer.onboarding.step3.description": "Submit the document after completing all signatures",
+    "signer.onboarding.step3.detail": "The document cannot be modified after submission",
+    "signer.onboarding.skipGuide": "Skip Guide",
+    "signer.onboarding.startSigning": "Start Signing",
+
+    // Submit Document (English)
+    "submit.confirmTitle": "Confirm Document Submission",
+    "submit.confirmDescription": 'Are you sure you want to submit "{title}" document?',
+    "submit.signatureStatus": "Signature Status",
+    "submit.completed": "Completed",
+    "submit.incompleteWarning": "Signatures are not complete yet",
+    "submit.incompleteWarningDetail": "Do you want to submit with some areas unsigned?",
+    "submit.finalWarning": "Cannot modify after submission",
+    "submit.finalWarningDetail": "Once submitted, the document cannot be modified. Please decide carefully.",
+    "submit.submitting": "Submitting...",
+    "submit.confirm": "Submit",
+    "submit.success": "Document submitted successfully",
+    "submit.error": "Failed to submit document",
+    "submit.document": "Submit Document",
+    "submit.documentComplete": "All signatures completed. You can now submit the document",
+    "submit.submitted": "Submitted",
+    "submit.submittedDescription": "Document has been successfully submitted. It can no longer be modified.",
+    "submit.backToHome": "Back to Home",
+
     // Signature Modal
     "signature.title": "Add Your Signature",
     "signature.instruction":
       "Draw your signature above using your mouse or finger",
     "signature.clear": "Clear",
     "signature.sign": "Sign Document",
+    "signature.submitting": "Submitting...",
 
     // Language Selector
     "language.ko": "한국어",

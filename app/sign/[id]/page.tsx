@@ -6,23 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import SignatureModal from "@/components/signature-modal"
+import SignerOnboarding from "@/components/signer-onboarding"
+import SubmitConfirmationModal from "@/components/submit-confirmation-modal"
 import { Card, CardContent } from "@/components/ui/card"
-import { Download, RefreshCw, Lock, Loader2 } from "lucide-react"
+import { Lock, Loader2, HelpCircle, Send } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSelector from "@/components/language-selector"
 import { toast } from "sonner"
 import { 
   getSharedDocument, 
   submitSignature, 
-  generateFinalDocument, 
   checkDocumentStatus,
-  type DocumentWithAreas 
+  submitDocument,
+  type DocumentWithAreas,
+  type SignerInfo 
 } from "@/app/actions/signing"
-
-interface SignerInfo {
-  name?: string
-  email?: string
-}
 
 export default function SignPage({ params }: { params: { id: string } }) {
   const { t } = useLanguage()
@@ -45,10 +43,14 @@ export default function SignPage({ params }: { params: { id: string } }) {
   const [signerInfo, setSignerInfo] = useState<SignerInfo>({})
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   
-  // Document generation state
-  const [isGenerating, setIsGenerating] = useState<boolean>(false)
-  const [signedDocumentUrl, setSignedDocumentUrl] = useState<string | null>(null)
-  const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false)
+  
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false)
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean>(false)
+  
+  // Submit state
+  const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false)
+  const [isSubmittingDocument, setIsSubmittingDocument] = useState<boolean>(false)
   
   // Document status
   const [documentStatus, setDocumentStatus] = useState<{
@@ -64,6 +66,18 @@ export default function SignPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     loadDocument()
   }, [params.id])
+
+  // Check if user has seen onboarding for this session
+  useEffect(() => {
+    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`
+    const hasSeen = sessionStorage.getItem(hasSeenOnboardingKey) === 'true'
+    setHasSeenOnboarding(hasSeen)
+    
+    // Show onboarding if document is loaded and user hasn't seen it
+    if (documentData && !hasSeen && !requiresPassword && !error) {
+      setShowOnboarding(true)
+    }
+  }, [params.id, documentData, requiresPassword, error])
 
   // Check document status periodically
   useEffect(() => {
@@ -107,7 +121,8 @@ export default function SignPage({ params }: { params: { id: string } }) {
         success: result.success,
         requiresPassword: result.requiresPassword,
         hasData: !!result.data,
-        error: result.error
+        error: result.error,
+        isSubmitted: result.isSubmitted
       })
       
       if (!result.success) {
@@ -118,6 +133,13 @@ export default function SignPage({ params }: { params: { id: string } }) {
             console.log('❌ [loadDocument] 비밀번호 인증 실패')
             toast.error(result.error || t("sign.invalidPassword"))
           }
+          return
+        }
+
+        // Handle submitted document
+        if (result.isSubmitted) {
+          setError(result.error || t("submit.submitted"))
+          setIsLoading(false)
           return
         }
         
@@ -181,7 +203,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
     setIsModalOpen(true)
   }
 
-  const handleSignatureComplete = async (signatureData: string) => {
+  const handleSignatureComplete = async (signatureData: string, updatedSignerInfo: SignerInfo) => {
     if (!documentData || !selectedArea) return
 
     setIsSubmitting(true)
@@ -190,14 +212,17 @@ export default function SignPage({ params }: { params: { id: string } }) {
       console.log('🚀 [SignPage] handleSignatureComplete 시작:', {
         documentId: documentData.id,
         selectedArea,
-        signerInfo
+        signerInfo: updatedSignerInfo
       })
+      
+      // Update signer info if it was changed in the modal
+      setSignerInfo(updatedSignerInfo)
       
       const result = await submitSignature(
         documentData.id,
         selectedArea,
         signatureData,
-        signerInfo
+        updatedSignerInfo
       )
 
       if (result.success) {
@@ -223,44 +248,71 @@ export default function SignPage({ params }: { params: { id: string } }) {
     }
   }
 
-  const handleGenerateDocument = async () => {
-    if (!documentData || !documentStatus?.isComplete) return
 
-    setIsGenerating(true)
+  // Onboarding handlers
+  const handleOnboardingStart = () => {
+    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`
+    sessionStorage.setItem(hasSeenOnboardingKey, 'true')
+    setHasSeenOnboarding(true)
+    setShowOnboarding(false)
+  }
+
+  const handleOnboardingClose = () => {
+    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`
+    sessionStorage.setItem(hasSeenOnboardingKey, 'true')
+    setHasSeenOnboarding(true)
+    setShowOnboarding(false)
+  }
+
+  const handleShowOnboarding = () => {
+    setShowOnboarding(true)
+  }
+
+  // Submit handlers
+  const handleShowSubmitModal = () => {
+    setShowSubmitModal(true)
+  }
+
+  const handleCloseSubmitModal = () => {
+    setShowSubmitModal(false)
+  }
+
+  const handleSubmitDocument = async () => {
+    if (!documentData) return
+
+    setIsSubmittingDocument(true)
     
     try {
-      const result = await generateFinalDocument(documentData.id)
+      console.log('🚀 [handleSubmitDocument] 문서 제출 시작:', {
+        documentId: documentData.id,
+        signerInfo
+      })
       
-      if (result.success && result.data) {
-        setSignedDocumentUrl(result.data.downloadUrl)
-        setShowDownloadModal(true)
-        toast.success(t("sign.documentGenerated"))
+      const result = await submitDocument(documentData.id, signerInfo)
+
+      if (result.success) {
+        console.log('✅ [handleSubmitDocument] 문서 제출 성공')
+        toast.success(t("submit.success"))
+        setShowSubmitModal(false)
+        
+        // Redirect to a success page or show success state
+        setTimeout(() => {
+          router.push("/")
+        }, 2000)
       } else {
-        toast.error(result.error || t("sign.generationError"))
+        console.error('❌ [handleSubmitDocument] 문서 제출 실패:', result.error)
+        toast.error(result.error || t("submit.error"))
       }
     } catch (err) {
-      console.error('Generate document error:', err)
-      toast.error(t("sign.generationError"))
+      console.error('❌ [handleSubmitDocument] 제출 중 예외:', err)
+      toast.error(t("submit.error"))
     } finally {
-      setIsGenerating(false)
+      setIsSubmittingDocument(false)
     }
   }
 
-  const handleDownload = () => {
-    if (!signedDocumentUrl || !documentData) return
-
-    try {
-      const link = document.createElement("a")
-      link.href = signedDocumentUrl
-      link.download = `signed_${documentData.title}.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      toast.success(t("sign.downloadStarted"))
-    } catch (err) {
-      console.error('Download error:', err)
-      toast.error(t("sign.downloadError"))
-    }
+  const handleSignerInfoChange = (updatedInfo: SignerInfo) => {
+    setSignerInfo(updatedInfo)
   }
 
   if (isLoading) {
@@ -366,39 +418,36 @@ export default function SignPage({ params }: { params: { id: string } }) {
             </p>
           )}
         </div>
-        <LanguageSelector />
+        <div className="flex items-center gap-2">
+          {hasSeenOnboarding && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShowOnboarding}
+              className="gap-2 min-h-[44px] px-4"
+              style={{ touchAction: "manipulation" }}
+            >
+              <HelpCircle className="h-4 w-4" />
+              {t("signer.onboarding.title") || "가이드"}
+            </Button>
+          )}
+          <LanguageSelector />
+        </div>
       </div>
 
-      {/* Signer Info Form */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="signer-name">{t("sign.signerName")}</Label>
-              <Input
-                id="signer-name"
-                value={signerInfo.name || ""}
-                onChange={(e) => setSignerInfo(prev => ({ ...prev, name: e.target.value }))}
-                placeholder={t("sign.signerNamePlaceholder")}
-              />
-            </div>
-            <div>
-              <Label htmlFor="signer-email">{t("sign.signerEmail")}</Label>
-              <Input
-                id="signer-email"
-                type="email"
-                value={signerInfo.email || ""}
-                onChange={(e) => setSignerInfo(prev => ({ ...prev, email: e.target.value }))}
-                placeholder={t("sign.signerEmailPlaceholder")}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Document with signature areas */}
       <div className="relative border rounded-lg overflow-hidden mb-6">
-        <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
+        <div 
+          ref={documentContainerRef} 
+          className="relative overflow-auto" 
+          style={{ 
+            maxHeight: "70vh",
+            minHeight: "300px",
+            WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
+            touchAction: "pan-x pan-y" // Allow panning but prevent zooming
+          }}
+        >
           <img
             src={documentUrl}
             alt={t("sign.documentAlt")}
@@ -409,33 +458,46 @@ export default function SignPage({ params }: { params: { id: string } }) {
 
           {documentData.signature_areas.map((area) => {
             const isSigned = documentData.signatures?.some(sig => sig.signature_area_id === area.id)
+            
+            // Ensure minimum touch target size for mobile accessibility
+            const minTouchTarget = 44
+            const adjustedWidth = Math.max(area.width, minTouchTarget)
+            const adjustedHeight = Math.max(area.height, minTouchTarget)
+            
+            // Center the touch target if it's larger than the original area
+            const xOffset = area.width < minTouchTarget ? (area.width - adjustedWidth) / 2 : 0
+            const yOffset = area.height < minTouchTarget ? (area.height - adjustedHeight) / 2 : 0
 
             return (
               <div
                 key={area.id}
-                className={`absolute cursor-pointer transition-all ${
+                className={`absolute cursor-pointer transition-all active:scale-95 ${
                   isSigned
-                    ? "border-2 border-green-500 bg-green-500/10"
-                    : "border-2 border-red-500 bg-red-500/10 animate-pulse hover:bg-red-500/20"
+                    ? "border-2 border-green-500 bg-green-500/10 hover:bg-green-500/20"
+                    : "border-2 border-red-500 bg-red-500/10 animate-pulse hover:bg-red-500/20 active:bg-red-500/30"
                 }`}
                 style={{
-                  left: `${area.x}px`,
-                  top: `${area.y}px`,
-                  width: `${area.width}px`,
-                  height: `${area.height}px`,
+                  left: `${area.x + xOffset}px`,
+                  top: `${area.y + yOffset}px`,
+                  width: `${adjustedWidth}px`,
+                  height: `${adjustedHeight}px`,
+                  minWidth: `${minTouchTarget}px`,
+                  minHeight: `${minTouchTarget}px`,
+                  touchAction: "manipulation"
                 }}
                 onClick={() => handleAreaClick(area.id)}
+                onTouchStart={() => {}} // Ensure touch events are properly handled
                 title={isSigned ? t("sign.signedArea") : t("sign.clickToSign")}
               >
                 {isSigned ? (
                   <div className="w-full h-full flex items-center justify-center">
-                    <div className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
+                    <div className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium shadow-sm">
                       ✓ {t("sign.signed")}
                     </div>
                   </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-xs font-medium text-red-600 bg-white/80 px-2 py-1 rounded">
+                    <span className="text-xs font-medium text-red-600 bg-white/90 px-2 py-1 rounded shadow-sm border border-red-200">
                       {t("sign.clickToSign")}
                     </span>
                   </div>
@@ -449,32 +511,35 @@ export default function SignPage({ params }: { params: { id: string } }) {
       {/* Action buttons */}
       <div className="flex justify-end gap-2">
         <Button 
-          onClick={handleGenerateDocument} 
-          disabled={!documentStatus?.isComplete || isGenerating}
-          variant={documentStatus?.isComplete ? "default" : "secondary"}
+          onClick={handleShowSubmitModal} 
+          disabled={isSubmittingDocument}
+          variant="default"
+          className="gap-2 min-h-[44px] px-6 text-base font-medium"
+          style={{ touchAction: "manipulation" }}
         >
-          {isGenerating ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              {t("sign.generating")}
-            </>
-          ) : (
-            <>
-              <Download className="mr-2 h-4 w-4" />
-              {t("sign.downloadDocument")}
-            </>
-          )}
+          <Send className="h-5 w-5" />
+          {t("submit.document") || "문서 제출"}
         </Button>
       </div>
 
       {/* Status indicator */}
-      {documentStatus && !documentStatus.isComplete && (
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-blue-800 text-sm">
-            {t("sign.completionStatus", {
-              signed: documentStatus.signedAreas.toString(),
-              total: documentStatus.totalAreas.toString()
-            })}
+      {documentStatus && (
+        <div className={`mt-4 p-4 border rounded-md ${
+          documentStatus.isComplete 
+            ? "bg-green-50 border-green-200" 
+            : "bg-blue-50 border-blue-200"
+        }`}>
+          <p className={`text-sm ${
+            documentStatus.isComplete ? "text-green-800" : "text-blue-800"
+          }`}>
+            {documentStatus.isComplete ? (
+              t("submit.documentComplete") || "모든 서명이 완료되어 문서를 제출할 수 있습니다"
+            ) : (
+              t("sign.completionStatus", {
+                signed: documentStatus.signedAreas.toString(),
+                total: documentStatus.totalAreas.toString()
+              })
+            )}
           </p>
         </div>
       )}
@@ -488,37 +553,32 @@ export default function SignPage({ params }: { params: { id: string } }) {
             setSelectedArea(null)
           }}
           onComplete={handleSignatureComplete}
+          signerInfo={signerInfo}
+          onSignerInfoChange={handleSignerInfoChange}
           isSubmitting={isSubmitting}
         />
       )}
 
-      {/* Download Modal */}
-      {showDownloadModal && signedDocumentUrl && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
-            <h2 className="text-2xl font-bold mb-4">{t("sign.signedDocument")}</h2>
 
-            <div className="border rounded-lg overflow-hidden mb-4">
-              <img
-                src={signedDocumentUrl}
-                alt={t("sign.signedDocumentAlt")}
-                className="max-w-full h-auto"
-                style={{ maxWidth: "100%" }}
-              />
-            </div>
+      {/* Signer Onboarding Modal */}
+      <SignerOnboarding
+        isOpen={showOnboarding}
+        onClose={handleOnboardingClose}
+        onStart={handleOnboardingStart}
+        documentTitle={documentData.title}
+        totalSignatureAreas={documentData.signature_areas.length}
+      />
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowDownloadModal(false)}>
-                {t("sign.close")}
-              </Button>
-              <Button onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
-                {t("sign.download")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Submit Confirmation Modal */}
+      <SubmitConfirmationModal
+        isOpen={showSubmitModal}
+        onClose={handleCloseSubmitModal}
+        onConfirm={handleSubmitDocument}
+        isSubmitting={isSubmittingDocument}
+        documentTitle={documentData.title}
+        signatureCount={documentStatus?.signedAreas || 0}
+        totalAreas={documentStatus?.totalAreas || 0}
+      />
     </div>
   )
 }
