@@ -77,19 +77,6 @@ export default function RegisterPage() {
 
       {/* Right side - Registration form */}
       <div className="w-full md:w-1/2 flex flex-col">
-        <div className="flex justify-end p-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              {t("register.backToHome")}
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="ml-2">
-              {t("register.login")}
-            </Button>
-          </Link>
-        </div>
-
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center md:text-left">
