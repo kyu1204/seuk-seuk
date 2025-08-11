@@ -141,8 +141,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
         switch (action) {
           case "view":
             if (document) {
-              // Navigate to sign page
-              router.push(`/s/${document.id}`); // Adjust path as needed
+              // Navigate to document detail page
+              router.push(`/document/${document.id}`);
             }
             break;
 

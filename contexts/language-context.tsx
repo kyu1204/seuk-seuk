@@ -234,6 +234,20 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.loadError": "문서 목록을 불러오는데 실패했습니다",
     "dashboard.actionError": "문서 {action} 실패했습니다",
 
+    // Document Detail
+    "dashboard.backToDashboard": "대시보드로 돌아가기",
+    "document.details": "문서 정보",
+    "document.created": "생성일",
+    "document.lastModified": "최종 수정일",
+    "document.status": "상태",
+    "document.fileName": "파일명",
+    "document.signatureProgress": "서명 진행 상황",
+    "document.signatureProgressPlaceholder": "서명 진행 상황이 여기에 표시됩니다.",
+    "document.preview": "문서 미리보기",
+    "document.previewPlaceholder": "문서 미리보기가 여기에 표시됩니다.",
+    "document.download": "다운로드",
+    "dashboard.status.submitted": "제출됨",
+
     // Signer Onboarding
     "signer.onboarding.title": "서명 가이드",
     "signer.onboarding.subtitle": '"{title}" 문서의 서명 과정을 안내해드립니다',
@@ -635,6 +649,20 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.deleteError": "Failed to delete document",
     "dashboard.loadError": "Failed to load documents",
     "dashboard.actionError": "Failed to {action} document",
+
+    // Document Detail
+    "dashboard.backToDashboard": "Back to Dashboard",
+    "document.details": "Document Details",
+    "document.created": "Created",
+    "document.lastModified": "Last Modified",
+    "document.status": "Status",
+    "document.fileName": "File Name",
+    "document.signatureProgress": "Signature Progress",
+    "document.signatureProgressPlaceholder": "Signature progress will be displayed here.",
+    "document.preview": "Document Preview",
+    "document.previewPlaceholder": "Document preview will be displayed here.",
+    "document.download": "Download",
+    "dashboard.status.submitted": "Submitted",
 
     // Homepage
     "home.notification": "🎉 New features just released! Check them out now.",
