@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,14 +20,25 @@ import {
 import { format } from 'date-fns';
 import { ko, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/language-context';
-import { deleteDocument } from '@/app/actions/document';
+import { deleteDocument, getDocumentSignedUrl, createDocumentShare } from '@/app/actions/document';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { User } from '@supabase/supabase-js';
 import type { LucideIcon } from 'lucide-react';
 
-// Simplified types based on your existing structure
+// Document types with signature areas
+interface SignatureArea {
+  id: string;
+  document_id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  order_index: number;
+  required: boolean;
+}
+
 interface DocumentDetailViewProps {
   document: {
     id: string;
@@ -38,6 +49,7 @@ interface DocumentDetailViewProps {
     file_path: string;
     file_name: string;
     user_id: string;
+    signature_areas?: SignatureArea[];
   };
   user: User;
 }
@@ -77,19 +89,66 @@ export function DocumentDetailView({ document, user }: DocumentDetailViewProps) 
   const { t, language } = useLanguage();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [isGeneratingShare, setIsGeneratingShare] = useState(false);
 
   const locale = language === 'ko' ? ko : enUS;
 
   const config = statusConfig[document.status];
   const StatusIcon = config.icon;
 
+  // Check if document has signature areas
+  const hasSignatureAreas = document.signature_areas && document.signature_areas.length > 0;
+  const canShare = document.status === 'draft' && hasSignatureAreas;
+
+  // Load document image
+  useEffect(() => {
+    async function loadDocumentImage() {
+      try {
+        const result = await getDocumentSignedUrl(document.id);
+        if (result.success && result.data) {
+          setDocumentUrl(result.data);
+        }
+      } catch (error) {
+        console.error('Error loading document image:', error);
+      }
+    }
+    
+    loadDocumentImage();
+  }, [document.id]);
+
   const handleEdit = () => {
     router.push(`/dashboard?mode=edit&documentId=${document.id}`);
   };
 
-  const handleShare = () => {
-    // TODO: Implement share functionality
-    console.log('Share document:', document.id);
+  const handleShare = async () => {
+    if (!canShare) {
+      toast.error(t('document.shareNotAvailable'));
+      return;
+    }
+
+    try {
+      setIsGeneratingShare(true);
+      const result = await createDocumentShare(document.id);
+      
+      if (result.success && result.data) {
+        const shareUrl = `${window.location.origin}/sign/${result.data}`;
+        
+        // Copy to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success(t('document.shareUrlCopied'));
+        
+        // Refresh to show updated status
+        router.refresh();
+      } else {
+        toast.error(result.error || t('document.shareError'));
+      }
+    } catch (error) {
+      console.error('Share error:', error);
+      toast.error(t('document.shareError'));
+    } finally {
+      setIsGeneratingShare(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -221,11 +280,39 @@ export function DocumentDetailView({ document, user }: DocumentDetailViewProps) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              {t('document.previewPlaceholder')}
-            </p>
-          </div>
+          {documentUrl ? (
+            <div className="relative max-w-full mx-auto">
+              <img
+                src={documentUrl}
+                alt={document.title}
+                className="w-full h-auto max-h-96 object-contain border rounded-lg"
+                onError={() => setDocumentUrl(null)}
+              />
+              {/* Render signature areas */}
+              {hasSignatureAreas && document.signature_areas?.map((area, index) => (
+                <div
+                  key={area.id}
+                  className="absolute border-2 border-red-500 border-dashed bg-red-100/20"
+                  style={{
+                    left: `${area.x}%`,
+                    top: `${area.y}%`,
+                    width: `${area.width}%`,
+                    height: `${area.height}%`,
+                  }}
+                >
+                  <div className="absolute -top-6 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                    {t('document.signatureArea')} {index + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                {t('document.previewPlaceholder')}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -237,9 +324,14 @@ export function DocumentDetailView({ document, user }: DocumentDetailViewProps) 
             {t('dashboard.actions.edit')}
           </Button>
           
-          <Button variant="outline" onClick={handleShare} className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleShare} 
+            className="gap-2"
+            disabled={!canShare || isGeneratingShare}
+          >
             <Share2 className="w-4 h-4" />
-            {t('dashboard.actions.share')}
+            {isGeneratingShare ? t('document.generatingShareUrl') : t('dashboard.actions.share')}
           </Button>
           
           <Button variant="outline" onClick={handleDownload} className="gap-2">

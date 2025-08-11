@@ -246,6 +246,11 @@ const translations: Record<Language, Record<string, string>> = {
     "document.preview": "문서 미리보기",
     "document.previewPlaceholder": "문서 미리보기가 여기에 표시됩니다.",
     "document.download": "다운로드",
+    "document.shareNotAvailable": "서명영역이 설정되지 않은 초안은 공유할 수 없습니다",
+    "document.shareUrlCopied": "공유 링크가 클립보드에 복사되었습니다",
+    "document.shareError": "공유 링크 생성에 실패했습니다",
+    "document.generatingShareUrl": "링크 생성 중...",
+    "document.signatureArea": "서명 영역",
     "dashboard.status.submitted": "제출됨",
 
     // Signer Onboarding
@@ -662,6 +667,11 @@ const translations: Record<Language, Record<string, string>> = {
     "document.preview": "Document Preview",
     "document.previewPlaceholder": "Document preview will be displayed here.",
     "document.download": "Download",
+    "document.shareNotAvailable": "Drafts without signature areas cannot be shared",
+    "document.shareUrlCopied": "Share link copied to clipboard",
+    "document.shareError": "Failed to generate share link",
+    "document.generatingShareUrl": "Generating link...",
+    "document.signatureArea": "Signature Area",
     "dashboard.status.submitted": "Submitted",
 
     // Homepage

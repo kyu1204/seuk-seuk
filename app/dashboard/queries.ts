@@ -60,7 +60,10 @@ export async function getDocumentById(documentId: string) {
   
   const { data, error } = await supabase
     .from('documents')
-    .select('*')
+    .select(`
+      *,
+      signature_areas (*)
+    `)
     .eq('id', documentId)
     .single()
   
