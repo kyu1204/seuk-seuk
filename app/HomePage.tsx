@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowRight, Check, FileSignature, Shield, Zap, ChevronUp } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 
 export default function HomePage() {
   const { t } = useLanguage()
@@ -265,15 +266,6 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* Scroll to top button */}
-      {scrolled && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 p-3 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all z-50"
-        >
-          <ChevronUp className="h-5 w-5" />
-        </button>
-      )}
     </div>
   )
 }

@@ -1,6 +1,3 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { FileSignature, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,58 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useLanguage } from "@/contexts/language-context"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { LanguageSelector } from "@/components/language-selector"
-import { getCurrentUserClient } from "@/app/auth/queries"
-import { signOut as serverSignOut } from "@/app/auth/actions"
+import LanguageSelector from "@/components/language-selector"
 import { cn } from "@/lib/utils"
+import { ScrollEffectWrapper } from "./navigation-bar-client"
+import { SignOutButton } from "./navigation-bar-client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 interface NavigationBarProps {
   className?: string
+  user?: SupabaseUser | null
 }
 
-export function NavigationBar({ className }: NavigationBarProps) {
-  const { t } = useLanguage()
-  const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [scrolled, setScrolled] = useState(false)
-
-  // Get user info on component mount
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const currentUser = await getCurrentUserClient()
-        setUser(currentUser)
-      } catch (error) {
-        console.error("Error fetching user:", error)
-        setUser(null)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    getUser()
-  }, [])
-
-  // Handle scroll effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
-  const handleSignOut = async () => {
-    try {
-      const formData = new FormData()
-      await serverSignOut(formData)
-    } catch (error) {
-      console.error("Error signing out:", error)
-    }
-  }
+export function NavigationBar({ className, user }: NavigationBarProps) {
 
   const getUserDisplayName = () => {
     if (!user) return "User"
@@ -86,47 +44,14 @@ export function NavigationBar({ className }: NavigationBarProps) {
       .slice(0, 2)
   }
 
-  // Show loading skeleton during initial load
-  if (isLoading) {
-    return (
-      <header
-        className={cn(
-          "sticky top-0 z-50 w-full transition-all duration-200",
-          "bg-background/80 backdrop-blur-md border-b",
-          className
-        )}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <FileSignature className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl">{t("app.title")}</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <LanguageSelector />
-              <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />
-            </div>
-          </div>
-        </div>
-      </header>
-    )
-  }
-
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-200",
-        scrolled ? "bg-background/80 backdrop-blur-md border-b" : "bg-transparent",
-        className
-      )}
-    >
+    <ScrollEffectWrapper className={className}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <FileSignature className="h-8 w-8 text-primary" />
-            <span className="font-bold text-xl">{t("app.title")}</span>
+            <span className="font-bold text-xl">슥슥</span>
           </Link>
 
           {/* Right side navigation */}
@@ -166,31 +91,31 @@ export function NavigationBar({ className }: NavigationBarProps) {
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard">
                       <User className="mr-2 h-4 w-4" />
-                      <span>{t("dashboard.profile")}</span>
+                      <span>프로필</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>{t("dashboard.settings")}</span>
+                    <span>설정</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
+                  <SignOutButton>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>{t("dashboard.signOut")}</span>
-                  </DropdownMenuItem>
+                    <span>로그아웃</span>
+                  </SignOutButton>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               /* Not logged in - Show login button */
               <Link href="/login">
                 <Button className="bg-primary hover:bg-primary/90">
-                  {t("login.logIn")}
+                  로그인
                 </Button>
               </Link>
             )}
           </div>
         </div>
       </div>
-    </header>
+    </ScrollEffectWrapper>
   )
 }
