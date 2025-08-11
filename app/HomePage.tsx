@@ -1,26 +1,13 @@
 "use client"
 
 import { useLanguage } from "@/contexts/language-context"
-import LanguageSelector from "@/components/language-selector"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowRight, Check, FileSignature, Shield, Zap, ChevronUp } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
 
 export default function HomePage() {
   const { t } = useLanguage()
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
 
   const features = [
     {
@@ -97,30 +84,6 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Header */}
-      <header
-        className={cn(
-          "sticky top-0 z-50 w-full transition-all duration-200",
-          scrolled ? "bg-background/80 backdrop-blur-md border-b" : "bg-transparent",
-        )}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <FileSignature className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl">{t("app.title")}</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <LanguageSelector />
-              <Link href="/login">
-                <Button className="bg-primary hover:bg-primary/90">{t("login.logIn")}</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 md:py-32">
         <div className="absolute inset-0 bg-dot-pattern opacity-30"></div>

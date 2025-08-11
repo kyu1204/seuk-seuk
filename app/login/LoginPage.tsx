@@ -77,19 +77,6 @@ export default function LoginPage() {
 
       {/* Right side - Login form */}
       <div className="w-full md:w-1/2 flex flex-col">
-        <div className="flex justify-end p-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              {t("login.backToHome")}
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button variant="ghost" size="sm" className="ml-2">
-              {t("login.register")}
-            </Button>
-          </Link>
-        </div>
-
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center md:text-left">
