@@ -406,7 +406,7 @@ export default function DocumentUpload() {
                 initialScrollPosition={scrollPosition}
               />
             ) : (
-              <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
+              <div ref={documentContainerRef} className="relative">
                 <img
                   src={document || "/placeholder.svg"}
                   alt={t("upload.documentAlt")}

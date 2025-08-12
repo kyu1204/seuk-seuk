@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -91,6 +91,9 @@ export function DocumentDetailView({ document, user }: DocumentDetailViewProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const imageRef = useRef<HTMLImageElement>(null);
 
   const locale = language === 'ko' ? ko : enUS;
 
@@ -170,6 +173,17 @@ export function DocumentDetailView({ document, user }: DocumentDetailViewProps) 
   const handleDownload = () => {
     // TODO: Implement download functionality
     console.log('Download document:', document.id);
+  };
+
+  const handleImageLoad = () => {
+    if (imageRef.current) {
+      const rect = imageRef.current.getBoundingClientRect();
+      setImageDimensions({
+        width: imageRef.current.clientWidth,
+        height: imageRef.current.clientHeight
+      });
+      setImageLoaded(true);
+    }
   };
 
   return (
@@ -281,30 +295,47 @@ export function DocumentDetailView({ document, user }: DocumentDetailViewProps) 
         </CardHeader>
         <CardContent>
           {documentUrl ? (
-            <div className="relative max-w-full mx-auto">
+            <div className="relative inline-block max-w-full mx-auto">
               <img
+                ref={imageRef}
                 src={documentUrl}
                 alt={document.title}
-                className="w-full h-auto max-h-96 object-contain border rounded-lg"
+                className="w-full h-auto object-contain border rounded-lg"
                 onError={() => setDocumentUrl(null)}
+                onLoad={handleImageLoad}
               />
-              {/* Render signature areas */}
-              {hasSignatureAreas && document.signature_areas?.map((area, index) => (
-                <div
-                  key={area.id}
-                  className="absolute border-2 border-red-500 border-dashed bg-red-100/20"
-                  style={{
-                    left: `${area.x}%`,
-                    top: `${area.y}%`,
-                    width: `${area.width}%`,
-                    height: `${area.height}%`,
-                  }}
-                >
-                  <div className="absolute -top-6 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                    {t('document.signatureArea')} {index + 1}
+              {/* Render signature areas only after image loads */}
+              {imageLoaded && hasSignatureAreas && imageRef.current && document.signature_areas?.map((area, index) => {
+                // Calculate proper positioning based on actual image dimensions
+                const img = imageRef.current!;
+                const imgNaturalWidth = img.naturalWidth;
+                const imgNaturalHeight = img.naturalHeight;
+                const imgDisplayWidth = img.clientWidth;
+                const imgDisplayHeight = img.clientHeight;
+                
+                // Convert pixel values to percentages based on displayed image size
+                const leftPercent = (area.x / imgNaturalWidth) * 100;
+                const topPercent = (area.y / imgNaturalHeight) * 100;
+                const widthPercent = (area.width / imgNaturalWidth) * 100;
+                const heightPercent = (area.height / imgNaturalHeight) * 100;
+                
+                return (
+                  <div
+                    key={area.id}
+                    className="absolute border-2 border-red-500 border-dashed bg-red-100/20 pointer-events-none"
+                    style={{
+                      left: `${leftPercent}%`,
+                      top: `${topPercent}%`,
+                      width: `${widthPercent}%`,
+                      height: `${heightPercent}%`,
+                    }}
+                  >
+                    <div className="absolute -top-6 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                      {t('document.signatureArea')} {index + 1}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">

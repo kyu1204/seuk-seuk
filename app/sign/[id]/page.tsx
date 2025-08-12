@@ -440,10 +440,8 @@ export default function SignPage({ params }: { params: { id: string } }) {
       <div className="relative border rounded-lg overflow-hidden mb-6">
         <div 
           ref={documentContainerRef} 
-          className="relative overflow-auto" 
-          style={{ 
-            maxHeight: "70vh",
-            minHeight: "300px",
+          className="relative" 
+          style={{
             WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
             touchAction: "pan-x pan-y" // Allow panning but prevent zooming
           }}
