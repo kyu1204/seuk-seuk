@@ -21,6 +21,7 @@ import {
   type DocumentWithAreas,
   type SignerInfo 
 } from "@/app/actions/signing"
+import { calculateImageLayout } from "@/lib/coordinate-utils"
 
 export default function SignPage({ params }: { params: { id: string } }) {
   const { t } = useLanguage()
@@ -61,6 +62,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
   } | null>(null)
   
   const documentContainerRef = useRef<HTMLDivElement>(null)
+  const documentImageRef = useRef<HTMLImageElement>(null)
 
   // Load document on mount
   useEffect(() => {
@@ -449,6 +451,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
           }}
         >
           <img
+            ref={documentImageRef}
             src={documentUrl}
             alt={t("sign.documentAlt")}
             className="w-full h-auto object-contain"
@@ -458,6 +461,22 @@ export default function SignPage({ params }: { params: { id: string } }) {
 
           {documentData.signature_areas.map((area) => {
             const isSigned = documentData.signatures?.some(sig => sig.signature_area_id === area.id)
+            
+            // object-fit: contain을 고려한 정확한 위치 계산
+            let adjustedX = area.x
+            let adjustedY = area.y
+            
+            if (documentImageRef.current && documentImageRef.current.complete) {
+              const containerRect = documentImageRef.current.getBoundingClientRect()
+              const { imageOffsetX, imageOffsetY } = calculateImageLayout(
+                containerRect.width,
+                containerRect.height,
+                documentImageRef.current.naturalWidth,
+                documentImageRef.current.naturalHeight
+              )
+              adjustedX = area.x + imageOffsetX
+              adjustedY = area.y + imageOffsetY
+            }
             
             // Ensure minimum touch target size for mobile accessibility
             const minTouchTarget = 44
@@ -477,8 +496,8 @@ export default function SignPage({ params }: { params: { id: string } }) {
                     : "border-2 border-red-500 bg-red-500/10 animate-pulse hover:bg-red-500/20 active:bg-red-500/30"
                 }`}
                 style={{
-                  left: `${area.x + xOffset}px`,
-                  top: `${area.y + yOffset}px`,
+                  left: `${adjustedX + xOffset}px`,
+                  top: `${adjustedY + yOffset}px`,
                   width: `${adjustedWidth}px`,
                   height: `${adjustedHeight}px`,
                   minWidth: `${minTouchTarget}px`,

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 
 // Import the useLanguage hook at the top of the file
 import { useLanguage } from "@/contexts/language-context"
+import { calculateImageLayout } from "@/lib/coordinate-utils"
 
 interface AreaSelectorProps {
   image: string
@@ -27,6 +28,7 @@ export default function AreaSelector({
   const [currentPos, setCurrentPos] = useState<{ x: number; y: number } | null>(null)
   const [isSelecting, setIsSelecting] = useState<boolean>(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
   const [originalOverflow, setOriginalOverflow] = useState<string>("")
   const [scrollPositionApplied, setScrollPositionApplied] = useState(false)
 
@@ -43,16 +45,36 @@ export default function AreaSelector({
   }, [initialScrollPosition, scrollPositionApplied])
 
   const getCoordinates = (clientX: number, clientY: number) => {
-    if (!containerRef.current) return { x: 0, y: 0 }
+    if (!containerRef.current || !imageRef.current) return { x: 0, y: 0 }
 
-    const rect = containerRef.current.getBoundingClientRect()
+    const containerRect = containerRef.current.getBoundingClientRect()
+    const imageRect = imageRef.current.getBoundingClientRect()
+    
     // Account for scroll position
     const scrollLeft = containerRef.current.scrollLeft
     const scrollTop = containerRef.current.scrollTop
 
-    // Calculate coordinates relative to the container, accounting for scroll
-    const x = clientX - rect.left + scrollLeft
-    const y = clientY - rect.top + scrollTop
+    // Calculate coordinates relative to the image, accounting for scroll and object-fit: contain
+    let x = clientX - imageRect.left + scrollLeft
+    let y = clientY - imageRect.top + scrollTop
+    
+    // object-fit: contain을 고려한 실제 이미지 영역 계산
+    if (imageRef.current.complete) {
+      const { imageOffsetX, imageOffsetY, actualDisplayWidth, actualDisplayHeight } = calculateImageLayout(
+        imageRect.width,
+        imageRect.height,
+        imageRef.current.naturalWidth,
+        imageRef.current.naturalHeight
+      )
+      
+      // 이미지 실제 영역 내 좌표로 변환
+      x = x - imageOffsetX
+      y = y - imageOffsetY
+      
+      // 이미지 영역 내로 제한
+      x = Math.max(0, Math.min(actualDisplayWidth, x))
+      y = Math.max(0, Math.min(actualDisplayHeight, y))
+    }
 
     return { x, y }
   }
@@ -292,6 +314,7 @@ export default function AreaSelector({
         }}
       >
         <img
+          ref={imageRef}
           src={image || "/placeholder.svg"}
           alt="Document"
           className="w-full h-auto object-contain"
@@ -300,22 +323,40 @@ export default function AreaSelector({
         />
 
         {/* Show existing areas */}
-        {existingAreas.map((area, index) => (
-          <div
-            key={index}
-            className="absolute border-2 border-green-500 bg-green-500/10 flex items-center justify-center pointer-events-none"
-            style={{
-              left: `${area.x}px`,
-              top: `${area.y}px`,
-              width: `${area.width}px`,
-              height: `${area.height}px`,
-            }}
-          >
-            <span className="text-xs font-medium text-green-600">
-              {t("upload.signature")} {index + 1}
-            </span>
-          </div>
-        ))}
+        {existingAreas.map((area, index) => {
+          // object-fit: contain을 고려한 정확한 위치 계산
+          let adjustedX = area.x
+          let adjustedY = area.y
+          
+          if (imageRef.current && imageRef.current.complete) {
+            const containerRect = imageRef.current.getBoundingClientRect()
+            const { imageOffsetX, imageOffsetY } = calculateImageLayout(
+              containerRect.width,
+              containerRect.height,
+              imageRef.current.naturalWidth,
+              imageRef.current.naturalHeight
+            )
+            adjustedX = area.x + imageOffsetX
+            adjustedY = area.y + imageOffsetY
+          }
+          
+          return (
+            <div
+              key={index}
+              className="absolute border-2 border-green-500 bg-green-500/10 flex items-center justify-center pointer-events-none"
+              style={{
+                left: `${adjustedX}px`,
+                top: `${adjustedY}px`,
+                width: `${area.width}px`,
+                height: `${area.height}px`,
+              }}
+            >
+              <span className="text-xs font-medium text-green-600">
+                {t("upload.signature")} {index + 1}
+              </span>
+            </div>
+          )
+        })}
 
         {/* Show current selection */}
         {isSelecting && startPos && currentPos && (

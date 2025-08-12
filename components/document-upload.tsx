@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { createDocument, saveSignatureAreas, createDocumentShare, getDocumentSignedUrl, getDocumentById } from "@/app/actions/document"
 import { Tables } from "@/lib/database-types"
 import SignatureRequestDialog from "@/components/signature-request-dialog"
+import { calculateImageLayout } from "@/lib/coordinate-utils"
 
 type Document = Tables<'documents'>
 
@@ -33,6 +34,9 @@ export default function DocumentUpload() {
   const [signatureAreas, setSignatureAreas] = useState<Array<{ x: number; y: number; width: number; height: number }>>(
     [],
   )
+  
+  // Refs
+  const documentImageRef = useRef<HTMLImageElement>(null)
   const [isSelecting, setIsSelecting] = useState<boolean>(false)
   
   // UI states
@@ -408,30 +412,49 @@ export default function DocumentUpload() {
             ) : (
               <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
                 <img
+                  ref={documentImageRef}
                   src={document || "/placeholder.svg"}
                   alt={t("upload.documentAlt")}
                   className="w-full h-auto object-contain"
                   draggable="false"
                 />
-                {signatureAreas.map((area, index) => (
-                  <div
-                    key={index}
-                    className="absolute border-2 border-red-500 bg-red-500/10 flex items-center justify-center cursor-pointer hover:bg-red-500/20 transition-colors"
-                    style={{
-                      position: "absolute",
-                      left: `${area.x}px`,
-                      top: `${area.y}px`,
-                      width: `${area.width}px`,
-                      height: `${area.height}px`,
-                    }}
-                    onClick={() => handleRemoveArea(index)}
-                    title={t("upload.clickToRemove")}
-                  >
-                    <span className="text-xs font-medium text-red-600">
-                      {t("upload.signature")} {index + 1}
-                    </span>
-                  </div>
-                ))}
+                {signatureAreas.map((area, index) => {
+                  // object-fit: contain을 고려한 정확한 위치 계산
+                  let adjustedX = area.x
+                  let adjustedY = area.y
+                  
+                  if (documentImageRef.current && documentImageRef.current.complete) {
+                    const containerRect = documentImageRef.current.getBoundingClientRect()
+                    const { imageOffsetX, imageOffsetY } = calculateImageLayout(
+                      containerRect.width,
+                      containerRect.height,
+                      documentImageRef.current.naturalWidth,
+                      documentImageRef.current.naturalHeight
+                    )
+                    adjustedX = area.x + imageOffsetX
+                    adjustedY = area.y + imageOffsetY
+                  }
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="absolute border-2 border-red-500 bg-red-500/10 flex items-center justify-center cursor-pointer hover:bg-red-500/20 transition-colors"
+                      style={{
+                        position: "absolute",
+                        left: `${adjustedX}px`,
+                        top: `${adjustedY}px`,
+                        width: `${area.width}px`,
+                        height: `${area.height}px`,
+                      }}
+                      onClick={() => handleRemoveArea(index)}
+                      title={t("upload.clickToRemove")}
+                    >
+                      <span className="text-xs font-medium text-red-600">
+                        {t("upload.signature")} {index + 1}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

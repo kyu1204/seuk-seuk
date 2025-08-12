@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>테스트 이미지 생성</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        canvas { border: 1px solid #ccc; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h2>테스트 문서 이미지 생성기</h2>
+    <button onclick="generateTestDocument()">테스트 문서 생성</button>
+    <button onclick="downloadImage()">다운로드</button>
+    <br>
+    <canvas id="testCanvas" width="800" height="1000"></canvas>
+    
+    <script>
+        function generateTestDocument() {
+            const canvas = document.getElementById('testCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 배경 생성
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 800, 1000);
+            
+            // 테두리
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, 800, 1000);
+            
+            // 제목 헤더
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(50, 50, 700, 60);
+            ctx.strokeStyle = '#dee2e6';
+            ctx.strokeRect(50, 50, 700, 60);
+            
+            // 제목 텍스트
+            ctx.fillStyle = '#495057';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('계약서 테스트 문서', 400, 85);
+            
+            // 문서 내용
+            ctx.textAlign = 'left';
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#212529';
+            ctx.fillText('제1조 (계약의 목적)', 70, 180);
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#495057';
+            ctx.fillText('본 계약은 양 당사자 간의 업무 협력에 관한 제반 사항을 정함을 목적으로 한다.', 70, 210);
+            
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#212529';
+            ctx.fillText('제2조 (계약 기간)', 70, 250);
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#495057';
+            ctx.fillText('본 계약의 유효기간은 2024년 1월 1일부터 2024년 12월 31일까지로 한다.', 70, 280);
+            
+            // 서명 영역 1 - 갑(회사)
+            ctx.strokeStyle = '#007bff';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(100, 450, 250, 80);
+            
+            ctx.fillStyle = '#007bff';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('갑 (회사) 서명', 225, 475);
+            
+            ctx.textAlign = 'left';
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#6c757d';
+            ctx.fillText('회사명: ___________________', 110, 500);
+            ctx.fillText('대표자: ___________________', 110, 520);
+            
+            // 서명 영역 2 - 을(개인)
+            ctx.strokeStyle = '#28a745';
+            ctx.strokeRect(450, 450, 250, 80);
+            
+            ctx.fillStyle = '#28a745';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('을 (개인) 서명', 575, 475);
+            
+            ctx.textAlign = 'left';
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#6c757d';
+            ctx.fillText('성명: ___________________', 460, 500);
+            ctx.fillText('생년월일: _______________', 460, 520);
+            
+            // 서명 영역 3 - 증인
+            ctx.strokeStyle = '#ffc107';
+            ctx.strokeRect(275, 580, 250, 60);
+            
+            ctx.fillStyle = '#ffc107';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('증인 서명', 400, 605);
+            
+            ctx.textAlign = 'left';
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#6c757d';
+            ctx.fillText('증인: ___________________', 285, 625);
+            
+            // 날짜 영역
+            ctx.strokeStyle = '#6f42c1';
+            ctx.strokeRect(500, 700, 200, 40);
+            
+            ctx.fillStyle = '#6f42c1';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('날짜: 2024년 __월 __일', 600, 725);
+            
+            // 하단 안내
+            ctx.fillStyle = '#868e96';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('본 문서는 테스트 목적으로 작성된 샘플 계약서입니다.', 400, 850);
+            
+            // 페이지 번호
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#adb5bd';
+            ctx.fillText('- 1 -', 750, 980);
+            
+            // 선 스타일 초기화
+            ctx.setLineDash([]);
+        }
+        
+        function downloadImage() {
+            const canvas = document.getElementById('testCanvas');
+            const link = document.createElement('a');
+            link.download = 'test-contract-document.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // 페이지 로드 시 자동 생성
+        window.onload = function() {
+            generateTestDocument();
+        };
+    </script>
+</body>
+</html>
