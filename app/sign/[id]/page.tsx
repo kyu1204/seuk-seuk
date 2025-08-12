@@ -61,6 +61,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
   } | null>(null)
   
   const documentContainerRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
 
   // Load document on mount
   useEffect(() => {
@@ -447,6 +448,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
           }}
         >
           <img
+            ref={imageRef}
             src={documentUrl}
             alt={t("sign.documentAlt")}
             className="w-full h-auto object-contain"
@@ -454,17 +456,33 @@ export default function SignPage({ params }: { params: { id: string } }) {
             style={{ userSelect: "none" }}
           />
 
-          {documentData.signature_areas.map((area) => {
+{documentData.signature_areas.map((area) => {
             const isSigned = documentData.signatures?.some(sig => sig.signature_area_id === area.id)
             
-            // Ensure minimum touch target size for mobile accessibility
-            const minTouchTarget = 44
-            const adjustedWidth = Math.max(area.width, minTouchTarget)
-            const adjustedHeight = Math.max(area.height, minTouchTarget)
+            // Calculate percentage-based positioning if image is loaded
+            if (!imageRef.current) return null
+            
+            const img = imageRef.current
+            const imgNaturalWidth = img.naturalWidth
+            const imgNaturalHeight = img.naturalHeight
+            
+            // Skip if image is not loaded yet
+            if (!imgNaturalWidth || !imgNaturalHeight) return null
+            
+            // Convert pixel values to percentages based on natural image size
+            const leftPercent = (area.x / imgNaturalWidth) * 100
+            const topPercent = (area.y / imgNaturalHeight) * 100
+            const widthPercent = (area.width / imgNaturalWidth) * 100
+            const heightPercent = (area.height / imgNaturalHeight) * 100
+            
+            // Ensure minimum touch target size (convert to percentage)
+            const minTouchTargetPercent = (44 / imgNaturalWidth) * 100
+            const adjustedWidthPercent = Math.max(widthPercent, minTouchTargetPercent)
+            const adjustedHeightPercent = Math.max(heightPercent, minTouchTargetPercent)
             
             // Center the touch target if it's larger than the original area
-            const xOffset = area.width < minTouchTarget ? (area.width - adjustedWidth) / 2 : 0
-            const yOffset = area.height < minTouchTarget ? (area.height - adjustedHeight) / 2 : 0
+            const xOffsetPercent = widthPercent < minTouchTargetPercent ? (widthPercent - adjustedWidthPercent) / 2 : 0
+            const yOffsetPercent = heightPercent < minTouchTargetPercent ? (heightPercent - adjustedHeightPercent) / 2 : 0
 
             return (
               <div
@@ -475,12 +493,12 @@ export default function SignPage({ params }: { params: { id: string } }) {
                     : "border-2 border-red-500 bg-red-500/10 animate-pulse hover:bg-red-500/20 active:bg-red-500/30"
                 }`}
                 style={{
-                  left: `${area.x + xOffset}px`,
-                  top: `${area.y + yOffset}px`,
-                  width: `${adjustedWidth}px`,
-                  height: `${adjustedHeight}px`,
-                  minWidth: `${minTouchTarget}px`,
-                  minHeight: `${minTouchTarget}px`,
+                  left: `${leftPercent + xOffsetPercent}%`,
+                  top: `${topPercent + yOffsetPercent}%`,
+                  width: `${adjustedWidthPercent}%`,
+                  height: `${adjustedHeightPercent}%`,
+                  minWidth: "44px",
+                  minHeight: "44px",
                   touchAction: "manipulation"
                 }}
                 onClick={() => handleAreaClick(area.id)}

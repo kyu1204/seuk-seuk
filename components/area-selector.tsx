@@ -27,6 +27,7 @@ export default function AreaSelector({
   const [currentPos, setCurrentPos] = useState<{ x: number; y: number } | null>(null)
   const [isSelecting, setIsSelecting] = useState<boolean>(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
   const [originalOverflow, setOriginalOverflow] = useState<string>("")
   const [scrollPositionApplied, setScrollPositionApplied] = useState(false)
 
@@ -291,6 +292,7 @@ export default function AreaSelector({
         }}
       >
         <img
+          ref={imageRef}
           src={image || "/placeholder.svg"}
           alt="Document"
           className="w-full h-auto object-contain"
@@ -299,22 +301,40 @@ export default function AreaSelector({
         />
 
         {/* Show existing areas */}
-        {existingAreas.map((area, index) => (
-          <div
-            key={index}
-            className="absolute border-2 border-green-500 bg-green-500/10 flex items-center justify-center pointer-events-none"
-            style={{
-              left: `${area.x}px`,
-              top: `${area.y}px`,
-              width: `${area.width}px`,
-              height: `${area.height}px`,
-            }}
-          >
-            <span className="text-xs font-medium text-green-600">
-              {t("upload.signature")} {index + 1}
-            </span>
-          </div>
-        ))}
+        {existingAreas.map((area, index) => {
+          // Calculate percentage-based positioning if image is loaded
+          if (!imageRef.current) return null
+          
+          const img = imageRef.current
+          const imgNaturalWidth = img.naturalWidth
+          const imgNaturalHeight = img.naturalHeight
+          
+          // Skip if image is not loaded yet
+          if (!imgNaturalWidth || !imgNaturalHeight) return null
+          
+          // Convert pixel values to percentages based on natural image size
+          const leftPercent = (area.x / imgNaturalWidth) * 100
+          const topPercent = (area.y / imgNaturalHeight) * 100
+          const widthPercent = (area.width / imgNaturalWidth) * 100
+          const heightPercent = (area.height / imgNaturalHeight) * 100
+          
+          return (
+            <div
+              key={index}
+              className="absolute border-2 border-green-500 bg-green-500/10 flex items-center justify-center pointer-events-none"
+              style={{
+                left: `${leftPercent}%`,
+                top: `${topPercent}%`,
+                width: `${widthPercent}%`,
+                height: `${heightPercent}%`,
+              }}
+            >
+              <span className="text-xs font-medium text-green-600">
+                {t("upload.signature")} {index + 1}
+              </span>
+            </div>
+          )
+        })}
 
         {/* Show current selection */}
         {isSelecting && startPos && currentPos && (

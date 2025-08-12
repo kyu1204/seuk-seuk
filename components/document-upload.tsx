@@ -41,6 +41,7 @@ export default function DocumentUpload() {
   const [showSignatureRequestDialog, setShowSignatureRequestDialog] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const documentContainerRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
   const [scrollPosition, setScrollPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
 
   // Load existing document if there's a document ID in localStorage or URL
@@ -408,30 +409,48 @@ export default function DocumentUpload() {
             ) : (
               <div ref={documentContainerRef} className="relative">
                 <img
+                  ref={imageRef}
                   src={document || "/placeholder.svg"}
                   alt={t("upload.documentAlt")}
                   className="w-full h-auto object-contain"
                   draggable="false"
                 />
-                {signatureAreas.map((area, index) => (
-                  <div
-                    key={index}
-                    className="absolute border-2 border-red-500 bg-red-500/10 flex items-center justify-center cursor-pointer hover:bg-red-500/20 transition-colors"
-                    style={{
-                      position: "absolute",
-                      left: `${area.x}px`,
-                      top: `${area.y}px`,
-                      width: `${area.width}px`,
-                      height: `${area.height}px`,
-                    }}
-                    onClick={() => handleRemoveArea(index)}
-                    title={t("upload.clickToRemove")}
-                  >
-                    <span className="text-xs font-medium text-red-600">
-                      {t("upload.signature")} {index + 1}
-                    </span>
-                  </div>
-                ))}
+{signatureAreas.map((area, index) => {
+                  // Calculate percentage-based positioning if image is loaded
+                  if (!imageRef.current) return null
+                  
+                  const img = imageRef.current
+                  const imgNaturalWidth = img.naturalWidth
+                  const imgNaturalHeight = img.naturalHeight
+                  
+                  // Skip if image is not loaded yet
+                  if (!imgNaturalWidth || !imgNaturalHeight) return null
+                  
+                  // Convert pixel values to percentages based on natural image size
+                  const leftPercent = (area.x / imgNaturalWidth) * 100
+                  const topPercent = (area.y / imgNaturalHeight) * 100
+                  const widthPercent = (area.width / imgNaturalWidth) * 100
+                  const heightPercent = (area.height / imgNaturalHeight) * 100
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="absolute border-2 border-red-500 bg-red-500/10 flex items-center justify-center cursor-pointer hover:bg-red-500/20 transition-colors"
+                      style={{
+                        left: `${leftPercent}%`,
+                        top: `${topPercent}%`,
+                        width: `${widthPercent}%`,
+                        height: `${heightPercent}%`,
+                      }}
+                      onClick={() => handleRemoveArea(index)}
+                      title={t("upload.clickToRemove")}
+                    >
+                      <span className="text-xs font-medium text-red-600">
+                        {t("upload.signature")} {index + 1}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
