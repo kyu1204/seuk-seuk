@@ -414,23 +414,39 @@ export default function DocumentUpload() {
                   alt={t("upload.documentAlt")}
                   className="w-full h-auto object-contain"
                   draggable="false"
+                  onLoad={() => {
+                    // Force a re-render when image loads to ensure signature areas are displayed
+                    console.log('🖼️ [UI] Image loaded, natural dimensions:', imageRef.current?.naturalWidth, 'x', imageRef.current?.naturalHeight);
+                  }}
                 />
 {signatureAreas.map((area, index) => {
                   // Calculate percentage-based positioning if image is loaded
-                  if (!imageRef.current) return null
+                  if (!imageRef.current) {
+                    console.log('⚠️ [UI] imageRef.current is null for area', index);
+                    return null;
+                  }
                   
                   const img = imageRef.current
                   const imgNaturalWidth = img.naturalWidth
                   const imgNaturalHeight = img.naturalHeight
                   
                   // Skip if image is not loaded yet
-                  if (!imgNaturalWidth || !imgNaturalHeight) return null
+                  if (!imgNaturalWidth || !imgNaturalHeight) {
+                    console.log('⚠️ [UI] Image dimensions not available:', { imgNaturalWidth, imgNaturalHeight });
+                    return null;
+                  }
                   
                   // Convert pixel values to percentages based on natural image size
                   const leftPercent = (area.x / imgNaturalWidth) * 100
                   const topPercent = (area.y / imgNaturalHeight) * 100
                   const widthPercent = (area.width / imgNaturalWidth) * 100
                   const heightPercent = (area.height / imgNaturalHeight) * 100
+                  
+                  console.log('📍 [UI] Rendering signature area', index, {
+                    original: area,
+                    percentages: { leftPercent, topPercent, widthPercent, heightPercent },
+                    imgDimensions: { imgNaturalWidth, imgNaturalHeight }
+                  });
                   
                   return (
                     <div

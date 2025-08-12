@@ -1,0 +1,10 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="white" stroke="black" stroke-width="2"/>
+  <text x="400" y="50" text-anchor="middle" font-size="24" font-family="Arial">Test Document</text>
+  <text x="50" y="150" font-size="16" font-family="Arial">This is a test document for signature area testing.</text>
+  <text x="50" y="200" font-size="14" font-family="Arial">Signature Area 1 should be placed here:</text>
+  <rect x="50" y="220" width="200" height="80" fill="none" stroke="red" stroke-width="1" stroke-dasharray="5,5"/>
+  <text x="50" y="350" font-size="14" font-family="Arial">Signature Area 2 should be placed here:</text>
+  <rect x="50" y="370" width="200" height="80" fill="none" stroke="red" stroke-width="1" stroke-dasharray="5,5"/>
+  <text x="400" y="500" text-anchor="middle" font-size="12" font-family="Arial">Test document for E2E testing</text>
+</svg>
