@@ -45,7 +45,7 @@ export default function DocumentUpload() {
   const [showSignatureRequestDialog, setShowSignatureRequestDialog] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const documentContainerRef = useRef<HTMLDivElement>(null)
-  const [scrollPosition, setScrollPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  // 스크롤 위치 저장 제거 (페이지 스크롤로 통합)
 
   // Load existing document if there's a document ID in localStorage or URL
   useEffect(() => {
@@ -193,16 +193,6 @@ export default function DocumentUpload() {
       return
     }
 
-    // Save current scroll position before switching to selection mode
-    if (documentContainerRef.current) {
-      const scrollTop = documentContainerRef.current.scrollTop
-      const scrollLeft = documentContainerRef.current.scrollLeft
-
-      setScrollPosition({
-        top: scrollTop,
-        left: scrollLeft,
-      })
-    }
     setIsSelecting(true)
   }
 
@@ -407,10 +397,9 @@ export default function DocumentUpload() {
                 onAreaSelected={handleAreaSelected}
                 onCancel={() => setIsSelecting(false)}
                 existingAreas={signatureAreas}
-                initialScrollPosition={scrollPosition}
               />
             ) : (
-              <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
+              <div ref={documentContainerRef} className="relative">
                 <img
                   ref={documentImageRef}
                   src={document || "/placeholder.svg"}

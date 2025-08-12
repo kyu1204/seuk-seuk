@@ -1,321 +1,343 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useRef, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import SignatureModal from "@/components/signature-modal"
-import SignerOnboarding from "@/components/signer-onboarding"
-import SubmitConfirmationModal from "@/components/submit-confirmation-modal"
-import { Card, CardContent } from "@/components/ui/card"
-import { Lock, Loader2, HelpCircle, Send } from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
-import LanguageSelector from "@/components/language-selector"
-import { toast } from "sonner"
-import { 
-  getSharedDocument, 
-  submitSignature, 
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import SignatureModal from "@/components/signature-modal";
+import SignerOnboarding from "@/components/signer-onboarding";
+import SubmitConfirmationModal from "@/components/submit-confirmation-modal";
+import { Card, CardContent } from "@/components/ui/card";
+import { Lock, Loader2, HelpCircle, Send } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
+import LanguageSelector from "@/components/language-selector";
+import { toast } from "sonner";
+import {
+  getSharedDocument,
+  submitSignature,
   checkDocumentStatus,
   submitDocument,
   type DocumentWithAreas,
-  type SignerInfo 
-} from "@/app/actions/signing"
-import { calculateImageLayout } from "@/lib/coordinate-utils"
+  type SignerInfo,
+} from "@/app/actions/signing";
+import { calculateImageLayout } from "@/lib/coordinate-utils";
 
 export default function SignPage({ params }: { params: { id: string } }) {
-  const { t } = useLanguage()
-  const router = useRouter()
-  
+  const { t } = useLanguage();
+  const router = useRouter();
+
   // Document state
-  const [documentData, setDocumentData] = useState<DocumentWithAreas | null>(null)
-  const [documentUrl, setDocumentUrl] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
-  
+  const [documentData, setDocumentData] = useState<DocumentWithAreas | null>(
+    null
+  );
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   // Password state
-  const [requiresPassword, setRequiresPassword] = useState<boolean>(false)
-  const [password, setPassword] = useState<string>("")
-  const [isCheckingPassword, setIsCheckingPassword] = useState<boolean>(false)
-  
+  const [requiresPassword, setRequiresPassword] = useState<boolean>(false);
+  const [password, setPassword] = useState<string>("");
+  const [isCheckingPassword, setIsCheckingPassword] = useState<boolean>(false);
+
   // Signature state
-  const [selectedArea, setSelectedArea] = useState<string | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
-  const [signerInfo, setSignerInfo] = useState<SignerInfo>({})
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  
-  
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [signerInfo, setSignerInfo] = useState<SignerInfo>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
   // Onboarding state
-  const [showOnboarding, setShowOnboarding] = useState<boolean>(false)
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean>(false)
-  
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean>(false);
+
   // Submit state
-  const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false)
-  const [isSubmittingDocument, setIsSubmittingDocument] = useState<boolean>(false)
-  
+  const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
+  const [isSubmittingDocument, setIsSubmittingDocument] =
+    useState<boolean>(false);
+
   // Document status
   const [documentStatus, setDocumentStatus] = useState<{
-    status: string
-    totalAreas: number
-    signedAreas: number
-    isComplete: boolean
-  } | null>(null)
-  
-  const documentContainerRef = useRef<HTMLDivElement>(null)
-  const documentImageRef = useRef<HTMLImageElement>(null)
+    status: string;
+    totalAreas: number;
+    signedAreas: number;
+    isComplete: boolean;
+  } | null>(null);
+
+  const documentContainerRef = useRef<HTMLDivElement>(null);
+  const documentImageRef = useRef<HTMLImageElement>(null);
 
   // Load document on mount
   useEffect(() => {
-    loadDocument()
-  }, [params.id])
+    loadDocument();
+  }, [params.id]);
 
   // Check if user has seen onboarding for this session
   useEffect(() => {
-    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`
-    const hasSeen = sessionStorage.getItem(hasSeenOnboardingKey) === 'true'
-    setHasSeenOnboarding(hasSeen)
-    
+    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`;
+    const hasSeen = sessionStorage.getItem(hasSeenOnboardingKey) === "true";
+    setHasSeenOnboarding(hasSeen);
+
     // Show onboarding if document is loaded and user hasn't seen it
     if (documentData && !hasSeen && !requiresPassword && !error) {
-      setShowOnboarding(true)
+      setShowOnboarding(true);
     }
-  }, [params.id, documentData, requiresPassword, error])
+  }, [params.id, documentData, requiresPassword, error]);
 
   // Check document status periodically
   useEffect(() => {
     if (documentData?.id) {
       const interval = setInterval(() => {
-        checkStatus()
-      }, 5000) // Check every 5 seconds
+        checkStatus();
+      }, 5000); // Check every 5 seconds
 
-      return () => clearInterval(interval)
+      return () => clearInterval(interval);
     }
-  }, [documentData?.id])
+  }, [documentData?.id]);
 
-  const checkStatus = useCallback(async (docId?: string) => {
-    const documentId = docId || documentData?.id
-    if (!documentId) return
+  const checkStatus = useCallback(
+    async (docId?: string) => {
+      const documentId = docId || documentData?.id;
+      if (!documentId) return;
 
-    try {
-      const result = await checkDocumentStatus(documentId)
-      if (result.success && result.data) {
-        setDocumentStatus(result.data)
+      try {
+        const result = await checkDocumentStatus(documentId);
+        if (result.success && result.data) {
+          setDocumentStatus(result.data);
+        }
+      } catch (err) {
+        console.error("Check status error:", err);
       }
-    } catch (err) {
-      console.error('Check status error:', err)
-    }
-  }, [documentData?.id])
+    },
+    [documentData?.id]
+  );
 
-  const loadDocument = useCallback(async (passwordAttempt?: string) => {
-    console.log('🔄 [loadDocument] 시작:', {
-      shortUrl: params.id,
-      hasPasswordAttempt: !!passwordAttempt,
-      requiresPassword,
-      currentPassword: password
-    })
-    
-    setIsLoading(true)
-    setError(null)
-    
-    try {
-      const result = await getSharedDocument(params.id, passwordAttempt)
-      console.log('📊 [loadDocument] getSharedDocument 결과:', {
-        success: result.success,
-        requiresPassword: result.requiresPassword,
-        hasData: !!result.data,
-        error: result.error,
-        isSubmitted: result.isSubmitted
-      })
-      
-      if (!result.success) {
-        if (result.requiresPassword) {
-          setRequiresPassword(true)
-          setIsLoading(false)
-          if (passwordAttempt) {
-            console.log('❌ [loadDocument] 비밀번호 인증 실패')
-            toast.error(result.error || t("sign.invalidPassword"))
+  const loadDocument = useCallback(
+    async (passwordAttempt?: string) => {
+      console.log("🔄 [loadDocument] 시작:", {
+        shortUrl: params.id,
+        hasPasswordAttempt: !!passwordAttempt,
+        requiresPassword,
+        currentPassword: password,
+      });
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await getSharedDocument(params.id, passwordAttempt);
+        console.log("📊 [loadDocument] getSharedDocument 결과:", {
+          success: result.success,
+          requiresPassword: result.requiresPassword,
+          hasData: !!result.data,
+          error: result.error,
+          isSubmitted: result.isSubmitted,
+        });
+
+        if (!result.success) {
+          if (result.requiresPassword) {
+            setRequiresPassword(true);
+            setIsLoading(false);
+            if (passwordAttempt) {
+              console.log("❌ [loadDocument] 비밀번호 인증 실패");
+              toast.error(result.error || t("sign.invalidPassword"));
+            }
+            return;
           }
-          return
+
+          // Handle submitted document
+          if (result.isSubmitted) {
+            setError(result.error || t("submit.submitted"));
+            setIsLoading(false);
+            return;
+          }
+
+          setError(result.error || t("sign.documentNotFound"));
+          setIsLoading(false);
+          return;
         }
 
-        // Handle submitted document
-        if (result.isSubmitted) {
-          setError(result.error || t("submit.submitted"))
-          setIsLoading(false)
-          return
-        }
-        
-        setError(result.error || t("sign.documentNotFound"))
-        setIsLoading(false)
-        return
-      }
+        if (result.data) {
+          console.log(
+            "✅ [loadDocument] 문서 로드 성공, 비밀번호 상태 업데이트"
+          );
+          // Password authentication was successful - save the password and clear the requirement
+          if (passwordAttempt) {
+            setPassword(passwordAttempt);
+          }
+          setRequiresPassword(false);
 
-      if (result.data) {
-        console.log('✅ [loadDocument] 문서 로드 성공, 비밀번호 상태 업데이트')
-        // Password authentication was successful - save the password and clear the requirement
-        if (passwordAttempt) {
-          setPassword(passwordAttempt)
+          setDocumentData(result.data);
+          setDocumentUrl(result.data.signedUrl);
+          await checkStatus(result.data.id);
         }
-        setRequiresPassword(false)
-        
-        setDocumentData(result.data)
-        setDocumentUrl(result.data.signedUrl)
-        await checkStatus(result.data.id)
+      } catch (err) {
+        console.error("❌ [loadDocument] 예외:", err);
+        setError(t("sign.loadError"));
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('❌ [loadDocument] 예외:', err)
-      setError(t("sign.loadError"))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [params.id, requiresPassword, password, t, checkStatus])
+    },
+    [params.id, requiresPassword, password, t, checkStatus]
+  );
 
   const handlePasswordSubmit = useCallback(async () => {
-    console.log('🔐 [handlePasswordSubmit] 시작:', {
+    console.log("🔐 [handlePasswordSubmit] 시작:", {
       passwordState: password,
       passwordLength: password.length,
       trimmedPassword: password.trim(),
-      trimmedLength: password.trim().length
-    })
-    
+      trimmedLength: password.trim().length,
+    });
+
     if (!password.trim()) {
-      console.log('❌ [handlePasswordSubmit] 비밀번호가 비어있음')
-      toast.error(t("sign.passwordRequired"))
-      return
+      console.log("❌ [handlePasswordSubmit] 비밀번호가 비어있음");
+      toast.error(t("sign.passwordRequired"));
+      return;
     }
 
-    setIsCheckingPassword(true)
-    console.log('🚀 [handlePasswordSubmit] loadDocument 호출:', password.trim())
-    await loadDocument(password.trim())
-    setIsCheckingPassword(false)
-  }, [password, t, loadDocument])
+    setIsCheckingPassword(true);
+    console.log(
+      "🚀 [handlePasswordSubmit] loadDocument 호출:",
+      password.trim()
+    );
+    await loadDocument(password.trim());
+    setIsCheckingPassword(false);
+  }, [password, t, loadDocument]);
 
   const handleAreaClick = (areaId: string) => {
     // Check if area is already signed
     const isAlreadySigned = documentData?.signatures?.some(
-      sig => sig.signature_area_id === areaId
-    )
-    
+      (sig) => sig.signature_area_id === areaId
+    );
+
     if (isAlreadySigned) {
-      toast.info(t("sign.alreadySigned"))
-      return
+      toast.info(t("sign.alreadySigned"));
+      return;
     }
 
-    setSelectedArea(areaId)
-    setIsModalOpen(true)
-  }
+    setSelectedArea(areaId);
+    setIsModalOpen(true);
+  };
 
-  const handleSignatureComplete = async (signatureData: string, updatedSignerInfo: SignerInfo) => {
-    if (!documentData || !selectedArea) return
+  const handleSignatureComplete = async (
+    signatureData: string,
+    updatedSignerInfo: SignerInfo
+  ) => {
+    if (!documentData || !selectedArea) return;
 
-    setIsSubmitting(true)
-    
+    setIsSubmitting(true);
+
     try {
-      console.log('🚀 [SignPage] handleSignatureComplete 시작:', {
+      console.log("🚀 [SignPage] handleSignatureComplete 시작:", {
         documentId: documentData.id,
         selectedArea,
-        signerInfo: updatedSignerInfo
-      })
-      
+        signerInfo: updatedSignerInfo,
+      });
+
       // Update signer info if it was changed in the modal
-      setSignerInfo(updatedSignerInfo)
-      
+      setSignerInfo(updatedSignerInfo);
+
       const result = await submitSignature(
         documentData.id,
         selectedArea,
         signatureData,
         updatedSignerInfo
-      )
+      );
 
       if (result.success) {
-        console.log('✅ [SignPage] 서명 제출 성공')
-        toast.success(t("sign.signatureSubmitted"))
-        setIsModalOpen(false)
-        setSelectedArea(null)
-        
+        console.log("✅ [SignPage] 서명 제출 성공");
+        toast.success(t("sign.signatureSubmitted"));
+        setIsModalOpen(false);
+        setSelectedArea(null);
+
         // Reload document to get updated signatures
         // Pass the current password (if any) for reload
-        console.log('🔄 [SignPage] 문서 재로드 시작 (비밀번호 있음:', !!password, ')')
-        await loadDocument(password || undefined)
-        await checkStatus()
+        console.log(
+          "🔄 [SignPage] 문서 재로드 시작 (비밀번호 있음:",
+          !!password,
+          ")"
+        );
+        await loadDocument(password || undefined);
+        await checkStatus();
       } else {
-        console.error('❌ [SignPage] 서명 제출 실패:', result.error)
-        toast.error(result.error || t("sign.signatureError"))
+        console.error("❌ [SignPage] 서명 제출 실패:", result.error);
+        toast.error(result.error || t("sign.signatureError"));
       }
     } catch (err) {
-      console.error('❌ [SignPage] 서명 제출 예외:', err)
-      toast.error(t("sign.signatureError"))
+      console.error("❌ [SignPage] 서명 제출 예외:", err);
+      toast.error(t("sign.signatureError"));
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
-
+  };
 
   // Onboarding handlers
   const handleOnboardingStart = () => {
-    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`
-    sessionStorage.setItem(hasSeenOnboardingKey, 'true')
-    setHasSeenOnboarding(true)
-    setShowOnboarding(false)
-  }
+    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`;
+    sessionStorage.setItem(hasSeenOnboardingKey, "true");
+    setHasSeenOnboarding(true);
+    setShowOnboarding(false);
+  };
 
   const handleOnboardingClose = () => {
-    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`
-    sessionStorage.setItem(hasSeenOnboardingKey, 'true')
-    setHasSeenOnboarding(true)
-    setShowOnboarding(false)
-  }
+    const hasSeenOnboardingKey = `onboarding_seen_${params.id}`;
+    sessionStorage.setItem(hasSeenOnboardingKey, "true");
+    setHasSeenOnboarding(true);
+    setShowOnboarding(false);
+  };
 
   const handleShowOnboarding = () => {
-    setShowOnboarding(true)
-  }
+    setShowOnboarding(true);
+  };
 
   // Submit handlers
   const handleShowSubmitModal = () => {
-    setShowSubmitModal(true)
-  }
+    setShowSubmitModal(true);
+  };
 
   const handleCloseSubmitModal = () => {
-    setShowSubmitModal(false)
-  }
+    setShowSubmitModal(false);
+  };
 
   const handleSubmitDocument = async () => {
-    if (!documentData) return
+    if (!documentData) return;
 
-    setIsSubmittingDocument(true)
-    
+    setIsSubmittingDocument(true);
+
     try {
-      console.log('🚀 [handleSubmitDocument] 문서 제출 시작:', {
+      console.log("🚀 [handleSubmitDocument] 문서 제출 시작:", {
         documentId: documentData.id,
-        signerInfo
-      })
-      
-      const result = await submitDocument(documentData.id, signerInfo)
+        signerInfo,
+      });
+
+      const result = await submitDocument(documentData.id, signerInfo);
 
       if (result.success) {
-        console.log('✅ [handleSubmitDocument] 문서 제출 성공')
-        toast.success(t("submit.success"))
-        setShowSubmitModal(false)
-        
+        console.log("✅ [handleSubmitDocument] 문서 제출 성공");
+        toast.success(t("submit.success"));
+        setShowSubmitModal(false);
+
         // Redirect to a success page or show success state
         setTimeout(() => {
-          router.push("/")
-        }, 2000)
+          router.push("/");
+        }, 2000);
       } else {
-        console.error('❌ [handleSubmitDocument] 문서 제출 실패:', result.error)
-        toast.error(result.error || t("submit.error"))
+        console.error(
+          "❌ [handleSubmitDocument] 문서 제출 실패:",
+          result.error
+        );
+        toast.error(result.error || t("submit.error"));
       }
     } catch (err) {
-      console.error('❌ [handleSubmitDocument] 제출 중 예외:', err)
-      toast.error(t("submit.error"))
+      console.error("❌ [handleSubmitDocument] 제출 중 예외:", err);
+      toast.error(t("submit.error"));
     } finally {
-      setIsSubmittingDocument(false)
+      setIsSubmittingDocument(false);
     }
-  }
+  };
 
   const handleSignerInfoChange = (updatedInfo: SignerInfo) => {
-    setSignerInfo(updatedInfo)
-  }
+    setSignerInfo(updatedInfo);
+  };
 
   if (isLoading) {
     return (
@@ -325,7 +347,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
           <p>{t("sign.loading")}</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (requiresPassword) {
@@ -336,8 +358,12 @@ export default function SignPage({ params }: { params: { id: string } }) {
             <CardContent className="p-6">
               <div className="text-center mb-6">
                 <Lock className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-semibold mb-2">{t("sign.passwordRequired")}</h2>
-                <p className="text-muted-foreground">{t("sign.passwordRequiredDesc")}</p>
+                <h2 className="text-2xl font-semibold mb-2">
+                  {t("sign.passwordRequired")}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t("sign.passwordRequiredDesc")}
+                </p>
               </div>
               <div className="space-y-4">
                 <div>
@@ -347,22 +373,26 @@ export default function SignPage({ params }: { params: { id: string } }) {
                     type="password"
                     value={password}
                     onChange={(e) => {
-                      console.log('⌨️ [Input] 비밀번호 입력:', {
+                      console.log("⌨️ [Input] 비밀번호 입력:", {
                         inputValue: e.target.value,
-                        inputLength: e.target.value.length
-                      })
-                      setPassword(e.target.value)
+                        inputLength: e.target.value.length,
+                      });
+                      setPassword(e.target.value);
                     }}
-                    onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handlePasswordSubmit()
+                    }
                     placeholder={t("sign.enterPassword")}
                   />
                 </div>
-                <Button 
+                <Button
                   onClick={handlePasswordSubmit}
                   disabled={isCheckingPassword || !password.trim()}
                   className="w-full"
                 >
-                  {isCheckingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isCheckingPassword && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   {isCheckingPassword ? t("sign.checking") : t("sign.submit")}
                 </Button>
               </div>
@@ -370,7 +400,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -379,14 +409,18 @@ export default function SignPage({ params }: { params: { id: string } }) {
         <Card>
           <CardContent className="p-6">
             <div className="text-center py-8">
-              <h2 className="text-2xl font-semibold mb-4">{t("sign.notFound")}</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                {t("sign.notFound")}
+              </h2>
               <p className="text-muted-foreground mb-6">{error}</p>
-              <Button onClick={() => router.push("/")}>{t("sign.returnHome")}</Button>
+              <Button onClick={() => router.push("/")}>
+                {t("sign.returnHome")}
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!documentData || !documentUrl) {
@@ -395,14 +429,20 @@ export default function SignPage({ params }: { params: { id: string } }) {
         <Card>
           <CardContent className="p-6">
             <div className="text-center py-8">
-              <h2 className="text-2xl font-semibold mb-4">{t("sign.notFound")}</h2>
-              <p className="text-muted-foreground mb-6">{t("sign.notFoundDesc")}</p>
-              <Button onClick={() => router.push("/")}>{t("sign.returnHome")}</Button>
+              <h2 className="text-2xl font-semibold mb-4">
+                {t("sign.notFound")}
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                {t("sign.notFoundDesc")}
+              </p>
+              <Button onClick={() => router.push("/")}>
+                {t("sign.returnHome")}
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -415,7 +455,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
             <p className="text-sm text-muted-foreground mt-1">
               {t("sign.progress", {
                 signed: documentStatus.signedAreas.toString(),
-                total: documentStatus.totalAreas.toString()
+                total: documentStatus.totalAreas.toString(),
               })}
             </p>
           )}
@@ -437,17 +477,16 @@ export default function SignPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-
       {/* Document with signature areas */}
       <div className="relative border rounded-lg overflow-hidden mb-6">
-        <div 
-          ref={documentContainerRef} 
-          className="relative overflow-auto" 
-          style={{ 
+        <div
+          ref={documentContainerRef}
+          className="relative overflow-auto"
+          style={{
             maxHeight: "70vh",
             minHeight: "300px",
             WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
-            touchAction: "pan-x pan-y" // Allow panning but prevent zooming
+            touchAction: "pan-x pan-y", // Allow panning but prevent zooming
           }}
         >
           <img
@@ -460,32 +499,41 @@ export default function SignPage({ params }: { params: { id: string } }) {
           />
 
           {documentData.signature_areas.map((area) => {
-            const isSigned = documentData.signatures?.some(sig => sig.signature_area_id === area.id)
-            
+            const isSigned = documentData.signatures?.some(
+              (sig) => sig.signature_area_id === area.id
+            );
+
             // object-fit: contain을 고려한 정확한 위치 계산
-            let adjustedX = area.x
-            let adjustedY = area.y
-            
+            let adjustedX = area.x;
+            let adjustedY = area.y;
+
             if (documentImageRef.current && documentImageRef.current.complete) {
-              const containerRect = documentImageRef.current.getBoundingClientRect()
+              const containerRect =
+                documentImageRef.current.getBoundingClientRect();
               const { imageOffsetX, imageOffsetY } = calculateImageLayout(
                 containerRect.width,
                 containerRect.height,
                 documentImageRef.current.naturalWidth,
                 documentImageRef.current.naturalHeight
-              )
-              adjustedX = area.x + imageOffsetX
-              adjustedY = area.y + imageOffsetY
+              );
+              adjustedX = area.x + imageOffsetX;
+              adjustedY = area.y + imageOffsetY;
             }
-            
+
             // Ensure minimum touch target size for mobile accessibility
-            const minTouchTarget = 44
-            const adjustedWidth = Math.max(area.width, minTouchTarget)
-            const adjustedHeight = Math.max(area.height, minTouchTarget)
-            
+            const minTouchTarget = 44;
+            const adjustedWidth = Math.max(area.width, minTouchTarget);
+            const adjustedHeight = Math.max(area.height, minTouchTarget);
+
             // Center the touch target if it's larger than the original area
-            const xOffset = area.width < minTouchTarget ? (area.width - adjustedWidth) / 2 : 0
-            const yOffset = area.height < minTouchTarget ? (area.height - adjustedHeight) / 2 : 0
+            const xOffset =
+              area.width < minTouchTarget
+                ? (area.width - adjustedWidth) / 2
+                : 0;
+            const yOffset =
+              area.height < minTouchTarget
+                ? (area.height - adjustedHeight) / 2
+                : 0;
 
             return (
               <div
@@ -502,7 +550,7 @@ export default function SignPage({ params }: { params: { id: string } }) {
                   height: `${adjustedHeight}px`,
                   minWidth: `${minTouchTarget}px`,
                   minHeight: `${minTouchTarget}px`,
-                  touchAction: "manipulation"
+                  touchAction: "manipulation",
                 }}
                 onClick={() => handleAreaClick(area.id)}
                 onTouchStart={() => {}} // Ensure touch events are properly handled
@@ -522,15 +570,15 @@ export default function SignPage({ params }: { params: { id: string } }) {
                   </div>
                 )}
               </div>
-            )
+            );
           })}
         </div>
       </div>
 
       {/* Action buttons */}
       <div className="flex justify-end gap-2">
-        <Button 
-          onClick={handleShowSubmitModal} 
+        <Button
+          onClick={handleShowSubmitModal}
           disabled={isSubmittingDocument}
           variant="default"
           className="gap-2 min-h-[44px] px-6 text-base font-medium"
@@ -543,22 +591,25 @@ export default function SignPage({ params }: { params: { id: string } }) {
 
       {/* Status indicator */}
       {documentStatus && (
-        <div className={`mt-4 p-4 border rounded-md ${
-          documentStatus.isComplete 
-            ? "bg-green-50 border-green-200" 
-            : "bg-blue-50 border-blue-200"
-        }`}>
-          <p className={`text-sm ${
-            documentStatus.isComplete ? "text-green-800" : "text-blue-800"
-          }`}>
-            {documentStatus.isComplete ? (
-              t("submit.documentComplete") || "모든 서명이 완료되어 문서를 제출할 수 있습니다"
-            ) : (
-              t("sign.completionStatus", {
-                signed: documentStatus.signedAreas.toString(),
-                total: documentStatus.totalAreas.toString()
-              })
-            )}
+        <div
+          className={`mt-4 p-4 border rounded-md ${
+            documentStatus.isComplete
+              ? "bg-green-50 border-green-200"
+              : "bg-blue-50 border-blue-200"
+          }`}
+        >
+          <p
+            className={`text-sm ${
+              documentStatus.isComplete ? "text-green-800" : "text-blue-800"
+            }`}
+          >
+            {documentStatus.isComplete
+              ? t("submit.documentComplete") ||
+                "모든 서명이 완료되어 문서를 제출할 수 있습니다"
+              : t("sign.completionStatus", {
+                  signed: documentStatus.signedAreas.toString(),
+                  total: documentStatus.totalAreas.toString(),
+                })}
           </p>
         </div>
       )}
@@ -568,8 +619,8 @@ export default function SignPage({ params }: { params: { id: string } }) {
         <SignatureModal
           isOpen={isModalOpen}
           onClose={() => {
-            setIsModalOpen(false)
-            setSelectedArea(null)
+            setIsModalOpen(false);
+            setSelectedArea(null);
           }}
           onComplete={handleSignatureComplete}
           signerInfo={signerInfo}
@@ -577,7 +628,6 @@ export default function SignPage({ params }: { params: { id: string } }) {
           isSubmitting={isSubmitting}
         />
       )}
-
 
       {/* Signer Onboarding Modal */}
       <SignerOnboarding
@@ -599,5 +649,5 @@ export default function SignPage({ params }: { params: { id: string } }) {
         totalAreas={documentStatus?.totalAreas || 0}
       />
     </div>
-  )
+  );
 }

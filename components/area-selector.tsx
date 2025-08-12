@@ -24,7 +24,6 @@ interface AreaSelectorProps {
     width: number;
     height: number;
   }>;
-  initialScrollPosition?: { top: number; left: number };
 }
 
 export default function AreaSelector({
@@ -32,7 +31,6 @@ export default function AreaSelector({
   onAreaSelected,
   onCancel,
   existingAreas = [],
-  initialScrollPosition = { top: 0, left: 0 },
 }: AreaSelectorProps) {
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(
     null
@@ -83,12 +81,17 @@ export default function AreaSelector({
       y = Math.max(0, Math.min(actualDisplayHeight, y));
     }
 
-    console.log("🎯 좌표 계산:", { 
-      clientX, 
-      clientY, 
-      imageRect: { left: imageRect.left, top: imageRect.top, width: imageRect.width, height: imageRect.height },
-      calculatedX: x, 
-      calculatedY: y 
+    console.log("🎯 좌표 계산:", {
+      clientX,
+      clientY,
+      imageRect: {
+        left: imageRect.left,
+        top: imageRect.top,
+        width: imageRect.width,
+        height: imageRect.height,
+      },
+      calculatedX: x,
+      calculatedY: y,
     });
     return { x, y };
   }, []);
@@ -232,13 +235,7 @@ export default function AreaSelector({
       document.removeEventListener("mousemove", handleGlobalMouseMove);
       document.removeEventListener("mouseup", handleGlobalMouseUp);
     };
-  }, [
-    isSelecting,
-    startPos,
-    currentPos,
-    onAreaSelected,
-    getCoordinates,
-  ]);
+  }, [isSelecting, startPos, currentPos, onAreaSelected, getCoordinates]);
 
   useEffect(() => {
     // Disable body scrolling when selecting an area
