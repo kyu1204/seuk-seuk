@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 
 // Import the useLanguage hook at the top of the file
@@ -44,7 +44,7 @@ export default function AreaSelector({
     }
   }, [initialScrollPosition, scrollPositionApplied])
 
-  const getCoordinates = (clientX: number, clientY: number) => {
+  const getCoordinates = useCallback((clientX: number, clientY: number) => {
     if (!containerRef.current || !imageRef.current) return { x: 0, y: 0 }
 
     const containerRect = containerRef.current.getBoundingClientRect()
@@ -54,15 +54,15 @@ export default function AreaSelector({
     const scrollLeft = containerRef.current.scrollLeft
     const scrollTop = containerRef.current.scrollTop
 
-    // Calculate coordinates relative to the image, accounting for scroll and object-fit: contain
-    let x = clientX - imageRect.left + scrollLeft
-    let y = clientY - imageRect.top + scrollTop
+    // Calculate coordinates relative to the container
+    let x = clientX - containerRect.left + scrollLeft
+    let y = clientY - containerRect.top + scrollTop
     
     // object-fit: contain을 고려한 실제 이미지 영역 계산
     if (imageRef.current.complete) {
       const { imageOffsetX, imageOffsetY, actualDisplayWidth, actualDisplayHeight } = calculateImageLayout(
-        imageRect.width,
-        imageRect.height,
+        containerRect.width,
+        containerRect.height,
         imageRef.current.naturalWidth,
         imageRef.current.naturalHeight
       )
@@ -76,11 +76,15 @@ export default function AreaSelector({
       y = Math.max(0, Math.min(actualDisplayHeight, y))
     }
 
+    console.log('🎯 좌표 계산:', { clientX, clientY, x, y })
     return { x, y }
-  }
+  }, [])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+
+    console.log('🖱️ 마우스 다운 이벤트:', { clientX: e.clientX, clientY: e.clientY })
 
     // Disable container scrolling when starting selection
     if (containerRef.current) {
@@ -89,6 +93,7 @@ export default function AreaSelector({
     }
 
     const { x, y } = getCoordinates(e.clientX, e.clientY)
+    console.log('🎯 시작 좌표:', { x, y })
     setStartPos({ x, y })
     setCurrentPos({ x, y })
     setIsSelecting(true)
@@ -106,6 +111,8 @@ export default function AreaSelector({
   const handleMouseUp = (e: React.MouseEvent) => {
     e.preventDefault()
 
+    console.log('🖱️ 마우스 업 이벤트:', { isSelecting, startPos, currentPos })
+
     // Re-enable container scrolling
     if (containerRef.current) {
       containerRef.current.style.overflow = originalOverflow
@@ -117,8 +124,13 @@ export default function AreaSelector({
       const width = Math.abs(currentPos.x - startPos.x)
       const height = Math.abs(currentPos.y - startPos.y)
 
+      console.log('📏 영역 크기:', { x, y, width, height })
+
       if (width > 10 && height > 10) {
+        console.log('✅ 영역 선택 완료!')
         onAreaSelected({ x, y, width, height })
+      } else {
+        console.log('❌ 영역이 너무 작습니다')
       }
     }
 
@@ -178,25 +190,56 @@ export default function AreaSelector({
     setCurrentPos(null)
   }
 
+  // Global mouse event handlers for outside container
   useEffect(() => {
-    const handleMouseUpOutside = () => {
-      if (isSelecting) {
-        // Re-enable container scrolling if mouse up happens outside
-        if (containerRef.current) {
-          containerRef.current.style.overflow = originalOverflow
-        }
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!isSelecting || !containerRef.current) return
+      
+      const { x, y } = getCoordinates(e.clientX, e.clientY)
+      setCurrentPos({ x, y })
+    }
 
-        setIsSelecting(false)
-        setStartPos(null)
-        setCurrentPos(null)
+    const handleGlobalMouseUp = (e: MouseEvent) => {
+      if (!isSelecting) return
+      
+      console.log('🖱️ 전역 마우스 업 이벤트:', { isSelecting, startPos, currentPos })
+
+      // Re-enable container scrolling
+      if (containerRef.current) {
+        containerRef.current.style.overflow = originalOverflow
       }
+
+      if (startPos && currentPos) {
+        const x = Math.min(startPos.x, currentPos.x)
+        const y = Math.min(startPos.y, currentPos.y)
+        const width = Math.abs(currentPos.x - startPos.x)
+        const height = Math.abs(currentPos.y - startPos.y)
+
+        console.log('📏 전역 영역 크기:', { x, y, width, height })
+
+        if (width > 10 && height > 10) {
+          console.log('✅ 전역 영역 선택 완료!')
+          onAreaSelected({ x, y, width, height })
+        } else {
+          console.log('❌ 전역 영역이 너무 작습니다')
+        }
+      }
+
+      setIsSelecting(false)
+      setStartPos(null)
+      setCurrentPos(null)
     }
 
-    window.addEventListener("mouseup", handleMouseUpOutside)
-    return () => {
-      window.removeEventListener("mouseup", handleMouseUpOutside)
+    if (isSelecting) {
+      document.addEventListener("mousemove", handleGlobalMouseMove)
+      document.addEventListener("mouseup", handleGlobalMouseUp)
     }
-  }, [isSelecting, originalOverflow])
+
+    return () => {
+      document.removeEventListener("mousemove", handleGlobalMouseMove)
+      document.removeEventListener("mouseup", handleGlobalMouseUp)
+    }
+  }, [isSelecting, startPos, currentPos, originalOverflow, onAreaSelected, getCoordinates])
 
   useEffect(() => {
     // Disable body scrolling when selecting an area
