@@ -63,3 +63,4 @@ This is a Next.js 14 document signing application with the following key archite
 - supabase 관련 동작은 supabase mcp를 활용
 - 작업 시작전 plan 계획 시 techspec/techspec.md 파일을 읽고 작업 계획을 세운다
 - 각 단계별로 작업 시작할 때 세부 테크스펙을 techspec/sub/ 폴더 하위에 생성하고 작업이 완료되면 techspec/fin/ 폴더 하위에 changelog 형태로 기록한다.
+- 코드를 작성할 때에는 항상 문제 해결 방식으로 접근, TDD 적용, 단순성·명확성 유지, 에러 트라이 시도 횟수 제한(3회)로 설정하고 가장 최상위 규칙으로 지킨다[]

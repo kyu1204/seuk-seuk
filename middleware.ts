@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
 // Define protected routes
   const protectedRoutes = ['/dashboard']
   const authRoutes = ['/login', '/register']
-  const publicRoutes = ['/sign'] // Share links are public
+  const publicRoutes = ['/sign', '/test-coordinates'] // Share links are public, test page is public
 
   // Check if the current path is protected
   const isProtectedRoute = protectedRoutes.some(route => 

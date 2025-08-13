@@ -1,0 +1,46 @@
+<svg width="800" height="1000" xmlns="http://www.w3.org/2000/svg">
+  <!-- 배경 -->
+  <rect width="800" height="1000" fill="#ffffff" stroke="#cccccc" stroke-width="2"/>
+  
+  <!-- 문서 헤더 -->
+  <rect x="50" y="50" width="700" height="60" fill="#f8f9fa" stroke="#dee2e6"/>
+  <text x="400" y="85" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#495057">계약서 테스트 문서</text>
+  
+  <!-- 문서 내용 섹션들 -->
+  <rect x="50" y="150" width="700" height="200" fill="#ffffff" stroke="#e9ecef"/>
+  <text x="70" y="180" font-family="Arial" font-size="16" fill="#212529">제1조 (계약의 목적)</text>
+  <text x="70" y="210" font-family="Arial" font-size="12" fill="#495057">본 계약은 양 당사자 간의 업무 협력에 관한 제반 사항을 정함을 목적으로 한다.</text>
+  
+  <text x="70" y="250" font-family="Arial" font-size="16" fill="#212529">제2조 (계약 기간)</text>
+  <text x="70" y="280" font-family="Arial" font-size="12" fill="#495057">본 계약의 유효기간은 2024년 1월 1일부터 2024년 12월 31일까지로 한다.</text>
+  
+  <text x="70" y="320" font-family="Arial" font-size="16" fill="#212529">제3조 (계약 조건)</text>
+  
+  <!-- 서명 영역들을 위한 표시 (실제 테스트에서 선택할 영역들) -->
+  <!-- 갑 서명 영역 -->
+  <rect x="100" y="450" width="250" height="80" fill="none" stroke="#007bff" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="225" y="475" text-anchor="middle" font-family="Arial" font-size="14" fill="#007bff">갑 (회사) 서명</text>
+  <text x="110" y="500" font-family="Arial" font-size="12" fill="#6c757d">회사명: ___________________</text>
+  <text x="110" y="520" font-family="Arial" font-size="12" fill="#6c757d">대표자: ___________________</text>
+  
+  <!-- 을 서명 영역 -->
+  <rect x="450" y="450" width="250" height="80" fill="none" stroke="#28a745" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="575" y="475" text-anchor="middle" font-family="Arial" font-size="14" fill="#28a745">을 (개인) 서명</text>
+  <text x="460" y="500" font-family="Arial" font-size="12" fill="#6c757d">성명: ___________________</text>
+  <text x="460" y="520" font-family="Arial" font-size="12" fill="#6c757d">생년월일: _______________</text>
+  
+  <!-- 증인 서명 영역 -->
+  <rect x="275" y="580" width="250" height="60" fill="none" stroke="#ffc107" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="400" y="605" text-anchor="middle" font-family="Arial" font-size="14" fill="#ffc107">증인 서명</text>
+  <text x="285" y="625" font-family="Arial" font-size="12" fill="#6c757d">증인: ___________________</text>
+  
+  <!-- 날짜 영역 -->
+  <rect x="500" y="700" width="200" height="40" fill="none" stroke="#6f42c1" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="600" y="725" text-anchor="middle" font-family="Arial" font-size="12" fill="#6f42c1">날짜: 2024년 __월 __일</text>
+  
+  <!-- 문서 하단 -->
+  <text x="400" y="850" text-anchor="middle" font-family="Arial" font-size="10" fill="#868e96">본 문서는 테스트 목적으로 작성된 샘플 계약서입니다.</text>
+  
+  <!-- 페이지 번호 -->
+  <text x="750" y="980" text-anchor="end" font-family="Arial" font-size="10" fill="#adb5bd">- 1 -</text>
+</svg>

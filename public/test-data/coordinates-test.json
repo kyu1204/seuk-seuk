@@ -1,0 +1,403 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "서명영역 위치 알고리즘 검증용 테스트 데이터",
+    "coordinateSystem": "relative (0-1 range)",
+    "lastUpdated": "2025-01-08",
+    "testScenarios": [
+      "다양한 위치 테스트",
+      "다양한 크기 테스트", 
+      "경계 케이스 테스트",
+      "다중 서명영역 테스트",
+      "이미지 비율별 테스트"
+    ]
+  },
+  "testDocuments": [
+    {
+      "id": "test-basic-positions",
+      "name": "기본 위치 테스트",
+      "description": "서명영역의 다양한 위치 배치 테스트",
+      "imagePath": "/test-images/document-landscape.jpg",
+      "imageInfo": {
+        "naturalWidth": 800,
+        "naturalHeight": 600,
+        "aspectRatio": "4:3",
+        "orientation": "landscape"
+      },
+      "signatureAreas": [
+        {
+          "id": "top-left",
+          "name": "좌상단",
+          "x": 0.05,
+          "y": 0.05,
+          "width": 0.2,
+          "height": 0.1,
+          "required": true,
+          "signerName": "홍길동",
+          "description": "문서 좌상단 서명 위치"
+        },
+        {
+          "id": "top-right", 
+          "name": "우상단",
+          "x": 0.75,
+          "y": 0.05,
+          "width": 0.2,
+          "height": 0.1,
+          "required": true,
+          "signerName": "김철수",
+          "description": "문서 우상단 서명 위치"
+        },
+        {
+          "id": "center",
+          "name": "중앙",
+          "x": 0.4,
+          "y": 0.45,
+          "width": 0.2,
+          "height": 0.1,
+          "required": true,
+          "signerName": "박영희",
+          "description": "문서 중앙 서명 위치"
+        },
+        {
+          "id": "bottom-right",
+          "name": "우하단",
+          "x": 0.75,
+          "y": 0.85,
+          "width": 0.2,
+          "height": 0.1,
+          "required": true,
+          "signerName": "이민수",
+          "description": "문서 우하단 서명 위치"
+        }
+      ]
+    },
+    {
+      "id": "test-size-variations",
+      "name": "크기 변화 테스트",
+      "description": "다양한 크기의 서명영역 테스트",
+      "imagePath": "/test-images/document-portrait.jpg",
+      "imageInfo": {
+        "naturalWidth": 600,
+        "naturalHeight": 800,
+        "aspectRatio": "3:4",
+        "orientation": "portrait"
+      },
+      "signatureAreas": [
+        {
+          "id": "small",
+          "name": "소형 서명영역",
+          "x": 0.1,
+          "y": 0.1,
+          "width": 0.15,
+          "height": 0.06,
+          "required": true,
+          "signerName": "작은서명",
+          "description": "작은 크기의 서명영역"
+        },
+        {
+          "id": "medium",
+          "name": "중형 서명영역",
+          "x": 0.3,
+          "y": 0.3,
+          "width": 0.25,
+          "height": 0.1,
+          "required": true,
+          "signerName": "보통서명",
+          "description": "보통 크기의 서명영역"
+        },
+        {
+          "id": "large",
+          "name": "대형 서명영역",
+          "x": 0.1,
+          "y": 0.6,
+          "width": 0.4,
+          "height": 0.15,
+          "required": true,
+          "signerName": "큰서명",
+          "description": "큰 크기의 서명영역"
+        }
+      ]
+    },
+    {
+      "id": "test-edge-cases",
+      "name": "경계 케이스 테스트",
+      "description": "이미지 경계 근처의 서명영역 테스트",
+      "imagePath": "/test-images/document-square.jpg",
+      "imageInfo": {
+        "naturalWidth": 600,
+        "naturalHeight": 600,
+        "aspectRatio": "1:1",
+        "orientation": "square"
+      },
+      "signatureAreas": [
+        {
+          "id": "edge-top",
+          "name": "상단 경계",
+          "x": 0.3,
+          "y": 0,
+          "width": 0.4,
+          "height": 0.08,
+          "required": true,
+          "signerName": "상단경계",
+          "description": "이미지 상단 경계에 위치한 서명영역"
+        },
+        {
+          "id": "edge-left",
+          "name": "좌측 경계",
+          "x": 0,
+          "y": 0.3,
+          "width": 0.25,
+          "height": 0.1,
+          "required": true,
+          "signerName": "좌측경계",
+          "description": "이미지 좌측 경계에 위치한 서명영역"
+        },
+        {
+          "id": "edge-right",
+          "name": "우측 경계",
+          "x": 0.75,
+          "y": 0.5,
+          "width": 0.25,
+          "height": 0.1,
+          "required": true,
+          "signerName": "우측경계",
+          "description": "이미지 우측 경계에 위치한 서명영역"
+        },
+        {
+          "id": "edge-bottom",
+          "name": "하단 경계",
+          "x": 0.3,
+          "y": 0.92,
+          "width": 0.4,
+          "height": 0.08,
+          "required": true,
+          "signerName": "하단경계",
+          "description": "이미지 하단 경계에 위치한 서명영역"
+        },
+        {
+          "id": "corner-precise",
+          "name": "모서리 정밀",
+          "x": 0.85,
+          "y": 0.9,
+          "width": 0.15,
+          "height": 0.1,
+          "required": false,
+          "signerName": "모서리",
+          "description": "우하단 모서리 근처 정밀 위치"
+        }
+      ]
+    },
+    {
+      "id": "test-multiple-areas",
+      "name": "다중 서명영역 테스트",
+      "description": "하나의 문서에 많은 서명영역이 있는 경우",
+      "imagePath": "/test-images/contract-document.jpg",
+      "imageInfo": {
+        "naturalWidth": 800,
+        "naturalHeight": 1200,
+        "aspectRatio": "2:3",
+        "orientation": "portrait"
+      },
+      "signatureAreas": [
+        {
+          "id": "signee-1",
+          "name": "계약자 1",
+          "x": 0.1,
+          "y": 0.2,
+          "width": 0.35,
+          "height": 0.08,
+          "required": true,
+          "signerName": "계약자1",
+          "description": "첫 번째 계약자 서명"
+        },
+        {
+          "id": "signee-2",
+          "name": "계약자 2",
+          "x": 0.55,
+          "y": 0.2,
+          "width": 0.35,
+          "height": 0.08,
+          "required": true,
+          "signerName": "계약자2",
+          "description": "두 번째 계약자 서명"
+        },
+        {
+          "id": "witness-1",
+          "name": "증인 1",
+          "x": 0.1,
+          "y": 0.4,
+          "width": 0.25,
+          "height": 0.06,
+          "required": false,
+          "signerName": "증인1",
+          "description": "첫 번째 증인 서명"
+        },
+        {
+          "id": "witness-2",
+          "name": "증인 2",
+          "x": 0.4,
+          "y": 0.4,
+          "width": 0.25,
+          "height": 0.06,
+          "required": false,
+          "signerName": "증인2",
+          "description": "두 번째 증인 서명"
+        },
+        {
+          "id": "notary",
+          "name": "공증인",
+          "x": 0.7,
+          "y": 0.4,
+          "width": 0.25,
+          "height": 0.06,
+          "required": false,
+          "signerName": "공증인",
+          "description": "공증인 서명"
+        },
+        {
+          "id": "company-seal",
+          "name": "회사 직인",
+          "x": 0.1,
+          "y": 0.65,
+          "width": 0.2,
+          "height": 0.15,
+          "required": true,
+          "signerName": "회사직인",
+          "description": "회사 공식 직인 위치"
+        },
+        {
+          "id": "date-field",
+          "name": "날짜 기입",
+          "x": 0.4,
+          "y": 0.7,
+          "width": 0.3,
+          "height": 0.05,
+          "required": true,
+          "signerName": "날짜",
+          "description": "계약 날짜 기입 위치"
+        },
+        {
+          "id": "final-approval",
+          "name": "최종 승인",
+          "x": 0.3,
+          "y": 0.9,
+          "width": 0.4,
+          "height": 0.08,
+          "required": true,
+          "signerName": "최종승인자",
+          "description": "최종 승인자 서명"
+        }
+      ]
+    },
+    {
+      "id": "test-precision",
+      "name": "정밀도 테스트",
+      "description": "소수점 정밀도 및 변환 정확성 테스트",
+      "imagePath": "/test-images/precision-test.jpg",
+      "imageInfo": {
+        "naturalWidth": 1000,
+        "naturalHeight": 1000,
+        "aspectRatio": "1:1",
+        "orientation": "square"
+      },
+      "signatureAreas": [
+        {
+          "id": "precision-1",
+          "name": "정밀도 테스트 1",
+          "x": 0.123456,
+          "y": 0.234567,
+          "width": 0.156789,
+          "height": 0.067890,
+          "required": true,
+          "signerName": "정밀1",
+          "description": "소수점 6자리 정밀도 테스트"
+        },
+        {
+          "id": "precision-2",
+          "name": "정밀도 테스트 2",
+          "x": 0.777777,
+          "y": 0.888888,
+          "width": 0.111111,
+          "height": 0.055555,
+          "required": true,
+          "signerName": "정밀2",
+          "description": "반복 소수 정밀도 테스트"
+        },
+        {
+          "id": "minimal-size",
+          "name": "최소 크기",
+          "x": 0.5,
+          "y": 0.5,
+          "width": 0.01,
+          "height": 0.01,
+          "required": false,
+          "signerName": "최소",
+          "description": "1% 크기 최소 서명영역"
+        }
+      ]
+    }
+  ],
+  "testScenarios": [
+    {
+      "id": "browser-compatibility",
+      "name": "브라우저 호환성 테스트",
+      "description": "Chrome, Firefox, Safari, Edge에서 동일한 위치 렌더링 확인",
+      "expectedBehavior": "모든 브라우저에서 픽셀 단위까지 동일한 위치",
+      "tolerancePixels": 1
+    },
+    {
+      "id": "responsive-scaling",
+      "name": "반응형 스케일링 테스트",
+      "description": "화면 크기 변경 시 상대적 위치 유지 확인",
+      "testSizes": [
+        { "name": "모바일", "width": 375, "height": 667 },
+        { "name": "태블릿", "width": 768, "height": 1024 },
+        { "name": "데스크톱", "width": 1920, "height": 1080 }
+      ],
+      "expectedBehavior": "화면 크기와 관계없이 동일한 상대적 위치"
+    },
+    {
+      "id": "zoom-stability",
+      "name": "줌 레벨 안정성 테스트",
+      "description": "브라우저 확대/축소 시 위치 정확성 확인",
+      "zoomLevels": [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
+      "expectedBehavior": "줌 레벨과 관계없이 정확한 상대적 위치"
+    },
+    {
+      "id": "image-ratio-test",
+      "name": "이미지 비율 테스트",
+      "description": "다양한 비율의 이미지에서 위치 정확성 확인",
+      "imageRatios": [
+        { "name": "초광각", "ratio": "21:9" },
+        { "name": "와이드", "ratio": "16:9" },
+        { "name": "표준", "ratio": "4:3" },
+        { "name": "정사각형", "ratio": "1:1" },
+        { "name": "세로", "ratio": "3:4" },
+        { "name": "길쭉함", "ratio": "9:16" }
+      ],
+      "expectedBehavior": "이미지 비율과 관계없이 정확한 상대적 위치"
+    }
+  ],
+  "validationRules": {
+    "coordinateRange": {
+      "min": 0,
+      "max": 1,
+      "description": "모든 좌표값은 0-1 범위 내"
+    },
+    "minimumSize": {
+      "width": 0.01,
+      "height": 0.01,
+      "description": "최소 1% 크기 권장"
+    },
+    "maximumSize": {
+      "width": 0.5,
+      "height": 0.5,
+      "description": "최대 50% 크기 권장"
+    },
+    "boundary": {
+      "description": "x + width ≤ 1, y + height ≤ 1"
+    },
+    "pixelTolerance": 1,
+    "description": "변환 시 최대 1픽셀 오차 허용"
+  }
+}
