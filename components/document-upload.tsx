@@ -16,6 +16,7 @@ import { createDocument, saveSignatureAreas, createDocumentShare, getDocumentSig
 import { Tables } from "@/lib/database-types"
 import SignatureRequestDialog from "@/components/signature-request-dialog"
 import { calculateImageLayout } from "@/lib/coordinate-utils"
+import { DocumentImage } from "@/components/ui/document-image"
 
 type Document = Tables<'documents'>
 
@@ -400,12 +401,11 @@ export default function DocumentUpload() {
               />
             ) : (
               <div ref={documentContainerRef} className="relative">
-                <img
+                <DocumentImage
                   ref={documentImageRef}
                   src={document || "/placeholder.svg"}
                   alt={t("upload.documentAlt")}
-                  className="w-full h-auto object-contain"
-                  draggable="false"
+                  variant="default"
                 />
                 {signatureAreas.map((area, index) => {
                   // object-fit: contain을 고려한 정확한 위치 계산

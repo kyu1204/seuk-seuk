@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 // Import the useLanguage hook at the top of the file
 import { useLanguage } from "@/contexts/language-context";
 import { calculateImageLayout } from "@/lib/coordinate-utils";
+import { DocumentImage } from "@/components/ui/document-image";
 
 interface AreaSelectorProps {
   image: string;
@@ -338,12 +339,11 @@ export default function AreaSelector({
           touchAction: "none",
         }}
       >
-        <img
+        <DocumentImage
           ref={imageRef}
           src={image || "/placeholder.svg"}
           alt="Document"
-          className="w-full h-auto object-contain"
-          draggable="false"
+          variant="default"
           style={{ userSelect: "none", WebkitUserSelect: "none" }}
         />
 

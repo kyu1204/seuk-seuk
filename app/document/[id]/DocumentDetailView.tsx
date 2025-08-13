@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { User } from '@supabase/supabase-js';
 import type { LucideIcon } from 'lucide-react';
+import { DocumentImage } from '@/components/ui/document-image';
 
 // Simplified types based on your existing structure
 interface DocumentDetailViewProps {
@@ -40,6 +41,7 @@ interface DocumentDetailViewProps {
     user_id: string;
   };
   user: User;
+  documentUrl?: string;
 }
 
 const statusConfig: Record<
@@ -73,7 +75,7 @@ const statusConfig: Record<
   },
 };
 
-export function DocumentDetailView({ document, user }: DocumentDetailViewProps) {
+export function DocumentDetailView({ document, user, documentUrl }: DocumentDetailViewProps) {
   const { t, language } = useLanguage();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -221,11 +223,22 @@ export function DocumentDetailView({ document, user }: DocumentDetailViewProps) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              {t('document.previewPlaceholder')}
-            </p>
-          </div>
+          {documentUrl ? (
+            <div className="flex justify-center p-4">
+              <DocumentImage
+                src={documentUrl}
+                alt={document.title}
+                variant="preview"
+                className="max-h-96"
+              />
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                {t('document.previewPlaceholder')}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

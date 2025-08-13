@@ -22,6 +22,7 @@ import {
   type SignerInfo,
 } from "@/app/actions/signing";
 import { calculateImageLayout } from "@/lib/coordinate-utils";
+import { DocumentImage } from "@/components/ui/document-image";
 
 export default function SignPage({ params }: { params: { id: string } }) {
   const { t } = useLanguage();
@@ -486,12 +487,11 @@ export default function SignPage({ params }: { params: { id: string } }) {
             touchAction: "pan-x pan-y", // Allow panning but prevent zooming
           }}
         >
-          <img
+          <DocumentImage
             ref={documentImageRef}
             src={documentUrl}
             alt={t("sign.documentAlt")}
-            className="w-full h-auto object-contain"
-            draggable="false"
+            variant="default"
             style={{ userSelect: "none" }}
           />
 
