@@ -26,7 +26,11 @@ import { DocumentImage } from "@/components/ui/document-image";
 
 type Document = Tables<"documents">;
 
-export default function DocumentUpload() {
+export default function DocumentUpload({
+  documentId,
+}: {
+  documentId?: string;
+}) {
   const { t } = useLanguage();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -55,62 +59,41 @@ export default function DocumentUpload() {
   const documentContainerRef = useRef<HTMLDivElement>(null);
   // 스크롤 위치 저장 제거 (페이지 스크롤로 통합)
 
-  // Load existing document if there's a document ID in localStorage or URL
+  // Load existing document when an ID is provided via props
   useEffect(() => {
-    const loadExistingDocument = async () => {
-      // Try to get document ID from localStorage (for demo purposes)
-      const storedDocumentId = localStorage.getItem("currentDocumentId");
-      if (storedDocumentId) {
-        console.log("🔄 [UI] Loading existing document:", storedDocumentId);
-
-        try {
-          const result = await getDocumentById(storedDocumentId);
-          console.log("📊 [UI] getDocumentById 결과:", result);
-
-          if (result.success && result.data) {
-            console.log("✅ [UI] 기존 문서 로드 성공:", {
-              documentId: result.data.id,
-              title: result.data.title,
-              signatureAreaCount: result.data.signature_areas.length,
-            });
-
-            setCurrentDocument(result.data);
-
-            // Load signature areas from database
-            if (
-              result.data.signature_areas &&
-              result.data.signature_areas.length > 0
-            ) {
-              const areas = result.data.signature_areas.map((area) => ({
-                x: area.x,
-                y: area.y,
-                width: area.width,
-                height: area.height,
-              }));
-              console.log("📥 [UI] 서명 영역 로드:", areas);
-              setSignatureAreas(areas);
-            }
-
-            // Get signed URL for document display
-            const signedUrlResult = await getDocumentSignedUrl(result.data.id);
-            if (signedUrlResult.success && signedUrlResult.data) {
-              console.log("🖼️ [UI] 문서 이미지 URL 로드 성공");
-              setDocument(signedUrlResult.data);
-            }
-          } else {
-            console.log("❌ [UI] 기존 문서 로드 실패:", result.error);
-            // Clear invalid document ID from storage
-            localStorage.removeItem("currentDocumentId");
+    const loadById = async (id: string) => {
+      try {
+        const result = await getDocumentById(id);
+        if (result.success && result.data) {
+          setCurrentDocument(result.data);
+          if (
+            result.data.signature_areas &&
+            result.data.signature_areas.length > 0
+          ) {
+            const areas = result.data.signature_areas.map((area) => ({
+              x: area.x,
+              y: area.y,
+              width: area.width,
+              height: area.height,
+            }));
+            setSignatureAreas(areas);
           }
-        } catch (error) {
-          console.error("❌ [UI] 기존 문서 로드 예외:", error);
-          localStorage.removeItem("currentDocumentId");
+          const signedUrlResult = await getDocumentSignedUrl(result.data.id);
+          if (signedUrlResult.success && signedUrlResult.data) {
+            setDocument(signedUrlResult.data);
+          }
+        } else if (!result.success) {
+          console.error("Failed to load document:", result.error);
         }
+      } catch (error) {
+        console.error("Failed to load document by id:", error);
       }
     };
 
-    loadExistingDocument();
-  }, []);
+    if (documentId) {
+      loadById(documentId);
+    }
+  }, [documentId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -188,11 +171,10 @@ export default function DocumentUpload() {
         console.log("✅ [UI] currentDocument 설정:", result.data.id);
         setCurrentDocument(result.data);
 
-        // Store document ID for persistence
-        localStorage.setItem("currentDocumentId", result.data.id);
-        console.log("💾 [UI] 문서 ID localStorage 저장:", result.data.id);
-
         toast.success(t("upload.success"));
+
+        // Navigate to dedicated edit page for consistency
+        router.push(`/upload/${result.data.id}`);
       } else {
         console.error("❌ [UI] 업로드 실패:", result.error);
         toast.error(result.error || t("upload.failed"));
@@ -290,10 +272,6 @@ export default function DocumentUpload() {
     setCurrentDocument(null);
     setSignatureAreas([]);
     setIsSelecting(false);
-
-    // Clear localStorage
-    localStorage.removeItem("currentDocumentId");
-    console.log("🗑️ [UI] localStorage 문서 ID 제거");
 
     // Reset file input
     if (fileInputRef.current) {
