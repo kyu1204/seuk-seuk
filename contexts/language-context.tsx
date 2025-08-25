@@ -21,7 +21,7 @@ type LanguageContextType = {
 // Create the context with default values
 const LanguageContext = createContext<LanguageContextType>({
   language: "ko",
-  setLanguage: () => {},
+  setLanguage: () => { },
   t: (key, params) => key,
 });
 
@@ -65,7 +65,7 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.areaSelectorInstructions": "클릭 후 드래그하여 서명 영역을 선택하세요",
     "upload.areaSelectorEscHint": "ESC 키 또는 취소 버튼으로 종료할 수 있습니다",
     "upload.cancel": "취소",
-    
+
     // Signature Request
     "signatureRequest.title": "서명 요청 생성",
     "signatureRequest.description": "서명받을 사람들을 지정하고 보안 설정을 구성하세요",
@@ -151,6 +151,12 @@ const translations: Record<Language, Record<string, string>> = {
     "language.ko": "한국어",
     "language.en": "English",
 
+    // Common
+    "common.cancel": "취소",
+    "common.previous": "이전",
+    "common.next": "다음",
+    "common.optional": "선택사항",
+
     // Dashboard
     "dashboard.title": "문서 관리",
     "dashboard.description": "문서를 업로드하고 서명 영역을 지정하세요",
@@ -160,7 +166,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.profile": "프로필",
     "dashboard.settings": "설정",
     "dashboard.signOut": "로그아웃",
-    
+
     // Dashboard Filters & Actions
     "dashboard.searchPlaceholder": "문서 제목이나 파일명으로 검색...",
     "dashboard.activeFilters": "활성 필터",
@@ -176,32 +182,32 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.sort.status": "상태",
     "dashboard.sort.ascending": "오름차순",
     "dashboard.sort.descending": "내림차순",
-    
+
     // Document Status
     "dashboard.status.draft": "초안",
     "dashboard.status.published": "진행중",
     "dashboard.status.completed": "완료",
     "dashboard.status.expired": "만료",
     "dashboard.shared": "공유됨",
-    
+
     // Document Actions
     "dashboard.actions.view": "보기",
     "dashboard.actions.edit": "편집",
     "dashboard.actions.share": "공유",
     "dashboard.actions.delete": "삭제",
     "dashboard.actions.download": "다운로드",
-    
+
     // Document Info
     "dashboard.signatureProgress": "서명 진행률",
     "dashboard.signaturesRemaining": "{count}개 서명 대기",
     "dashboard.created": "생성",
     "dashboard.updated": "수정",
     "dashboard.lastAccessed": "최근 접근",
-    
+
     // Document List
     "dashboard.documentsCount": "{count}개 문서",
     "dashboard.searchResultsCount": "'{query}' 검색 결과: {count}개",
-    
+
     // Empty States
     "dashboard.noDocuments": "문서가 없습니다",
     "dashboard.noDocumentsDescription": "첫 번째 문서를 업로드하여 서명 프로세스를 시작하세요.",
@@ -218,13 +224,13 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.noSearchResults": "검색 결과가 없습니다",
     "dashboard.noSearchResultsDescription": "'{query}'에 대한 검색 결과를 찾을 수 없습니다.",
     "dashboard.clearSearch": "검색 초기화",
-    
+
     // Delete Dialog
     "dashboard.deleteDialog.title": "문서를 삭제하시겠습니까?",
     "dashboard.deleteDialog.description": "'{title}' 문서와 관련된 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
     "dashboard.deleteDialog.cancel": "취소",
     "dashboard.deleteDialog.confirm": "삭제",
-    
+
     // Dashboard Navigation
     "dashboard.myDocuments": "내 문서",
     "dashboard.newDocument": "새 문서",
@@ -393,7 +399,7 @@ const translations: Record<Language, Record<string, string>> = {
     "register.joinMessage":
       "슥슥에 가입하여 문서 서명 및 관리를 시작하세요. 간편하고 안전한 서명 경험을 제공합니다.",
     "register.kakaoTalk": "카카오",
-    
+
     // Auth Errors - Server Actions
     "auth.invalidInput": "입력값을 확인해주세요",
     "auth.validEmail": "유효한 이메일을 입력해주세요",
@@ -445,7 +451,7 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.areaSelectorInstructions": "Click and drag to select signature area",
     "upload.areaSelectorEscHint": "Press ESC or click Cancel to exit",
     "upload.cancel": "Cancel",
-    
+
     // Signature Request
     "signatureRequest.title": "Create Signature Request",
     "signatureRequest.description": "Specify signers and configure security settings",
@@ -567,6 +573,12 @@ const translations: Record<Language, Record<string, string>> = {
     "language.ko": "한국어",
     "language.en": "English",
 
+    // Common
+    "common.cancel": "Cancel",
+    "common.previous": "Previous",
+    "common.next": "Next",
+    "common.optional": "Optional",
+
     // Dashboard
     "dashboard.title": "Document Management",
     "dashboard.description": "Upload documents and define signature areas",
@@ -576,7 +588,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.profile": "Profile",
     "dashboard.settings": "Settings",
     "dashboard.signOut": "Sign Out",
-    
+
     // Dashboard Filters & Actions
     "dashboard.searchPlaceholder": "Search by document title or filename...",
     "dashboard.activeFilters": "Active filters",
@@ -592,32 +604,32 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.sort.status": "Status",
     "dashboard.sort.ascending": "Ascending",
     "dashboard.sort.descending": "Descending",
-    
+
     // Document Status
     "dashboard.status.draft": "Draft",
     "dashboard.status.published": "In Progress",
     "dashboard.status.completed": "Completed",
     "dashboard.status.expired": "Expired",
     "dashboard.shared": "Shared",
-    
+
     // Document Actions
     "dashboard.actions.view": "View",
     "dashboard.actions.edit": "Edit",
     "dashboard.actions.share": "Share",
     "dashboard.actions.delete": "Delete",
     "dashboard.actions.download": "Download",
-    
+
     // Document Info
     "dashboard.signatureProgress": "Signature Progress",
     "dashboard.signaturesRemaining": "{count} signatures pending",
     "dashboard.created": "Created",
     "dashboard.updated": "Updated",
     "dashboard.lastAccessed": "Last accessed",
-    
+
     // Document List
     "dashboard.documentsCount": "{count} documents",
     "dashboard.searchResultsCount": "Search results for '{query}': {count}",
-    
+
     // Empty States
     "dashboard.noDocuments": "No documents yet",
     "dashboard.noDocumentsDescription": "Upload your first document to start the signing process.",
@@ -634,13 +646,13 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.noSearchResults": "No search results",
     "dashboard.noSearchResultsDescription": "No results found for '{query}'.",
     "dashboard.clearSearch": "Clear Search",
-    
+
     // Delete Dialog
     "dashboard.deleteDialog.title": "Delete Document?",
     "dashboard.deleteDialog.description": "'{title}' and all related data will be permanently deleted. This action cannot be undone.",
     "dashboard.deleteDialog.cancel": "Cancel",
     "dashboard.deleteDialog.confirm": "Delete",
-    
+
     // Dashboard Navigation
     "dashboard.myDocuments": "My Documents",
     "dashboard.newDocument": "New Document",
@@ -775,7 +787,7 @@ const translations: Record<Language, Record<string, string>> = {
     "register.joinMessage":
       "Sign up for Seuk to start signing and managing your documents. We provide a simple and secure signing experience.",
     "register.kakaoTalk": "Kakao",
-    
+
     // Auth Errors - Server Actions
     "auth.invalidInput": "Please check your input",
     "auth.validEmail": "Please enter a valid email",
