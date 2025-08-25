@@ -41,21 +41,21 @@ export default function SignerOnboarding({
   const steps = [
     {
       icon: FileText,
-      title: t("signer.onboarding.step1.title") || "문서 검토",
-      description: t("signer.onboarding.step1.description") || "먼저 문서 내용을 확인하세요",
-      detail: t("signer.onboarding.step1.detail") || "서명이 필요한 영역이 빨간색으로 표시됩니다"
+      title: t("signer.onboarding.step1.title"),
+      description: t("signer.onboarding.step1.description"),
+      detail: t("signer.onboarding.step1.detail")
     },
     {
       icon: PenTool,
-      title: t("signer.onboarding.step2.title") || "서명하기",
-      description: t("signer.onboarding.step2.description", { count: totalSignatureAreas }) || `총 ${totalSignatureAreas}개 영역에 서명해주세요`,
-      detail: t("signer.onboarding.step2.detail") || "빨간색 영역을 클릭하면 서명 패드가 열립니다"
+      title: t("signer.onboarding.step2.title"),
+      description: t("signer.onboarding.step2.description", { count: totalSignatureAreas }),
+      detail: t("signer.onboarding.step2.detail")
     },
     {
       icon: Send,
-      title: t("signer.onboarding.step3.title") || "제출하기",
-      description: t("signer.onboarding.step3.description") || "모든 서명 완료 후 문서를 제출합니다",
-      detail: t("signer.onboarding.step3.detail") || "제출 후에는 문서를 다시 수정할 수 없습니다"
+      title: t("signer.onboarding.step3.title"),
+      description: t("signer.onboarding.step3.description"),
+      detail: t("signer.onboarding.step3.detail")
     }
   ]
 
@@ -81,12 +81,11 @@ export default function SignerOnboarding({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl">
-              {t("signer.onboarding.title") || "서명 가이드"}
+              {t("signer.onboarding.title")}
             </DialogTitle>
           </div>
           <DialogDescription>
-            {t("signer.onboarding.subtitle", { title: documentTitle }) ||
-              `"${documentTitle}" 문서의 서명 과정을 안내해드립니다`}
+            {t("signer.onboarding.subtitle", { title: documentTitle })}
           </DialogDescription>
         </DialogHeader>
 
@@ -166,12 +165,12 @@ export default function SignerOnboarding({
               >
                 {currentStep === steps.length - 1 ? (
                   <>
-                    {t("signer.onboarding.startSigning") || "서명 시작"}
+                    {t("signer.onboarding.startSigning")}
                     <Send className="w-4 h-4" />
                   </>
                 ) : (
                   <>
-                    {t("common.next") || "다음"}
+                    {t("common.next")}
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
