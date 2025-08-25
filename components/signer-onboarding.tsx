@@ -76,7 +76,9 @@ export default function SignerOnboarding({
   if (!isOpen) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => { }}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose()
+    }}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
