@@ -149,7 +149,7 @@ export default function SignerOnboarding({
               onClick={handlePrevious}
               disabled={currentStep === 0}
             >
-              {t("common.previous") || "이전"}
+              {t("common.previous")}
             </Button>
 
             <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export default function SignerOnboarding({
                 variant="ghost"
                 onClick={onClose}
               >
-                {t("signer.onboarding.skipGuide") || "가이드 건너뛰기"}
+                {t("signer.onboarding.skipGuide")}
               </Button>
 
               <Button
