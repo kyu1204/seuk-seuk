@@ -2,15 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import DocumentUpload from "@/components/document-upload";
 import { useLanguage } from "@/contexts/language-context";
 import { deleteDocument } from "@/app/actions/document";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Plus,
-  FolderOpen,
-} from "lucide-react";
+import { Plus, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -36,9 +31,6 @@ export default function DashboardPage({ user }: DashboardPageProps) {
   const router = useRouter();
 
   // Dashboard state
-  const [activeTab, setActiveTab] = useState<"documents" | "upload">(
-    "documents"
-  );
   const [documentState, setDocumentState] = useState<DocumentListState>({
     documents: [],
     loading: true,
@@ -106,9 +98,9 @@ export default function DashboardPage({ user }: DashboardPageProps) {
             break;
 
           case "edit":
-            // Switch to upload tab and load document for editing
-            setActiveTab("upload");
-            // You might want to pass document ID to DocumentUpload component
+            if (document) {
+              router.push(`/upload/${document.id}`);
+            }
             break;
 
           case "share":
@@ -166,8 +158,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
   }, []);
 
   const handleCreateNew = useCallback(() => {
-    setActiveTab("upload");
-  }, []);
+    router.push("/upload");
+  }, [router]);
 
   const handleClearFilters = useCallback(() => {
     setDocumentState((prev) => ({
@@ -183,56 +175,43 @@ export default function DashboardPage({ user }: DashboardPageProps) {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">
-            {t("dashboard.welcome", { name: user.user_metadata?.name || user.email?.split("@")[0] || "User" })}
+            {t("dashboard.welcome", {
+              name:
+                user.user_metadata?.name || user.email?.split("@")[0] || "User",
+            })}
           </h1>
           <p className="text-muted-foreground">{t("dashboard.description")}</p>
         </div>
 
         {/* Main Content */}
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) =>
-            setActiveTab(value as "documents" | "upload")
-          }
-          className="space-y-6"
-        >
+        <div className="space-y-6">
           <div className="flex items-center justify-end">
-            {activeTab === "documents" && (
-              <Button onClick={handleCreateNew} className="gap-2">
-                <Plus className="h-4 w-4" />
-                {t("dashboard.createNewDocument")}
-              </Button>
-            )}
+            <Button onClick={handleCreateNew} className="gap-2">
+              <Plus className="h-4 w-4" />
+              {t("dashboard.createNewDocument")}
+            </Button>
           </div>
 
-          {/* Documents Tab */}
-          <TabsContent value="documents" className="space-y-6">
-            <DocumentFilters
-              currentFilter={documentState.filter}
-              counts={documentState.counts}
-              searchQuery={documentState.searchQuery}
-              sortOptions={documentState.sortOptions}
-              onFilterChange={handleFilterChange}
-              onSearchChange={handleSearchChange}
-              onSortChange={handleSortChange}
-            />
+          <DocumentFilters
+            currentFilter={documentState.filter}
+            counts={documentState.counts}
+            searchQuery={documentState.searchQuery}
+            sortOptions={documentState.sortOptions}
+            onFilterChange={handleFilterChange}
+            onSearchChange={handleSearchChange}
+            onSortChange={handleSortChange}
+          />
 
-            <DocumentList
-              documents={documentState.documents}
-              loading={documentState.loading}
-              filter={documentState.filter}
-              searchQuery={documentState.searchQuery}
-              onDocumentAction={handleDocumentAction}
-              onCreateNew={handleCreateNew}
-              onClearFilters={handleClearFilters}
-            />
-          </TabsContent>
-
-          {/* Upload Tab */}
-          <TabsContent value="upload" className="space-y-6">
-            <DocumentUpload />
-          </TabsContent>
-        </Tabs>
+          <DocumentList
+            documents={documentState.documents}
+            loading={documentState.loading}
+            filter={documentState.filter}
+            searchQuery={documentState.searchQuery}
+            onDocumentAction={handleDocumentAction}
+            onCreateNew={handleCreateNew}
+            onClearFilters={handleClearFilters}
+          />
+        </div>
       </div>
     </div>
   );
