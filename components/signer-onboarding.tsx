@@ -3,20 +3,20 @@
 import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog"
-import { 
-  CheckCircle, 
-  FileText, 
-  PenTool, 
-  Send, 
+import {
+  CheckCircle,
+  FileText,
+  PenTool,
+  Send,
   ArrowRight,
-  X 
+  X
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -28,12 +28,12 @@ interface SignerOnboardingProps {
   totalSignatureAreas: number
 }
 
-export default function SignerOnboarding({ 
-  isOpen, 
-  onClose, 
-  onStart, 
+export default function SignerOnboarding({
+  isOpen,
+  onClose,
+  onStart,
   documentTitle,
-  totalSignatureAreas 
+  totalSignatureAreas
 }: SignerOnboardingProps) {
   const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState(0)
@@ -48,7 +48,7 @@ export default function SignerOnboarding({
     {
       icon: PenTool,
       title: t("signer.onboarding.step2.title") || "서명하기",
-      description: t("signer.onboarding.step2.description") || `총 ${totalSignatureAreas}개 영역에 서명해주세요`,
+      description: t("signer.onboarding.step2.description", { count: totalSignatureAreas }) || `총 ${totalSignatureAreas}개 영역에 서명해주세요`,
       detail: t("signer.onboarding.step2.detail") || "빨간색 영역을 클릭하면 서명 패드가 열립니다"
     },
     {
@@ -76,25 +76,17 @@ export default function SignerOnboarding({
   if (!isOpen) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="max-w-2xl" hideClose>
+    <Dialog open={isOpen} onOpenChange={() => { }}>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl">
               {t("signer.onboarding.title") || "서명 가이드"}
             </DialogTitle>
-            <Button
-              variant="ghost" 
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
           <DialogDescription>
-            {t("signer.onboarding.subtitle", { title: documentTitle }) || 
-             `"${documentTitle}" 문서의 서명 과정을 안내해드립니다`}
+            {t("signer.onboarding.subtitle", { title: documentTitle }) ||
+              `"${documentTitle}" 문서의 서명 과정을 안내해드립니다`}
           </DialogDescription>
         </DialogHeader>
 
@@ -104,11 +96,10 @@ export default function SignerOnboarding({
             {steps.map((_, index) => (
               <div key={index} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                    index <= currentStep
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${index <= currentStep
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   {index < currentStep ? (
                     <CheckCircle className="w-4 h-4" />
@@ -118,9 +109,8 @@ export default function SignerOnboarding({
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`w-12 h-0.5 mx-2 transition-colors ${
-                      index < currentStep ? "bg-primary" : "bg-muted"
-                    }`}
+                    className={`w-12 h-0.5 mx-2 transition-colors ${index < currentStep ? "bg-primary" : "bg-muted"
+                      }`}
                   />
                 )}
               </div>
@@ -136,7 +126,7 @@ export default function SignerOnboarding({
                     className: "w-8 h-8 text-primary"
                   })}
                 </div>
-                
+
                 <div>
                   <h3 className="text-xl font-semibold mb-2">
                     {steps[currentStep].title}
@@ -161,7 +151,7 @@ export default function SignerOnboarding({
             >
               {t("common.previous") || "이전"}
             </Button>
-            
+
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
@@ -169,7 +159,7 @@ export default function SignerOnboarding({
               >
                 {t("signer.onboarding.skipGuide") || "가이드 건너뛰기"}
               </Button>
-              
+
               <Button
                 onClick={handleNext}
                 className="gap-2"
