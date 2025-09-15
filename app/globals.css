@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221 83% 53%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 9.8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Dot pattern for hero section */
+.bg-dot-pattern {
+  background-image: radial-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Grid pattern for sections */
+.bg-grid-pattern {
+  background-image: linear-gradient(to right, rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Angled card effect */
+.card-angled {
+  transform: perspective(1000px) rotateY(-5deg);
+  transition: transform 0.3s ease;
+}
+
+.card-angled:hover {
+  transform: perspective(1000px) rotateY(0deg);
+}
+
+.card-angled-right {
+  transform: perspective(1000px) rotateY(5deg);
+  transition: transform 0.3s ease;
+}
+
+.card-angled-right:hover {
+  transform: perspective(1000px) rotateY(0deg);
+}
+
+/* Notification banner */
+.notification-banner {
+  background-color: #3b82f6;
+  color: white;
+  padding: 0.5rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(90deg, #1e40af 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.dark .gradient-text {
+  background: linear-gradient(90deg, #ffffff 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
