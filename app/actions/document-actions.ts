@@ -1,71 +1,226 @@
 "use server"
 
-import { createCanvas, loadImage } from "canvas"
+import { createServerClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+import type { Document, DocumentInsert, Signature, SignatureInsert, SignatureArea } from '@/lib/supabase/database.types'
 
-interface SignatureData {
-  areaIndex: number
-  signature: string
+// Generate a random short URL
+function generateShortUrl(): string {
+  return Math.random().toString(36).substring(2, 15)
 }
 
-interface Area {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-export async function generateSignedDocument(documentImage: string, signatures: SignatureData[], areas: Area[]) {
+/**
+ * Upload a file to Supabase Storage and create a document record
+ */
+export async function uploadDocument(formData: FormData) {
   try {
-    // Instead of making a fetch request to our own API, let's process the image directly here
-    // This eliminates potential network issues and simplifies the flow
+    const supabase = createServerClient()
+    const file = formData.get('file') as File
+    const filename = formData.get('filename') as string
+    const signatureAreas = JSON.parse(formData.get('signatureAreas') as string) as SignatureArea[]
 
-    if (!documentImage) {
-      throw new Error("Document image is required")
+    if (!file || !filename) {
+      return { error: 'File and filename are required' }
     }
 
-    // Load the document image
-    const docImage = await loadImage(documentImage)
+    // Generate unique filename to avoid conflicts
+    const timestamp = Date.now()
+    const fileExtension = file.name.split('.').pop() || ''
+    const uniqueFilename = `${timestamp}-${filename}`
 
-    // Create a canvas with the same dimensions as the document
-    const canvas = createCanvas(docImage.width, docImage.height)
-    const ctx = canvas.getContext("2d")
+    // Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('documents')
+      .upload(uniqueFilename, file)
 
-    // Draw the document image
-    ctx.drawImage(docImage, 0, 0)
+    if (uploadError) {
+      console.error('Upload error:', uploadError)
+      return { error: 'Failed to upload file' }
+    }
 
-    // Add each signature to the document
-    if (signatures && signatures.length > 0 && areas) {
-      for (const signature of signatures) {
-        if (signature.areaIndex === undefined || !signature.signature) continue
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('documents')
+      .getPublicUrl(uniqueFilename)
 
-        const area = areas[signature.areaIndex]
-        if (!area) continue
+    // Generate short URL
+    const shortUrl = generateShortUrl()
 
-        // Load and draw the signature
-        try {
-          const signatureImage = await loadImage(signature.signature)
-          ctx.drawImage(signatureImage, area.x, area.y, area.width, area.height)
-        } catch (err) {
-          console.error("Error loading signature:", err)
-          // Continue with other signatures even if one fails
-        }
+    // Create document record
+    const documentData: DocumentInsert = {
+      filename,
+      file_url: publicUrl,
+      signature_areas: signatureAreas,
+      short_url: shortUrl,
+      status: 'draft'
+    }
+
+    const { data: document, error: dbError } = await supabase
+      .from('documents')
+      .insert(documentData)
+      .select()
+      .single()
+
+    if (dbError) {
+      console.error('Database error:', dbError)
+      return { error: 'Failed to create document record' }
+    }
+
+    return { success: true, document, shortUrl }
+  } catch (error) {
+    console.error('Upload document error:', error)
+    return { error: 'An unexpected error occurred' }
+  }
+}
+
+/**
+ * Get document by short URL
+ */
+export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string }> {
+  try {
+    const supabase = createServerClient()
+
+    // Get document
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('short_url', shortUrl)
+      .single()
+
+    if (docError || !document) {
+      return { document: null, signatures: [], error: 'Document not found' }
+    }
+
+    // Get existing signatures
+    const { data: signatures, error: sigError } = await supabase
+      .from('signatures')
+      .select('*')
+      .eq('document_id', document.id)
+      .order('area_index')
+
+    if (sigError) {
+      console.error('Signatures error:', sigError)
+      return { document, signatures: [], error: 'Failed to load signatures' }
+    }
+
+    return { document, signatures: signatures || [] }
+  } catch (error) {
+    console.error('Get document error:', error)
+    return { document: null, signatures: [], error: 'An unexpected error occurred' }
+  }
+}
+
+/**
+ * Save a signature for a document
+ */
+export async function saveSignature(documentId: string, areaIndex: number, signatureData: string) {
+  try {
+    const supabase = createServerClient()
+
+    // Check if signature already exists for this area
+    const { data: existing } = await supabase
+      .from('signatures')
+      .select('id')
+      .eq('document_id', documentId)
+      .eq('area_index', areaIndex)
+      .single()
+
+    if (existing) {
+      // Update existing signature
+      const { error: updateError } = await supabase
+        .from('signatures')
+        .update({ signature_data: signatureData })
+        .eq('id', existing.id)
+
+      if (updateError) {
+        console.error('Update signature error:', updateError)
+        return { error: 'Failed to update signature' }
+      }
+    } else {
+      // Create new signature
+      const signatureInsert: SignatureInsert = {
+        document_id: documentId,
+        area_index: areaIndex,
+        signature_data: signatureData
+      }
+
+      const { error: insertError } = await supabase
+        .from('signatures')
+        .insert(signatureInsert)
+
+      if (insertError) {
+        console.error('Insert signature error:', insertError)
+        return { error: 'Failed to save signature' }
       }
     }
 
-    // Convert canvas to data URL
-    const dataUrl = canvas.toDataURL("image/png")
+    // Revalidate the signing page
+    revalidatePath(`/sign/[id]`, 'page')
 
-    return { success: true, signedDocument: dataUrl }
+    return { success: true }
   } catch (error) {
-    console.error("Error in server action:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to generate signed document",
-    }
+    console.error('Save signature error:', error)
+    return { error: 'An unexpected error occurred' }
   }
 }
-// This file contains a server action for generating signed documents
-// Since we're keeping the client-side document generation functionality,
-// we can keep this file as it might be useful for future server-side processing
-// No changes needed here
 
+/**
+ * Mark document as completed
+ */
+export async function markDocumentCompleted(documentId: string) {
+  try {
+    const supabase = createServerClient()
+
+    const { error } = await supabase
+      .from('documents')
+      .update({ status: 'completed' })
+      .eq('id', documentId)
+
+    if (error) {
+      console.error('Mark completed error:', error)
+      return { error: 'Failed to mark document as completed' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Mark completed error:', error)
+    return { error: 'An unexpected error occurred' }
+  }
+}
+
+/**
+ * Get document by ID (for server components)
+ */
+export async function getDocumentById(id: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string }> {
+  try {
+    const supabase = createServerClient()
+
+    // Get document
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (docError || !document) {
+      return { document: null, signatures: [], error: 'Document not found' }
+    }
+
+    // Get existing signatures
+    const { data: signatures, error: sigError } = await supabase
+      .from('signatures')
+      .select('*')
+      .eq('document_id', document.id)
+      .order('area_index')
+
+    if (sigError) {
+      console.error('Signatures error:', sigError)
+      return { document, signatures: [], error: 'Failed to load signatures' }
+    }
+
+    return { document, signatures: signatures || [] }
+  } catch (error) {
+    console.error('Get document by ID error:', error)
+    return { document: null, signatures: [], error: 'An unexpected error occurred' }
+  }
+}
