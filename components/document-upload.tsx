@@ -42,28 +42,17 @@ export default function DocumentUpload() {
   }
 
   const handleAddSignatureArea = () => {
-    // Temporary fix: Directly add a test signature area for testing
-    // TODO: Fix the AreaSelector event listeners issue
-    const testArea = {
-      x: 50,
-      y: 400,
-      width: 200,
-      height: 40
+    // Save current scroll position before switching to selection mode
+    if (documentContainerRef.current) {
+      const scrollTop = documentContainerRef.current.scrollTop
+      const scrollLeft = documentContainerRef.current.scrollLeft
+
+      setScrollPosition({
+        top: scrollTop,
+        left: scrollLeft,
+      })
     }
-    setSignatureAreas([...signatureAreas, testArea])
-
-    // Original code (commented out for testing):
-    // // Save current scroll position before switching to selection mode
-    // if (documentContainerRef.current) {
-    //   const scrollTop = documentContainerRef.current.scrollTop
-    //   const scrollLeft = documentContainerRef.current.scrollLeft
-
-    //   setScrollPosition({
-    //     top: scrollTop,
-    //     left: scrollLeft,
-    //   })
-    // }
-    // setIsSelecting(true)
+    setIsSelecting(true)
   }
 
   const handleAreaSelected = (area: SignatureArea) => {
