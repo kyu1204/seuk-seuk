@@ -4,6 +4,8 @@ import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Document, DocumentInsert, Signature, SignatureInsert, SignatureArea } from '@/lib/supabase/database.types'
 
+import { randomUUID } from 'crypto'
+
 // Generate a random short URL
 function generateShortUrl(): string {
   return Math.random().toString(36).substring(2, 15)
@@ -23,10 +25,9 @@ export async function uploadDocument(formData: FormData) {
       return { error: 'File and filename are required' }
     }
 
-    // Generate unique filename to avoid conflicts
-    const timestamp = Date.now()
+    // Generate unique filename using UUID
     const fileExtension = file.name.split('.').pop() || ''
-    const uniqueFilename = `${timestamp}-${filename}`
+    const uniqueFilename = `${randomUUID()}.${fileExtension}`
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
