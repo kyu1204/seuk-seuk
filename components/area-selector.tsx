@@ -204,7 +204,7 @@ export default function AreaSelector({
     <div className="relative">
       <div
         ref={containerRef}
-        className="relative cursor-crosshair overflow-auto"
+        className="relative cursor-crosshair"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -212,7 +212,6 @@ export default function AreaSelector({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{
-          maxHeight: "70vh",
           touchAction: "none",
         }}
       >
