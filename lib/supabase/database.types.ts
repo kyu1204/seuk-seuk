@@ -14,7 +14,6 @@ export interface Database {
           id: string
           filename: string
           file_url: string
-          signature_areas: Json[] // Array of {x, y, width, height} objects
           short_url: string
           created_at: string
           status: 'draft' | 'completed'
@@ -23,7 +22,6 @@ export interface Database {
           id?: string
           filename: string
           file_url: string
-          signature_areas: Json[]
           short_url: string
           created_at?: string
           status?: 'draft' | 'completed'
@@ -32,7 +30,6 @@ export interface Database {
           id?: string
           filename?: string
           file_url?: string
-          signature_areas?: Json[]
           short_url?: string
           created_at?: string
           status?: 'draft' | 'completed'
@@ -44,22 +41,43 @@ export interface Database {
           id: string
           document_id: string
           area_index: number
-          signature_data: string
+          x: number
+          y: number
+          width: number
+          height: number
+          signature_data: string | null
+          status: 'pending' | 'signed'
+          signer_name: string | null
           created_at: string
+          signed_at: string | null
         }
         Insert: {
           id?: string
           document_id: string
           area_index: number
-          signature_data: string
+          x: number
+          y: number
+          width: number
+          height: number
+          signature_data?: string | null
+          status?: 'pending' | 'signed'
+          signer_name?: string | null
           created_at?: string
+          signed_at?: string | null
         }
         Update: {
           id?: string
           document_id?: string
           area_index?: number
-          signature_data?: string
+          x?: number
+          y?: number
+          width?: number
+          height?: number
+          signature_data?: string | null
+          status?: 'pending' | 'signed'
+          signer_name?: string | null
           created_at?: string
+          signed_at?: string | null
         }
         Relationships: [
           {
@@ -92,7 +110,7 @@ export type Signature = Database['public']['Tables']['signatures']['Row']
 export type SignatureInsert = Database['public']['Tables']['signatures']['Insert']
 export type SignatureUpdate = Database['public']['Tables']['signatures']['Update']
 
-// Type for signature areas stored in JSON
+// Type for signature areas (now integrated into signatures table)
 export interface SignatureArea {
   x: number
   y: number
