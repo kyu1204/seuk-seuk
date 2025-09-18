@@ -18,5 +18,5 @@ export default async function SignPage({ params }: PageProps) {
   }
 
   // Pass data to client component
-  return <SignPageClient document={document} signatures={signatures} />
+  return <SignPageClient documentData={document} signatures={signatures} />
 }

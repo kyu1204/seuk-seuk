@@ -12,11 +12,11 @@ import { saveSignature, markDocumentCompleted } from "@/app/actions/document-act
 import type { Document, Signature, SignatureArea } from "@/lib/supabase/database.types"
 
 interface SignPageClientProps {
-  document: Document
+  documentData: Document
   signatures: Signature[]
 }
 
-export default function SignPageClient({ document, signatures }: SignPageClientProps) {
+export default function SignPageClient({ documentData, signatures }: SignPageClientProps) {
   const { t } = useLanguage()
   const router = useRouter()
   const [localSignatures, setLocalSignatures] = useState<Signature[]>(signatures)
@@ -29,8 +29,6 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const documentContainerRef = useRef<HTMLDivElement>(null)
 
-  // Parse signature areas from the document
-  const signatureAreas = (document.signature_areas as SignatureArea[]) || []
 
   const handleAreaClick = (index: number) => {
     setSelectedArea(index)
@@ -45,7 +43,7 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
 
     try {
       // Save signature to database
-      const result = await saveSignature(document.id, selectedArea, signatureData)
+      const result = await saveSignature(documentData.id, selectedArea, signatureData)
 
       if (result.error) {
         setError(result.error)
@@ -66,7 +64,7 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
         // Add new signature
         const newSignature: Signature = {
           id: `temp-${Date.now()}`, // Temporary ID
-          document_id: document.id,
+          document_id: documentData.id,
           area_index: selectedArea,
           signature_data: signatureData,
           created_at: new Date().toISOString(),
@@ -84,7 +82,7 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
   }
 
   const handleGenerateDocument = async () => {
-    if (!document || isGenerating) return
+    if (!documentData || isGenerating) return
 
     setIsGenerating(true)
     setError(null)
@@ -120,7 +118,7 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
       await new Promise((resolve, reject) => {
         originalImage.onload = resolve
         originalImage.onerror = reject
-        originalImage.src = document.file_url
+        originalImage.src = documentData.file_url
       })
 
       // Create a canvas with the original image dimensions
@@ -138,8 +136,7 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
 
       // Draw each signature at the correct position
       for (const signature of localSignatures) {
-        const area = signatureAreas[signature.area_index]
-        if (!area) continue
+        if (!signature.signature_data) continue
 
         // Create a new image for the signature
         const signatureImage = new Image()
@@ -153,10 +150,10 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
         })
 
         // Calculate the actual position and size in the original image
-        const actualX = area.x * scaleX
-        const actualY = area.y * scaleY
-        const actualWidth = area.width * scaleX
-        const actualHeight = area.height * scaleY
+        const actualX = Number(signature.x) * scaleX
+        const actualY = Number(signature.y) * scaleY
+        const actualWidth = Number(signature.width) * scaleX
+        const actualHeight = Number(signature.height) * scaleY
 
         // Calculate the signature's aspect ratio
         const signatureAspectRatio = signatureImage.width / signatureImage.height
@@ -190,7 +187,7 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
       const dataUrl = canvas.toDataURL("image/png")
 
       // Mark document as completed
-      await markDocumentCompleted(document.id)
+      await markDocumentCompleted(documentData.id)
 
       // Set the signed image URL and show download modal
       setSignedImageUrl(dataUrl)
@@ -205,15 +202,15 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
 
   // Handle download
   const handleDownload = () => {
-    if (!signedImageUrl || !document) return
+    if (!signedImageUrl || !documentData) return
 
     try {
       const link = document.createElement("a")
       link.href = signedImageUrl
 
       // Use the original filename if available
-      const filename = document.filename
-        ? `signed_${document.filename.replace(/\.[^/.]+$/, "")}.png`
+      const filename = documentData.filename
+        ? `signed_${documentData.filename.replace(/\.[^/.]+$/, "")}.png`
         : "signed_document.png"
 
       link.download = filename
@@ -226,9 +223,7 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
     }
   }
 
-  const allAreasSigned = signatureAreas.every((_, index) =>
-    localSignatures.some((s) => s.area_index === index)
-  )
+  const allAreasSigned = localSignatures.length > 0 && localSignatures.every((s) => s.signature_data !== null)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -237,23 +232,22 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
       </div>
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{document.filename}</h1>
+          <h1 className="text-3xl font-bold mb-2">{documentData.filename}</h1>
           <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
         </div>
 
-        <div className="relative border rounded-lg overflow-hidden mb-6">
-          <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
+        <div className="relative border rounded-lg mb-6">
+          <div ref={documentContainerRef} className="relative">
             <img
-              src={document.file_url}
+              src={documentData.file_url}
               alt="Document"
               className="w-full h-auto object-contain"
               draggable="false"
               style={{ userSelect: "none" }}
             />
 
-            {signatureAreas.map((area, index) => {
-              const isSigned = localSignatures.some((s) => s.area_index === index)
-              const signatureData = localSignatures.find((s) => s.area_index === index)?.signature_data
+            {localSignatures.map((signature, index) => {
+              const isSigned = signature.signature_data !== null
 
               return (
                 <div
@@ -264,17 +258,17 @@ export default function SignPageClient({ document, signatures }: SignPageClientP
                       : "border-2 border-red-500 bg-red-500/10 animate-pulse"
                   }`}
                   style={{
-                    left: `${area.x}px`,
-                    top: `${area.y}px`,
-                    width: `${area.width}px`,
-                    height: `${area.height}px`,
+                    left: `${signature.x}px`,
+                    top: `${signature.y}px`,
+                    width: `${signature.width}px`,
+                    height: `${signature.height}px`,
                   }}
-                  onClick={() => handleAreaClick(index)}
+                  onClick={() => handleAreaClick(signature.area_index)}
                 >
                   {isSigned ? (
                     <div className="w-full h-full relative">
                       <img
-                        src={signatureData!}
+                        src={signature.signature_data!}
                         alt="Signature"
                         className="w-full h-full object-contain"
                       />

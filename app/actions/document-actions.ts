@@ -19,7 +19,6 @@ export async function uploadDocument(formData: FormData) {
     const supabase = createServerClient()
     const file = formData.get('file') as File
     const filename = formData.get('filename') as string
-    const signatureAreas = JSON.parse(formData.get('signatureAreas') as string) as SignatureArea[]
 
     if (!file || !filename) {
       return { error: 'File and filename are required' }
@@ -47,11 +46,10 @@ export async function uploadDocument(formData: FormData) {
     // Generate short URL
     const shortUrl = generateShortUrl()
 
-    // Create document record
+    // Create document record (without signature areas)
     const documentData: DocumentInsert = {
       filename,
       file_url: publicUrl,
-      signature_areas: signatureAreas,
       short_url: shortUrl,
       status: 'draft'
     }
@@ -112,47 +110,26 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
 }
 
 /**
- * Save a signature for a document
+ * Save a signature for a specific signature area
  */
 export async function saveSignature(documentId: string, areaIndex: number, signatureData: string) {
   try {
     const supabase = createServerClient()
 
-    // Check if signature already exists for this area
-    const { data: existing } = await supabase
+    // Update signature with data, status, and signed_at
+    const { error: updateError } = await supabase
       .from('signatures')
-      .select('id')
+      .update({
+        signature_data: signatureData,
+        status: 'signed',
+        signed_at: new Date().toISOString()
+      })
       .eq('document_id', documentId)
       .eq('area_index', areaIndex)
-      .single()
 
-    if (existing) {
-      // Update existing signature
-      const { error: updateError } = await supabase
-        .from('signatures')
-        .update({ signature_data: signatureData })
-        .eq('id', existing.id)
-
-      if (updateError) {
-        console.error('Update signature error:', updateError)
-        return { error: 'Failed to update signature' }
-      }
-    } else {
-      // Create new signature
-      const signatureInsert: SignatureInsert = {
-        document_id: documentId,
-        area_index: areaIndex,
-        signature_data: signatureData
-      }
-
-      const { error: insertError } = await supabase
-        .from('signatures')
-        .insert(signatureInsert)
-
-      if (insertError) {
-        console.error('Insert signature error:', insertError)
-        return { error: 'Failed to save signature' }
-      }
+    if (updateError) {
+      console.error('Update signature error:', updateError)
+      return { error: 'Failed to update signature' }
     }
 
     // Revalidate the signing page
@@ -190,6 +167,43 @@ export async function markDocumentCompleted(documentId: string) {
 }
 
 /**
+ * Create signature areas for a document
+ */
+export async function createSignatureAreas(
+  documentId: string,
+  signatureAreas: SignatureArea[]
+) {
+  try {
+    const supabase = createServerClient()
+
+    const signatureInserts: SignatureInsert[] = signatureAreas.map((area, index) => ({
+      document_id: documentId,
+      area_index: index,
+      x: area.x,
+      y: area.y,
+      width: area.width,
+      height: area.height,
+      status: 'pending',
+      signature_data: null
+    }))
+
+    const { error } = await supabase
+      .from('signatures')
+      .insert(signatureInserts)
+
+    if (error) {
+      console.error('Create signature areas error:', error)
+      return { error: 'Failed to create signature areas' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Create signature areas error:', error)
+    return { error: 'An unexpected error occurred' }
+  }
+}
+
+/**
  * Get document by ID (for server components)
  */
 export async function getDocumentById(id: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string }> {
@@ -207,7 +221,7 @@ export async function getDocumentById(id: string): Promise<{ document: Document 
       return { document: null, signatures: [], error: 'Document not found' }
     }
 
-    // Get existing signatures
+    // Get existing signatures (including signature areas)
     const { data: signatures, error: sigError } = await supabase
       .from('signatures')
       .select('*')

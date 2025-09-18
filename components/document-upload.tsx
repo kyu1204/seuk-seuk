@@ -8,7 +8,7 @@ import { Upload, FileImage, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import AreaSelector from "@/components/area-selector"
-import { uploadDocument } from "@/app/actions/document-actions"
+import { uploadDocument, createSignatureAreas } from "@/app/actions/document-actions"
 import { useLanguage } from "@/contexts/language-context"
 import type { SignatureArea } from "@/lib/supabase/database.types"
 
@@ -85,23 +85,34 @@ export default function DocumentUpload() {
     setError(null)
 
     try {
-      // Create FormData for the server action
+      // Step 1: Upload document (without signature areas)
       const formData = new FormData()
       formData.append('file', originalFile)
       formData.append('filename', fileName)
-      formData.append('signatureAreas', JSON.stringify(signatureAreas))
 
-      // Upload document using server action
-      const result = await uploadDocument(formData)
+      const uploadResult = await uploadDocument(formData)
 
-      if (result.error) {
-        setError(result.error)
+      if (uploadResult.error) {
+        setError(uploadResult.error)
         return
       }
 
-      if (result.success && result.shortUrl) {
-        // Redirect to the signing page with the short URL
-        router.push(`/sign/${result.shortUrl}`)
+      if (!uploadResult.success || !uploadResult.document) {
+        setError("Failed to upload document")
+        return
+      }
+
+      // Step 2: Create signature areas
+      const areasResult = await createSignatureAreas(uploadResult.document.id, signatureAreas)
+
+      if (areasResult.error) {
+        setError(areasResult.error)
+        return
+      }
+
+      // Success: Redirect to signing page
+      if (uploadResult.shortUrl) {
+        router.push(`/sign/${uploadResult.shortUrl}`)
       } else {
         setError("Failed to create document link")
       }
@@ -165,7 +176,7 @@ export default function DocumentUpload() {
                 initialScrollPosition={scrollPosition}
               />
             ) : (
-              <div ref={documentContainerRef} className="relative overflow-auto" style={{ maxHeight: "70vh" }}>
+              <div ref={documentContainerRef} className="relative">
                 <img
                   src={document || "/placeholder.svg"}
                   alt="Document"
