@@ -27,8 +27,10 @@ const translations: Record<Language, Record<string, string>> = {
     "app.description": "문서를 쉽게 업로드하고, 서명하고, 공유하세요",
 
     // Document Upload
-    "upload.title": "문서 업로드",
-    "upload.description": "문서를 드래그 앤 드롭하거나 클릭하여 찾아보기",
+    "upload.title": "문서 관리",
+    "upload.description": "문서를 업로드하고 서명 영역을 지정하세요",
+    "upload.backToHome": "홈으로 돌아가기",
+    "upload.dragDrop": "문서를 드래그 앤 드롭하거나 클릭하여 찾아보기",
     "upload.button": "문서 선택",
     "upload.clear": "지우기",
     "upload.addSignatureArea": "서명 영역 추가",
@@ -58,11 +60,6 @@ const translations: Record<Language, Record<string, string>> = {
     // Language Selector
     "language.ko": "한국어",
     "language.en": "English",
-
-    // Dashboard
-    "dashboard.title": "문서 관리",
-    "dashboard.description": "문서를 업로드하고 서명 영역을 지정하세요",
-    "dashboard.backToHome": "홈으로 돌아가기",
 
     // Homepage
     "home.notification": "🎉 새로운 기능이 출시되었습니다! 지금 바로 확인해보세요.",
@@ -175,8 +172,10 @@ const translations: Record<Language, Record<string, string>> = {
     "app.description": "Upload, sign, and share documents online with ease",
 
     // Document Upload
-    "upload.title": "Upload your document",
-    "upload.description": "Drag and drop your document or click to browse",
+    "upload.title": "Document Management",
+    "upload.description": "Upload documents and define signature areas",
+    "upload.backToHome": "Back to Home",
+    "upload.dragDrop": "Drag and drop your document or click to browse",
     "upload.button": "Select Document",
     "upload.clear": "Clear",
     "upload.addSignatureArea": "Add Signature Area",
@@ -206,11 +205,6 @@ const translations: Record<Language, Record<string, string>> = {
     // Language Selector
     "language.ko": "한국어",
     "language.en": "English",
-
-    // Dashboard
-    "dashboard.title": "Document Management",
-    "dashboard.description": "Upload documents and define signature areas",
-    "dashboard.backToHome": "Back to Home",
 
     // Homepage
     "home.notification": "🎉 New features just released! Check them out now.",

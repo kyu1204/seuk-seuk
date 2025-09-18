@@ -129,7 +129,7 @@ export default function HomePage() {
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 gradient-text">{t("home.hero.title")}</h1>
             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">{t("home.hero.description")}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/dashboard">
+              <Link href="/upload">
                 <Button size="lg" className="bg-primary hover:bg-primary/90 gap-2 text-white">
                   {t("home.hero.cta")}
                   <ArrowRight className="h-4 w-4" />
@@ -277,7 +277,7 @@ export default function HomePage() {
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4 gradient-text">{t("home.cta.title")}</h2>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">{t("home.cta.description")}</p>
-            <Link href="/dashboard">
+            <Link href="/upload">
               <Button size="lg" className="bg-primary hover:bg-primary/90 gap-2 text-white">
                 {t("home.cta.button")}
                 <ArrowRight className="h-4 w-4" />
