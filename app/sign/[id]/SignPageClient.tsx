@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import SignatureModal from "@/components/signature-modal"
 import { Card, CardContent } from "@/components/ui/card"
-import { Download, RefreshCw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSelector from "@/components/language-selector"
-import { saveSignature, markDocumentCompleted } from "@/app/actions/document-actions"
+import { saveSignature, markDocumentCompleted, uploadSignedDocument } from "@/app/actions/document-actions"
 import type { Document, Signature, SignatureArea } from "@/lib/supabase/database.types"
 
 interface SignPageClientProps {
@@ -23,9 +23,7 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
   const [selectedArea, setSelectedArea] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
-  const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false)
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const documentContainerRef = useRef<HTMLDivElement>(null)
 
@@ -186,12 +184,19 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
       // Convert to data URL
       const dataUrl = canvas.toDataURL("image/png")
 
+      // Upload signed document to Supabase Storage
+      const uploadResult = await uploadSignedDocument(documentData.id, dataUrl)
+
+      if (uploadResult.error) {
+        setError(uploadResult.error)
+        return
+      }
+
       // Mark document as completed
       await markDocumentCompleted(documentData.id)
 
-      // Set the signed image URL and show download modal
-      setSignedImageUrl(dataUrl)
-      setShowDownloadModal(true)
+      // Navigate to completion page
+      router.push(`/sign/${documentData.id}/completed`)
     } catch (err) {
       console.error("Error generating signed document:", err)
       setError(err instanceof Error ? err.message : "Failed to generate signed document")
@@ -200,28 +205,6 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
     }
   }
 
-  // Handle download
-  const handleDownload = () => {
-    if (!signedImageUrl || !documentData) return
-
-    try {
-      const link = document.createElement("a")
-      link.href = signedImageUrl
-
-      // Use the original filename if available
-      const filename = documentData.filename
-        ? `signed_${documentData.filename.replace(/\.[^/.]+$/, "")}.png`
-        : "signed_document.png"
-
-      link.download = filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    } catch (err) {
-      console.error("Error downloading document:", err)
-      setError("Failed to download document")
-    }
-  }
 
   const allAreasSigned = localSignatures.length > 0 && localSignatures.every((s) => s.signature_data !== null)
 
@@ -292,10 +275,7 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
                 {t("sign.generating")}
               </>
             ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                {t("sign.saveDocument")}
-              </>
+              t("sign.saveDocument")
             )}
           </Button>
         </div>
@@ -312,33 +292,6 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
         />
       )}
 
-      {/* Download Modal */}
-      {showDownloadModal && signedImageUrl && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
-            <h2 className="text-2xl font-bold mb-4">{t("sign.signedDocument")}</h2>
-
-            <div className="border rounded-lg overflow-hidden mb-4">
-              <img
-                src={signedImageUrl}
-                alt="Signed Document"
-                className="max-w-full h-auto"
-                style={{ maxWidth: "100%" }}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowDownloadModal(false)}>
-                {t("sign.close")}
-              </Button>
-              <Button onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
-                {t("sign.download")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Loading indicator for signature saving */}
       {isSaving && (

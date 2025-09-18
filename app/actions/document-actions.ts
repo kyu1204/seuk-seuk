@@ -204,6 +204,56 @@ export async function createSignatureAreas(
 }
 
 /**
+ * Upload signed document image to Supabase Storage
+ */
+export async function uploadSignedDocument(documentId: string, signedImageData: string) {
+  try {
+    const supabase = createServerClient()
+
+    // Convert data URL to blob
+    const response = await fetch(signedImageData)
+    const blob = await response.blob()
+
+    // Generate filename for signed document
+    const filename = `signed_${documentId}.png`
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('signed-documents')
+      .upload(filename, blob, {
+        contentType: 'image/png',
+        upsert: true // Replace if already exists
+      })
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError)
+      return { error: 'Failed to upload signed document' }
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('signed-documents')
+      .getPublicUrl(filename)
+
+    // Update document with signed file URL
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({ signed_file_url: publicUrl })
+      .eq('id', documentId)
+
+    if (updateError) {
+      console.error('Update document error:', updateError)
+      return { error: 'Failed to update document with signed file URL' }
+    }
+
+    return { success: true, signedFileUrl: publicUrl }
+  } catch (error) {
+    console.error('Upload signed document error:', error)
+    return { error: 'An unexpected error occurred' }
+  }
+}
+
+/**
  * Get document by ID (for server components)
  */
 export async function getDocumentById(id: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string }> {
