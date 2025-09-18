@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
-export default function DashboardPage() {
+export default function UploadPage() {
   const { t } = useLanguage()
 
   return (
@@ -17,15 +17,15 @@ export default function DashboardPage() {
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
-              <span>{t("dashboard.backToHome")}</span>
+              <span>{t("upload.backToHome")}</span>
             </Button>
           </Link>
           <LanguageSelector />
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">{t("dashboard.title")}</h1>
-          <p className="text-muted-foreground">{t("dashboard.description")}</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">{t("upload.title")}</h1>
+          <p className="text-muted-foreground">{t("upload.description")}</p>
         </div>
 
         <DocumentUpload />

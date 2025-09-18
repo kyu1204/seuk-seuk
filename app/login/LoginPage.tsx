@@ -22,8 +22,8 @@ export default function LoginPage() {
     // Simulate login process
     setTimeout(() => {
       setIsLoading(false)
-      // In a real app, you would redirect to dashboard after successful login
-      window.location.href = "/dashboard"
+      // In a real app, you would redirect to upload after successful login
+      window.location.href = "/upload"
     }, 500)
   }
 
