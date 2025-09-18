@@ -50,6 +50,8 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.signedDocument": "서명된 문서",
     "sign.close": "닫기",
     "sign.download": "다운로드",
+    "sign.completed.title": "서명이 완료되었습니다",
+    "sign.completed.description": "문서 서명이 성공적으로 완료되어 안전하게 저장되었습니다.",
 
     // Signature Modal
     "signature.title": "서명 추가",
@@ -195,6 +197,8 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.signedDocument": "Your Signed Document",
     "sign.close": "Close",
     "sign.download": "Download",
+    "sign.completed.title": "Signature Completed",
+    "sign.completed.description": "Your document has been successfully signed and securely saved.",
 
     // Signature Modal
     "signature.title": "Add Your Signature",

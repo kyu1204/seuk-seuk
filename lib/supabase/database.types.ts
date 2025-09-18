@@ -15,6 +15,7 @@ export interface Database {
           filename: string
           file_url: string
           short_url: string
+          signed_file_url: string | null
           created_at: string
           status: 'draft' | 'completed'
         }
@@ -23,6 +24,7 @@ export interface Database {
           filename: string
           file_url: string
           short_url: string
+          signed_file_url?: string | null
           created_at?: string
           status?: 'draft' | 'completed'
         }
@@ -31,6 +33,7 @@ export interface Database {
           filename?: string
           file_url?: string
           short_url?: string
+          signed_file_url?: string | null
           created_at?: string
           status?: 'draft' | 'completed'
         }
