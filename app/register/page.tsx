@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import RegisterPage from "./RegisterPage"
 
 export const metadata: Metadata = {
-  title: "DocSign - Register",
-  description: "Create a new DocSign account",
+  title: "SeukSeuk - Register",
+  description: "Create a new SeukSeuk account",
 }
 
 export default function Register() {

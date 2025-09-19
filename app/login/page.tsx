@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import LoginPage from "./LoginPage"
 
 export const metadata: Metadata = {
-  title: "DocSign - Login",
-  description: "Log in to your DocSign account",
+  title: "SeukSeuk - Login",
+  description: "Log in to your SeukSeuk account",
 }
 
 export default function Login() {
