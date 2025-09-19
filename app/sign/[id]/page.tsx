@@ -11,12 +11,12 @@ export default async function SignPage({ params }: PageProps) {
   const { id } = params
 
   // Fetch document data server-side
-  const { document, signatures, error } = await getDocumentByShortUrl(id)
+  const { document, signatures, error, isExpired } = await getDocumentByShortUrl(id)
 
   if (error || !document) {
     notFound()
   }
 
-  // Pass data to client component
-  return <SignPageClient documentData={document} signatures={signatures} />
+  // Pass data to client component, including expiration status
+  return <SignPageClient documentData={document} signatures={signatures} isExpired={isExpired} />
 }

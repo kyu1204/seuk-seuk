@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { ArrowLeft, Edit, Share, ExternalLink, Copy, Key } from "lucide-react"
 import Link from "next/link"
 import AreaSelector from "@/components/area-selector"
+import PublishDocumentModal from "@/components/publish-document-modal"
 import { publishDocument, updateSignatureAreas } from "@/app/actions/document-actions"
 import { useLanguage } from "@/contexts/language-context"
 import type { Document, Signature, SignatureArea } from "@/lib/supabase/database.types"
@@ -33,8 +34,7 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
-  const [password, setPassword] = useState<string>('')
-  const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false)
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false)
   const documentContainerRef = useRef<HTMLDivElement>(null)
   const [scrollPosition, setScrollPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
 
@@ -109,14 +109,14 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
     }
   }
 
-  const handlePublish = async () => {
+  const handlePublish = async (password: string, expiresAt: string) => {
     if (document.status !== 'draft' || signatureAreas.length === 0) return
 
     setIsLoading(true)
     setError(null)
 
     try {
-      const result = await publishDocument(document.id, password || null)
+      const result = await publishDocument(document.id, password, expiresAt)
 
       if (result.error) {
         setError(result.error)
@@ -128,10 +128,6 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
       if (result.shortUrl) {
         setPublishedUrl(`${window.location.origin}/sign/${result.shortUrl}`)
       }
-
-      // Reset password input
-      setPassword('')
-      setShowPasswordInput(false)
 
       // Refresh the page data
       router.refresh()
@@ -189,23 +185,13 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
             )}
 
             {canPublish && !isEditMode && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowPasswordInput(!showPasswordInput)}
-                  disabled={isLoading}
-                >
-                  <Key className="mr-2 h-4 w-4" />
-                  {showPasswordInput ? '비밀번호 설정 취소' : '비밀번호 설정'}
-                </Button>
-                <Button
-                  onClick={handlePublish}
-                  disabled={isLoading}
-                >
-                  <Share className="mr-2 h-4 w-4" />
-                  {isLoading ? '발행 중...' : '발행하기'}
-                </Button>
-              </div>
+              <Button
+                onClick={() => setIsPublishModalOpen(true)}
+                disabled={isLoading}
+              >
+                <Share className="mr-2 h-4 w-4" />
+                발급하기
+              </Button>
             )}
 
             {isEditMode && (
@@ -218,31 +204,6 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
             )}
           </div>
 
-          {/* Password Input */}
-          {showPasswordInput && canPublish && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-lg">문서 보안 설정</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="password">비밀번호 (선택사항)</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="서명 페이지 접근 시 필요한 비밀번호를 입력하세요"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    비밀번호를 설정하면 서명자가 문서에 접근할 때 비밀번호를 입력해야 합니다. 비워두면 누구나 접근할 수 있습니다.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Published URL Display */}
           {isPublished && document.short_url && (
@@ -336,6 +297,14 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
             </Button>
           </div>
         )}
+
+        {/* Publish Document Modal */}
+        <PublishDocumentModal
+          isOpen={isPublishModalOpen}
+          onClose={() => setIsPublishModalOpen(false)}
+          onPublish={handlePublish}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   )

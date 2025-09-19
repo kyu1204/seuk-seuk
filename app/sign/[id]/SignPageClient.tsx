@@ -7,7 +7,7 @@ import SignatureModal from "@/components/signature-modal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RefreshCw, Lock } from "lucide-react"
+import { RefreshCw, Lock, Clock } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSelector from "@/components/language-selector"
 import { saveSignature, markDocumentCompleted, uploadSignedDocument, verifyDocumentPassword } from "@/app/actions/document-actions"
@@ -16,9 +16,10 @@ import type { Document, Signature, SignatureArea } from "@/lib/supabase/database
 interface SignPageClientProps {
   documentData: Document
   signatures: Signature[]
+  isExpired?: boolean
 }
 
-export default function SignPageClient({ documentData, signatures }: SignPageClientProps) {
+export default function SignPageClient({ documentData, signatures, isExpired = false }: SignPageClientProps) {
   const { t } = useLanguage()
   const router = useRouter()
   const [localSignatures, setLocalSignatures] = useState<Signature[]>(signatures)
@@ -241,6 +242,45 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
     } finally {
       setIsVerifyingPassword(false)
     }
+  }
+
+  // Show expired document screen if document is expired
+  if (isExpired) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-4">
+          <LanguageSelector />
+        </div>
+        <div className="max-w-md mx-auto">
+          <Card>
+            <CardHeader className="text-center">
+              <Clock className="mx-auto h-12 w-12 text-red-400 mb-4" />
+              <CardTitle className="text-xl text-red-600">서명 기간 만료</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center space-y-3">
+                <p className="text-gray-600">
+                  죄송합니다. 이 문서의 서명 기간이 만료되었습니다.
+                </p>
+                <p className="text-sm text-gray-500">
+                  문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.
+                </p>
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-sm text-red-700 text-center font-medium">
+                  {documentData.filename}
+                </p>
+                {documentData.expires_at && (
+                  <p className="text-xs text-red-600 text-center mt-1">
+                    만료일: {new Date(documentData.expires_at).toLocaleDateString('ko-KR')}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   // Show password verification screen if password is required and not verified

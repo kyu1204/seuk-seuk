@@ -75,7 +75,7 @@ export async function uploadDocument(formData: FormData) {
 /**
  * Get document by short URL
  */
-export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string }> {
+export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string; isExpired?: boolean }> {
   try {
     const supabase = createServerClient()
 
@@ -88,6 +88,18 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
 
     if (docError || !document) {
       return { document: null, signatures: [], error: 'Document not found' }
+    }
+
+    // Check if document is expired
+    const isExpired = document.expires_at && new Date(document.expires_at) < new Date()
+
+    if (isExpired) {
+      return {
+        document,
+        signatures: [],
+        error: '서명 기간이 만료되었습니다.',
+        isExpired: true
+      }
     }
 
     // Get existing signatures
@@ -256,16 +268,17 @@ export async function uploadSignedDocument(documentId: string, signedImageData: 
 /**
  * Publish a document (change status from draft to published)
  */
-export async function publishDocument(documentId: string, password?: string | null) {
+export async function publishDocument(documentId: string, password: string, expiresAt: string) {
   try {
     const supabase = createServerClient()
 
-    // Update document status to published with optional password
+    // Update document status to published with password and expiration
     const { error } = await supabase
       .from('documents')
       .update({
         status: 'published',
-        password: password
+        password: password,
+        expires_at: expiresAt
       })
       .eq('id', documentId)
       .eq('status', 'draft') // Only allow publishing from draft status

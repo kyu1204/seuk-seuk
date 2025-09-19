@@ -19,6 +19,7 @@ export interface Database {
           created_at: string
           status: 'draft' | 'published' | 'completed'
           password: string | null
+          expires_at: string | null
         }
         Insert: {
           id?: string
@@ -29,6 +30,7 @@ export interface Database {
           created_at?: string
           status?: 'draft' | 'published' | 'completed'
           password?: string | null
+          expires_at?: string | null
         }
         Update: {
           id?: string
@@ -39,6 +41,7 @@ export interface Database {
           created_at?: string
           status?: 'draft' | 'published' | 'completed'
           password?: string | null
+          expires_at?: string | null
         }
         Relationships: []
       }
