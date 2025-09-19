@@ -23,7 +23,7 @@ const LanguageContext = createContext<LanguageContextType>({
 const translations: Record<Language, Record<string, string>> = {
   ko: {
     // Header
-    "app.title": "DocSign",
+    "app.title": "슥슥",
     "app.description": "문서를 쉽게 업로드하고, 서명하고, 공유하세요",
 
     // Document Upload
@@ -72,12 +72,12 @@ const translations: Record<Language, Record<string, string>> = {
     "home.getStarted": "시작하기",
     "home.hero.title": "문서 서명, 더 쉽고 빠르게",
     "home.hero.description":
-      "DocSign으로 종이 없는 문서 워크플로우를 경험하세요. 어디서나 안전하게 문서에 서명하고 공유할 수 있습니다.",
+      "슥슥으로 종이 없는 문서 워크플로우를 경험하세요. 어디서나 안전하게 문서에 서명하고 공유할 수 있습니다.",
     "home.hero.cta": "지금 시작하기",
     "home.hero.learnMore": "더 알아보기",
     "home.hero.trustedBy": "수천 명의 사용자가 신뢰하는 서비스",
     "home.featuresTitle": "강력한 기능",
-    "home.featuresDescription": "DocSign은 문서 서명 프로세스를 간소화하는 다양한 기능을 제공합니다.",
+    "home.featuresDescription": "슥슥은 문서 서명 프로세스를 간소화하는 다양한 기능을 제공합니다.",
     "home.features.easy.title": "간편한 사용",
     "home.features.easy.description": "직관적인 인터페이스로 누구나 쉽게 사용할 수 있습니다.",
     "home.features.secure.title": "안전한 보안",
@@ -85,17 +85,17 @@ const translations: Record<Language, Record<string, string>> = {
     "home.features.fast.title": "빠른 처리",
     "home.features.fast.description": "몇 초 만에 문서를 업로드하고 서명할 수 있습니다.",
     "home.testimonialsTitle": "고객 후기",
-    "home.testimonialsDescription": "DocSign을 사용하는 고객들의 생생한 후기를 확인해보세요.",
+    "home.testimonialsDescription": "슥슥을 사용하는 고객들의 생생한 후기를 확인해보세요.",
     "home.testimonials.quote1":
-      "DocSign은 우리 회사의 계약 프로세스를 완전히 바꿔놓았습니다. 이전에는 서류 작업에 며칠이 걸렸지만, 이제는 몇 분 만에 완료됩니다.",
+      "슥슥은 우리 회사의 계약 프로세스를 완전히 바꿔놓았습니다. 이전에는 서류 작업에 며칠이 걸렸지만, 이제는 몇 분 만에 완료됩니다.",
     "home.testimonials.author1": "김민수",
     "home.testimonials.role1": "스타트업 CEO",
     "home.testimonials.quote2":
-      "사용하기 쉽고 안전한 서명 솔루션을 찾고 있었는데, DocSign이 완벽했습니다. 고객들도 사용하기 쉽다고 좋아합니다.",
+      "사용하기 쉽고 안전한 서명 솔루션을 찾고 있었는데, 슥슥이 완벽했습니다. 고객들도 사용하기 쉽다고 좋아합니다.",
     "home.testimonials.author2": "이지현",
     "home.testimonials.role2": "프리랜서 디자이너",
     "home.testimonials.quote3":
-      "원격 근무 환경에서 문서 서명이 큰 문제였는데, DocSign 덕분에 이제는 걱정이 없습니다. 강력히 추천합니다!",
+      "원격 근무 환경에서 문서 서명이 큰 문제였는데, 슥슥 덕분에 이제는 걱정이 없습니다. 강력히 추천합니다!",
     "home.testimonials.author3": "박준호",
     "home.testimonials.role3": "인사 관리자",
     "home.pricingTitle": "합리적인 가격",
@@ -124,7 +124,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.popular": "인기",
     "pricing.perMonth": "월",
     "home.cta.title": "지금 바로 시작하세요",
-    "home.cta.description": "DocSign으로 문서 서명 프로세스를 간소화하고 시간과 비용을 절약하세요.",
+    "home.cta.description": "슥슥으로 문서 서명 프로세스를 간소화하고 시간과 비용을 절약하세요.",
     "home.cta.button": "지금 시작하기",
     "home.footer.rights": "모든 권리 보유.",
 
@@ -147,7 +147,7 @@ const translations: Record<Language, Record<string, string>> = {
     "login.backToHome": "홈으로",
     "login.welcomeBack": "다시 만나서 반갑습니다",
     "login.welcomeMessage":
-      "DocSign에 로그인하여 문서 서명 및 관리를 시작하세요. 안전하고 빠른 서명 경험을 제공합니다.",
+      "슥슥에 로그인하여 문서 서명 및 관리를 시작하세요. 안전하고 빠른 서명 경험을 제공합니다.",
     "login.kakaoTalk": "카카오",
 
     // Register Page
@@ -163,14 +163,14 @@ const translations: Record<Language, Record<string, string>> = {
     "register.alreadyHaveAccount": "이미 계정이 있으신가요?",
     "register.login": "로그인",
     "register.backToHome": "홈으로",
-    "register.joinUs": "DocSign에 가입하세요",
+    "register.joinUs": "슥슥에 가입하세요",
     "register.joinMessage":
-      "DocSign에 가입하여 문서 서명 및 관리를 시작하세요. 간편하고 안전한 서명 경험을 제공합니다.",
+      "슥슥에 가입하여 문서 서명 및 관리를 시작하세요. 간편하고 안전한 서명 경험을 제공합니다.",
     "register.kakaoTalk": "카카오",
   },
   en: {
     // Header
-    "app.title": "DocSign",
+    "app.title": "SeukSeuk",
     "app.description": "Upload, sign, and share documents online with ease",
 
     // Document Upload
@@ -219,12 +219,12 @@ const translations: Record<Language, Record<string, string>> = {
     "home.getStarted": "Get Started",
     "home.hero.title": "Document Signing Made Simple",
     "home.hero.description":
-      "Experience paperless document workflows with DocSign. Sign and share documents securely from anywhere.",
+      "Experience paperless document workflows with SeukSeuk. Sign and share documents securely from anywhere.",
     "home.hero.cta": "Start Now",
     "home.hero.learnMore": "Learn More",
     "home.hero.trustedBy": "Trusted by thousands of users",
     "home.featuresTitle": "Powerful Features",
-    "home.featuresDescription": "DocSign offers a range of features to streamline your document signing process.",
+    "home.featuresDescription": "SeukSeuk offers a range of features to streamline your document signing process.",
     "home.features.easy.title": "Easy to Use",
     "home.features.easy.description": "Intuitive interface that anyone can use without training.",
     "home.features.secure.title": "Secure & Protected",
@@ -232,17 +232,17 @@ const translations: Record<Language, Record<string, string>> = {
     "home.features.fast.title": "Lightning Fast",
     "home.features.fast.description": "Upload and sign documents in seconds, not minutes.",
     "home.testimonialsTitle": "Customer Testimonials",
-    "home.testimonialsDescription": "See what our customers are saying about DocSign.",
+    "home.testimonialsDescription": "See what our customers are saying about SeukSeuk.",
     "home.testimonials.quote1":
-      "DocSign completely transformed our contract process. What used to take days now takes minutes.",
+      "SeukSeuk completely transformed our contract process. What used to take days now takes minutes.",
     "home.testimonials.author1": "John Smith",
     "home.testimonials.role1": "Startup CEO",
     "home.testimonials.quote2":
-      "I was looking for an easy-to-use and secure signing solution, and DocSign was perfect. My clients love how easy it is to use.",
+      "I was looking for an easy-to-use and secure signing solution, and SeukSeuk was perfect. My clients love how easy it is to use.",
     "home.testimonials.author2": "Sarah Johnson",
     "home.testimonials.role2": "Freelance Designer",
     "home.testimonials.quote3":
-      "Document signing was a major pain point in our remote work environment, but DocSign solved that. Highly recommended!",
+      "Document signing was a major pain point in our remote work environment, but SeukSeuk solved that. Highly recommended!",
     "home.testimonials.author3": "Michael Chen",
     "home.testimonials.role3": "HR Manager",
     "home.pricingTitle": "Simple Pricing",
@@ -271,7 +271,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.popular": "Popular",
     "pricing.perMonth": "/month",
     "home.cta.title": "Get Started Today",
-    "home.cta.description": "Streamline your document signing process and save time and money with DocSign.",
+    "home.cta.description": "Streamline your document signing process and save time and money with SeukSeuk.",
     "home.cta.button": "Get Started",
     "home.footer.rights": "All rights reserved.",
 
@@ -294,7 +294,7 @@ const translations: Record<Language, Record<string, string>> = {
     "login.backToHome": "Back to home",
     "login.welcomeBack": "Welcome Back",
     "login.welcomeMessage":
-      "Sign in to DocSign to start signing and managing your documents. We provide a secure and fast signing experience.",
+      "Sign in to SeukSeuk to start signing and managing your documents. We provide a secure and fast signing experience.",
     "login.kakaoTalk": "Kakao",
 
     // Register Page
@@ -310,9 +310,9 @@ const translations: Record<Language, Record<string, string>> = {
     "register.alreadyHaveAccount": "Already have an account?",
     "register.login": "Log in",
     "register.backToHome": "Back to home",
-    "register.joinUs": "Join DocSign Today",
+    "register.joinUs": "Join SeukSeuk Today",
     "register.joinMessage":
-      "Sign up for DocSign to start signing and managing your documents. We provide a simple and secure signing experience.",
+      "Sign up for SeukSeuk to start signing and managing your documents. We provide a simple and secure signing experience.",
     "register.kakaoTalk": "Kakao",
   },
 }
@@ -324,7 +324,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   // Load saved language preference on mount
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("docSignLanguage") as Language
+    const savedLanguage = localStorage.getItem("seukSeukLanguage") as Language
     if (savedLanguage && (savedLanguage === "ko" || savedLanguage === "en")) {
       setLanguageState(savedLanguage)
     }
@@ -333,7 +333,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Save language preference when it changes
   const setLanguage = (newLanguage: Language) => {
     setLanguageState(newLanguage)
-    localStorage.setItem("docSignLanguage", newLanguage)
+    localStorage.setItem("seukSeukLanguage", newLanguage)
   }
 
   // Translation function

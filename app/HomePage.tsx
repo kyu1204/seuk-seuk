@@ -296,7 +296,7 @@ export default function HomePage() {
               <span className="font-bold">{t("app.title")}</span>
             </div>
             <div className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} DocSign. {t("home.footer.rights")}
+              &copy; {new Date().getFullYear()} SeukSeuk. {t("home.footer.rights")}
             </div>
           </div>
         </div>

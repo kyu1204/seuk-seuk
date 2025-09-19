@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import UploadPage from "./UploadPage"
 
 export const metadata: Metadata = {
-  title: "DocSign - Upload",
+  title: "SeukSeuk - Upload",
   description: "Upload and manage your documents",
 }
 
