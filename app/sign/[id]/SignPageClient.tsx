@@ -7,18 +7,21 @@ import SignatureModal from "@/components/signature-modal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RefreshCw, Lock } from "lucide-react"
+import { RefreshCw, Lock, Clock, CheckCircle, FileSignature } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSelector from "@/components/language-selector"
+import Link from "next/link"
 import { saveSignature, markDocumentCompleted, uploadSignedDocument, verifyDocumentPassword } from "@/app/actions/document-actions"
-import type { Document, Signature, SignatureArea } from "@/lib/supabase/database.types"
+import type { ClientDocument, Signature, SignatureArea } from "@/lib/supabase/database.types"
 
 interface SignPageClientProps {
-  documentData: Document
+  documentData: ClientDocument
   signatures: Signature[]
+  isExpired?: boolean
+  isCompleted?: boolean
 }
 
-export default function SignPageClient({ documentData, signatures }: SignPageClientProps) {
+export default function SignPageClient({ documentData, signatures, isExpired = false, isCompleted = false }: SignPageClientProps) {
   const { t } = useLanguage()
   const router = useRouter()
   const [localSignatures, setLocalSignatures] = useState<Signature[]>(signatures)
@@ -28,7 +31,7 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const [password, setPassword] = useState<string>('')
-  const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(!documentData.password)
+  const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(!documentData.requiresPassword)
   const [isVerifyingPassword, setIsVerifyingPassword] = useState<boolean>(false)
   const documentContainerRef = useRef<HTMLDivElement>(null)
 
@@ -241,6 +244,95 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
     } finally {
       setIsVerifyingPassword(false)
     }
+  }
+
+  // Show completed document screen if document is completed
+  if (isCompleted) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background">
+        {/* Header with logo */}
+        <header className="w-full">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex justify-between items-center">
+              <Link href="/" className="flex items-center gap-2">
+                <FileSignature className="h-8 w-8 text-primary" />
+                <span className="font-bold text-xl">{t("app.title")}</span>
+              </Link>
+              <LanguageSelector />
+            </div>
+          </div>
+        </header>
+        
+        {/* Main content */}
+        <div className="container mx-auto px-4 py-8 flex-1">
+          <div className="max-w-md mx-auto">
+            <Card>
+              <CardHeader className="text-center">
+                <CheckCircle className="mx-auto h-12 w-12 text-green-400 mb-4" />
+                <CardTitle className="text-xl text-green-600">이미 제출된 문서입니다</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center space-y-3">
+                  <p className="text-gray-600">
+                    이 문서는 이미 서명이 완료되어 제출되었습니다.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    더 이상 수정할 수 없습니다.
+                  </p>
+                </div>
+                <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                  <p className="text-sm text-green-700 text-center font-medium">
+                    {documentData.filename}
+                  </p>
+                  <p className="text-xs text-green-600 text-center mt-1">
+                    서명 완료됨
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show expired document screen if document is expired
+  if (isExpired) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-4">
+          <LanguageSelector />
+        </div>
+        <div className="max-w-md mx-auto">
+          <Card>
+            <CardHeader className="text-center">
+              <Clock className="mx-auto h-12 w-12 text-red-400 mb-4" />
+              <CardTitle className="text-xl text-red-600">서명 기간 만료</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center space-y-3">
+                <p className="text-gray-600">
+                  죄송합니다. 이 문서의 서명 기간이 만료되었습니다.
+                </p>
+                <p className="text-sm text-gray-500">
+                  문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.
+                </p>
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-sm text-red-700 text-center font-medium">
+                  {documentData.filename}
+                </p>
+                {documentData.expires_at && (
+                  <p className="text-xs text-red-600 text-center mt-1">
+                    만료일: {new Date(documentData.expires_at).toLocaleDateString('ko-KR')}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   // Show password verification screen if password is required and not verified

@@ -19,6 +19,7 @@ export interface Database {
           created_at: string
           status: 'draft' | 'published' | 'completed'
           password: string | null
+          expires_at: string | null
         }
         Insert: {
           id?: string
@@ -29,6 +30,7 @@ export interface Database {
           created_at?: string
           status?: 'draft' | 'published' | 'completed'
           password?: string | null
+          expires_at?: string | null
         }
         Update: {
           id?: string
@@ -39,6 +41,7 @@ export interface Database {
           created_at?: string
           status?: 'draft' | 'published' | 'completed'
           password?: string | null
+          expires_at?: string | null
         }
         Relationships: []
       }
@@ -111,6 +114,11 @@ export interface Database {
 export type Document = Database['public']['Tables']['documents']['Row']
 export type DocumentInsert = Database['public']['Tables']['documents']['Insert']
 export type DocumentUpdate = Database['public']['Tables']['documents']['Update']
+
+// Client-side Document type that excludes password hash and includes requiresPassword
+export type ClientDocument = Omit<Document, 'password'> & {
+  requiresPassword?: boolean
+}
 
 export type Signature = Database['public']['Tables']['signatures']['Row']
 export type SignatureInsert = Database['public']['Tables']['signatures']['Insert']

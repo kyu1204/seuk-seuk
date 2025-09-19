@@ -2,7 +2,8 @@
 
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Document, DocumentInsert, Signature, SignatureInsert, SignatureArea } from '@/lib/supabase/database.types'
+import type { Document, DocumentInsert, ClientDocument, Signature, SignatureInsert, SignatureArea } from '@/lib/supabase/database.types'
+import bcrypt from 'bcryptjs'
 
 import { randomUUID } from 'crypto'
 
@@ -75,7 +76,7 @@ export async function uploadDocument(formData: FormData) {
 /**
  * Get document by short URL
  */
-export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string }> {
+export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: ClientDocument | null; signatures: Signature[]; error?: string; isExpired?: boolean; isCompleted?: boolean }> {
   try {
     const supabase = createServerClient()
 
@@ -90,6 +91,37 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
       return { document: null, signatures: [], error: 'Document not found' }
     }
 
+    // Transform to ClientDocument (remove password, add requiresPassword)
+    const { password, ...documentWithoutPassword } = document
+    const clientDocument: ClientDocument = {
+      ...documentWithoutPassword,
+      requiresPassword: !!password
+    }
+
+    // Check if document is completed
+    const isCompleted = document.status === 'completed'
+
+    if (isCompleted) {
+      return {
+        document: clientDocument,
+        signatures: [],
+        error: '이미 제출된 문서입니다.',
+        isCompleted: true
+      }
+    }
+
+    // Check if document is expired
+    const isExpired = document.expires_at && new Date(document.expires_at) < new Date()
+
+    if (isExpired) {
+      return {
+        document: clientDocument,
+        signatures: [],
+        error: '서명 기간이 만료되었습니다.',
+        isExpired: true
+      }
+    }
+
     // Get existing signatures
     const { data: signatures, error: sigError } = await supabase
       .from('signatures')
@@ -99,10 +131,10 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
 
     if (sigError) {
       console.error('Signatures error:', sigError)
-      return { document, signatures: [], error: 'Failed to load signatures' }
+      return { document: clientDocument, signatures: [], error: 'Failed to load signatures' }
     }
 
-    return { document, signatures: signatures || [] }
+    return { document: clientDocument, signatures: signatures || [] }
   } catch (error) {
     console.error('Get document error:', error)
     return { document: null, signatures: [], error: 'An unexpected error occurred' }
@@ -256,16 +288,23 @@ export async function uploadSignedDocument(documentId: string, signedImageData: 
 /**
  * Publish a document (change status from draft to published)
  */
-export async function publishDocument(documentId: string, password?: string | null) {
+export async function publishDocument(documentId: string, password: string, expiresAt: string | null) {
   try {
     const supabase = createServerClient()
 
-    // Update document status to published with optional password
+    // Handle empty/whitespace passwords by storing null instead of hash
+    const trimmedPassword = password.trim()
+    const passwordHash = trimmedPassword ? await bcrypt.hash(trimmedPassword, 12) : null
+    
+    // NOTE: If the documents.password column is NOT NULL, the schema must be relaxed to allow nulls
+    
+    const expiresAtISO = expiresAt ? new Date(expiresAt).toISOString() : null
     const { error } = await supabase
       .from('documents')
       .update({
         status: 'published',
-        password: password
+        password: passwordHash,
+        expires_at: expiresAtISO
       })
       .eq('id', documentId)
       .eq('status', 'draft') // Only allow publishing from draft status
@@ -367,8 +406,8 @@ export async function verifyDocumentPassword(shortUrl: string, password: string)
       return { error: 'Document not found' }
     }
 
-    // Check if password matches
-    const isValid = document.password === password
+    // Check if password matches (hash)
+    const isValid = document.password ? await bcrypt.compare(password, document.password) : false
 
     return { success: true, isValid }
   } catch (error) {
