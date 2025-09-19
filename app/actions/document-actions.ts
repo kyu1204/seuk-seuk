@@ -254,6 +254,99 @@ export async function uploadSignedDocument(documentId: string, signedImageData: 
 }
 
 /**
+ * Publish a document (change status from draft to published)
+ */
+export async function publishDocument(documentId: string) {
+  try {
+    const supabase = createServerClient()
+
+    // Update document status to published
+    const { error } = await supabase
+      .from('documents')
+      .update({ status: 'published' })
+      .eq('id', documentId)
+      .eq('status', 'draft') // Only allow publishing from draft status
+
+    if (error) {
+      console.error('Publish document error:', error)
+      return { error: 'Failed to publish document' }
+    }
+
+    // Get the updated document to return the short URL
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('short_url')
+      .eq('id', documentId)
+      .single()
+
+    if (docError) {
+      console.error('Get document error:', docError)
+      return { error: 'Failed to retrieve document after publishing' }
+    }
+
+    // Revalidate document detail page
+    revalidatePath(`/document/${documentId}`)
+
+    return { success: true, shortUrl: document.short_url }
+  } catch (error) {
+    console.error('Publish document error:', error)
+    return { error: 'An unexpected error occurred' }
+  }
+}
+
+/**
+ * Update signature areas for a document (delete existing and create new ones)
+ */
+export async function updateSignatureAreas(documentId: string, signatureAreas: SignatureArea[]) {
+  try {
+    const supabase = createServerClient()
+
+    // Start transaction-like operations
+    // First, delete existing signature areas
+    const { error: deleteError } = await supabase
+      .from('signatures')
+      .delete()
+      .eq('document_id', documentId)
+
+    if (deleteError) {
+      console.error('Delete signature areas error:', deleteError)
+      return { error: 'Failed to delete existing signature areas' }
+    }
+
+    // Then create new signature areas if any exist
+    if (signatureAreas.length > 0) {
+      const signatureInserts: SignatureInsert[] = signatureAreas.map((area, index) => ({
+        document_id: documentId,
+        area_index: index,
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+        status: 'pending',
+        signature_data: null
+      }))
+
+      const { error: insertError } = await supabase
+        .from('signatures')
+        .insert(signatureInserts)
+
+      if (insertError) {
+        console.error('Create new signature areas error:', insertError)
+        return { error: 'Failed to create new signature areas' }
+      }
+    }
+
+    // Revalidate document detail page
+    revalidatePath(`/document/${documentId}`)
+
+    return { success: true }
+  } catch (error) {
+    console.error('Update signature areas error:', error)
+    return { error: 'An unexpected error occurred' }
+  }
+}
+
+/**
  * Get document by ID (for server components)
  */
 export async function getDocumentById(id: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string }> {

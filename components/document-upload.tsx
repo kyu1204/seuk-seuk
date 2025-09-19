@@ -75,7 +75,7 @@ export default function DocumentUpload() {
     setError(null)
   }
 
-  const handleGetSignature = async () => {
+  const handleSaveDocument = async () => {
     if (!originalFile || signatureAreas.length === 0) {
       setError("Please upload a document and add at least one signature area")
       return
@@ -110,12 +110,8 @@ export default function DocumentUpload() {
         return
       }
 
-      // Success: Redirect to signing page
-      if (uploadResult.shortUrl) {
-        router.push(`/sign/${uploadResult.shortUrl}`)
-      } else {
-        setError("Failed to create document link")
-      }
+      // Success: Redirect to document detail page
+      router.push(`/document/${uploadResult.document.id}`)
     } catch (error) {
       console.error("Error uploading document:", error)
       setError("An unexpected error occurred while uploading the document")
@@ -213,11 +209,11 @@ export default function DocumentUpload() {
             </Button>
             <Button
               variant="default"
-              onClick={handleGetSignature}
+              onClick={handleSaveDocument}
               disabled={signatureAreas.length === 0 || isLoading || !originalFile}
               className="ml-auto"
             >
-              {isLoading ? t("upload.generating") : t("upload.getSignature")}
+              {isLoading ? "저장 중..." : "저장하기"}
             </Button>
           </div>
 

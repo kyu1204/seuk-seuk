@@ -17,7 +17,7 @@ export interface Database {
           short_url: string
           signed_file_url: string | null
           created_at: string
-          status: 'draft' | 'completed'
+          status: 'draft' | 'published' | 'completed'
         }
         Insert: {
           id?: string
@@ -26,7 +26,7 @@ export interface Database {
           short_url: string
           signed_file_url?: string | null
           created_at?: string
-          status?: 'draft' | 'completed'
+          status?: 'draft' | 'published' | 'completed'
         }
         Update: {
           id?: string
@@ -35,7 +35,7 @@ export interface Database {
           short_url?: string
           signed_file_url?: string | null
           created_at?: string
-          status?: 'draft' | 'completed'
+          status?: 'draft' | 'published' | 'completed'
         }
         Relationships: []
       }
