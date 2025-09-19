@@ -4,11 +4,13 @@ import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import SignatureModal from "@/components/signature-modal"
-import { Card, CardContent } from "@/components/ui/card"
-import { RefreshCw } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RefreshCw, Lock } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSelector from "@/components/language-selector"
-import { saveSignature, markDocumentCompleted, uploadSignedDocument } from "@/app/actions/document-actions"
+import { saveSignature, markDocumentCompleted, uploadSignedDocument, verifyDocumentPassword } from "@/app/actions/document-actions"
 import type { Document, Signature, SignatureArea } from "@/lib/supabase/database.types"
 
 interface SignPageClientProps {
@@ -25,6 +27,9 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState<boolean>(false)
+  const [password, setPassword] = useState<string>('')
+  const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(!documentData.password)
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState<boolean>(false)
   const documentContainerRef = useRef<HTMLDivElement>(null)
 
 
@@ -207,6 +212,95 @@ export default function SignPageClient({ documentData, signatures }: SignPageCli
 
 
   const allAreasSigned = localSignatures.length > 0 && localSignatures.every((s) => s.signature_data !== null)
+
+  const handlePasswordSubmit = async () => {
+    if (!password.trim()) {
+      setError('비밀번호를 입력해주세요.')
+      return
+    }
+
+    setIsVerifyingPassword(true)
+    setError(null)
+
+    try {
+      const result = await verifyDocumentPassword(documentData.short_url, password)
+
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+
+      if (result.isValid) {
+        setIsPasswordVerified(true)
+      } else {
+        setError('비밀번호가 올바르지 않습니다.')
+      }
+    } catch (err) {
+      console.error('Password verification error:', err)
+      setError('비밀번호 확인 중 오류가 발생했습니다.')
+    } finally {
+      setIsVerifyingPassword(false)
+    }
+  }
+
+  // Show password verification screen if password is required and not verified
+  if (!isPasswordVerified) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-4">
+          <LanguageSelector />
+        </div>
+        <div className="max-w-md mx-auto">
+          <Card>
+            <CardHeader className="text-center">
+              <Lock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <CardTitle className="text-xl">보안 문서</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-center text-gray-600">
+                이 문서는 비밀번호로 보호되어 있습니다.<br />
+                계속하려면 비밀번호를 입력해주세요.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="document-password">비밀번호</Label>
+                <Input
+                  id="document-password"
+                  type="password"
+                  placeholder="비밀번호를 입력하세요"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handlePasswordSubmit()
+                    }
+                  }}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={handlePasswordSubmit}
+                disabled={isVerifyingPassword || !password.trim()}
+              >
+                {isVerifyingPassword ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    확인 중...
+                  </>
+                ) : (
+                  '확인'
+                )}
+              </Button>
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm text-center">
+                  {error}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
