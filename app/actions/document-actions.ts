@@ -2,7 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Document, DocumentInsert, Signature, SignatureInsert, SignatureArea } from '@/lib/supabase/database.types'
+import type { Document, DocumentInsert, ClientDocument, Signature, SignatureInsert, SignatureArea } from '@/lib/supabase/database.types'
 import bcrypt from 'bcryptjs'
 
 import { randomUUID } from 'crypto'
@@ -76,7 +76,7 @@ export async function uploadDocument(formData: FormData) {
 /**
  * Get document by short URL
  */
-export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string; isExpired?: boolean; isCompleted?: boolean }> {
+export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: ClientDocument | null; signatures: Signature[]; error?: string; isExpired?: boolean; isCompleted?: boolean }> {
   try {
     const supabase = createServerClient()
 
@@ -91,12 +91,19 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
       return { document: null, signatures: [], error: 'Document not found' }
     }
 
+    // Transform to ClientDocument (remove password, add requiresPassword)
+    const { password, ...documentWithoutPassword } = document
+    const clientDocument: ClientDocument = {
+      ...documentWithoutPassword,
+      requiresPassword: !!password
+    }
+
     // Check if document is completed
     const isCompleted = document.status === 'completed'
 
     if (isCompleted) {
       return {
-        document,
+        document: clientDocument,
         signatures: [],
         error: '이미 제출된 문서입니다.',
         isCompleted: true
@@ -108,7 +115,7 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
 
     if (isExpired) {
       return {
-        document,
+        document: clientDocument,
         signatures: [],
         error: '서명 기간이 만료되었습니다.',
         isExpired: true
@@ -124,10 +131,10 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
 
     if (sigError) {
       console.error('Signatures error:', sigError)
-      return { document, signatures: [], error: 'Failed to load signatures' }
+      return { document: clientDocument, signatures: [], error: 'Failed to load signatures' }
     }
 
-    return { document, signatures: signatures || [] }
+    return { document: clientDocument, signatures: signatures || [] }
   } catch (error) {
     console.error('Get document error:', error)
     return { document: null, signatures: [], error: 'An unexpected error occurred' }

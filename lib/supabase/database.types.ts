@@ -115,6 +115,11 @@ export type Document = Database['public']['Tables']['documents']['Row']
 export type DocumentInsert = Database['public']['Tables']['documents']['Insert']
 export type DocumentUpdate = Database['public']['Tables']['documents']['Update']
 
+// Client-side Document type that excludes password hash and includes requiresPassword
+export type ClientDocument = Omit<Document, 'password'> & {
+  requiresPassword?: boolean
+}
+
 export type Signature = Database['public']['Tables']['signatures']['Row']
 export type SignatureInsert = Database['public']['Tables']['signatures']['Insert']
 export type SignatureUpdate = Database['public']['Tables']['signatures']['Update']

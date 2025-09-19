@@ -12,10 +12,10 @@ import { useLanguage } from "@/contexts/language-context"
 import LanguageSelector from "@/components/language-selector"
 import Link from "next/link"
 import { saveSignature, markDocumentCompleted, uploadSignedDocument, verifyDocumentPassword } from "@/app/actions/document-actions"
-import type { Document, Signature, SignatureArea } from "@/lib/supabase/database.types"
+import type { ClientDocument, Signature, SignatureArea } from "@/lib/supabase/database.types"
 
 interface SignPageClientProps {
-  documentData: Document
+  documentData: ClientDocument
   signatures: Signature[]
   isExpired?: boolean
   isCompleted?: boolean
@@ -31,7 +31,7 @@ export default function SignPageClient({ documentData, signatures, isExpired = f
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const [password, setPassword] = useState<string>('')
-  const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(!documentData.password)
+  const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(!documentData.requiresPassword)
   const [isVerifyingPassword, setIsVerifyingPassword] = useState<boolean>(false)
   const documentContainerRef = useRef<HTMLDivElement>(null)
 
