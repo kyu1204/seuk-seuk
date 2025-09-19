@@ -256,14 +256,17 @@ export async function uploadSignedDocument(documentId: string, signedImageData: 
 /**
  * Publish a document (change status from draft to published)
  */
-export async function publishDocument(documentId: string) {
+export async function publishDocument(documentId: string, password?: string | null) {
   try {
     const supabase = createServerClient()
 
-    // Update document status to published
+    // Update document status to published with optional password
     const { error } = await supabase
       .from('documents')
-      .update({ status: 'published' })
+      .update({
+        status: 'published',
+        password: password
+      })
       .eq('id', documentId)
       .eq('status', 'draft') // Only allow publishing from draft status
 
@@ -342,6 +345,34 @@ export async function updateSignatureAreas(documentId: string, signatureAreas: S
     return { success: true }
   } catch (error) {
     console.error('Update signature areas error:', error)
+    return { error: 'An unexpected error occurred' }
+  }
+}
+
+/**
+ * Verify document password
+ */
+export async function verifyDocumentPassword(shortUrl: string, password: string) {
+  try {
+    const supabase = createServerClient()
+
+    // Get document with password
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('password')
+      .eq('short_url', shortUrl)
+      .single()
+
+    if (docError || !document) {
+      return { error: 'Document not found' }
+    }
+
+    // Check if password matches
+    const isValid = document.password === password
+
+    return { success: true, isValid }
+  } catch (error) {
+    console.error('Verify password error:', error)
     return { error: 'An unexpected error occurred' }
   }
 }
