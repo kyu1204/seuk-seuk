@@ -76,7 +76,7 @@ export async function uploadDocument(formData: FormData) {
 /**
  * Get document by short URL
  */
-export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string; isExpired?: boolean }> {
+export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string; isExpired?: boolean; isCompleted?: boolean }> {
   try {
     const supabase = createServerClient()
 
@@ -89,6 +89,18 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
 
     if (docError || !document) {
       return { document: null, signatures: [], error: 'Document not found' }
+    }
+
+    // Check if document is completed
+    const isCompleted = document.status === 'completed'
+
+    if (isCompleted) {
+      return {
+        document,
+        signatures: [],
+        error: '이미 제출된 문서입니다.',
+        isCompleted: true
+      }
     }
 
     // Check if document is expired
