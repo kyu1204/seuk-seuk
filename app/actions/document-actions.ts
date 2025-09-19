@@ -285,8 +285,12 @@ export async function publishDocument(documentId: string, password: string, expi
   try {
     const supabase = createServerClient()
 
-    // Update document status to published with password hash and expiration
-    const passwordHash = await bcrypt.hash(password, 12)
+    // Handle empty/whitespace passwords by storing null instead of hash
+    const trimmedPassword = password.trim()
+    const passwordHash = trimmedPassword ? await bcrypt.hash(trimmedPassword, 12) : null
+    
+    // NOTE: If the documents.password column is NOT NULL, the schema must be relaxed to allow nulls
+    
     const expiresAtISO = expiresAt ? new Date(expiresAt).toISOString() : null
     const { error } = await supabase
       .from('documents')
