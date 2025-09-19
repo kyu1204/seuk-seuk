@@ -3,6 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Document, DocumentInsert, Signature, SignatureInsert, SignatureArea } from '@/lib/supabase/database.types'
+import bcrypt from 'bcryptjs'
 
 import { randomUUID } from 'crypto'
 
@@ -268,17 +269,19 @@ export async function uploadSignedDocument(documentId: string, signedImageData: 
 /**
  * Publish a document (change status from draft to published)
  */
-export async function publishDocument(documentId: string, password: string, expiresAt: string) {
+export async function publishDocument(documentId: string, password: string, expiresAt: string | null) {
   try {
     const supabase = createServerClient()
 
-    // Update document status to published with password and expiration
+    // Update document status to published with password hash and expiration
+    const passwordHash = await bcrypt.hash(password, 12)
+    const expiresAtISO = expiresAt ? new Date(expiresAt).toISOString() : null
     const { error } = await supabase
       .from('documents')
       .update({
         status: 'published',
-        password: password,
-        expires_at: expiresAt
+        password: passwordHash,
+        expires_at: expiresAtISO
       })
       .eq('id', documentId)
       .eq('status', 'draft') // Only allow publishing from draft status
@@ -380,8 +383,8 @@ export async function verifyDocumentPassword(shortUrl: string, password: string)
       return { error: 'Document not found' }
     }
 
-    // Check if password matches
-    const isValid = document.password === password
+    // Check if password matches (hash)
+    const isValid = document.password ? await bcrypt.compare(password, document.password) : false
 
     return { success: true, isValid }
   } catch (error) {

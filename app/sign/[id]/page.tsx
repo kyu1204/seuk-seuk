@@ -13,10 +13,16 @@ export default async function SignPage({ params }: PageProps) {
   // Fetch document data server-side
   const { document, signatures, error, isExpired } = await getDocumentByShortUrl(id)
 
-  if (error || !document) {
+  // Only show 404 if document doesn't exist, not for expired/error states
+  if (!document) {
     notFound()
   }
 
-  // Pass data to client component, including expiration status
+  // Log non-fatal errors for monitoring
+  if (error && document) {
+    console.warn(`Non-fatal error for document ${id}:`, error)
+  }
+
+  // Pass data to client component, including expiration status and error
   return <SignPageClient documentData={document} signatures={signatures} isExpired={isExpired} />
 }
