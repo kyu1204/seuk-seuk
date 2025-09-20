@@ -25,6 +25,13 @@ export async function uploadDocument(formData: FormData) {
       return { error: 'File and filename are required' }
     }
 
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { error: 'Authentication required' }
+    }
+
     // Generate unique filename using UUID
     const fileExtension = file.name.split('.').pop() || ''
     const uniqueFilename = `${randomUUID()}.${fileExtension}`
@@ -52,7 +59,8 @@ export async function uploadDocument(formData: FormData) {
       filename,
       file_url: publicUrl,
       short_url: shortUrl,
-      status: 'draft'
+      status: 'draft',
+      user_id: user.id
     }
 
     const { data: document, error: dbError } = await supabase
@@ -208,6 +216,28 @@ export async function createSignatureAreas(
   try {
     const supabase = await createClient()
 
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { error: 'Authentication required' }
+    }
+
+    // Verify that the current user is the owner of the document
+    const { data: ownerCheck, error: ownerError } = await supabase
+      .from('documents')
+      .select('user_id')
+      .eq('id', documentId)
+      .single()
+
+    if (ownerError || !ownerCheck) {
+      return { error: 'Document not found' }
+    }
+
+    if (ownerCheck.user_id !== user.id) {
+      return { error: 'Unauthorized: You can only modify your own documents' }
+    }
+
     const signatureInserts: SignatureInsert[] = signatureAreas.map((area, index) => ({
       document_id: documentId,
       area_index: index,
@@ -292,6 +322,28 @@ export async function publishDocument(documentId: string, password: string, expi
   try {
     const supabase = await createClient()
 
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { error: 'Authentication required' }
+    }
+
+    // Verify that the current user is the owner of the document
+    const { data: ownerCheck, error: ownerError } = await supabase
+      .from('documents')
+      .select('user_id')
+      .eq('id', documentId)
+      .single()
+
+    if (ownerError || !ownerCheck) {
+      return { error: 'Document not found' }
+    }
+
+    if (ownerCheck.user_id !== user.id) {
+      return { error: 'Unauthorized: You can only publish your own documents' }
+    }
+
     // Handle empty/whitespace passwords by storing null instead of hash
     const trimmedPassword = password.trim()
     const passwordHash = trimmedPassword ? await bcrypt.hash(trimmedPassword, 12) : null
@@ -342,6 +394,28 @@ export async function publishDocument(documentId: string, password: string, expi
 export async function updateSignatureAreas(documentId: string, signatureAreas: SignatureArea[]) {
   try {
     const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { error: 'Authentication required' }
+    }
+
+    // Verify that the current user is the owner of the document
+    const { data: ownerCheck, error: ownerError } = await supabase
+      .from('documents')
+      .select('user_id')
+      .eq('id', documentId)
+      .single()
+
+    if (ownerError || !ownerCheck) {
+      return { error: 'Document not found' }
+    }
+
+    if (ownerCheck.user_id !== user.id) {
+      return { error: 'Unauthorized: You can only modify your own documents' }
+    }
 
     // Start transaction-like operations
     // First, delete existing signature areas
