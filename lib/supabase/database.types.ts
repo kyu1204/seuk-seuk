@@ -47,6 +47,7 @@ export interface Database {
           status: 'draft' | 'published' | 'completed'
           password: string | null
           expires_at: string | null
+          user_id: string
         }
         Insert: {
           id?: string
@@ -58,6 +59,7 @@ export interface Database {
           status?: 'draft' | 'published' | 'completed'
           password?: string | null
           expires_at?: string | null
+          user_id: string
         }
         Update: {
           id?: string
@@ -69,6 +71,7 @@ export interface Database {
           status?: 'draft' | 'published' | 'completed'
           password?: string | null
           expires_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
