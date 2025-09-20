@@ -50,7 +50,7 @@ export default function RegisterPage() {
         const result: ActionResult = await signUp(form);
 
         if (result.success) {
-          toast.success(result.message || "회원가입이 완료되었습니다", {
+          toast.success(result.message || t("toast.register.success"), {
             duration: 1000,
           });
           router.push("/login");
@@ -58,13 +58,13 @@ export default function RegisterPage() {
           if (result.errors) {
             setErrors(result.errors);
           }
-          toast.error(result.message || "회원가입 중 오류가 발생했습니다", {
+          toast.error(result.message || t("toast.register.error"), {
             duration: 1000,
           });
         }
       } catch (error) {
         console.error("Registration error:", error);
-        toast.error("예상치 못한 오류가 발생했습니다", { duration: 1000 });
+        toast.error(t("toast.error.unexpected"), { duration: 1000 });
       }
     });
   };

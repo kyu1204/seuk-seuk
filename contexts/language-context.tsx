@@ -63,6 +63,26 @@ const translations: Record<Language, Record<string, string>> = {
     "language.ko": "한국어",
     "language.en": "English",
 
+    // Toast Messages
+    "toast.logout.success": "로그아웃이 완료되었습니다",
+    "toast.logout.error": "로그아웃 중 오류가 발생했습니다",
+    "toast.login.success": "로그인이 완료되었습니다",
+    "toast.login.error.credentials": "이메일 또는 비밀번호가 올바르지 않습니다",
+    "toast.login.error.general": "로그인 중 오류가 발생했습니다",
+    "toast.register.success": "회원가입이 완료되었습니다",
+    "toast.register.error": "회원가입 중 오류가 발생했습니다",
+    "toast.error.unexpected": "예상치 못한 오류가 발생했습니다",
+    "toast.copy.success": "클립보드에 복사되었습니다",
+
+    // User Profile
+    "user.fallback": "사용자",
+    "user.logout": "로그아웃",
+    "user.logout.loading": "로그아웃 중...",
+
+    // Error Messages
+    "error.auth.logout": "로그아웃 중 오류가 발생했습니다",
+    "error.auth.logout.unexpected": "로그아웃 중 예상치 못한 오류가 발생했습니다",
+
     // Homepage
     "home.notification": "🎉 새로운 기능이 출시되었습니다! 지금 바로 확인해보세요.",
     "home.nav.features": "기능",
@@ -209,6 +229,26 @@ const translations: Record<Language, Record<string, string>> = {
     // Language Selector
     "language.ko": "한국어",
     "language.en": "English",
+
+    // Toast Messages
+    "toast.logout.success": "Logout completed successfully",
+    "toast.logout.error": "An error occurred during logout",
+    "toast.login.success": "Login completed successfully",
+    "toast.login.error.credentials": "Email or password is incorrect",
+    "toast.login.error.general": "An error occurred during login",
+    "toast.register.success": "Registration completed successfully",
+    "toast.register.error": "An error occurred during registration",
+    "toast.error.unexpected": "An unexpected error occurred",
+    "toast.copy.success": "Copied to clipboard",
+
+    // User Profile
+    "user.fallback": "User",
+    "user.logout": "Logout",
+    "user.logout.loading": "Logging out...",
+
+    // Error Messages
+    "error.auth.logout": "An error occurred during logout",
+    "error.auth.logout.unexpected": "An unexpected error occurred during logout",
 
     // Homepage
     "home.notification": "🎉 New features just released! Check them out now.",

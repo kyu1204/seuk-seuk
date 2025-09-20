@@ -59,19 +59,19 @@ export default function LoginPage() {
         );
 
         if (!error) {
-          toast.success("로그인이 완료되었습니다", { duration: 1000 });
+          toast.success(t("toast.login.success"), { duration: 1000 });
           // 리다이렉트 플래그 설정 - useEffect에서 user 상태 변화를 감지하여 즉시 리다이렉트
           setShouldRedirect(true);
         } else {
           if (error.message === "Invalid login credentials") {
-            toast.error("이메일 또는 비밀번호가 올바르지 않습니다");
+            toast.error(t("toast.login.error.credentials"));
           } else {
-            toast.error(error.message || "로그인 중 오류가 발생했습니다");
+            toast.error(error.message || t("toast.login.error.general"));
           }
         }
       } catch (error) {
         console.error("Login error:", error);
-        toast.error("예상치 못한 오류가 발생했습니다");
+        toast.error(t("toast.error.unexpected"));
       }
     });
   };

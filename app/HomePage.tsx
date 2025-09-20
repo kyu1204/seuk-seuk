@@ -52,12 +52,12 @@ export default function HomePage() {
       try {
         // useAuth의 signOut 함수 사용 (클라이언트 사이드)
         await signOut();
-        toast.success("로그아웃이 완료되었습니다", { duration: 1000 });
+        toast.success(t("toast.logout.success"), { duration: 1000 });
         // 리다이렉트 플래그 설정 - useEffect에서 user 상태 변화를 감지하여 즉시 리다이렉트
         setShouldRedirectToHome(true);
       } catch (error) {
         console.error("Sign out error:", error);
-        toast.error("로그아웃 중 오류가 발생했습니다", { duration: 1000 });
+        toast.error(t("toast.logout.error"), { duration: 1000 });
       }
     });
   };
@@ -199,7 +199,7 @@ export default function HomePage() {
                         <DropdownMenuLabel className="font-normal">
                           <div className="flex flex-col space-y-1">
                             <p className="text-sm font-medium leading-none">
-                              {user.user_metadata?.full_name || "사용자"}
+                              {user.user_metadata?.full_name || t("user.fallback")}
                             </p>
                             <p className="text-xs leading-none text-muted-foreground">
                               {user.email}
@@ -221,7 +221,7 @@ export default function HomePage() {
                         >
                           <LogOut className="mr-2 h-4 w-4" />
                           <span>
-                            {isPending ? "로그아웃 중..." : "로그아웃"}
+                            {isPending ? t("user.logout.loading") : t("user.logout")}
                           </span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
