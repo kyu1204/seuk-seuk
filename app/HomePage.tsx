@@ -1,9 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/contexts/language-context";
-import { useAuth } from "@/contexts/auth-context";
-import LanguageSelector from "@/components/language-selector";
-import { ThemeToggle } from "@/components/theme-toggle";
+import Layout from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
@@ -12,63 +10,12 @@ import {
   FileSignature,
   Shield,
   Zap,
-  ChevronUp,
-  LogOut,
-  User,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useTransition } from "react";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const { user, loading, signOut } = useAuth();
-  const router = useRouter();
-  const [scrolled, setScrolled] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [shouldRedirectToHome, setShouldRedirectToHome] = useState(false);
-
-  // 로그아웃 성공 후 사용자 상태가 변경되면 즉시 리다이렉트
-  useEffect(() => {
-    if (shouldRedirectToHome && !user && !loading) {
-      router.push("/");
-      setShouldRedirectToHome(false);
-    }
-  }, [user, loading, shouldRedirectToHome, router]);
-
-  const handleSignOut = async () => {
-    startTransition(async () => {
-      try {
-        // useAuth의 signOut 함수 사용 (클라이언트 사이드)
-        await signOut();
-        toast.success(t("toast.logout.success"), { duration: 1000 });
-        // 리다이렉트 플래그 설정 - useEffect에서 user 상태 변화를 감지하여 즉시 리다이렉트
-        setShouldRedirectToHome(true);
-      } catch (error) {
-        console.error("Sign out error:", error);
-        toast.error(t("toast.logout.error"), { duration: 1000 });
-      }
-    });
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const features = [
     {
@@ -148,98 +95,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      {/* Header */}
-      <header
-        className={cn(
-          "sticky top-0 z-50 w-full transition-all duration-200",
-          scrolled
-            ? "bg-background/80 backdrop-blur-md border-b"
-            : "bg-transparent"
-        )}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <FileSignature className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl">{t("app.title")}</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <LanguageSelector />
-              {!loading &&
-                (user ? (
-                  <div className="flex items-center gap-3">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="relative h-9 w-9 rounded-full"
-                        >
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage
-                              src={user.user_metadata?.avatar_url}
-                              alt={
-                                user.user_metadata?.full_name ||
-                                user.email ||
-                                "User"
-                              }
-                            />
-                            <AvatarFallback>
-                              {user.user_metadata?.full_name
-                                ? user.user_metadata.full_name
-                                    .charAt(0)
-                                    .toUpperCase()
-                                : user.email?.charAt(0).toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56" align="end">
-                        <DropdownMenuLabel className="font-normal">
-                          <div className="flex flex-col space-y-1">
-                            <p className="text-sm font-medium leading-none">
-                              {user.user_metadata?.full_name || t("user.fallback")}
-                            </p>
-                            <p className="text-xs leading-none text-muted-foreground">
-                              {user.email}
-                            </p>
-                          </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href="/upload" className="cursor-pointer">
-                            <User className="mr-2 h-4 w-4" />
-                            <span>{t("home.dashboard")}</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={handleSignOut}
-                          className="cursor-pointer"
-                          disabled={isPending}
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          <span>
-                            {isPending ? t("user.logout.loading") : t("user.logout")}
-                          </span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Link href="/login">
-                      <Button className="bg-primary hover:bg-primary/90">
-                        {t("login.logIn")}
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      </header>
+    <Layout>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 md:py-32">
@@ -475,16 +331,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* Scroll to top button */}
-      {scrolled && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 p-3 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all z-50"
-        >
-          <ChevronUp className="h-5 w-5" />
-        </button>
-      )}
-    </div>
+    </Layout>
   );
 }

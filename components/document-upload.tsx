@@ -1,124 +1,133 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
-import { Upload, FileImage, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import AreaSelector from "@/components/area-selector"
-import { uploadDocument, createSignatureAreas } from "@/app/actions/document-actions"
-import { useLanguage } from "@/contexts/language-context"
-import type { SignatureArea } from "@/lib/supabase/database.types"
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Upload, FileImage, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import AreaSelector from "@/components/area-selector";
+import {
+  uploadDocument,
+  createSignatureAreas,
+} from "@/app/actions/document-actions";
+import { useLanguage } from "@/contexts/language-context";
+import type { SignatureArea } from "@/lib/supabase/database.types";
 
 export default function DocumentUpload() {
-  const { t } = useLanguage()
-  const router = useRouter()
-  const [document, setDocument] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string>("")
-  const [originalFile, setOriginalFile] = useState<File | null>(null)
-  const [signatureAreas, setSignatureAreas] = useState<SignatureArea[]>([])
-  const [isSelecting, setIsSelecting] = useState<boolean>(false)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const documentContainerRef = useRef<HTMLDivElement>(null)
-  const [scrollPosition, setScrollPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const { t } = useLanguage();
+  const router = useRouter();
+  const [document, setDocument] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>("");
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [signatureAreas, setSignatureAreas] = useState<SignatureArea[]>([]);
+  const [isSelecting, setIsSelecting] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollPosition, setScrollPosition] = useState<{
+    top: number;
+    left: number;
+  }>({ top: 0, left: 0 });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      setFileName(file.name)
-      setOriginalFile(file)
-      setError(null)
+      setFileName(file.name);
+      setOriginalFile(file);
+      setError(null);
 
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (event) => {
-        setDocument(event.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+        setDocument(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleAddSignatureArea = () => {
     // Save current scroll position before switching to selection mode
     if (documentContainerRef.current) {
-      const scrollTop = documentContainerRef.current.scrollTop
-      const scrollLeft = documentContainerRef.current.scrollLeft
+      const scrollTop = documentContainerRef.current.scrollTop;
+      const scrollLeft = documentContainerRef.current.scrollLeft;
 
       setScrollPosition({
         top: scrollTop,
         left: scrollLeft,
-      })
+      });
     }
-    setIsSelecting(true)
-  }
+    setIsSelecting(true);
+  };
 
   const handleAreaSelected = (area: SignatureArea) => {
     // Simply store the area coordinates as they are
-    setSignatureAreas([...signatureAreas, area])
-    setIsSelecting(false)
-  }
+    setSignatureAreas([...signatureAreas, area]);
+    setIsSelecting(false);
+  };
 
   const handleRemoveArea = (index: number) => {
-    const updatedAreas = [...signatureAreas]
-    updatedAreas.splice(index, 1)
-    setSignatureAreas(updatedAreas)
-  }
+    const updatedAreas = [...signatureAreas];
+    updatedAreas.splice(index, 1);
+    setSignatureAreas(updatedAreas);
+  };
 
   const handleClearDocument = () => {
-    setDocument(null)
-    setFileName("")
-    setOriginalFile(null)
-    setSignatureAreas([])
-    setError(null)
-  }
+    setDocument(null);
+    setFileName("");
+    setOriginalFile(null);
+    setSignatureAreas([]);
+    setError(null);
+  };
 
   const handleSaveDocument = async () => {
     if (!originalFile || signatureAreas.length === 0) {
-      setError("Please upload a document and add at least one signature area")
-      return
+      setError("Please upload a document and add at least one signature area");
+      return;
     }
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
       // Step 1: Upload document (without signature areas)
-      const formData = new FormData()
-      formData.append('file', originalFile)
-      formData.append('filename', fileName)
+      const formData = new FormData();
+      formData.append("file", originalFile);
+      formData.append("filename", fileName);
 
-      const uploadResult = await uploadDocument(formData)
+      const uploadResult = await uploadDocument(formData);
 
       if (uploadResult.error) {
-        setError(uploadResult.error)
-        return
+        setError(uploadResult.error);
+        return;
       }
 
       if (!uploadResult.success || !uploadResult.document) {
-        setError("Failed to upload document")
-        return
+        setError("Failed to upload document");
+        return;
       }
 
       // Step 2: Create signature areas
-      const areasResult = await createSignatureAreas(uploadResult.document.id, signatureAreas)
+      const areasResult = await createSignatureAreas(
+        uploadResult.document.id,
+        signatureAreas
+      );
 
       if (areasResult.error) {
-        setError(areasResult.error)
-        return
+        setError(areasResult.error);
+        return;
       }
 
       // Success: Redirect to document detail page
-      router.push(`/document/${uploadResult.document.id}`)
+      router.push(`/document/${uploadResult.document.id}`);
     } catch (error) {
-      console.error("Error uploading document:", error)
-      setError("An unexpected error occurred while uploading the document")
+      console.error("Error uploading document:", error);
+      setError("An unexpected error occurred while uploading the document");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-8">
@@ -131,11 +140,16 @@ export default function DocumentUpload() {
               </div>
               <div className="text-center space-y-2">
                 <h3 className="font-medium text-lg">{t("upload.title")}</h3>
-                <p className="text-muted-foreground text-sm">{t("upload.description")}</p>
+                <p className="text-muted-foreground text-sm">
+                  {t("upload.description")}
+                </p>
               </div>
               <label htmlFor="document-upload">
                 <div className="cursor-pointer">
-                  <Button onClick={() => fileInputRef.current?.click()} type="button">
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    type="button"
+                  >
                     <Upload className="mr-2 h-4 w-4" />
                     {t("upload.button")}
                   </Button>
@@ -210,7 +224,9 @@ export default function DocumentUpload() {
             <Button
               variant="default"
               onClick={handleSaveDocument}
-              disabled={signatureAreas.length === 0 || isLoading || !originalFile}
+              disabled={
+                signatureAreas.length === 0 || isLoading || !originalFile
+              }
               className="ml-auto"
             >
               {isLoading ? "저장 중..." : "저장하기"}
@@ -225,6 +241,5 @@ export default function DocumentUpload() {
         </div>
       )}
     </div>
-  )
+  );
 }
-
