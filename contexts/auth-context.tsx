@@ -47,6 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id) // 디버깅용
+
+      // 즉시 상태 업데이트
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
@@ -66,6 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) {
           console.error('Error updating user profile:', error)
         }
+      }
+
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out, clearing state') // 디버깅용
+        // 상태를 즉시 클리어
+        setSession(null)
+        setUser(null)
       }
     })
 
@@ -109,8 +119,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     setLoading(true)
-    await supabase.auth.signOut()
-    setLoading(false)
+    try {
+      await supabase.auth.signOut()
+      // onAuthStateChange가 SIGNED_OUT 이벤트를 처리하므로
+      // 여기서 상태를 수동으로 변경할 필요 없음
+    } catch (error) {
+      console.error('Error during signOut:', error)
+      throw error
+    } finally {
+      setLoading(false)
+    }
   }
 
   const value = {

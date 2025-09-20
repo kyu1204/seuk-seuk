@@ -1,6 +1,7 @@
 "use server"
 
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 
@@ -186,10 +187,8 @@ export async function signOut(): Promise<ActionResult> {
       }
     }
 
-    return {
-      success: true,
-      message: "로그아웃이 완료되었습니다",
-    }
+    // Next.js 14 App Router 최적화: 레이아웃 전체 재검증 후 리다이렉트
+    redirect("/")
   } catch (error) {
     console.error("Unexpected error during signout:", error)
     return {
@@ -197,4 +196,20 @@ export async function signOut(): Promise<ActionResult> {
       message: "로그아웃 중 예상치 못한 오류가 발생했습니다",
     }
   }
+}
+
+// 새로운 서버 액션: 폼 데이터 없이 직접 호출 가능
+export async function performSignOut() {
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.signOut()
+
+  if (error) {
+    console.error("SignOut error:", error)
+    throw new Error(error.message || "로그아웃 중 오류가 발생했습니다")
+  }
+
+  // 전체 레이아웃 재검증으로 인증 상태 업데이트
+  revalidatePath("/", "layout")
+  redirect("/")
 }

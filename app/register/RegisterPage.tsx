@@ -1,69 +1,73 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { FileSignature, Github, KeyRound, Mail, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { useLanguage } from "@/contexts/language-context"
-import { signUp, type ActionResult } from "@/app/actions/auth-actions"
-import { toast } from "sonner"
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { FileSignature, Github, KeyRound, Mail, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useLanguage } from "@/contexts/language-context";
+import { signUp, type ActionResult } from "@/app/actions/auth-actions";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
-  const { t } = useLanguage()
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const { t } = useLanguage();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
-  })
-  const [errors, setErrors] = useState<Record<string, string[]>>({})
+  });
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear errors when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: [] }))
+      setErrors((prev) => ({ ...prev, [name]: [] }));
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setErrors({})
+    e.preventDefault();
+    setErrors({});
 
-    const form = new FormData()
-    form.append("fullName", formData.fullName)
-    form.append("email", formData.email)
-    form.append("password", formData.password)
-    form.append("confirmPassword", formData.confirmPassword)
+    const form = new FormData();
+    form.append("fullName", formData.fullName);
+    form.append("email", formData.email);
+    form.append("password", formData.password);
+    form.append("confirmPassword", formData.confirmPassword);
 
     startTransition(async () => {
       try {
-        const result: ActionResult = await signUp(form)
+        const result: ActionResult = await signUp(form);
 
         if (result.success) {
-          toast.success(result.message || "회원가입이 완료되었습니다")
-          router.push("/login")
+          toast.success(result.message || "회원가입이 완료되었습니다", {
+            duration: 1000,
+          });
+          router.push("/login");
         } else {
           if (result.errors) {
-            setErrors(result.errors)
+            setErrors(result.errors);
           }
-          toast.error(result.message || "회원가입 중 오류가 발생했습니다")
+          toast.error(result.message || "회원가입 중 오류가 발생했습니다", {
+            duration: 1000,
+          });
         }
       } catch (error) {
-        console.error("Registration error:", error)
-        toast.error("예상치 못한 오류가 발생했습니다")
+        console.error("Registration error:", error);
+        toast.error("예상치 못한 오류가 발생했습니다", { duration: 1000 });
       }
-    })
-  }
+    });
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -74,8 +78,12 @@ export default function RegisterPage() {
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="max-w-md text-center">
             <FileSignature className="h-20 w-20 text-primary mx-auto mb-6" />
-            <h1 className="text-4xl font-bold mb-4 gradient-text">{t("register.joinUs")}</h1>
-            <p className="text-lg text-muted-foreground">{t("register.joinMessage")}</p>
+            <h1 className="text-4xl font-bold mb-4 gradient-text">
+              {t("register.joinUs")}
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              {t("register.joinMessage")}
+            </p>
           </div>
         </div>
       </div>
@@ -98,8 +106,12 @@ export default function RegisterPage() {
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center md:text-left">
-              <h2 className="text-3xl font-bold tracking-tight">{t("register.title")}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{t("register.subtitle")}</p>
+              <h2 className="text-3xl font-bold tracking-tight">
+                {t("register.title")}
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t("register.subtitle")}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -165,7 +177,9 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{t("register.confirmPassword")}</Label>
+                  <Label htmlFor="confirmPassword">
+                    {t("register.confirmPassword")}
+                  </Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -180,13 +194,21 @@ export default function RegisterPage() {
                     />
                   </div>
                   {errors.confirmPassword && (
-                    <p className="text-sm text-red-500">{errors.confirmPassword[0]}</p>
+                    <p className="text-sm text-red-500">
+                      {errors.confirmPassword[0]}
+                    </p>
                   )}
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isPending}>
-                {isPending ? t("register.registering") : t("register.createAccount")}
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90"
+                disabled={isPending}
+              >
+                {isPending
+                  ? t("register.registering")
+                  : t("register.createAccount")}
               </Button>
 
               <div className="relative">
@@ -194,13 +216,19 @@ export default function RegisterPage() {
                   <Separator className="w-full" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">{t("register.orContinueWith")}</span>
+                  <span className="bg-background px-2 text-muted-foreground">
+                    {t("register.orContinueWith")}
+                  </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <Button variant="outline" type="button" className="w-full">
-                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                       fill="#4285F4"
@@ -225,7 +253,12 @@ export default function RegisterPage() {
                   Github
                 </Button>
                 <Button variant="outline" type="button" className="w-full">
-                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <rect width="24" height="24" rx="12" fill="#FEE500" />
                     <path
                       d="M12 5.5C8.41 5.5 5.5 7.865 5.5 10.8C5.5 12.7 6.62 14.3875 8.32 15.3375C8.15 15.9125 7.64 17.8 7.59 18.0375C7.53 18.35 7.75 18.35 7.89 18.25C8 18.175 10.21 16.6625 10.83 16.2375C11.21 16.3 11.6 16.325 12 16.325C15.59 16.325 18.5 13.96 18.5 11.025C18.5 8.09 15.59 5.5 12 5.5Z"
@@ -237,7 +270,9 @@ export default function RegisterPage() {
               </div>
 
               <div className="text-center text-sm">
-                <span className="text-muted-foreground">{t("register.alreadyHaveAccount")}</span>{" "}
+                <span className="text-muted-foreground">
+                  {t("register.alreadyHaveAccount")}
+                </span>{" "}
                 <Link href="/login" className="text-primary hover:underline">
                   {t("register.login")}
                 </Link>
@@ -247,6 +282,5 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

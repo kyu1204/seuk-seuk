@@ -27,21 +27,39 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const { user, signOut, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [shouldRedirectToHome, setShouldRedirectToHome] = useState(false);
+
+  // 로그아웃 성공 후 사용자 상태가 변경되면 즉시 리다이렉트
+  useEffect(() => {
+    if (shouldRedirectToHome && !user && !loading) {
+      router.push("/");
+      setShouldRedirectToHome(false);
+    }
+  }, [user, loading, shouldRedirectToHome, router]);
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success("로그아웃이 완료되었습니다");
-    } catch (error) {
-      toast.error("로그아웃 중 오류가 발생했습니다");
-    }
+    startTransition(async () => {
+      try {
+        // useAuth의 signOut 함수 사용 (클라이언트 사이드)
+        await signOut();
+        toast.success("로그아웃이 완료되었습니다", { duration: 1000 });
+        // 리다이렉트 플래그 설정 - useEffect에서 user 상태 변화를 감지하여 즉시 리다이렉트
+        setShouldRedirectToHome(true);
+      } catch (error) {
+        console.error("Sign out error:", error);
+        toast.error("로그아웃 중 오류가 발생했습니다", { duration: 1000 });
+      }
+    });
   };
 
   useEffect(() => {
@@ -177,11 +195,7 @@ export default function HomePage() {
                           </Avatar>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-56"
-                        align="end"
-                        forceMount
-                      >
+                      <DropdownMenuContent className="w-56" align="end">
                         <DropdownMenuLabel className="font-normal">
                           <div className="flex flex-col space-y-1">
                             <p className="text-sm font-medium leading-none">
@@ -203,20 +217,18 @@ export default function HomePage() {
                         <DropdownMenuItem
                           onClick={handleSignOut}
                           className="cursor-pointer"
+                          disabled={isPending}
                         >
                           <LogOut className="mr-2 h-4 w-4" />
-                          <span>로그아웃</span>
+                          <span>
+                            {isPending ? "로그아웃 중..." : "로그아웃"}
+                          </span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Link href="/register">
-                      <Button variant="outline" size="sm">
-                        {t("register.title")}
-                      </Button>
-                    </Link>
                     <Link href="/login">
                       <Button className="bg-primary hover:bg-primary/90">
                         {t("login.logIn")}
