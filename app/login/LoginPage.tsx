@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { FileSignature, Github, KeyRound, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,21 +11,56 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/contexts/language-context"
+import { signIn, type ActionResult } from "@/app/actions/auth-actions"
+import { toast } from "sonner"
 
 export default function LoginPage() {
   const { t } = useLanguage()
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  })
+  const [errors, setErrors] = useState<Record<string, string[]>>({})
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+    // Clear errors when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: [] }))
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
+    setErrors({})
 
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false)
-      // In a real app, you would redirect to upload after successful login
-      window.location.href = "/upload"
-    }, 500)
+    const form = new FormData()
+    form.append("email", formData.email)
+    form.append("password", formData.password)
+
+    startTransition(async () => {
+      try {
+        const result: ActionResult = await signIn(form)
+
+        if (result.success) {
+          toast.success(result.message || "로그인이 완료되었습니다")
+          const redirectTo = searchParams.get('redirectTo') || '/upload'
+          router.push(redirectTo)
+        } else {
+          if (result.errors) {
+            setErrors(result.errors)
+          }
+          toast.error(result.message || "로그인 중 오류가 발생했습니다")
+        }
+      } catch (error) {
+        console.error("Login error:", error)
+        toast.error("예상치 못한 오류가 발생했습니다")
+      }
+    })
   }
 
   return (
@@ -70,8 +106,20 @@ export default function LoginPage() {
                   <Label htmlFor="email">{t("login.email")}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="email" type="email" placeholder="name@example.com" className="pl-10" required />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="name@example.com"
+                      className="pl-10"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                    />
                   </div>
+                  {errors.email && (
+                    <p className="text-sm text-red-500">{errors.email[0]}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -83,13 +131,25 @@ export default function LoginPage() {
                   </div>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="password" type="password" placeholder="••••••••" className="pl-10" required />
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
+                    />
                   </div>
+                  {errors.password && (
+                    <p className="text-sm text-red-500">{errors.password[0]}</p>
+                  )}
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
-                {isLoading ? t("login.loggingIn") : t("login.logIn")}
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isPending}>
+                {isPending ? t("login.loggingIn") : t("login.logIn")}
               </Button>
 
               <div className="relative">

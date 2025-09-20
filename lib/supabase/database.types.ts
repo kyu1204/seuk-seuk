@@ -9,6 +9,33 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      users: {
+        Row: {
+          id: string
+          email: string
+          full_name: string
+          avatar_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name: string
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           id: string
@@ -111,6 +138,10 @@ export interface Database {
 }
 
 // Helper types for easier usage
+export type User = Database['public']['Tables']['users']['Row']
+export type UserInsert = Database['public']['Tables']['users']['Insert']
+export type UserUpdate = Database['public']['Tables']['users']['Update']
+
 export type Document = Database['public']['Tables']['documents']['Row']
 export type DocumentInsert = Database['public']['Tables']['documents']['Insert']
 export type DocumentUpdate = Database['public']['Tables']['documents']['Update']
