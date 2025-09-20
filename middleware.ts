@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
-    request,
+    headers: request.headers,
   })
 
   const supabase = createServerClient(
@@ -15,9 +15,9 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value, options))
           supabaseResponse = NextResponse.next({
-            request,
+            headers: supabaseResponse.headers,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -54,14 +54,30 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute && !user) {
     const redirectUrl = new URL('/login', request.url)
     redirectUrl.searchParams.set('redirectTo', pathname)
-    return NextResponse.redirect(redirectUrl)
+    const redirectResponse = NextResponse.redirect(redirectUrl)
+
+    // Copy cookies from supabaseResponse to preserve session/refresh tokens
+    const cookies = supabaseResponse.headers.get('set-cookie')
+    if (cookies) {
+      redirectResponse.headers.set('set-cookie', cookies)
+    }
+
+    return redirectResponse
   }
 
   // If user is authenticated and trying to access auth routes
   if (isAuthRoute && user) {
     const redirectTo = request.nextUrl.searchParams.get('redirectTo')
     const redirectUrl = new URL(redirectTo || '/upload', request.url)
-    return NextResponse.redirect(redirectUrl)
+    const redirectResponse = NextResponse.redirect(redirectUrl)
+
+    // Copy cookies from supabaseResponse to preserve session/refresh tokens
+    const cookies = supabaseResponse.headers.get('set-cookie')
+    if (cookies) {
+      redirectResponse.headers.set('set-cookie', cookies)
+    }
+
+    return redirectResponse
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

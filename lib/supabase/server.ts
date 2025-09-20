@@ -2,6 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from './database.types'
 
+/**
+ * Creates a Supabase server client for use in Server Components, Route Handlers, and Server Actions.
+ * This function uses the modern @supabase/ssr package for proper SSR cookie handling.
+ *
+ * @returns Promise<SupabaseClient<Database>> - Configured Supabase client
+ */
 export async function createClient() {
   const cookieStore = await cookies()
 
