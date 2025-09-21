@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import DocumentUpload from "@/components/document-upload"
-import LanguageSelector from "@/components/language-selector"
-import { useLanguage } from "@/contexts/language-context"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import DocumentUpload from "@/components/document-upload";
+import LanguageSelector from "@/components/language-selector";
+import { useLanguage } from "@/contexts/language-context";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function UploadPage() {
-  const { t } = useLanguage()
+  const { t } = useLanguage();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -24,13 +24,14 @@ export default function UploadPage() {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">{t("upload.title")}</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">
+            {t("upload.title")}
+          </h1>
           <p className="text-muted-foreground">{t("upload.description")}</p>
         </div>
 
         <DocumentUpload />
       </div>
     </div>
-  )
+  );
 }
-
