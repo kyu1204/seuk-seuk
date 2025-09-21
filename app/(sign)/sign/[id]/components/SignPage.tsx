@@ -420,6 +420,8 @@ export default function SignPageComponent({
                 <Label htmlFor="document-password">{t("register.password")}</Label>
                 <Input
                   id="document-password"
+                  name="document-password"
+                  errors={[]}
                   type="password"
                   placeholder={t("sign.password.placeholder")}
                   value={password}
