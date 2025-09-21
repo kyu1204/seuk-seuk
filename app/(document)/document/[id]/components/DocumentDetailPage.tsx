@@ -20,15 +20,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-interface DocumentDetailClientProps {
+interface DocumentDetailComponentProps {
   documentData: Document;
   signatures: Signature[];
 }
 
-export default function DocumentDetailClient({
+export default function DocumentDetailComponent({
   documentData,
   signatures,
-}: DocumentDetailClientProps) {
+}: DocumentDetailComponentProps) {
   const { t } = useLanguage();
   const router = useRouter();
 
