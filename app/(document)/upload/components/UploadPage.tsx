@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function UploadPage() {
+export default function UploadPageComponent() {
   const { t } = useLanguage();
 
   return (

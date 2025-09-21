@@ -25,19 +25,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-interface SignPageClientProps {
+interface SignPageComponentProps {
   documentData: ClientDocument;
   signatures: Signature[];
   isExpired?: boolean;
   isCompleted?: boolean;
 }
 
-export default function SignPageClient({
+export default function SignPageComponent({
   documentData,
   signatures,
   isExpired = false,
   isCompleted = false,
-}: SignPageClientProps) {
+}: SignPageComponentProps) {
   const { t } = useLanguage();
   const router = useRouter();
   const [localSignatures, setLocalSignatures] =
@@ -99,6 +99,13 @@ export default function SignPageClient({
           area_index: selectedArea,
           signature_data: signatureData,
           created_at: new Date().toISOString(),
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0,
+          status: "pending",
+          signer_name: null,
+          signed_at: null,
         };
         setLocalSignatures([...localSignatures, newSignature]);
       }
@@ -177,7 +184,7 @@ export default function SignPageClient({
         await new Promise((resolve, reject) => {
           signatureImage.onload = resolve;
           signatureImage.onerror = reject;
-          signatureImage.src = signature.signature_data;
+          signatureImage.src = signature.signature_data!;
         });
 
         // Calculate the actual position and size in the original image
@@ -533,7 +540,7 @@ export default function SignPageClient({
           onComplete={handleSignatureComplete}
           existingSignature={
             localSignatures.find((s) => s.area_index === selectedArea)
-              ?.signature_data
+              ?.signature_data!
           }
         />
       )}
