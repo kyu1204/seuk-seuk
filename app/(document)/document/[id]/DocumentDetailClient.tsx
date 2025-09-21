@@ -1,155 +1,172 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ArrowLeft, Edit, Share, ExternalLink, Copy, Key } from "lucide-react"
-import Link from "next/link"
-import AreaSelector from "@/components/area-selector"
-import PublishDocumentModal from "@/components/publish-document-modal"
-import { publishDocument, updateSignatureAreas } from "@/app/actions/document-actions"
-import { useLanguage } from "@/contexts/language-context"
-import type { Document, Signature, SignatureArea } from "@/lib/supabase/database.types"
+import {
+  publishDocument,
+  updateSignatureAreas,
+} from "@/app/actions/document-actions";
+import AreaSelector from "@/components/area-selector";
+import PublishDocumentModal from "@/components/publish-document-modal";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/contexts/language-context";
+import type {
+  Document,
+  Signature,
+  SignatureArea,
+} from "@/lib/supabase/database.types";
+import { ArrowLeft, Copy, Edit, ExternalLink, Share } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 
 interface DocumentDetailClientProps {
-  documentData: Document
-  signatures: Signature[]
+  documentData: Document;
+  signatures: Signature[];
 }
 
-export default function DocumentDetailClient({ documentData, signatures }: DocumentDetailClientProps) {
-  const { t } = useLanguage()
-  const router = useRouter()
+export default function DocumentDetailClient({
+  documentData,
+  signatures,
+}: DocumentDetailClientProps) {
+  const { t } = useLanguage();
+  const router = useRouter();
 
-  const [document, setDocument] = useState<Document>(documentData)
+  const [document, setDocument] = useState<Document>(documentData);
   const [signatureAreas, setSignatureAreas] = useState<SignatureArea[]>(
-    signatures.map(sig => ({ x: sig.x, y: sig.y, width: sig.width, height: sig.height }))
-  )
+    signatures.map((sig) => ({
+      x: sig.x,
+      y: sig.y,
+      width: sig.width,
+      height: sig.height,
+    }))
+  );
 
-  const [isEditMode, setIsEditMode] = useState(false)
-  const [isSelecting, setIsSelecting] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
-  const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false)
-  const documentContainerRef = useRef<HTMLDivElement>(null)
-  const [scrollPosition, setScrollPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false);
+  const documentContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollPosition, setScrollPosition] = useState<{
+    top: number;
+    left: number;
+  }>({ top: 0, left: 0 });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'draft':
-        return <Badge variant="secondary">초안</Badge>
-      case 'published':
-        return <Badge variant="default">발행됨</Badge>
-      case 'completed':
-        return <Badge variant="outline">완료됨</Badge>
+      case "draft":
+        return <Badge variant="secondary">초안</Badge>;
+      case "published":
+        return <Badge variant="default">발행됨</Badge>;
+      case "completed":
+        return <Badge variant="outline">완료됨</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>
+        return <Badge variant="secondary">{status}</Badge>;
     }
-  }
+  };
 
   const handleEditModeToggle = () => {
-    if (document.status === 'draft') {
-      setIsEditMode(!isEditMode)
-      setError(null)
+    if (document.status === "draft") {
+      setIsEditMode(!isEditMode);
+      setError(null);
     }
-  }
+  };
 
   const handleAddSignatureArea = () => {
     // Save current scroll position before switching to selection mode
     if (documentContainerRef.current) {
-      const scrollTop = documentContainerRef.current.scrollTop
-      const scrollLeft = documentContainerRef.current.scrollLeft
+      const scrollTop = documentContainerRef.current.scrollTop;
+      const scrollLeft = documentContainerRef.current.scrollLeft;
 
       setScrollPosition({
         top: scrollTop,
         left: scrollLeft,
-      })
+      });
     }
-    setIsSelecting(true)
-  }
+    setIsSelecting(true);
+  };
 
   const handleAreaSelected = (area: SignatureArea) => {
     // Simply store the area coordinates as they are
-    setSignatureAreas([...signatureAreas, area])
-    setIsSelecting(false)
-  }
+    setSignatureAreas([...signatureAreas, area]);
+    setIsSelecting(false);
+  };
 
   const handleRemoveArea = (index: number) => {
-    const updatedAreas = [...signatureAreas]
-    updatedAreas.splice(index, 1)
-    setSignatureAreas(updatedAreas)
-  }
+    const updatedAreas = [...signatureAreas];
+    updatedAreas.splice(index, 1);
+    setSignatureAreas(updatedAreas);
+  };
 
   const handleSaveChanges = async () => {
-    if (document.status !== 'draft') return
+    if (document.status !== "draft") return;
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const result = await updateSignatureAreas(document.id, signatureAreas)
+      const result = await updateSignatureAreas(document.id, signatureAreas);
 
       if (result.error) {
-        setError(result.error)
-        return
+        setError(result.error);
+        return;
       }
 
-      setIsEditMode(false)
+      setIsEditMode(false);
       // Refresh the page data
-      router.refresh()
+      router.refresh();
     } catch (error) {
-      console.error("Error updating signature areas:", error)
-      setError("서명 영역 업데이트 중 오류가 발생했습니다")
+      console.error("Error updating signature areas:", error);
+      setError("서명 영역 업데이트 중 오류가 발생했습니다");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handlePublish = async (password: string, expiresAt: string) => {
-    if (document.status !== 'draft' || signatureAreas.length === 0) return
+    if (document.status !== "draft" || signatureAreas.length === 0) return;
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const result = await publishDocument(document.id, password, expiresAt)
+      const result = await publishDocument(document.id, password, expiresAt);
 
       if (result.error) {
-        setError(result.error)
-        return
+        setError(result.error);
+        return;
       }
 
       // Update local state
-      setDocument({ ...document, status: 'published' })
+      setDocument({ ...document, status: "published" });
       if (result.shortUrl) {
-        setPublishedUrl(`${window.location.origin}/sign/${result.shortUrl}`)
+        setPublishedUrl(`${window.location.origin}/sign/${result.shortUrl}`);
       }
 
       // Refresh the page data
-      router.refresh()
+      router.refresh();
     } catch (error) {
-      console.error("Error publishing document:", error)
-      setError("문서 발행 중 오류가 발생했습니다")
+      console.error("Error publishing document:", error);
+      setError("문서 발행 중 오류가 발생했습니다");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCopyUrl = async () => {
     if (publishedUrl || document.short_url) {
-      const urlToCopy = publishedUrl || `${window.location.origin}/sign/${document.short_url}`
-      await navigator.clipboard.writeText(urlToCopy)
+      const urlToCopy =
+        publishedUrl || `${window.location.origin}/sign/${document.short_url}`;
+      await navigator.clipboard.writeText(urlToCopy);
       // TODO: Add toast notification
     }
-  }
+  };
 
-  const canEdit = document.status === 'draft'
-  const canPublish = document.status === 'draft' && signatureAreas.length > 0
-  const isPublished = document.status === 'published'
+  const canEdit = document.status === "draft";
+  const canPublish = document.status === "draft" && signatureAreas.length > 0;
+  const isPublished = document.status === "published";
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -167,7 +184,9 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
         {/* Document Info */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold tracking-tight">{document.filename}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {document.filename}
+            </h1>
             {getStatusBadge(document.status)}
           </div>
 
@@ -180,7 +199,7 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
                 disabled={isLoading}
               >
                 <Edit className="mr-2 h-4 w-4" />
-                {isEditMode ? '편집 취소' : '수정하기'}
+                {isEditMode ? "편집 취소" : "수정하기"}
               </Button>
             )}
 
@@ -195,15 +214,11 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
             )}
 
             {isEditMode && (
-              <Button
-                onClick={handleSaveChanges}
-                disabled={isLoading}
-              >
-                {isLoading ? '저장 중...' : '변경사항 저장'}
+              <Button onClick={handleSaveChanges} disabled={isLoading}>
+                {isLoading ? "저장 중..." : "변경사항 저장"}
               </Button>
             )}
           </div>
-
 
           {/* Published URL Display */}
           {isPublished && document.short_url && (
@@ -227,7 +242,7 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
                   이 URL을 통해 서명자가 문서에 서명할 수 있습니다.
-                  {!canEdit && ' 발행된 문서는 더 이상 수정할 수 없습니다.'}
+                  {!canEdit && " 발행된 문서는 더 이상 수정할 수 없습니다."}
                 </p>
               </CardContent>
             </Card>
@@ -264,8 +279,8 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
                   key={index}
                   className={`absolute border-2 flex items-center justify-center ${
                     isEditMode
-                      ? 'border-red-500 bg-red-500/10 cursor-pointer'
-                      : 'border-blue-500 bg-blue-500/10'
+                      ? "border-red-500 bg-red-500/10 cursor-pointer"
+                      : "border-blue-500 bg-blue-500/10"
                   }`}
                   style={{
                     position: "absolute",
@@ -276,11 +291,15 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
                     pointerEvents: "auto",
                     cursor: isEditMode ? "pointer" : "default",
                   }}
-                  onClick={isEditMode ? () => handleRemoveArea(index) : undefined}
+                  onClick={
+                    isEditMode ? () => handleRemoveArea(index) : undefined
+                  }
                 >
-                  <span className={`text-xs font-medium ${
-                    isEditMode ? 'text-red-600' : 'text-blue-600'
-                  }`}>
+                  <span
+                    className={`text-xs font-medium ${
+                      isEditMode ? "text-red-600" : "text-blue-600"
+                    }`}
+                  >
                     서명 영역 {index + 1}
                   </span>
                 </div>
@@ -307,5 +326,5 @@ export default function DocumentDetailClient({ documentData, signatures }: Docum
         />
       </div>
     </div>
-  )
+  );
 }

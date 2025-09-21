@@ -1,31 +1,31 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { FileSignature, Github, KeyRound, Mail, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { useLanguage } from "@/contexts/language-context"
+import { useState } from "react";
+import Link from "next/link";
+import { FileSignature, Github, KeyRound, Mail, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useLanguage } from "@/contexts/language-context";
 
 export default function RegisterPage() {
-  const { t } = useLanguage()
-  const [isLoading, setIsLoading] = useState(false)
+  const { t } = useLanguage();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     // Simulate registration process
     setTimeout(() => {
-      setIsLoading(false)
+      setIsLoading(false);
       // In a real app, you would redirect to login or dashboard after successful registration
-      window.location.href = "/login"
-    }, 500)
-  }
+      window.location.href = "/login";
+    }, 500);
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -36,8 +36,12 @@ export default function RegisterPage() {
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="max-w-md text-center">
             <FileSignature className="h-20 w-20 text-primary mx-auto mb-6" />
-            <h1 className="text-4xl font-bold mb-4 gradient-text">{t("register.joinUs")}</h1>
-            <p className="text-lg text-muted-foreground">{t("register.joinMessage")}</p>
+            <h1 className="text-4xl font-bold mb-4 gradient-text">
+              {t("register.joinUs")}
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              {t("register.joinMessage")}
+            </p>
           </div>
         </div>
       </div>
@@ -60,8 +64,12 @@ export default function RegisterPage() {
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center md:text-left">
-              <h2 className="text-3xl font-bold tracking-tight">{t("register.title")}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{t("register.subtitle")}</p>
+              <h2 className="text-3xl font-bold tracking-tight">
+                {t("register.title")}
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t("register.subtitle")}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -70,7 +78,13 @@ export default function RegisterPage() {
                   <Label htmlFor="name">{t("register.name")}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="name" type="text" placeholder="John Doe" className="pl-10" required />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="John Doe"
+                      className="pl-10"
+                      required
+                    />
                   </div>
                 </div>
 
@@ -83,8 +97,6 @@ export default function RegisterPage() {
                       type="email"
                       placeholder="name@example.com"
                       className="pl-10"
-                      placeholder="name@example.com"
-                      className="pl-10"
                       required
                     />
                   </div>
@@ -94,21 +106,41 @@ export default function RegisterPage() {
                   <Label htmlFor="password">{t("register.password")}</Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="password" type="password" placeholder="••••••••" className="pl-10" required />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10"
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{t("register.confirmPassword")}</Label>
+                  <Label htmlFor="confirmPassword">
+                    {t("register.confirmPassword")}
+                  </Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="confirmPassword" type="password" placeholder="••••••••" className="pl-10" required />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10"
+                      required
+                    />
                   </div>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
-                {isLoading ? t("register.registering") : t("register.createAccount")}
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90"
+                disabled={isLoading}
+              >
+                {isLoading
+                  ? t("register.registering")
+                  : t("register.createAccount")}
               </Button>
 
               <div className="relative">
@@ -116,13 +148,19 @@ export default function RegisterPage() {
                   <Separator className="w-full" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">{t("register.orContinueWith")}</span>
+                  <span className="bg-background px-2 text-muted-foreground">
+                    {t("register.orContinueWith")}
+                  </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <Button variant="outline" type="button" className="w-full">
-                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                       fill="#4285F4"
@@ -147,7 +185,12 @@ export default function RegisterPage() {
                   Github
                 </Button>
                 <Button variant="outline" type="button" className="w-full">
-                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <rect width="24" height="24" rx="12" fill="#FEE500" />
                     <path
                       d="M12 5.5C8.41 5.5 5.5 7.865 5.5 10.8C5.5 12.7 6.62 14.3875 8.32 15.3375C8.15 15.9125 7.64 17.8 7.59 18.0375C7.53 18.35 7.75 18.35 7.89 18.25C8 18.175 10.21 16.6625 10.83 16.2375C11.21 16.3 11.6 16.325 12 16.325C15.59 16.325 18.5 13.96 18.5 11.025C18.5 8.09 15.59 5.5 12 5.5Z"
@@ -159,7 +202,9 @@ export default function RegisterPage() {
               </div>
 
               <div className="text-center text-sm">
-                <span className="text-muted-foreground">{t("register.alreadyHaveAccount")}</span>{" "}
+                <span className="text-muted-foreground">
+                  {t("register.alreadyHaveAccount")}
+                </span>{" "}
                 <Link href="/login" className="text-primary hover:underline">
                   {t("register.login")}
                 </Link>
@@ -169,6 +214,5 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
