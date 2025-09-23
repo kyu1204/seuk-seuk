@@ -1,6 +1,6 @@
 "use server"
 
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerSupabase } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Document, DocumentInsert, ClientDocument, Signature, SignatureInsert, SignatureArea } from '@/lib/supabase/database.types'
 import bcrypt from 'bcryptjs'
@@ -17,7 +17,7 @@ function generateShortUrl(): string {
  */
 export async function uploadDocument(formData: FormData) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
     const file = formData.get('file') as File
     const filename = formData.get('filename') as string
 
@@ -78,7 +78,7 @@ export async function uploadDocument(formData: FormData) {
  */
 export async function getDocumentByShortUrl(shortUrl: string): Promise<{ document: ClientDocument | null; signatures: Signature[]; error?: string; isExpired?: boolean; isCompleted?: boolean }> {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     // Get document
     const { data: document, error: docError } = await supabase
@@ -146,7 +146,7 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{ documen
  */
 export async function saveSignature(documentId: string, areaIndex: number, signatureData: string) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     // Update signature with data, status, and signed_at
     const { error: updateError } = await supabase
@@ -179,7 +179,7 @@ export async function saveSignature(documentId: string, areaIndex: number, signa
  */
 export async function markDocumentCompleted(documentId: string) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     const { error } = await supabase
       .from('documents')
@@ -206,7 +206,7 @@ export async function createSignatureAreas(
   signatureAreas: SignatureArea[]
 ) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     const signatureInserts: SignatureInsert[] = signatureAreas.map((area, index) => ({
       document_id: documentId,
@@ -240,7 +240,7 @@ export async function createSignatureAreas(
  */
 export async function uploadSignedDocument(documentId: string, signedImageData: string) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     // Convert data URL to blob
     const response = await fetch(signedImageData)
@@ -290,7 +290,7 @@ export async function uploadSignedDocument(documentId: string, signedImageData: 
  */
 export async function publishDocument(documentId: string, password: string, expiresAt: string | null) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     // Handle empty/whitespace passwords by storing null instead of hash
     const trimmedPassword = password.trim()
@@ -341,7 +341,7 @@ export async function publishDocument(documentId: string, password: string, expi
  */
 export async function updateSignatureAreas(documentId: string, signatureAreas: SignatureArea[]) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     // Start transaction-like operations
     // First, delete existing signature areas
@@ -393,7 +393,7 @@ export async function updateSignatureAreas(documentId: string, signatureAreas: S
  */
 export async function verifyDocumentPassword(shortUrl: string, password: string) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     // Get document with password
     const { data: document, error: docError } = await supabase
@@ -421,7 +421,7 @@ export async function verifyDocumentPassword(shortUrl: string, password: string)
  */
 export async function getDocumentById(id: string): Promise<{ document: Document | null; signatures: Signature[]; error?: string }> {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerSupabase()
 
     // Get document
     const { data: document, error: docError } = await supabase

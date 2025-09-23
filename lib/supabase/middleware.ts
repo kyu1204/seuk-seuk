@@ -12,6 +12,32 @@ const publicRoutes: Routes = {
   "/": true,
 };
 
+// Function to check if a path is public
+function isPublicRoute(pathname: string): boolean {
+  // Check explicit public routes
+  if (publicRoutes[pathname]) return true;
+
+  // Check if it's a sign route (public for external users)
+  if (pathname.startsWith("/sign/")) return true;
+
+  return false;
+}
+
+// Protected routes that require authentication
+const protectedRoutes: Routes = {
+  "/upload": true,
+  "/document": true,
+  "/private": true,
+};
+
+// Function to check if a path is protected
+function isProtectedRoute(pathname: string): boolean {
+  // Check if the path starts with any protected route pattern
+  return Object.keys(protectedRoutes).some(route =>
+    pathname.startsWith(route) || pathname === route
+  ) || pathname.startsWith("/document/");
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -50,8 +76,9 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !publicRoutes[request.nextUrl.pathname]) {
-    // no user, potentially respond by redirecting the user to the login page
+  // Check if user is trying to access a protected route without authentication
+  if (!user && !isPublicRoute(request.nextUrl.pathname)) {
+    // no user, redirect to login page
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

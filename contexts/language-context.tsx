@@ -187,6 +187,10 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.expired.instruction": "문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.",
     "sign.expired.date": "만료일:",
     "sign.savingSignature": "서명 저장 중...",
+
+    // Authentication
+    "auth.signOut": "로그아웃",
+    "auth.signingOut": "로그아웃 중...",
   },
   en: {
     // Header
@@ -354,6 +358,10 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.expired.instruction": "Please contact the document issuer to request a new signature request.",
     "sign.expired.date": "Expired on:",
     "sign.savingSignature": "Saving signature...",
+
+    // Authentication
+    "auth.signOut": "Sign Out",
+    "auth.signingOut": "Signing out...",
   },
 }
 
