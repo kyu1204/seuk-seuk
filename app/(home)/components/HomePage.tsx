@@ -1,8 +1,6 @@
 "use client";
 
 import { useLanguage } from "@/contexts/language-context";
-import LanguageSelector from "@/components/language-selector";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
@@ -19,15 +17,6 @@ import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const features = [
     {
@@ -108,35 +97,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Header */}
-      <header
-        className={cn(
-          "sticky top-0 z-50 w-full transition-all duration-200",
-          scrolled
-            ? "bg-background/80 backdrop-blur-md border-b"
-            : "bg-transparent"
-        )}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <FileSignature className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl">{t("app.title")}</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <LanguageSelector />
-              <Link href="/login">
-                <Button className="bg-primary hover:bg-primary/90">
-                  {t("login.logIn")}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
+{/* Hero Section */}
       <section className="relative overflow-hidden py-20 md:py-32">
         <div className="absolute inset-0 bg-dot-pattern opacity-30"></div>
         <div className="container mx-auto px-4 relative z-10">
@@ -371,15 +332,30 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* Scroll to top button */}
-      {scrolled && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 p-3 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all z-50"
-        >
-          <ChevronUp className="h-5 w-5" />
-        </button>
-      )}
+      <ScrollToTopButton />
     </div>
+  );
+}
+
+function ScrollToTopButton() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  if (!scrolled) return null;
+
+  return (
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      className="fixed bottom-6 right-6 p-3 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all z-50"
+    >
+      <ChevronUp className="h-5 w-5" />
+    </button>
   );
 }
