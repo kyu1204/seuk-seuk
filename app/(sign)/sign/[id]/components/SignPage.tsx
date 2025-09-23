@@ -262,7 +262,7 @@ export default function SignPageComponent({
 
   const handlePasswordSubmit = async () => {
     if (!password.trim()) {
-      setError("비밀번호를 입력해주세요.");
+      setError(t("sign.password.required"));
       return;
     }
 
@@ -283,11 +283,11 @@ export default function SignPageComponent({
       if (result.isValid) {
         setIsPasswordVerified(true);
       } else {
-        setError("비밀번호가 올바르지 않습니다.");
+        setError(t("sign.password.incorrect"));
       }
     } catch (err) {
       console.error("Password verification error:", err);
-      setError("비밀번호 확인 중 오류가 발생했습니다.");
+      setError(t("sign.password.error"));
     } finally {
       setIsVerifyingPassword(false);
     }
@@ -317,16 +317,16 @@ export default function SignPageComponent({
               <CardHeader className="text-center">
                 <CheckCircle className="mx-auto h-12 w-12 text-green-400 mb-4" />
                 <CardTitle className="text-xl text-green-600">
-                  이미 제출된 문서입니다
+                  {t("sign.completed.title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center space-y-3">
                   <p className="text-gray-600">
-                    이 문서는 이미 서명이 완료되어 제출되었습니다.
+                    {t("sign.completed.message")}
                   </p>
                   <p className="text-sm text-gray-500">
-                    더 이상 수정할 수 없습니다.
+                    {t("sign.completed.noEdit")}
                   </p>
                 </div>
                 <div className="bg-green-50 border border-green-200 rounded-md p-3">
@@ -334,7 +334,7 @@ export default function SignPageComponent({
                     {documentData.filename}
                   </p>
                   <p className="text-xs text-green-600 text-center mt-1">
-                    서명 완료됨
+                    {t("sign.completed.status")}
                   </p>
                 </div>
               </CardContent>
@@ -361,16 +361,16 @@ export default function SignPageComponent({
             <CardHeader className="text-center">
               <Clock className="mx-auto h-12 w-12 text-red-400 mb-4" />
               <CardTitle className="text-xl text-red-600">
-                서명 기간 만료
+                {t("sign.expired.title")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center space-y-3">
                 <p className="text-gray-600">
-                  죄송합니다. 이 문서의 서명 기간이 만료되었습니다.
+                  {t("sign.expired.message")}
                 </p>
                 <p className="text-sm text-gray-500">
-                  문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.
+                  {t("sign.expired.instruction")}
                 </p>
               </div>
               <div className="bg-red-50 border border-red-200 rounded-md p-3">
@@ -379,7 +379,7 @@ export default function SignPageComponent({
                 </p>
                 {documentData.expires_at && (
                   <p className="text-xs text-red-600 text-center mt-1">
-                    만료일:{" "}
+                    {t("sign.expired.date")}{" "}
                     {new Date(documentData.expires_at).toLocaleDateString(
                       "ko-KR"
                     )}
@@ -408,20 +408,20 @@ export default function SignPageComponent({
           <Card>
             <CardHeader className="text-center">
               <Lock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <CardTitle className="text-xl">보안 문서</CardTitle>
+              <CardTitle className="text-xl">{t("sign.password.title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-center text-gray-600">
-                이 문서는 비밀번호로 보호되어 있습니다.
+                {t("sign.password.description")}
                 <br />
-                계속하려면 비밀번호를 입력해주세요.
+                {t("sign.password.instruction")}
               </p>
               <div className="space-y-2">
-                <Label htmlFor="document-password">비밀번호</Label>
+                <Label htmlFor="document-password">{t("register.password")}</Label>
                 <Input
                   id="document-password"
                   type="password"
-                  placeholder="비밀번호를 입력하세요"
+                  placeholder={t("sign.password.placeholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => {
@@ -439,10 +439,10 @@ export default function SignPageComponent({
                 {isVerifyingPassword ? (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    확인 중...
+                    {t("sign.password.verifying")}
                   </>
                 ) : (
-                  "확인"
+                  t("sign.password.verify")
                 )}
               </Button>
               {error && (
@@ -563,7 +563,7 @@ export default function SignPageComponent({
           <div className="bg-white rounded-lg p-4 shadow-lg">
             <div className="flex items-center gap-3">
               <RefreshCw className="h-5 w-5 animate-spin" />
-              <span>Saving signature...</span>
+              <span>{t("sign.savingSignature")}</span>
             </div>
           </div>
         </div>
