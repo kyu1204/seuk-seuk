@@ -172,14 +172,7 @@ export default function DocumentDetailComponent({
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <Link href="/upload">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              업로드로 돌아가기
-            </Button>
-          </Link>
-        </div>
+        <div className="mb-8"></div>
 
         {/* Document Info */}
         <div className="mb-8">

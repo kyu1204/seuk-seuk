@@ -349,7 +349,11 @@ export default function SignPageComponent({
   if (isExpired) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <Link href="/" className="flex items-center gap-2">
+            <FileSignature className="h-8 w-8 text-primary" />
+            <span className="font-bold text-xl">{t("app.title")}</span>
+          </Link>
           <LanguageSelector />
         </div>
         <div className="max-w-md mx-auto">
@@ -393,7 +397,11 @@ export default function SignPageComponent({
   if (!isPasswordVerified) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <Link href="/" className="flex items-center gap-2">
+            <FileSignature className="h-8 w-8 text-primary" />
+            <span className="font-bold text-xl">{t("app.title")}</span>
+          </Link>
           <LanguageSelector />
         </div>
         <div className="max-w-md mx-auto">
@@ -451,7 +459,11 @@ export default function SignPageComponent({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <Link href="/" className="flex items-center gap-2">
+          <FileSignature className="h-8 w-8 text-primary" />
+          <span className="font-bold text-xl">{t("app.title")}</span>
+        </Link>
         <LanguageSelector />
       </div>
       <div className="max-w-5xl mx-auto">
