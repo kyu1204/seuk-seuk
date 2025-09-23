@@ -167,6 +167,26 @@ const translations: Record<Language, Record<string, string>> = {
     "register.joinMessage":
       "슥슥에 가입하여 문서 서명 및 관리를 시작하세요. 간편하고 안전한 서명 경험을 제공합니다.",
     "register.kakaoTalk": "카카오",
+
+    // Sign Page - Password Protection & Status
+    "sign.password.title": "보안 문서",
+    "sign.password.description": "이 문서는 비밀번호로 보호되어 있습니다.",
+    "sign.password.instruction": "계속하려면 비밀번호를 입력해주세요.",
+    "sign.password.placeholder": "비밀번호를 입력하세요",
+    "sign.password.verify": "확인",
+    "sign.password.verifying": "확인 중...",
+    "sign.password.required": "비밀번호를 입력해주세요.",
+    "sign.password.incorrect": "비밀번호가 올바르지 않습니다.",
+    "sign.password.error": "비밀번호 확인 중 오류가 발생했습니다.",
+    "sign.completed.title": "이미 제출된 문서입니다",
+    "sign.completed.message": "이 문서는 이미 서명이 완료되어 제출되었습니다.",
+    "sign.completed.noEdit": "더 이상 수정할 수 없습니다.",
+    "sign.completed.status": "서명 완료됨",
+    "sign.expired.title": "서명 기간 만료",
+    "sign.expired.message": "죄송합니다. 이 문서의 서명 기간이 만료되었습니다.",
+    "sign.expired.instruction": "문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.",
+    "sign.expired.date": "만료일:",
+    "sign.savingSignature": "서명 저장 중...",
   },
   en: {
     // Header
@@ -314,6 +334,26 @@ const translations: Record<Language, Record<string, string>> = {
     "register.joinMessage":
       "Sign up for SeukSeuk to start signing and managing your documents. We provide a simple and secure signing experience.",
     "register.kakaoTalk": "Kakao",
+
+    // Sign Page - Password Protection & Status
+    "sign.password.title": "Protected Document",
+    "sign.password.description": "This document is password protected.",
+    "sign.password.instruction": "Please enter the password to continue.",
+    "sign.password.placeholder": "Enter password",
+    "sign.password.verify": "Verify",
+    "sign.password.verifying": "Verifying...",
+    "sign.password.required": "Please enter a password.",
+    "sign.password.incorrect": "The password is incorrect.",
+    "sign.password.error": "An error occurred while verifying the password.",
+    "sign.completed.title": "Document Already Submitted",
+    "sign.completed.message": "This document has already been signed and submitted.",
+    "sign.completed.noEdit": "No further changes can be made.",
+    "sign.completed.status": "Signature Completed",
+    "sign.expired.title": "Signature Period Expired",
+    "sign.expired.message": "Sorry, the signing period for this document has expired.",
+    "sign.expired.instruction": "Please contact the document issuer to request a new signature request.",
+    "sign.expired.date": "Expired on:",
+    "sign.savingSignature": "Saving signature...",
   },
 }
 
