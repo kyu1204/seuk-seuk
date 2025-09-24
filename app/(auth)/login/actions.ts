@@ -25,13 +25,9 @@ export async function login(_: any, formData: FormData) {
     email: formData.get("email"),
     password: formData.get("password"),
   };
-  console.log(data);
 
   const result = await formSchema.spa(data);
-
-  console.log(result);
   if (!result.success) {
-    console.log(result.error.flatten());
     return result.error.flatten();
   }
 

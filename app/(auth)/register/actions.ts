@@ -35,13 +35,9 @@ export async function register(_: any, formData: FormData) {
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
   };
-  console.log(data);
 
   const result = await formSchema.spa(data);
-
-  console.log(result);
   if (!result.success) {
-    console.log(result.error.flatten());
     return result.error.flatten();
   }
   if (result.data.password !== result.data.confirmPassword) {
@@ -79,7 +75,6 @@ export async function register(_: any, formData: FormData) {
       },
     };
   }
-  console.log(registerData);
 
   revalidatePath("/", "layout");
   redirect("/");
