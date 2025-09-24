@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
-import { CheckCircle2, FileSignature } from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
-import LanguageSelector from "@/components/language-selector"
-import Link from "next/link"
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle2, FileSignature } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
+import LanguageSelector from "@/components/language-selector";
+import Link from "next/link";
 
 export default function SignCompletedPage() {
-  const { t } = useLanguage()
+  const { t } = useLanguage();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -36,10 +36,10 @@ export default function SignCompletedPage() {
                     <CheckCircle2 className="w-10 h-10 text-primary" />
                   </div>
                   <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-6 gradient-text">
-                    {t("sign.completed.title")}
+                    {t("sign.complete.title")}
                   </h1>
                   <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                    {t("sign.completed.description")}
+                    {t("sign.complete.description")}
                   </p>
                 </div>
               </CardContent>
@@ -48,5 +48,5 @@ export default function SignCompletedPage() {
         </div>
       </section>
     </div>
-  )
+  );
 }

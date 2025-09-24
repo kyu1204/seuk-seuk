@@ -4,6 +4,9 @@ import { useLanguage } from "@/contexts/language-context";
 import LanguageSelector from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import UserAvatar from "@/components/user-avatar";
+import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import { FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,8 +16,11 @@ interface SiteHeaderProps {
   showScrollEffect?: boolean;
 }
 
-export default function SiteHeader({ showScrollEffect = true }: SiteHeaderProps) {
+export default function SiteHeader({
+  showScrollEffect = true,
+}: SiteHeaderProps) {
   const { t } = useLanguage();
+  const { user, loading, isAuthenticated } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -47,11 +53,20 @@ export default function SiteHeader({ showScrollEffect = true }: SiteHeaderProps)
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <LanguageSelector />
-            <Link href="/login">
-              <Button className="bg-primary hover:bg-primary/90">
-                {t("login.logIn")}
-              </Button>
-            </Link>
+            {loading ? (
+              /* 로딩 중일 때 스켈레톤 표시 - 아바타와 버튼 사이의 중간 크기 */
+              <Skeleton className="h-8 w-12 rounded-md" />
+            ) : isAuthenticated ? (
+              /* 로그인 상태일 때 사용자 아바타 표시 */
+              <UserAvatar user={user!} />
+            ) : (
+              /* 비로그인 상태일 때 로그인 버튼 표시 */
+              <Link href="/login">
+                <Button className="bg-primary hover:bg-primary/90">
+                  {t("login.logIn")}
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

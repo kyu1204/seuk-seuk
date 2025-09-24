@@ -10,22 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/contexts/language-context";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { useFormState } from "react-dom";
+import { register } from "./actions";
 
 export default function RegisterPage() {
   const { t } = useLanguage();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate registration process
-    setTimeout(() => {
-      setIsLoading(false);
-      // In a real app, you would redirect to login or dashboard after successful registration
-      window.location.href = "/login";
-    }, 500);
-  };
+  const [state, dispatch] = useFormState(register, null);
 
   return (
     <div className="flex min-h-screen">
@@ -72,7 +64,7 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form action={dispatch} className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">{t("register.name")}</Label>
@@ -81,6 +73,8 @@ export default function RegisterPage() {
                     <Input
                       id="name"
                       type="text"
+                      name="name"
+                      errors={state?.fieldErrors.name}
                       placeholder="John Doe"
                       className="pl-10"
                       required
@@ -95,6 +89,8 @@ export default function RegisterPage() {
                     <Input
                       id="email"
                       type="email"
+                      name="email"
+                      errors={state?.fieldErrors.email}
                       placeholder="name@example.com"
                       className="pl-10"
                       required
@@ -109,6 +105,8 @@ export default function RegisterPage() {
                     <Input
                       id="password"
                       type="password"
+                      name="password"
+                      errors={state?.fieldErrors.password}
                       placeholder="••••••••"
                       className="pl-10"
                       required
@@ -125,6 +123,8 @@ export default function RegisterPage() {
                     <Input
                       id="confirmPassword"
                       type="password"
+                      name="confirmPassword"
+                      errors={state?.fieldErrors.confirmPassword}
                       placeholder="••••••••"
                       className="pl-10"
                       required
@@ -133,83 +133,79 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <Button
-                type="submit"
+              <SubmitButton
+                label={t("register.createAccount")}
+                pendingLabel={t("register.registering")}
                 className="w-full bg-primary hover:bg-primary/90"
-                disabled={isLoading}
-              >
-                {isLoading
-                  ? t("register.registering")
-                  : t("register.createAccount")}
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    {t("register.orContinueWith")}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <Button variant="outline" type="button" className="w-full">
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  Google
-                </Button>
-                <Button variant="outline" type="button" className="w-full">
-                  <Github className="mr-2 h-4 w-4" />
-                  Github
-                </Button>
-                <Button variant="outline" type="button" className="w-full">
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect width="24" height="24" rx="12" fill="#FEE500" />
-                    <path
-                      d="M12 5.5C8.41 5.5 5.5 7.865 5.5 10.8C5.5 12.7 6.62 14.3875 8.32 15.3375C8.15 15.9125 7.64 17.8 7.59 18.0375C7.53 18.35 7.75 18.35 7.89 18.25C8 18.175 10.21 16.6625 10.83 16.2375C11.21 16.3 11.6 16.325 12 16.325C15.59 16.325 18.5 13.96 18.5 11.025C18.5 8.09 15.59 5.5 12 5.5Z"
-                      fill="#392020"
-                    />
-                  </svg>
-                  {t("register.kakaoTalk")}
-                </Button>
-              </div>
-
-              <div className="text-center text-sm">
-                <span className="text-muted-foreground">
-                  {t("register.alreadyHaveAccount")}
-                </span>{" "}
-                <Link href="/login" className="text-primary hover:underline">
-                  {t("register.login")}
-                </Link>
-              </div>
+              />
             </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  {t("register.orContinueWith")}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <Button variant="outline" type="button" className="w-full">
+                <svg
+                  className="mr-2 h-4 w-4"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                </svg>
+                Google
+              </Button>
+              <Button variant="outline" type="button" className="w-full">
+                <Github className="mr-2 h-4 w-4" />
+                Github
+              </Button>
+              <Button variant="outline" type="button" className="w-full">
+                <svg
+                  className="mr-2 h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect width="24" height="24" rx="12" fill="#FEE500" />
+                  <path
+                    d="M12 5.5C8.41 5.5 5.5 7.865 5.5 10.8C5.5 12.7 6.62 14.3875 8.32 15.3375C8.15 15.9125 7.64 17.8 7.59 18.0375C7.53 18.35 7.75 18.35 7.89 18.25C8 18.175 10.21 16.6625 10.83 16.2375C11.21 16.3 11.6 16.325 12 16.325C15.59 16.325 18.5 13.96 18.5 11.025C18.5 8.09 15.59 5.5 12 5.5Z"
+                    fill="#392020"
+                  />
+                </svg>
+                {t("register.kakaoTalk")}
+              </Button>
+            </div>
+
+            <div className="text-center text-sm">
+              <span className="text-muted-foreground">
+                {t("register.alreadyHaveAccount")}
+              </span>{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                {t("register.login")}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

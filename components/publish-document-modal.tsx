@@ -1,81 +1,92 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Share, RefreshCw } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CalendarIcon, RefreshCw, Share } from "lucide-react";
+import { useState } from "react";
 
 interface PublishDocumentModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onPublish: (password: string, expiresAt: string) => Promise<void>
-  isLoading?: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  onPublish: (password: string, expiresAt: string) => Promise<void>;
+  isLoading?: boolean;
 }
 
 export default function PublishDocumentModal({
   isOpen,
   onClose,
   onPublish,
-  isLoading = false
+  isLoading = false,
 }: PublishDocumentModalProps) {
-  const [password, setPassword] = useState("")
-  const [expiresAt, setExpiresAt] = useState<Date>()
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  const [errors, setErrors] = useState<{password?: string, expiresAt?: string}>({})
+  const [password, setPassword] = useState("");
+  const [expiresAt, setExpiresAt] = useState<Date>();
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [errors, setErrors] = useState<{
+    password?: string;
+    expiresAt?: string;
+  }>({});
 
   const validateForm = () => {
-    const newErrors: {password?: string, expiresAt?: string} = {}
+    const newErrors: { password?: string; expiresAt?: string } = {};
 
     if (!password.trim()) {
-      newErrors.password = "비밀번호는 필수입니다"
+      newErrors.password = "비밀번호는 필수입니다";
     } else if (password.length < 4) {
-      newErrors.password = "비밀번호는 최소 4자 이상이어야 합니다"
+      newErrors.password = "비밀번호는 최소 4자 이상이어야 합니다";
     }
 
     if (!expiresAt) {
-      newErrors.expiresAt = "만료 기간은 필수입니다"
+      newErrors.expiresAt = "만료 기간은 필수입니다";
     } else if (expiresAt <= new Date()) {
-      newErrors.expiresAt = "만료 기간은 현재 시간보다 이후여야 합니다"
+      newErrors.expiresAt = "만료 기간은 현재 시간보다 이후여야 합니다";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      return
+      return;
     }
 
     try {
-      await onPublish(password, expiresAt!.toISOString())
+      await onPublish(password, expiresAt!.toISOString());
       // Reset form on success
-      setPassword("")
-      setExpiresAt(undefined)
-      setErrors({})
-      onClose()
+      setPassword("");
+      setExpiresAt(undefined);
+      setErrors({});
+      onClose();
     } catch (error) {
-      console.error("Publish error:", error)
+      console.error("Publish error:", error);
     }
-  }
+  };
 
   const handleClose = () => {
-    if (isLoading) return // Prevent closing while loading
-    setPassword("")
-    setExpiresAt(undefined)
-    setErrors({})
-    onClose()
-  }
+    if (isLoading) return; // Prevent closing while loading
+    setPassword("");
+    setExpiresAt(undefined);
+    setErrors({});
+    onClose();
+  };
 
   // Get minimum date (today)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={isLoading ? undefined : handleClose}>
@@ -100,12 +111,13 @@ export default function PublishDocumentModal({
             <Input
               id="password"
               type="password"
+              name="password"
               placeholder="서명 페이지 접근용 비밀번호"
               value={password}
               onChange={(e) => {
-                setPassword(e.target.value)
+                setPassword(e.target.value);
                 if (errors.password) {
-                  setErrors(prev => ({ ...prev, password: undefined }))
+                  setErrors((prev) => ({ ...prev, password: undefined }));
                 }
               }}
               disabled={isLoading}
@@ -133,15 +145,13 @@ export default function PublishDocumentModal({
                   disabled={isLoading}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {expiresAt ? (
-                    expiresAt.toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })
-                  ) : (
-                    "서명 만료 날짜를 선택하세요"
-                  )}
+                  {expiresAt
+                    ? expiresAt.toLocaleDateString("ko-KR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : "서명 만료 날짜를 선택하세요"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -151,14 +161,17 @@ export default function PublishDocumentModal({
                   onSelect={(date) => {
                     if (date) {
                       // Set time to end of day (23:59:59)
-                      const endOfDay = new Date(date)
-                      endOfDay.setHours(23, 59, 59, 999)
-                      setExpiresAt(endOfDay)
+                      const endOfDay = new Date(date);
+                      endOfDay.setHours(23, 59, 59, 999);
+                      setExpiresAt(endOfDay);
                       if (errors.expiresAt) {
-                        setErrors(prev => ({ ...prev, expiresAt: undefined }))
+                        setErrors((prev) => ({
+                          ...prev,
+                          expiresAt: undefined,
+                        }));
                       }
                     }
-                    setIsCalendarOpen(false)
+                    setIsCalendarOpen(false);
                   }}
                   disabled={(date) => date < today}
                   initialFocus
@@ -182,10 +195,7 @@ export default function PublishDocumentModal({
             >
               취소
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading}
-            >
+            <Button onClick={handleSubmit} disabled={isLoading}>
               {isLoading ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -202,5 +212,5 @@ export default function PublishDocumentModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
