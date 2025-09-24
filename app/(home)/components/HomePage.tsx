@@ -106,7 +106,7 @@ export default function HomePageComponent() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-{/* Hero Section */}
+      {/* Hero Section */}
       <section className="relative overflow-hidden py-20 md:py-32">
         <div className="absolute inset-0 bg-dot-pattern opacity-30"></div>
         <div className="container mx-auto px-4 relative z-10">

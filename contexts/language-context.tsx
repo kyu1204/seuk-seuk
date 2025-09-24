@@ -1,23 +1,29 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 
 // Define available languages
-export type Language = "ko" | "en"
+export type Language = "ko" | "en";
 
 // Define the context type
 type LanguageContextType = {
-  language: Language
-  setLanguage: (language: Language) => void
-  t: (key: string) => string
-}
+  language: Language;
+  setLanguage: (language: Language) => void;
+  t: (key: string) => string;
+};
 
 // Create the context with default values
 const LanguageContext = createContext<LanguageContextType>({
   language: "ko",
   setLanguage: () => {},
   t: (key) => key,
-})
+});
 
 // Translation data
 const translations: Record<Language, Record<string, string>> = {
@@ -50,8 +56,9 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.signedDocument": "서명된 문서",
     "sign.close": "닫기",
     "sign.download": "다운로드",
-    "sign.completed.title": "서명이 완료되었습니다",
-    "sign.completed.description": "문서 서명이 성공적으로 완료되어 안전하게 저장되었습니다.",
+    "sign.complete.title": "서명이 완료되었습니다",
+    "sign.complete.description":
+      "문서 서명이 성공적으로 완료되어 안전하게 저장되었습니다.",
 
     // Signature Modal
     "signature.title": "서명 추가",
@@ -64,7 +71,8 @@ const translations: Record<Language, Record<string, string>> = {
     "language.en": "English",
 
     // Homepage
-    "home.notification": "🎉 새로운 기능이 출시되었습니다! 지금 바로 확인해보세요.",
+    "home.notification":
+      "🎉 새로운 기능이 출시되었습니다! 지금 바로 확인해보세요.",
     "home.nav.features": "기능",
     "home.nav.pricing": "가격",
     "home.nav.testimonials": "고객 후기",
@@ -77,15 +85,20 @@ const translations: Record<Language, Record<string, string>> = {
     "home.hero.learnMore": "더 알아보기",
     "home.hero.trustedBy": "수천 명의 사용자가 신뢰하는 서비스",
     "home.featuresTitle": "강력한 기능",
-    "home.featuresDescription": "슥슥은 문서 서명 프로세스를 간소화하는 다양한 기능을 제공합니다.",
+    "home.featuresDescription":
+      "슥슥은 문서 서명 프로세스를 간소화하는 다양한 기능을 제공합니다.",
     "home.features.easy.title": "간편한 사용",
-    "home.features.easy.description": "직관적인 인터페이스로 누구나 쉽게 사용할 수 있습니다.",
+    "home.features.easy.description":
+      "직관적인 인터페이스로 누구나 쉽게 사용할 수 있습니다.",
     "home.features.secure.title": "안전한 보안",
-    "home.features.secure.description": "모든 문서와 서명은 암호화되어 안전하게 보호됩니다.",
+    "home.features.secure.description":
+      "모든 문서와 서명은 암호화되어 안전하게 보호됩니다.",
     "home.features.fast.title": "빠른 처리",
-    "home.features.fast.description": "몇 초 만에 문서를 업로드하고 서명할 수 있습니다.",
+    "home.features.fast.description":
+      "몇 초 만에 문서를 업로드하고 서명할 수 있습니다.",
     "home.testimonialsTitle": "고객 후기",
-    "home.testimonialsDescription": "슥슥을 사용하는 고객들의 생생한 후기를 확인해보세요.",
+    "home.testimonialsDescription":
+      "슥슥을 사용하는 고객들의 생생한 후기를 확인해보세요.",
     "home.testimonials.quote1":
       "슥슥은 우리 회사의 계약 프로세스를 완전히 바꿔놓았습니다. 이전에는 서류 작업에 며칠이 걸렸지만, 이제는 몇 분 만에 완료됩니다.",
     "home.testimonials.author1": "김민수",
@@ -124,7 +137,8 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.popular": "인기",
     "pricing.perMonth": "월",
     "home.cta.title": "지금 바로 시작하세요",
-    "home.cta.description": "슥슥으로 문서 서명 프로세스를 간소화하고 시간과 비용을 절약하세요.",
+    "home.cta.description":
+      "슥슥으로 문서 서명 프로세스를 간소화하고 시간과 비용을 절약하세요.",
     "home.cta.button": "지금 시작하기",
     "home.footer.rights": "모든 권리 보유.",
 
@@ -184,7 +198,8 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.completed.status": "서명 완료됨",
     "sign.expired.title": "서명 기간 만료",
     "sign.expired.message": "죄송합니다. 이 문서의 서명 기간이 만료되었습니다.",
-    "sign.expired.instruction": "문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.",
+    "sign.expired.instruction":
+      "문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.",
     "sign.expired.date": "만료일:",
     "sign.savingSignature": "서명 저장 중...",
 
@@ -212,7 +227,8 @@ const translations: Record<Language, Record<string, string>> = {
     // Sign Page
     "sign.loading": "Loading document...",
     "sign.notFound": "Document Not Found",
-    "sign.notFoundDesc": "The document you're looking for doesn't exist or has expired.",
+    "sign.notFoundDesc":
+      "The document you're looking for doesn't exist or has expired.",
     "sign.returnHome": "Return to Home",
     "sign.clickAreas": "Click on the highlighted areas to add your signature",
     "sign.clickToSign": "Click to sign",
@@ -221,12 +237,14 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.signedDocument": "Your Signed Document",
     "sign.close": "Close",
     "sign.download": "Download",
-    "sign.completed.title": "Signature Completed",
-    "sign.completed.description": "Your document has been successfully signed and securely saved.",
+    "sign.complete.title": "Signature Completed",
+    "sign.complete.description":
+      "Your document has been successfully signed and securely saved.",
 
     // Signature Modal
     "signature.title": "Add Your Signature",
-    "signature.instruction": "Draw your signature above using your mouse or finger",
+    "signature.instruction":
+      "Draw your signature above using your mouse or finger",
     "signature.clear": "Clear",
     "signature.sign": "Sign Document",
 
@@ -248,15 +266,20 @@ const translations: Record<Language, Record<string, string>> = {
     "home.hero.learnMore": "Learn More",
     "home.hero.trustedBy": "Trusted by thousands of users",
     "home.featuresTitle": "Powerful Features",
-    "home.featuresDescription": "SeukSeuk offers a range of features to streamline your document signing process.",
+    "home.featuresDescription":
+      "SeukSeuk offers a range of features to streamline your document signing process.",
     "home.features.easy.title": "Easy to Use",
-    "home.features.easy.description": "Intuitive interface that anyone can use without training.",
+    "home.features.easy.description":
+      "Intuitive interface that anyone can use without training.",
     "home.features.secure.title": "Secure & Protected",
-    "home.features.secure.description": "All documents and signatures are encrypted and securely stored.",
+    "home.features.secure.description":
+      "All documents and signatures are encrypted and securely stored.",
     "home.features.fast.title": "Lightning Fast",
-    "home.features.fast.description": "Upload and sign documents in seconds, not minutes.",
+    "home.features.fast.description":
+      "Upload and sign documents in seconds, not minutes.",
     "home.testimonialsTitle": "Customer Testimonials",
-    "home.testimonialsDescription": "See what our customers are saying about SeukSeuk.",
+    "home.testimonialsDescription":
+      "See what our customers are saying about SeukSeuk.",
     "home.testimonials.quote1":
       "SeukSeuk completely transformed our contract process. What used to take days now takes minutes.",
     "home.testimonials.author1": "John Smith",
@@ -285,7 +308,8 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.pro.feature4": "Email notifications",
     "pricing.pro.cta": "Go Pro",
     "pricing.enterprise.name": "Enterprise",
-    "pricing.enterprise.description": "Custom solutions for large organizations",
+    "pricing.enterprise.description":
+      "Custom solutions for large organizations",
     "pricing.enterprise.price": "Contact Us",
     "pricing.enterprise.feature1": "Unlimited documents",
     "pricing.enterprise.feature2": "Custom workflows",
@@ -295,7 +319,8 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.popular": "Popular",
     "pricing.perMonth": "/month",
     "home.cta.title": "Get Started Today",
-    "home.cta.description": "Streamline your document signing process and save time and money with SeukSeuk.",
+    "home.cta.description":
+      "Streamline your document signing process and save time and money with SeukSeuk.",
     "home.cta.button": "Get Started",
     "home.footer.rights": "All rights reserved.",
 
@@ -350,12 +375,15 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.password.incorrect": "The password is incorrect.",
     "sign.password.error": "An error occurred while verifying the password.",
     "sign.completed.title": "Document Already Submitted",
-    "sign.completed.message": "This document has already been signed and submitted.",
+    "sign.completed.message":
+      "This document has already been signed and submitted.",
     "sign.completed.noEdit": "No further changes can be made.",
     "sign.completed.status": "Signature Completed",
     "sign.expired.title": "Signature Period Expired",
-    "sign.expired.message": "Sorry, the signing period for this document has expired.",
-    "sign.expired.instruction": "Please contact the document issuer to request a new signature request.",
+    "sign.expired.message":
+      "Sorry, the signing period for this document has expired.",
+    "sign.expired.instruction":
+      "Please contact the document issuer to request a new signature request.",
     "sign.expired.date": "Expired on:",
     "sign.savingSignature": "Saving signature...",
 
@@ -363,41 +391,44 @@ const translations: Record<Language, Record<string, string>> = {
     "auth.signOut": "Sign Out",
     "auth.signingOut": "Signing out...",
   },
-}
+};
 
 // Provider component
 export function LanguageProvider({ children }: { children: ReactNode }) {
   // Initialize with Korean as default
-  const [language, setLanguageState] = useState<Language>("ko")
+  const [language, setLanguageState] = useState<Language>("ko");
 
   // Load saved language preference on mount
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("seukSeukLanguage") as Language
+    const savedLanguage = localStorage.getItem("seukSeukLanguage") as Language;
     if (savedLanguage && (savedLanguage === "ko" || savedLanguage === "en")) {
-      setLanguageState(savedLanguage)
+      setLanguageState(savedLanguage);
     }
-  }, [])
+  }, []);
 
   // Save language preference when it changes
   const setLanguage = (newLanguage: Language) => {
-    setLanguageState(newLanguage)
-    localStorage.setItem("seukSeukLanguage", newLanguage)
-  }
+    setLanguageState(newLanguage);
+    localStorage.setItem("seukSeukLanguage", newLanguage);
+  };
 
   // Translation function
   const t = (key: string): string => {
-    return translations[language][key] || key
-  }
+    return translations[language][key] || key;
+  };
 
-  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
 }
 
 // Custom hook for using the language context
 export function useLanguage() {
-  const context = useContext(LanguageContext)
+  const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error("useLanguage must be used within a LanguageProvider")
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
-  return context
+  return context;
 }
-

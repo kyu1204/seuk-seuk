@@ -33,9 +33,11 @@ const protectedRoutes: Routes = {
 // Function to check if a path is protected
 function isProtectedRoute(pathname: string): boolean {
   // Check if the path starts with any protected route pattern
-  return Object.keys(protectedRoutes).some(route =>
-    pathname.startsWith(route) || pathname === route
-  ) || pathname.startsWith("/document/");
+  return (
+    Object.keys(protectedRoutes).some(
+      (route) => pathname.startsWith(route) || pathname === route
+    ) || pathname.startsWith("/document/")
+  );
 }
 
 export async function updateSession(request: NextRequest) {

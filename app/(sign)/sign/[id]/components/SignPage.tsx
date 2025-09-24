@@ -322,9 +322,7 @@ export default function SignPageComponent({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center space-y-3">
-                  <p className="text-gray-600">
-                    {t("sign.completed.message")}
-                  </p>
+                  <p className="text-gray-600">{t("sign.completed.message")}</p>
                   <p className="text-sm text-gray-500">
                     {t("sign.completed.noEdit")}
                   </p>
@@ -366,9 +364,7 @@ export default function SignPageComponent({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center space-y-3">
-                <p className="text-gray-600">
-                  {t("sign.expired.message")}
-                </p>
+                <p className="text-gray-600">{t("sign.expired.message")}</p>
                 <p className="text-sm text-gray-500">
                   {t("sign.expired.instruction")}
                 </p>
@@ -408,7 +404,9 @@ export default function SignPageComponent({
           <Card>
             <CardHeader className="text-center">
               <Lock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <CardTitle className="text-xl">{t("sign.password.title")}</CardTitle>
+              <CardTitle className="text-xl">
+                {t("sign.password.title")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-center text-gray-600">
@@ -417,7 +415,9 @@ export default function SignPageComponent({
                 {t("sign.password.instruction")}
               </p>
               <div className="space-y-2">
-                <Label htmlFor="document-password">{t("register.password")}</Label>
+                <Label htmlFor="document-password">
+                  {t("register.password")}
+                </Label>
                 <Input
                   id="document-password"
                   name="document-password"

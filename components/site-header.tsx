@@ -16,7 +16,9 @@ interface SiteHeaderProps {
   showScrollEffect?: boolean;
 }
 
-export default function SiteHeader({ showScrollEffect = true }: SiteHeaderProps) {
+export default function SiteHeader({
+  showScrollEffect = true,
+}: SiteHeaderProps) {
   const { t } = useLanguage();
   const { user, loading, isAuthenticated } = useAuth();
   const [scrolled, setScrolled] = useState(false);
