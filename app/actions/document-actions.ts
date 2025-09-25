@@ -32,6 +32,15 @@ export async function uploadDocument(formData: FormData) {
       return { error: "File and filename are required" };
     }
 
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
     // Generate unique filename using UUID
     const fileExtension = file.name.split(".").pop() || "";
     const uniqueFilename = `${randomUUID()}.${fileExtension}`;
@@ -54,12 +63,13 @@ export async function uploadDocument(formData: FormData) {
     // Generate short URL
     const shortUrl = generateShortUrl();
 
-    // Create document record (without signature areas)
+    // Create document record with user_id
     const documentData: DocumentInsert = {
       filename,
       file_url: publicUrl,
       short_url: shortUrl,
       status: "draft",
+      user_id: user.id,
     };
 
     const { data: document, error: dbError } = await supabase
@@ -83,9 +93,7 @@ export async function uploadDocument(formData: FormData) {
 /**
  * Get document by short URL
  */
-export async function getDocumentByShortUrl(
-  shortUrl: string
-): Promise<{
+export async function getDocumentByShortUrl(shortUrl: string): Promise<{
   document: ClientDocument | null;
   signatures: Signature[];
   error?: string;
@@ -468,9 +476,7 @@ export async function verifyDocumentPassword(
 /**
  * Get document by ID (for server components)
  */
-export async function getDocumentById(
-  id: string
-): Promise<{
+export async function getDocumentById(id: string): Promise<{
   document: Document | null;
   signatures: Signature[];
   error?: string;
@@ -507,6 +513,151 @@ export async function getDocumentById(
     return {
       document: null,
       signatures: [],
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Get user's documents with pagination support (for SSR - first page)
+ */
+export async function getUserDocuments(
+  page: number = 1,
+  limit: number = 12,
+  status?: "draft" | "published" | "completed"
+): Promise<{
+  documents: Document[];
+  hasMore: boolean;
+  total: number;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return {
+        documents: [],
+        hasMore: false,
+        total: 0,
+        error: "User not authenticated",
+      };
+    }
+
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Build query
+    let query = supabase
+      .from("documents")
+      .select("*", { count: "exact" })
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    // Add status filter if provided
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    const { data: documents, error: docError, count } = await query;
+
+    if (docError) {
+      console.error("Get user documents error:", docError);
+      return {
+        documents: [],
+        hasMore: false,
+        total: 0,
+        error: "Failed to load documents",
+      };
+    }
+
+    const total = count || 0;
+    const hasMore = offset + limit < total;
+
+    return {
+      documents: documents || [],
+      hasMore,
+      total,
+    };
+  } catch (error) {
+    console.error("Get user documents error:", error);
+    return {
+      documents: [],
+      hasMore: false,
+      total: 0,
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Get user's documents for client-side loading (for CSR - infinite scroll)
+ */
+export async function getUserDocumentsClient(
+  page: number,
+  limit: number = 12,
+  status?: "draft" | "published" | "completed"
+): Promise<{
+  documents: Document[];
+  hasMore: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { documents: [], hasMore: false, error: "User not authenticated" };
+    }
+
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Build query
+    let query = supabase
+      .from("documents")
+      .select("*", { count: "exact" })
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    // Add status filter if provided
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    const { data: documents, error: docError, count } = await query;
+
+    if (docError) {
+      console.error("Get user documents client error:", docError);
+      return {
+        documents: [],
+        hasMore: false,
+        error: "Failed to load documents",
+      };
+    }
+
+    const total = count || 0;
+    const hasMore = offset + limit < total;
+
+    return {
+      documents: documents || [],
+      hasMore,
+    };
+  } catch (error) {
+    console.error("Get user documents client error:", error);
+    return {
+      documents: [],
+      hasMore: false,
       error: "An unexpected error occurred",
     };
   }
