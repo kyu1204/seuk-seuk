@@ -63,7 +63,7 @@ export default function DocumentDetailComponent({
       case "published":
         return <Badge variant="default">{t("status.published")}</Badge>;
       case "completed":
-        return <Badge variant="default">{t("status.completed")}</Badge>;
+        return <Badge variant="success">{t("status.completed")}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }

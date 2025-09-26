@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type {
   Document,
@@ -200,8 +200,11 @@ export async function saveSignature(
       return { error: "Failed to update signature" };
     }
 
-    // Revalidate the signing page
-    revalidatePath(`/sign/[id]`, "page");
+    // Get document to revalidate the specific signing page
+    const { document } = await getDocumentById(documentId);
+    if (document?.short_url) {
+      revalidatePath(`/sign/${document.short_url}`, "page");
+    }
 
     return { success: true };
   } catch (error) {
@@ -281,6 +284,8 @@ export async function uploadSignedDocument(
   signedImageData: string
 ) {
   try {
+    // Use service role to bypass RLS for presigned URL generation
+    const supabaseService = createServiceSupabase();
     const supabase = await createServerSupabase();
 
     // Get document to verify existence and get user_id
@@ -299,8 +304,8 @@ export async function uploadSignedDocument(
     const filename = `signed_${documentId}.png`;
     const filePath = `${document.user_id}/${filename}`;
 
-    // Create presigned URL for upload
-    const { data: presignedData, error: presignedError } = await supabase.storage
+    // Create presigned URL for upload using service role to bypass RLS
+    const { data: presignedData, error: presignedError } = await supabaseService.storage
       .from('signed-documents')
       .createSignedUploadUrl(filePath, {
         upsert: true
@@ -332,7 +337,7 @@ export async function uploadSignedDocument(
     // Get public URL for the uploaded file
     const {
       data: { publicUrl },
-    } = supabase.storage.from('signed-documents').getPublicUrl(presignedData.path);
+    } = supabaseService.storage.from('signed-documents').getPublicUrl(presignedData.path);
 
     // Update document with signed file URL
     const { error: updateError } = await supabase
@@ -648,10 +653,10 @@ export async function getUserDocumentsClient(
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query (exclude password field for client)
     let query = supabase
       .from("documents")
-      .select("*", { count: "exact" })
+      .select("id, filename, status, file_url, signed_file_url, short_url, created_at, expires_at, user_id", { count: "exact" })
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
