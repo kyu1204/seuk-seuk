@@ -118,7 +118,7 @@ export default function HomePageComponent() {
               {t("home.hero.description")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/upload">
+              <Link href="/dashboard">
                 <Button
                   size="lg"
                   className="bg-primary hover:bg-primary/90 gap-2 text-white"

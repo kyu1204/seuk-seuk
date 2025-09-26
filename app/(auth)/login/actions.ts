@@ -48,5 +48,5 @@ export async function login(_: any, formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/dashboard");
 }

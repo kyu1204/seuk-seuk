@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/language-context";
 import { createClientSupabase } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 interface UserAvatarProps {
   user: User;
@@ -70,6 +71,13 @@ export default function UserAvatar({ user }: UserAvatarProps) {
             </p>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <Link href="/dashboard">
+          <DropdownMenuItem className="cursor-pointer">
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            {t("dashboard.title")}
+          </DropdownMenuItem>
+        </Link>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}

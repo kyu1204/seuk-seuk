@@ -32,6 +32,15 @@ export async function uploadDocument(formData: FormData) {
       return { error: "File and filename are required" };
     }
 
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
     // Generate unique filename using UUID
     const fileExtension = file.name.split(".").pop() || "";
     const uniqueFilename = `${randomUUID()}.${fileExtension}`;
@@ -54,12 +63,13 @@ export async function uploadDocument(formData: FormData) {
     // Generate short URL
     const shortUrl = generateShortUrl();
 
-    // Create document record (without signature areas)
+    // Create document record with user_id
     const documentData: DocumentInsert = {
       filename,
       file_url: publicUrl,
       short_url: shortUrl,
       status: "draft",
+      user_id: user.id,
     };
 
     const { data: document, error: dbError } = await supabase
@@ -83,9 +93,7 @@ export async function uploadDocument(formData: FormData) {
 /**
  * Get document by short URL
  */
-export async function getDocumentByShortUrl(
-  shortUrl: string
-): Promise<{
+export async function getDocumentByShortUrl(shortUrl: string): Promise<{
   document: ClientDocument | null;
   signatures: Signature[];
   error?: string;
@@ -266,7 +274,7 @@ export async function createSignatureAreas(
 }
 
 /**
- * Upload signed document image to Supabase Storage
+ * Upload signed document image using presigned URL
  */
 export async function uploadSignedDocument(
   documentId: string,
@@ -275,46 +283,72 @@ export async function uploadSignedDocument(
   try {
     const supabase = await createServerSupabase();
 
+    // Get document to verify existence and get user_id
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('id, user_id')
+      .eq('id', documentId)
+      .single();
+
+    if (docError || !document) {
+      console.error('Document not found:', docError);
+      return { error: 'Document not found' };
+    }
+
+    // Generate filename for signed document
+    const filename = `signed_${documentId}.png`;
+    const filePath = `${document.user_id}/${filename}`;
+
+    // Create presigned URL for upload
+    const { data: presignedData, error: presignedError } = await supabase.storage
+      .from('signed-documents')
+      .createSignedUploadUrl(filePath, {
+        upsert: true
+      });
+
+    if (presignedError) {
+      console.error('Error creating presigned URL:', presignedError);
+      return { error: 'Failed to create upload URL' };
+    }
+
     // Convert data URL to blob
     const response = await fetch(signedImageData);
     const blob = await response.blob();
 
-    // Generate filename for signed document
-    const filename = `signed_${documentId}.png`;
+    // Upload file using presigned URL
+    const uploadResponse = await fetch(presignedData.signedUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: {
+        'Content-Type': 'image/png',
+      },
+    });
 
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("signed-documents")
-      .upload(filename, blob, {
-        contentType: "image/png",
-        upsert: true, // Replace if already exists
-      });
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      return { error: "Failed to upload signed document" };
+    if (!uploadResponse.ok) {
+      console.error('Upload failed:', uploadResponse.statusText);
+      return { error: 'Failed to upload signed document' };
     }
 
-    // Get public URL
+    // Get public URL for the uploaded file
     const {
       data: { publicUrl },
-    } = supabase.storage.from("signed-documents").getPublicUrl(filename);
+    } = supabase.storage.from('signed-documents').getPublicUrl(presignedData.path);
 
     // Update document with signed file URL
     const { error: updateError } = await supabase
-      .from("documents")
+      .from('documents')
       .update({ signed_file_url: publicUrl })
-      .eq("id", documentId);
+      .eq('id', documentId);
 
     if (updateError) {
-      console.error("Update document error:", updateError);
-      return { error: "Failed to update document with signed file URL" };
+      console.error('Update document error:', updateError);
+      return { error: 'Failed to update document with signed file URL' };
     }
 
     return { success: true, signedFileUrl: publicUrl };
   } catch (error) {
-    console.error("Upload signed document error:", error);
-    return { error: "An unexpected error occurred" };
+    console.error('Upload signed document error:', error);
+    return { error: 'An unexpected error occurred' };
   }
 }
 
@@ -468,9 +502,7 @@ export async function verifyDocumentPassword(
 /**
  * Get document by ID (for server components)
  */
-export async function getDocumentById(
-  id: string
-): Promise<{
+export async function getDocumentById(id: string): Promise<{
   document: Document | null;
   signatures: Signature[];
   error?: string;
@@ -509,5 +541,209 @@ export async function getDocumentById(
       signatures: [],
       error: "An unexpected error occurred",
     };
+  }
+}
+
+/**
+ * Get user's documents with pagination support (for SSR - first page)
+ */
+export async function getUserDocuments(
+  page: number = 1,
+  limit: number = 12,
+  status?: "draft" | "published" | "completed"
+): Promise<{
+  documents: Document[];
+  hasMore: boolean;
+  total: number;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return {
+        documents: [],
+        hasMore: false,
+        total: 0,
+        error: "User not authenticated",
+      };
+    }
+
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Build query
+    let query = supabase
+      .from("documents")
+      .select("*", { count: "exact" })
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    // Add status filter if provided
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    const { data: documents, error: docError, count } = await query;
+
+    if (docError) {
+      console.error("Get user documents error:", docError);
+      return {
+        documents: [],
+        hasMore: false,
+        total: 0,
+        error: "Failed to load documents",
+      };
+    }
+
+    const total = count || 0;
+    const hasMore = offset + limit < total;
+
+    return {
+      documents: documents || [],
+      hasMore,
+      total,
+    };
+  } catch (error) {
+    console.error("Get user documents error:", error);
+    return {
+      documents: [],
+      hasMore: false,
+      total: 0,
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Get user's documents for client-side loading (for CSR - infinite scroll)
+ */
+export async function getUserDocumentsClient(
+  page: number,
+  limit: number = 12,
+  status?: "draft" | "published" | "completed"
+): Promise<{
+  documents: Document[];
+  hasMore: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { documents: [], hasMore: false, error: "User not authenticated" };
+    }
+
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Build query
+    let query = supabase
+      .from("documents")
+      .select("*", { count: "exact" })
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    // Add status filter if provided
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    const { data: documents, error: docError, count } = await query;
+
+    if (docError) {
+      console.error("Get user documents client error:", docError);
+      return {
+        documents: [],
+        hasMore: false,
+        error: "Failed to load documents",
+      };
+    }
+
+    const total = count || 0;
+    const hasMore = offset + limit < total;
+
+    return {
+      documents: documents || [],
+      hasMore,
+    };
+  } catch (error) {
+    console.error("Get user documents client error:", error);
+    return {
+      documents: [],
+      hasMore: false,
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Get signed URL for signed document
+ */
+export async function getSignedDocumentUrl(documentId: string): Promise<{
+  signedUrl: string | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { signedUrl: null, error: "User not authenticated" };
+    }
+
+    // Get document to verify ownership and get signed file path
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, user_id, filename, signed_file_url")
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (docError || !document) {
+      return { signedUrl: null, error: "Document not found" };
+    }
+
+    if (!document.signed_file_url) {
+      return { signedUrl: null, error: "Signed document not available" };
+    }
+
+    // Extract file path from signed_file_url
+    const url = new URL(document.signed_file_url);
+    const pathParts = url.pathname.split('/');
+    const filePath = pathParts.slice(pathParts.indexOf('signed-documents') + 1).join('/');
+
+    // Generate signed URL for download (valid for 1 hour)
+    const { data, error: signError } = await supabase.storage
+      .from('signed-documents')
+      .createSignedUrl(filePath, 3600, {
+        download: `서명완료_${document.filename}.png`
+      });
+
+    if (signError) {
+      console.error('Error creating signed URL:', signError);
+      return { signedUrl: null, error: 'Failed to create signed URL' };
+    }
+
+    return { signedUrl: data.signedUrl };
+  } catch (error) {
+    console.error('Get signed document URL error:', error);
+    return { signedUrl: null, error: 'An unexpected error occurred' };
   }
 }

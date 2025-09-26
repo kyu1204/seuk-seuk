@@ -15,7 +15,7 @@ export type Language = "ko" | "en";
 type LanguageContextType = {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 };
 
 // Create the context with default values
@@ -206,6 +206,23 @@ const translations: Record<Language, Record<string, string>> = {
     // Authentication
     "auth.signOut": "로그아웃",
     "auth.signingOut": "로그아웃 중...",
+
+    // Dashboard
+    "dashboard.title": "내 문서",
+    "dashboard.description": "총 {total}개의 문서를 관리하고 있습니다.",
+    "dashboard.upload": "문서 업로드",
+    "dashboard.empty.title": "아직 업로드된 문서가 없습니다",
+    "dashboard.empty.description": "첫 번째 문서를 업로드하여 시작해보세요. 문서를 업로드하고 서명 영역을 지정한 후 다른 사람과 공유할 수 있습니다.",
+    "dashboard.empty.action": "첫 문서 업로드하기",
+    "dashboard.loading.more": "추가 문서 로딩 중...",
+    "dashboard.retry": "다시 시도",
+    "dashboard.end.message": "모든 문서를 불러왔습니다.",
+    "dashboard.error.loadMore": "추가 문서를 불러오는 중 오류가 발생했습니다.",
+
+    // Document Status
+    "status.draft": "초안",
+    "status.published": "게시됨",
+    "status.completed": "완료됨",
   },
   en: {
     // Header
@@ -390,6 +407,23 @@ const translations: Record<Language, Record<string, string>> = {
     // Authentication
     "auth.signOut": "Sign Out",
     "auth.signingOut": "Signing out...",
+
+    // Dashboard
+    "dashboard.title": "My Documents",
+    "dashboard.description": "You are managing a total of {total} documents.",
+    "dashboard.upload": "Upload Document",
+    "dashboard.empty.title": "No documents uploaded yet",
+    "dashboard.empty.description": "Get started by uploading your first document. You can upload documents, define signature areas, and share them with others.",
+    "dashboard.empty.action": "Upload First Document",
+    "dashboard.loading.more": "Loading more documents...",
+    "dashboard.retry": "Retry",
+    "dashboard.end.message": "All documents have been loaded.",
+    "dashboard.error.loadMore": "An error occurred while loading more documents.",
+
+    // Document Status
+    "status.draft": "Draft",
+    "status.published": "Published",
+    "status.completed": "Completed",
   },
 };
 
@@ -412,9 +446,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("seukSeukLanguage", newLanguage);
   };
 
-  // Translation function
-  const t = (key: string): string => {
-    return translations[language][key] || key;
+  // Translation function with parameter support
+  const t = (key: string, params?: Record<string, string | number>): string => {
+    let translation = translations[language][key] || key;
+
+    // Replace parameters in the translation string
+    if (params) {
+      Object.keys(params).forEach(param => {
+        translation = translation.replace(`{${param}}`, String(params[param]));
+      });
+    }
+
+    return translation;
   };
 
   return (
