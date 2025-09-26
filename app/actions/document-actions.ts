@@ -274,7 +274,7 @@ export async function createSignatureAreas(
 }
 
 /**
- * Upload signed document image to Supabase Storage
+ * Upload signed document image using presigned URL
  */
 export async function uploadSignedDocument(
   documentId: string,
@@ -283,46 +283,72 @@ export async function uploadSignedDocument(
   try {
     const supabase = await createServerSupabase();
 
+    // Get document to verify existence and get user_id
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('id, user_id')
+      .eq('id', documentId)
+      .single();
+
+    if (docError || !document) {
+      console.error('Document not found:', docError);
+      return { error: 'Document not found' };
+    }
+
+    // Generate filename for signed document
+    const filename = `signed_${documentId}.png`;
+    const filePath = `${document.user_id}/${filename}`;
+
+    // Create presigned URL for upload
+    const { data: presignedData, error: presignedError } = await supabase.storage
+      .from('signed-documents')
+      .createSignedUploadUrl(filePath, {
+        upsert: true
+      });
+
+    if (presignedError) {
+      console.error('Error creating presigned URL:', presignedError);
+      return { error: 'Failed to create upload URL' };
+    }
+
     // Convert data URL to blob
     const response = await fetch(signedImageData);
     const blob = await response.blob();
 
-    // Generate filename for signed document
-    const filename = `signed_${documentId}.png`;
+    // Upload file using presigned URL
+    const uploadResponse = await fetch(presignedData.signedUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: {
+        'Content-Type': 'image/png',
+      },
+    });
 
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("signed-documents")
-      .upload(filename, blob, {
-        contentType: "image/png",
-        upsert: true, // Replace if already exists
-      });
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      return { error: "Failed to upload signed document" };
+    if (!uploadResponse.ok) {
+      console.error('Upload failed:', uploadResponse.statusText);
+      return { error: 'Failed to upload signed document' };
     }
 
-    // Get public URL
+    // Get public URL for the uploaded file
     const {
       data: { publicUrl },
-    } = supabase.storage.from("signed-documents").getPublicUrl(filename);
+    } = supabase.storage.from('signed-documents').getPublicUrl(presignedData.path);
 
     // Update document with signed file URL
     const { error: updateError } = await supabase
-      .from("documents")
+      .from('documents')
       .update({ signed_file_url: publicUrl })
-      .eq("id", documentId);
+      .eq('id', documentId);
 
     if (updateError) {
-      console.error("Update document error:", updateError);
-      return { error: "Failed to update document with signed file URL" };
+      console.error('Update document error:', updateError);
+      return { error: 'Failed to update document with signed file URL' };
     }
 
     return { success: true, signedFileUrl: publicUrl };
   } catch (error) {
-    console.error("Upload signed document error:", error);
-    return { error: "An unexpected error occurred" };
+    console.error('Upload signed document error:', error);
+    return { error: 'An unexpected error occurred' };
   }
 }
 
@@ -660,5 +686,64 @@ export async function getUserDocumentsClient(
       hasMore: false,
       error: "An unexpected error occurred",
     };
+  }
+}
+
+/**
+ * Get signed URL for signed document
+ */
+export async function getSignedDocumentUrl(documentId: string): Promise<{
+  signedUrl: string | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { signedUrl: null, error: "User not authenticated" };
+    }
+
+    // Get document to verify ownership and get signed file path
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, user_id, filename, signed_file_url")
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (docError || !document) {
+      return { signedUrl: null, error: "Document not found" };
+    }
+
+    if (!document.signed_file_url) {
+      return { signedUrl: null, error: "Signed document not available" };
+    }
+
+    // Extract file path from signed_file_url
+    const url = new URL(document.signed_file_url);
+    const pathParts = url.pathname.split('/');
+    const filePath = pathParts.slice(pathParts.indexOf('signed-documents') + 1).join('/');
+
+    // Generate signed URL for download (valid for 1 hour)
+    const { data, error: signError } = await supabase.storage
+      .from('signed-documents')
+      .createSignedUrl(filePath, 3600, {
+        download: `서명완료_${document.filename}.png`
+      });
+
+    if (signError) {
+      console.error('Error creating signed URL:', signError);
+      return { signedUrl: null, error: 'Failed to create signed URL' };
+    }
+
+    return { signedUrl: data.signedUrl };
+  } catch (error) {
+    console.error('Get signed document URL error:', error);
+    return { signedUrl: null, error: 'An unexpected error occurred' };
   }
 }

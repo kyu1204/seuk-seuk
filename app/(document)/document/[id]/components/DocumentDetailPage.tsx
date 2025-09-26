@@ -3,6 +3,7 @@
 import {
   publishDocument,
   updateSignatureAreas,
+  getSignedDocumentUrl,
 } from "@/app/actions/document-actions";
 import AreaSelector from "@/components/area-selector";
 import PublishDocumentModal from "@/components/publish-document-modal";
@@ -15,10 +16,10 @@ import type {
   Signature,
   SignatureArea,
 } from "@/lib/supabase/database.types";
-import { ArrowLeft, Copy, Edit, ExternalLink, Share } from "lucide-react";
+import { ArrowLeft, Copy, Edit, ExternalLink, Share, Download } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 interface DocumentDetailComponentProps {
   documentData: Document;
@@ -53,15 +54,16 @@ export default function DocumentDetailComponent({
     top: number;
     left: number;
   }>({ top: 0, left: 0 });
+  const [signedDocumentUrl, setSignedDocumentUrl] = useState<string | null>(null);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "draft":
-        return <Badge variant="secondary">초안</Badge>;
+        return <Badge variant="secondary">{t("status.draft")}</Badge>;
       case "published":
-        return <Badge variant="default">발행됨</Badge>;
+        return <Badge variant="default">{t("status.published")}</Badge>;
       case "completed":
-        return <Badge variant="outline">완료됨</Badge>;
+        return <Badge variant="default">{t("status.completed")}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -164,9 +166,41 @@ export default function DocumentDetailComponent({
     }
   };
 
+  const handleDownloadSignedDocument = () => {
+    if (!isCompleted || !signedDocumentUrl) return;
+
+    try {
+      // 새 탭에서 다운로드 URL 열기
+      window.open(signedDocumentUrl, '_blank');
+    } catch (error) {
+      console.error('Download failed:', error);
+      setError('다운로드 중 오류가 발생했습니다.');
+    }
+  };
+
   const canEdit = document.status === "draft";
   const canPublish = document.status === "draft" && signatureAreas.length > 0;
   const isPublished = document.status === "published";
+  const isCompleted = document.status === "completed";
+
+  // 완료된 문서의 경우 signed URL 가져오기
+  useEffect(() => {
+    if (isCompleted && document.signed_file_url) {
+      getSignedDocumentUrl(document.id).then((result) => {
+        if (result.signedUrl) {
+          setSignedDocumentUrl(result.signedUrl);
+        } else {
+          console.error('Failed to get signed document URL:', result.error);
+        }
+      });
+    }
+  }, [isCompleted, document.id, document.signed_file_url]);
+
+  // 상태에 따라 표시할 이미지 결정
+  const displayImageUrl =
+    isCompleted && signedDocumentUrl
+      ? signedDocumentUrl
+      : document.file_url;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -211,6 +245,17 @@ export default function DocumentDetailComponent({
                 {isLoading ? "저장 중..." : "변경사항 저장"}
               </Button>
             )}
+
+            {isCompleted && signedDocumentUrl && (
+              <Button
+                variant="outline"
+                onClick={handleDownloadSignedDocument}
+                disabled={isLoading}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                서명완료 문서 다운로드
+              </Button>
+            )}
           </div>
 
           {/* Published URL Display */}
@@ -241,6 +286,7 @@ export default function DocumentDetailComponent({
             </Card>
           )}
 
+
           {error && (
             <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
               {error}
@@ -261,13 +307,13 @@ export default function DocumentDetailComponent({
           ) : (
             <div ref={documentContainerRef} className="relative">
               <img
-                src={document.file_url}
+                src={displayImageUrl}
                 alt={document.filename}
                 className="w-full h-auto object-contain"
                 draggable="false"
               />
-              {/* Signature Area Overlays */}
-              {signatureAreas.map((area, index) => (
+              {/* Signature Area Overlays - 완료된 문서의 경우 서명 영역 오버레이 숨김 */}
+              {!isCompleted && signatureAreas.map((area, index) => (
                 <div
                   key={index}
                   className={`absolute border-2 flex items-center justify-center ${

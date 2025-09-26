@@ -12,6 +12,13 @@ const publicRoutes: Routes = {
   "/": true,
 };
 
+// Routes that should redirect to dashboard if user is authenticated
+const publicOnlyRoutes: Routes = {
+  "/login": true,
+  "/register": true,
+  "/": true,
+};
+
 // Function to check if a path is public
 function isPublicRoute(pathname: string): boolean {
   // Check explicit public routes
@@ -83,6 +90,14 @@ export async function updateSession(request: NextRequest) {
     // no user, redirect to login page
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Check if authenticated user is trying to access public-only routes
+  if (user && publicOnlyRoutes[request.nextUrl.pathname]) {
+    // logged in user trying to access public-only page, redirect to dashboard
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
