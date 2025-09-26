@@ -18,6 +18,6 @@ export async function signOut() {
     throw new Error("로그아웃 중 오류가 발생했습니다.");
   }
 
-  // 로그아웃 후 메인 페이지로 리다이렉트
-  redirect("/");
+  // 로그아웃 후 로그인 페이지로 리다이렉트
+  redirect("/login");
 }

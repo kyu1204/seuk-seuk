@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/language-context";
-import { createClientSupabase } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { LogOut, User as UserIcon, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { signOut } from "@/app/actions/auth-actions";
 
 interface UserAvatarProps {
   user: User;
@@ -24,13 +24,11 @@ interface UserAvatarProps {
 export default function UserAvatar({ user }: UserAvatarProps) {
   const { t } = useLanguage();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const supabase = createClientSupabase();
 
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      await supabase.auth.signOut();
-      // onAuthStateChange가 자동으로 헤더를 갱신함
+      await signOut();
     } catch (error) {
       console.error("Sign out error:", error);
       setIsSigningOut(false);
