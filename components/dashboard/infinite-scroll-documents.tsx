@@ -111,14 +111,6 @@ export function InfiniteScrollDocuments({
         </div>
       )}
 
-      {/* End of List */}
-      {!hasMore && documents.length > 0 && (
-        <div className="text-center py-8">
-          <p className="text-sm text-muted-foreground">
-            {t("dashboard.end.message")}
-          </p>
-        </div>
-      )}
     </div>
   );
 }
