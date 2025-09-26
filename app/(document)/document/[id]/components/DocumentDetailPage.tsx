@@ -218,44 +218,54 @@ export default function DocumentDetailComponent({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 mb-6">
-            {canEdit && (
-              <Button
-                variant="outline"
-                onClick={handleEditModeToggle}
-                disabled={isLoading}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                {isEditMode ? "편집 취소" : "수정하기"}
-              </Button>
-            )}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex gap-4">
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  onClick={handleEditModeToggle}
+                  disabled={isLoading}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  {isEditMode ? "편집 취소" : "수정하기"}
+                </Button>
+              )}
 
-            {canPublish && !isEditMode && (
-              <Button
-                onClick={() => setIsPublishModalOpen(true)}
-                disabled={isLoading}
-              >
-                <Share className="mr-2 h-4 w-4" />
-                발급하기
-              </Button>
-            )}
+              {isEditMode && (
+                <Button onClick={handleAddSignatureArea} disabled={isLoading}>
+                  서명 영역 추가
+                </Button>
+              )}
 
-            {isEditMode && (
-              <Button onClick={handleSaveChanges} disabled={isLoading}>
-                {isLoading ? "저장 중..." : "변경사항 저장"}
-              </Button>
-            )}
+              {isCompleted && signedDocumentUrl && (
+                <Button
+                  variant="outline"
+                  onClick={handleDownloadSignedDocument}
+                  disabled={isLoading}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  서명완료 문서 다운로드
+                </Button>
+              )}
+            </div>
 
-            {isCompleted && signedDocumentUrl && (
-              <Button
-                variant="outline"
-                onClick={handleDownloadSignedDocument}
-                disabled={isLoading}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                서명완료 문서 다운로드
-              </Button>
-            )}
+            <div className="flex gap-4">
+              {isEditMode && (
+                <Button onClick={handleSaveChanges} disabled={isLoading}>
+                  {isLoading ? "저장 중..." : "변경사항 저장"}
+                </Button>
+              )}
+
+              {canPublish && !isEditMode && (
+                <Button
+                  onClick={() => setIsPublishModalOpen(true)}
+                  disabled={isLoading}
+                >
+                  <Share className="mr-2 h-4 w-4" />
+                  발급하기
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Published URL Display */}
@@ -347,14 +357,6 @@ export default function DocumentDetailComponent({
           )}
         </div>
 
-        {/* Edit Mode Controls */}
-        {isEditMode && !isSelecting && (
-          <div className="mt-6 flex gap-4">
-            <Button onClick={handleAddSignatureArea} disabled={isLoading}>
-              서명 영역 추가
-            </Button>
-          </div>
-        )}
 
         {/* Publish Document Modal */}
         <PublishDocumentModal
