@@ -2,6 +2,7 @@
 
 import DocumentUpload from "@/components/document-upload";
 import { useLanguage } from "@/contexts/language-context";
+import { UsageWidget } from "@/components/dashboard/usage-widget";
 
 export default function UploadPageComponent() {
   const { t } = useLanguage();
@@ -16,6 +17,11 @@ export default function UploadPageComponent() {
             {t("upload.title")}
           </h1>
           <p className="text-muted-foreground">{t("upload.description")}</p>
+        </div>
+
+        {/* Usage Widget for Upload Page */}
+        <div className="mb-8 max-w-md">
+          <UsageWidget />
         </div>
 
         <DocumentUpload />

@@ -13,6 +13,7 @@ import type {
 import bcrypt from "bcryptjs";
 
 import { randomUUID } from "crypto";
+import { canCreateDocument, canPublishDocument, incrementDocumentCreated, decrementDocumentCreated } from "./subscription-actions";
 
 // Generate a random short URL
 function generateShortUrl(): string {
@@ -39,6 +40,15 @@ export async function uploadDocument(formData: FormData) {
     } = await supabase.auth.getUser();
     if (authError || !user) {
       return { error: "User not authenticated" };
+    }
+
+    // Check if user can create a new document
+    const { canCreate, reason, error: limitError } = await canCreateDocument();
+    if (limitError) {
+      return { error: limitError };
+    }
+    if (!canCreate) {
+      return { error: reason || "Document creation limit reached" };
     }
 
     // Generate unique filename using UUID
@@ -81,6 +91,13 @@ export async function uploadDocument(formData: FormData) {
     if (dbError) {
       console.error("Database error:", dbError);
       return { error: "Failed to create document record" };
+    }
+
+    // Increment monthly usage count
+    const { success: usageUpdated, error: usageError } = await incrementDocumentCreated();
+    if (!usageUpdated || usageError) {
+      console.error("Failed to update usage:", usageError);
+      // Don't fail the entire operation, just log the error
     }
 
     return { success: true, document, shortUrl };
@@ -367,6 +384,15 @@ export async function publishDocument(
 ) {
   try {
     const supabase = await createServerSupabase();
+
+    // Check if user can publish more documents
+    const { canPublish, reason, error: limitError } = await canPublishDocument();
+    if (limitError) {
+      return { error: limitError };
+    }
+    if (!canPublish) {
+      return { error: reason || "Document publish limit reached" };
+    }
 
     // Handle empty/whitespace passwords by storing null instead of hash
     const trimmedPassword = password.trim();
@@ -868,6 +894,16 @@ export async function deleteDocument(documentId: string): Promise<{
     }
 
     console.log('✅ SERVER: Document deleted successfully');
+
+    // Decrement monthly usage count
+    console.log('📊 SERVER: Decrementing monthly usage count...');
+    const { success: usageUpdated, error: usageError } = await decrementDocumentCreated();
+    if (!usageUpdated || usageError) {
+      console.error("⚠️ SERVER: Failed to update usage:", usageError);
+      // Don't fail the entire operation, just log the error
+    } else {
+      console.log('✅ SERVER: Monthly usage count decremented successfully');
+    }
 
     // Revalidate any relevant pages
     console.log('🔄 SERVER: Revalidating pages...');
