@@ -72,12 +72,12 @@ export default function UserAvatar({ user }: UserAvatarProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <Link href="/dashboard">
-          <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard" className="cursor-pointer">
             <LayoutDashboard className="mr-2 h-4 w-4" />
             {t("dashboard.title")}
-          </DropdownMenuItem>
-        </Link>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}

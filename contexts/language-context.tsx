@@ -453,7 +453,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     // Replace parameters in the translation string
     if (params) {
       Object.keys(params).forEach(param => {
-        translation = translation.replace(`{${param}}`, String(params[param]));
+        translation = translation.replace(new RegExp(`\\{${param}\\}`, 'g'), String(params[param]));
       });
     }
 

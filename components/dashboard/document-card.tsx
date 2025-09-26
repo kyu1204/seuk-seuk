@@ -24,7 +24,7 @@ export function DocumentCard({ document }: DocumentCardProps) {
       },
       completed: {
         label: t("status.completed"),
-        variant: "default" as const,
+        variant: "success" as const,
       },
     };
 
