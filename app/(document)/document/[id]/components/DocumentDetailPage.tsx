@@ -4,9 +4,11 @@ import {
   publishDocument,
   updateSignatureAreas,
   getSignedDocumentUrl,
+  deleteDocument,
 } from "@/app/actions/document-actions";
 import AreaSelector from "@/components/area-selector";
 import PublishDocumentModal from "@/components/publish-document-modal";
+import DeleteDocumentModal from "@/components/delete-document-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +18,7 @@ import type {
   Signature,
   SignatureArea,
 } from "@/lib/supabase/database.types";
-import { ArrowLeft, Copy, Edit, ExternalLink, Share, Download } from "lucide-react";
+import { ArrowLeft, Copy, Edit, ExternalLink, Share, Download, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
@@ -49,6 +51,7 @@ export default function DocumentDetailComponent({
   const [error, setError] = useState<string | null>(null);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
   const [scrollPosition, setScrollPosition] = useState<{
     top: number;
@@ -178,10 +181,58 @@ export default function DocumentDetailComponent({
     }
   };
 
+  const handleDeleteDocument = async () => {
+    console.log('🗑️ Delete button clicked, document:', { id: document.id, status: document.status });
+
+    if (document.status !== "draft") {
+      console.log('❌ Cannot delete: document status is not draft:', document.status);
+      return;
+    }
+
+    console.log('✅ Starting delete process...');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log('📤 Calling deleteDocument action...');
+      const result = await deleteDocument(document.id);
+      console.log('📥 Delete result:', result);
+
+      if (result.error) {
+        console.log('❌ Delete failed with error:', result.error);
+        setError(result.error);
+        return;
+      }
+
+      console.log('✅ Delete successful, redirecting to dashboard...');
+      // 삭제 성공시 대시보드로 강제 새로고침하여 이동
+      window.location.href = '/dashboard';
+    } catch (error) {
+      console.error("❌ Error deleting document:", error);
+      setError("문서 삭제 중 오류가 발생했습니다");
+    } finally {
+      console.log('🔄 Cleaning up delete process...');
+      setIsLoading(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
   const canEdit = document.status === "draft";
   const canPublish = document.status === "draft" && signatureAreas.length > 0;
   const isPublished = document.status === "published";
   const isCompleted = document.status === "completed";
+
+  // Debug UI conditions
+  console.log('🎛️ UI Conditions:', {
+    documentStatus: document.status,
+    canEdit,
+    isEditMode,
+    canDelete: canEdit && !isEditMode,
+    isLoading,
+    canPublish,
+    isPublished,
+    isCompleted
+  });
 
   // 완료된 문서의 경우 signed URL 가져오기
   useEffect(() => {
@@ -228,6 +279,17 @@ export default function DocumentDetailComponent({
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   {isEditMode ? "편집 취소" : "수정하기"}
+                </Button>
+              )}
+
+              {canEdit && !isEditMode && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  disabled={isLoading}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  문서 삭제
                 </Button>
               )}
 
@@ -364,6 +426,15 @@ export default function DocumentDetailComponent({
           onClose={() => setIsPublishModalOpen(false)}
           onPublish={handlePublish}
           isLoading={isLoading}
+        />
+
+        {/* Delete Document Modal */}
+        <DeleteDocumentModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteDocument}
+          isLoading={isLoading}
+          documentName={document.filename}
         />
       </div>
     </div>

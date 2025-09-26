@@ -218,6 +218,10 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.retry": "다시 시도",
     "dashboard.end.message": "모든 문서를 불러왔습니다.",
     "dashboard.error.loadMore": "추가 문서를 불러오는 중 오류가 발생했습니다.",
+    "dashboard.filter.all": "전체",
+    "dashboard.filter.draft": "초안",
+    "dashboard.filter.published": "게시됨",
+    "dashboard.filter.completed": "완료됨",
 
     // Document Status
     "status.draft": "초안",
@@ -419,6 +423,10 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.retry": "Retry",
     "dashboard.end.message": "All documents have been loaded.",
     "dashboard.error.loadMore": "An error occurred while loading more documents.",
+    "dashboard.filter.all": "All",
+    "dashboard.filter.draft": "Draft",
+    "dashboard.filter.published": "Published",
+    "dashboard.filter.completed": "Completed",
 
     // Document Status
     "status.draft": "Draft",

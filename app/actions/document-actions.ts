@@ -656,7 +656,7 @@ export async function getUserDocumentsClient(
     // Build query (exclude password field for client)
     let query = supabase
       .from("documents")
-      .select("id, filename, status, file_url, signed_file_url, short_url, created_at, expires_at, user_id", { count: "exact" })
+      .select("id, filename, status, file_url, signed_file_url, short_url, created_at, expires_at, user_id, password", { count: "exact" })
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -750,5 +750,203 @@ export async function getSignedDocumentUrl(documentId: string): Promise<{
   } catch (error) {
     console.error('Get signed document URL error:', error);
     return { signedUrl: null, error: 'An unexpected error occurred' };
+  }
+}
+
+/**
+ * Delete a document (only draft status documents can be deleted)
+ */
+export async function deleteDocument(documentId: string): Promise<{
+  success?: boolean;
+  error?: string;
+}> {
+  console.log('🚀 SERVER: deleteDocument called with ID:', documentId);
+
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    console.log('👤 SERVER: Getting current user...');
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) {
+      console.log('❌ SERVER: Auth error:', authError);
+      return { error: "User not authenticated" };
+    }
+
+    if (!user) {
+      console.log('❌ SERVER: No user found');
+      return { error: "User not authenticated" };
+    }
+
+    console.log('✅ SERVER: User authenticated:', user.id);
+
+    // Get document to verify ownership and status
+    console.log('📄 SERVER: Fetching document...');
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, user_id, status, file_url")
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (docError) {
+      console.log('❌ SERVER: Document query error:', docError);
+      return { error: "Document not found" };
+    }
+
+    if (!document) {
+      console.log('❌ SERVER: No document found');
+      return { error: "Document not found" };
+    }
+
+    console.log('✅ SERVER: Document found:', { id: document.id, status: document.status, user_id: document.user_id });
+
+    // Only allow deletion of draft documents
+    if (document.status !== "draft") {
+      console.log('❌ SERVER: Document is not draft status:', document.status);
+      return { error: "Only draft documents can be deleted" };
+    }
+
+    console.log('✅ SERVER: Document is draft, proceeding with deletion...');
+
+    // Delete associated signatures first (cascade delete)
+    console.log('🗂️ SERVER: Deleting signatures...');
+    const { error: sigError } = await supabase
+      .from("signatures")
+      .delete()
+      .eq("document_id", documentId);
+
+    if (sigError) {
+      console.error("❌ SERVER: Delete signatures error:", sigError);
+      return { error: "Failed to delete signature areas" };
+    }
+
+    console.log('✅ SERVER: Signatures deleted successfully');
+
+    // Delete the document file from storage
+    if (document.file_url) {
+      console.log('📁 SERVER: Deleting file from storage:', document.file_url);
+      try {
+        const url = new URL(document.file_url);
+        const pathParts = url.pathname.split('/');
+        const filename = pathParts[pathParts.length - 1];
+
+        console.log('📁 SERVER: Extracted filename:', filename);
+
+        const { error: storageError } = await supabase.storage
+          .from("documents")
+          .remove([filename]);
+
+        if (storageError) {
+          console.error("⚠️ SERVER: Delete file error:", storageError);
+          // Continue with document deletion even if file deletion fails
+        } else {
+          console.log('✅ SERVER: File deleted successfully');
+        }
+      } catch (storageError) {
+        console.error("⚠️ SERVER: Error parsing file URL:", storageError);
+        // Continue with document deletion
+      }
+    }
+
+    // Delete the document record
+    console.log('📄 SERVER: Deleting document record...');
+    const { error: deleteError } = await supabase
+      .from("documents")
+      .delete()
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .eq("status", "draft"); // Double-check status
+
+    if (deleteError) {
+      console.error("❌ SERVER: Delete document error:", deleteError);
+      return { error: "Failed to delete document" };
+    }
+
+    console.log('✅ SERVER: Document deleted successfully');
+
+    // Revalidate any relevant pages
+    console.log('🔄 SERVER: Revalidating pages...');
+    revalidatePath('/dashboard');
+    revalidatePath(`/document/${documentId}`);
+
+    console.log('🎉 SERVER: Delete operation completed successfully');
+    return { success: true };
+  } catch (error) {
+    console.error("❌ SERVER: Unexpected error in deleteDocument:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Get user's document counts by status (optimized for performance)
+ */
+export async function getUserDocumentCounts(): Promise<{
+  all: number;
+  draft: number;
+  published: number;
+  completed: number;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return {
+        all: 0,
+        draft: 0,
+        published: 0,
+        completed: 0,
+        error: "User not authenticated",
+      };
+    }
+
+    // Get counts for all statuses in parallel using count only queries
+    const [allResult, draftResult, publishedResult, completedResult] = await Promise.all([
+      supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id),
+      supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("status", "draft"),
+      supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("status", "published"),
+      supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("status", "completed"),
+    ]);
+
+    return {
+      all: allResult.count || 0,
+      draft: draftResult.count || 0,
+      published: publishedResult.count || 0,
+      completed: completedResult.count || 0,
+    };
+  } catch (error) {
+    console.error("Get document counts error:", error);
+    return {
+      all: 0,
+      draft: 0,
+      published: 0,
+      completed: 0,
+      error: "An unexpected error occurred",
+    };
   }
 }

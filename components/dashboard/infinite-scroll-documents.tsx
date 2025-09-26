@@ -64,6 +64,14 @@ export function InfiniteScrollDocuments({
     }
   }, [page, hasMore, isLoadingMore, status, t]);
 
+  // Reset documents when initialDocuments or status changes
+  useEffect(() => {
+    setDocuments(initialDocuments);
+    setPage(2);
+    setHasMore(initialHasMore);
+    setError(null);
+  }, [initialDocuments, initialHasMore, status]);
+
   // Load more when the trigger element comes into view
   useEffect(() => {
     if (inView && hasMore && !isLoadingMore) {
