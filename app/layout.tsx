@@ -11,7 +11,8 @@ const inter = Inter({ subsets: ["latin"] });
 // Dynamic metadata based on language
 export async function generateMetadata(): Promise<Metadata> {
   const cookieStore = await cookies();
-  const language = cookieStore.get("seukSeukLanguage")?.value as "ko" | "en" || "ko";
+  const language =
+    (cookieStore.get("seukSeukLanguage")?.value as "ko" | "en") || "ko";
 
   const metadata = {
     ko: {
@@ -21,13 +22,17 @@ export async function generateMetadata(): Promise<Metadata> {
     en: {
       title: "SeukSeuk - Online Document Signing",
       description: "Upload, sign, and share documents online with ease",
-    }
+    },
+    icons: {
+      icon: "/favicon.svg",
+    },
   };
 
   return {
     title: metadata[language].title,
     description: metadata[language].description,
-    generator: "v0.dev",
+    generator: "MINT",
+    icons: metadata.icons,
   };
 }
 
@@ -37,7 +42,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const language = cookieStore.get("seukSeukLanguage")?.value as "ko" | "en" || "ko";
+  const language =
+    (cookieStore.get("seukSeukLanguage")?.value as "ko" | "en") || "ko";
 
   return (
     <html lang={language === "ko" ? "ko" : "en"} suppressHydrationWarning>
