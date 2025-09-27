@@ -10,6 +10,8 @@ const publicRoutes: Routes = {
   "/auth": true,
   "/error": true,
   "/": true,
+  "/forgot-password": true,
+  "/reset-password": true,
 };
 
 // Routes that should redirect to dashboard if user is authenticated
@@ -26,6 +28,9 @@ function isPublicRoute(pathname: string): boolean {
 
   // Check if it's a sign route (public for external users)
   if (pathname.startsWith("/sign/")) return true;
+
+  // Check if it's an auth route (including auth/confirm, auth/callback, etc.)
+  if (pathname.startsWith("/auth/")) return true;
 
   return false;
 }

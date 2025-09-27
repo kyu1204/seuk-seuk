@@ -68,13 +68,8 @@ export function PricingPage() {
           return;
         }
 
-        // 플랜 순서 정렬: Free → Pro → Enterprise
-        const sortedPlans = plansResult.plans.sort((a, b) => {
-          const order = { free: 0, pro: 1, enterprise: 2 };
-          const aOrder = order[a.name.toLowerCase()] ?? 999;
-          const bOrder = order[b.name.toLowerCase()] ?? 999;
-          return aOrder - bOrder;
-        });
+        // 플랜 순서 정렬: order 컬럼 사용
+        const sortedPlans = plansResult.plans.sort((a, b) => a.order - b.order);
 
         setPlans(sortedPlans);
         setCurrentSubscription(subscriptionResult.subscription);

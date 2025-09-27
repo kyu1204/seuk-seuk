@@ -285,6 +285,33 @@ const translations: Record<Language, Record<string, string>> = {
     "usage.upgrade.description": "Pro 플랜으로 업그레이드하세요",
     "usage.upgrade.button": "업그레이드",
     "usage.features.title": "현재 플랜 혜택",
+
+    // Forgot Password Page
+    "forgotPassword.title": "비밀번호 찾기",
+    "forgotPassword.subtitle": "이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.",
+    "forgotPassword.emailLabel": "이메일 주소",
+    "forgotPassword.sendReset": "재설정 링크 보내기",
+    "forgotPassword.sending": "전송 중...",
+    "forgotPassword.backToLogin": "로그인으로 돌아가기",
+    "forgotPassword.checkEmail": "이메일을 확인하세요",
+    "forgotPassword.emailSentMessage": "비밀번호 재설정 링크가 이메일로 전송되었습니다.",
+    "forgotPassword.checkInbox": "이메일 받은함을 확인하시고 링크를 클릭하여 비밀번호를 재설정하세요.",
+    "forgotPassword.didntReceive": "이메일을 받지 못하셨나요?",
+    "forgotPassword.sendAnother": "다시 보내기",
+
+    // Reset Password Page
+    "resetPassword.title": "새 비밀번호 설정",
+    "resetPassword.subtitle": "새로운 비밀번호를 입력하세요.",
+    "resetPassword.newPassword": "새 비밀번호",
+    "resetPassword.confirmPassword": "비밀번호 확인",
+    "resetPassword.updatePassword": "비밀번호 업데이트",
+    "resetPassword.updating": "업데이트 중...",
+    "resetPassword.backToLogin": "로그인으로 돌아가기",
+    "resetPassword.invalidLink": "유효하지 않은 링크",
+    "resetPassword.invalidLinkMessage": "이 링크는 유효하지 않거나 만료되었습니다. 새로운 비밀번호 재설정을 요청해주세요.",
+    "resetPassword.requestNew": "새 재설정 링크 요청",
+    "resetPassword.successTitle": "비밀번호가 변경되었습니다",
+    "resetPassword.successMessage": "새 비밀번호로 로그인해주세요. 잠시 후 로그인 페이지로 이동합니다.",
   },
   en: {
     // Header
@@ -548,6 +575,33 @@ const translations: Record<Language, Record<string, string>> = {
     "usage.upgrade.description": "Upgrade to Pro plan",
     "usage.upgrade.button": "Upgrade",
     "usage.features.title": "Current Plan Benefits",
+
+    // Forgot Password Page
+    "forgotPassword.title": "Forgot Password",
+    "forgotPassword.subtitle": "Enter your email address and we'll send you a password reset link.",
+    "forgotPassword.emailLabel": "Email Address",
+    "forgotPassword.sendReset": "Send Reset Link",
+    "forgotPassword.sending": "Sending...",
+    "forgotPassword.backToLogin": "Back to Login",
+    "forgotPassword.checkEmail": "Check Your Email",
+    "forgotPassword.emailSentMessage": "A password reset link has been sent to your email.",
+    "forgotPassword.checkInbox": "Please check your inbox and click the link to reset your password.",
+    "forgotPassword.didntReceive": "Didn't receive an email?",
+    "forgotPassword.sendAnother": "Send Another",
+
+    // Reset Password Page
+    "resetPassword.title": "Set New Password",
+    "resetPassword.subtitle": "Enter your new password below.",
+    "resetPassword.newPassword": "New Password",
+    "resetPassword.confirmPassword": "Confirm Password",
+    "resetPassword.updatePassword": "Update Password",
+    "resetPassword.updating": "Updating...",
+    "resetPassword.backToLogin": "Back to Login",
+    "resetPassword.invalidLink": "Invalid Link",
+    "resetPassword.invalidLinkMessage": "This link is invalid or has expired. Please request a new password reset.",
+    "resetPassword.requestNew": "Request New Reset Link",
+    "resetPassword.successTitle": "Password Changed Successfully",
+    "resetPassword.successMessage": "Please log in with your new password. You will be redirected to the login page shortly.",
   },
 };
 
