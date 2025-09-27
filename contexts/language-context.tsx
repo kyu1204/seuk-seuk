@@ -7,6 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { setLanguageCookie } from "@/app/actions/language-actions";
 
 // Define available languages
 export type Language = "ko" | "en";
@@ -14,14 +15,14 @@ export type Language = "ko" | "en";
 // Define the context type
 type LanguageContextType = {
   language: Language;
-  setLanguage: (language: Language) => void;
+  setLanguage: (language: Language) => Promise<void>;
   t: (key: string, params?: Record<string, string | number>) => string;
 };
 
 // Create the context with default values
 const LanguageContext = createContext<LanguageContextType>({
   language: "ko",
-  setLanguage: () => {},
+  setLanguage: async () => {},
   t: (key) => key,
 });
 
@@ -135,6 +136,45 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.enterprise.cta": "문의하기",
     "pricing.popular": "인기",
     "pricing.perMonth": "월",
+
+    // Pricing Page Specific Keys
+    "pricingPage.title": "요금제 선택",
+    "pricingPage.description": "필요에 맞는 플랜을 선택하고 더 많은 기능을 이용하세요",
+    "pricingPage.currentPlan": "현재 {planName} 플랜을 이용 중입니다",
+    "pricingPage.popular": "인기",
+    "pricingPage.currentBadge": "현재 플랜",
+    "pricingPage.free": "무료",
+    "pricingPage.contact": "문의",
+    "pricingPage.perMonth": "/월",
+    "pricingPage.documentsPerMonth": "월 문서 생성",
+    "pricingPage.activeDocuments": "활성 문서",
+    "pricingPage.unlimited": "무제한",
+    "pricingPage.documents": "개",
+    "pricingPage.currentlyUsing": "현재 이용 중",
+    "pricingPage.startFree": "무료로 시작하기",
+    "pricingPage.contactUs": "문의하기",
+    "pricingPage.selectPlan": "플랜 선택하기",
+    "pricingPage.additionalInfo": "모든 플랜에는 기본 전자서명 기능이 포함되어 있습니다.",
+    "pricingPage.additionalInfo2": "언제든지 플랜을 변경하거나 취소할 수 있습니다.",
+    "pricingPage.errorTitle": "오류가 발생했습니다",
+    "pricingPage.backButton": "뒤로 가기",
+    "pricingPage.loadError": "Failed to load pricing data",
+    "pricingPage.alertMessage": "{planName} 플랜이 선택되었습니다. 결제 모듈 연동 예정입니다.",
+
+    // Pricing Page - Plan Details
+    "pricingPage.plans.free.description": "개인 사용자를 위한 기본 플랜",
+    "pricingPage.plans.free.feature1": "기본 문서 관리",
+    "pricingPage.plans.free.feature2": "표준 지원",
+    "pricingPage.plans.pro.description": "전문가와 소규모 팀을 위한 향상된 기능",
+    "pricingPage.plans.pro.feature1": "이메일 알림",
+    "pricingPage.plans.pro.feature2": "우선순위 지원",
+    "pricingPage.plans.pro.feature3": "고급 분석",
+    "pricingPage.plans.enterprise.description": "대규모 조직을 위한 완전한 솔루션",
+    "pricingPage.plans.enterprise.feature1": "맞춤형 워크플로우",
+    "pricingPage.plans.enterprise.feature2": "전용 지원",
+    "pricingPage.plans.enterprise.feature3": "API 액세스",
+    "pricingPage.plans.enterprise.feature4": "SSO 통합",
+
     "home.cta.title": "지금 바로 시작하세요",
     "home.cta.description":
       "슥슥으로 문서 서명 프로세스를 간소화하고 시간과 비용을 절약하세요.",
@@ -209,6 +249,8 @@ const translations: Record<Language, Record<string, string>> = {
     // Dashboard
     "dashboard.title": "내 문서",
     "dashboard.description": "총 {total}개의 문서를 관리하고 있습니다.",
+    "dashboard.header.title": "내 문서",
+    "dashboard.header.description": "문서를 관리하고 서명을 수집하세요",
     "dashboard.upload": "문서 업로드",
     "dashboard.empty.title": "아직 업로드된 문서가 없습니다",
     "dashboard.empty.description": "첫 번째 문서를 업로드하여 시작해보세요. 문서를 업로드하고 서명 영역을 지정한 후 다른 사람과 공유할 수 있습니다.",
@@ -226,6 +268,23 @@ const translations: Record<Language, Record<string, string>> = {
     "status.draft": "초안",
     "status.published": "게시됨",
     "status.completed": "완료됨",
+
+    // Usage Widget
+    "usage.title": "사용량 현황",
+    "usage.description": "현재 월 사용량과 활성 문서 현황을 확인하세요",
+    "usage.error.title": "사용량 정보 오류",
+    "usage.error.message": "사용량 정보를 불러올 수 없습니다.",
+    "usage.monthly.title": "이번 달 문서 생성",
+    "usage.monthly.unlimited": "무제한",
+    "usage.monthly.limit.reached": "월별 문서 생성 제한에 도달했습니다",
+    "usage.active.title": "활성 문서 (게시됨 + 완료됨)",
+    "usage.active.limit.reached": "활성 문서 제한에 도달했습니다",
+    "usage.plan.free": "무료",
+    "usage.plan.suffix": "플랜",
+    "usage.upgrade.title": "더 많은 문서가 필요하신가요?",
+    "usage.upgrade.description": "Pro 플랜으로 업그레이드하세요",
+    "usage.upgrade.button": "업그레이드",
+    "usage.features.title": "현재 플랜 혜택",
   },
   en: {
     // Header
@@ -338,6 +397,45 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.enterprise.cta": "Contact Sales",
     "pricing.popular": "Popular",
     "pricing.perMonth": "/month",
+
+    // Pricing Page Specific Keys
+    "pricingPage.title": "Choose Your Plan",
+    "pricingPage.description": "Select a plan that fits your needs and unlock more features",
+    "pricingPage.currentPlan": "Currently using {planName} plan",
+    "pricingPage.popular": "Popular",
+    "pricingPage.currentBadge": "Current Plan",
+    "pricingPage.free": "Free",
+    "pricingPage.contact": "Contact Us",
+    "pricingPage.perMonth": "/month",
+    "pricingPage.documentsPerMonth": "Monthly documents",
+    "pricingPage.activeDocuments": "Active documents",
+    "pricingPage.unlimited": "Unlimited",
+    "pricingPage.documents": "",
+    "pricingPage.currentlyUsing": "Currently Using",
+    "pricingPage.startFree": "Start Free",
+    "pricingPage.contactUs": "Contact Us",
+    "pricingPage.selectPlan": "Select Plan",
+    "pricingPage.additionalInfo": "All plans include basic electronic signature features.",
+    "pricingPage.additionalInfo2": "You can change or cancel your plan anytime.",
+    "pricingPage.errorTitle": "An error occurred",
+    "pricingPage.backButton": "Go Back",
+    "pricingPage.loadError": "Failed to load pricing data",
+    "pricingPage.alertMessage": "{planName} plan has been selected. Payment integration coming soon.",
+
+    // Pricing Page - Plan Details
+    "pricingPage.plans.free.description": "Basic plan for individual users",
+    "pricingPage.plans.free.feature1": "Basic document management",
+    "pricingPage.plans.free.feature2": "Standard support",
+    "pricingPage.plans.pro.description": "Enhanced features for professionals and small teams",
+    "pricingPage.plans.pro.feature1": "Email notifications",
+    "pricingPage.plans.pro.feature2": "Priority support",
+    "pricingPage.plans.pro.feature3": "Advanced analytics",
+    "pricingPage.plans.enterprise.description": "Complete solution for large organizations",
+    "pricingPage.plans.enterprise.feature1": "Custom workflows",
+    "pricingPage.plans.enterprise.feature2": "Dedicated support",
+    "pricingPage.plans.enterprise.feature3": "API access",
+    "pricingPage.plans.enterprise.feature4": "SSO integration",
+
     "home.cta.title": "Get Started Today",
     "home.cta.description":
       "Streamline your document signing process and save time and money with SeukSeuk.",
@@ -414,6 +512,8 @@ const translations: Record<Language, Record<string, string>> = {
     // Dashboard
     "dashboard.title": "My Documents",
     "dashboard.description": "You are managing a total of {total} documents.",
+    "dashboard.header.title": "My Documents",
+    "dashboard.header.description": "Manage your documents and collect signatures",
     "dashboard.upload": "Upload Document",
     "dashboard.empty.title": "No documents uploaded yet",
     "dashboard.empty.description": "Get started by uploading your first document. You can upload documents, define signature areas, and share them with others.",
@@ -431,6 +531,23 @@ const translations: Record<Language, Record<string, string>> = {
     "status.draft": "Draft",
     "status.published": "Published",
     "status.completed": "Completed",
+
+    // Usage Widget
+    "usage.title": "Usage Overview",
+    "usage.description": "Check your current monthly usage and active document status",
+    "usage.error.title": "Usage Information Error",
+    "usage.error.message": "Unable to load usage information.",
+    "usage.monthly.title": "Monthly Document Creation",
+    "usage.monthly.unlimited": "Unlimited",
+    "usage.monthly.limit.reached": "Monthly document creation limit reached",
+    "usage.active.title": "Active Documents (Published + Completed)",
+    "usage.active.limit.reached": "Active document limit reached",
+    "usage.plan.free": "Free",
+    "usage.plan.suffix": "Plan",
+    "usage.upgrade.title": "Need more documents?",
+    "usage.upgrade.description": "Upgrade to Pro plan",
+    "usage.upgrade.button": "Upgrade",
+    "usage.features.title": "Current Plan Benefits",
   },
 };
 
@@ -444,13 +561,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const savedLanguage = localStorage.getItem("seukSeukLanguage") as Language;
     if (savedLanguage && (savedLanguage === "ko" || savedLanguage === "en")) {
       setLanguageState(savedLanguage);
+      // Sync with server-side cookie
+      setLanguageCookie(savedLanguage);
+    } else {
+      // Set default language cookie if none exists
+      setLanguageCookie("ko");
     }
   }, []);
 
   // Save language preference when it changes
-  const setLanguage = (newLanguage: Language) => {
+  const setLanguage = async (newLanguage: Language) => {
     setLanguageState(newLanguage);
     localStorage.setItem("seukSeukLanguage", newLanguage);
+    // Update server-side cookie for metadata generation
+    await setLanguageCookie(newLanguage);
   };
 
   // Translation function with parameter support

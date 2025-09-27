@@ -4,22 +4,43 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/language-context";
+import { cookies } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "SeukSeuk - Online Document Signing",
-  description: "Upload, sign, and share documents online with ease",
-  generator: "v0.dev",
-};
+// Dynamic metadata based on language
+export async function generateMetadata(): Promise<Metadata> {
+  const cookieStore = await cookies();
+  const language = cookieStore.get("seukSeukLanguage")?.value as "ko" | "en" || "ko";
 
-export default function RootLayout({
+  const metadata = {
+    ko: {
+      title: "슥슥 - 온라인 문서 서명",
+      description: "문서를 쉽게 업로드하고, 서명하고, 공유하세요",
+    },
+    en: {
+      title: "SeukSeuk - Online Document Signing",
+      description: "Upload, sign, and share documents online with ease",
+    }
+  };
+
+  return {
+    title: metadata[language].title,
+    description: metadata[language].description,
+    generator: "v0.dev",
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const language = cookieStore.get("seukSeukLanguage")?.value as "ko" | "en" || "ko";
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={language === "ko" ? "ko" : "en"} suppressHydrationWarning>
       <head />
       <body className={inter.className}>
         <ThemeProvider

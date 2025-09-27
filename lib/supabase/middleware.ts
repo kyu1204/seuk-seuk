@@ -35,6 +35,7 @@ const protectedRoutes: Routes = {
   "/upload": true,
   "/document": true,
   "/private": true,
+  "/pricing": true,
 };
 
 // Function to check if a path is protected

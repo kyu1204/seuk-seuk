@@ -282,16 +282,14 @@ export default function HomePageComponent() {
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    className={cn(
-                      "w-full",
-                      plan.popular
-                        ? "bg-primary hover:bg-primary/90 text-white"
-                        : "bg-secondary hover:bg-secondary/80"
-                    )}
-                  >
-                    {plan.cta}
-                  </Button>
+                  <Link href="/pricing">
+                    <Button
+                      variant={plan.popular ? "default" : "outline"}
+                      className="w-full"
+                    >
+                      {plan.cta}
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
