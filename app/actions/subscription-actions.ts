@@ -11,13 +11,14 @@ export interface SubscriptionPlan {
   price_cents: number;
   features: string[];
   is_active: boolean;
+  order: number;
 }
 
 export interface Subscription {
   id: string;
   user_id: string;
   plan_id: string;
-  status: 'trial' | 'active' | 'cancelled' | 'expired';
+  status: "trial" | "active" | "cancelled" | "expired";
   starts_at: string;
   ends_at: string | null;
   trial_ends_at: string | null;
@@ -67,10 +68,12 @@ export async function getCurrentSubscription(): Promise<{
     // Get user's current subscription with plan details
     const { data: subscription, error } = await supabase
       .from("subscriptions")
-      .select(`
+      .select(
+        `
         *,
         plan:subscription_plans(*)
-      `)
+      `
+      )
       .eq("user_id", user.id)
       .eq("status", "active")
       .single();
@@ -128,7 +131,7 @@ export async function getCurrentMonthUsage(): Promise<{
       .eq("year_month", currentMonth)
       .single();
 
-    if (error && error.code === 'PGRST116') {
+    if (error && error.code === "PGRST116") {
       // Record doesn't exist, create it
       const { data: newUsage, error: createError } = await supabase
         .from("monthly_usage")
@@ -214,8 +217,10 @@ export async function getUserUsageLimits(): Promise<{
     const limits: UsageLimits = {
       monthlyCreationLimit: monthlyLimit,
       activeDocumentLimit: activeLimit,
-      canCreateNew: monthlyLimit === -1 || usage.documents_created < monthlyLimit,
-      canPublishMore: activeLimit === -1 || (activeDocumentsCount || 0) < activeLimit,
+      canCreateNew:
+        monthlyLimit === -1 || usage.documents_created < monthlyLimit,
+      canPublishMore:
+        activeLimit === -1 || (activeDocumentsCount || 0) < activeLimit,
       currentMonthlyCreated: usage.documents_created,
       currentActiveDocuments: activeDocumentsCount || 0,
     };
@@ -332,10 +337,10 @@ export async function incrementDocumentCreated(): Promise<{
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
 
     // Use RPC function to properly increment or create the record
-    const { error } = await supabase.rpc(
-      'increment_documents_created',
-      { target_user_id: user.id, target_year_month: currentMonth }
-    );
+    const { error } = await supabase.rpc("increment_documents_created", {
+      target_user_id: user.id,
+      target_year_month: currentMonth,
+    });
 
     if (error) {
       console.error("Increment document created error:", error);
@@ -383,10 +388,10 @@ export async function decrementDocumentCreated(): Promise<{
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
 
     // Use RPC function to decrement the count (won't go below 0)
-    const { error } = await supabase.rpc(
-      'decrement_documents_created',
-      { target_user_id: user.id, target_year_month: currentMonth }
-    );
+    const { error } = await supabase.rpc("decrement_documents_created", {
+      target_user_id: user.id,
+      target_year_month: currentMonth,
+    });
 
     if (error) {
       console.error("Decrement document created error:", error);
