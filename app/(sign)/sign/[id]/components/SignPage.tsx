@@ -45,6 +45,7 @@ export default function SignPageComponent({
   const [selectedArea, setSelectedArea] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [generatingProgress, setGeneratingProgress] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [password, setPassword] = useState<string>("");
@@ -124,6 +125,7 @@ export default function SignPageComponent({
 
     setIsGenerating(true);
     setError(null);
+    setGeneratingProgress("문서 처리 준비 중...");
 
     try {
       // Get the current document container dimensions
@@ -148,7 +150,27 @@ export default function SignPageComponent({
       const scaleX = naturalWidth / displayedWidth;
       const scaleY = naturalHeight / displayedHeight;
 
+      // 🚀 Performance optimization: Set maximum canvas dimensions
+      const MAX_DIMENSION = 2000; // Maximum width/height for performance
+      let canvasWidth = naturalWidth;
+      let canvasHeight = naturalHeight;
+      let downscaleRatio = 1;
+
+      // Downscale if image is too large
+      if (canvasWidth > MAX_DIMENSION || canvasHeight > MAX_DIMENSION) {
+        const aspectRatio = canvasWidth / canvasHeight;
+        if (canvasWidth > canvasHeight) {
+          canvasWidth = MAX_DIMENSION;
+          canvasHeight = MAX_DIMENSION / aspectRatio;
+        } else {
+          canvasHeight = MAX_DIMENSION;
+          canvasWidth = MAX_DIMENSION * aspectRatio;
+        }
+        downscaleRatio = canvasWidth / naturalWidth;
+      }
+
       // Create a new image element with the original document
+      setGeneratingProgress("원본 문서 로딩 중...");
       const originalImage = new Image();
       originalImage.crossOrigin = "anonymous";
 
@@ -159,66 +181,69 @@ export default function SignPageComponent({
         originalImage.src = documentData.file_url;
       });
 
-      // Create a canvas with the original image dimensions
+      // 🚀 Performance optimization: Preload all signature images in parallel
+      setGeneratingProgress("서명 이미지 처리 중...");
+      const signatureImages = await Promise.all(
+        localSignatures
+          .filter(sig => sig.signature_data)
+          .map(signature => {
+            return new Promise<{ signature: typeof signature; image: HTMLImageElement }>((resolve, reject) => {
+              const signatureImage = new Image();
+              signatureImage.crossOrigin = "anonymous";
+              signatureImage.onload = () => resolve({ signature, image: signatureImage });
+              signatureImage.onerror = reject;
+              signatureImage.src = signature.signature_data!;
+            });
+          })
+      );
+
+      // Create a canvas with optimized dimensions
       const canvas = document.createElement("canvas");
-      canvas.width = originalImage.naturalWidth;
-      canvas.height = originalImage.naturalHeight;
-      const ctx = canvas.getContext("2d");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext("2d", {
+        alpha: false, // Disable alpha for better performance
+        willReadFrequently: false
+      });
 
       if (!ctx) {
         throw new Error("Could not get canvas context");
       }
 
-      // Draw the original document
-      ctx.drawImage(originalImage, 0, 0);
+      // 🚀 Performance optimization: Set image smoothing for better quality when downscaling
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Draw the original document with downscaling
+      setGeneratingProgress("문서 합성 중...");
+      ctx.drawImage(originalImage, 0, 0, canvasWidth, canvasHeight);
 
       // Draw each signature at the correct position
-      for (const signature of localSignatures) {
-        if (!signature.signature_data) continue;
-
-        // Create a new image for the signature
-        const signatureImage = new Image();
-        signatureImage.crossOrigin = "anonymous";
-
-        // Wait for the signature image to load
-        await new Promise((resolve, reject) => {
-          signatureImage.onload = resolve;
-          signatureImage.onerror = reject;
-          signatureImage.src = signature.signature_data!;
-        });
-
-        // Calculate the actual position and size in the original image
-        const actualX = Number(signature.x) * scaleX;
-        const actualY = Number(signature.y) * scaleY;
-        const actualWidth = Number(signature.width) * scaleX;
-        const actualHeight = Number(signature.height) * scaleY;
+      for (const { signature, image: signatureImage } of signatureImages) {
+        // Calculate the actual position and size with downscaling
+        const actualX = Number(signature.x) * scaleX * downscaleRatio;
+        const actualY = Number(signature.y) * scaleY * downscaleRatio;
+        const actualWidth = Number(signature.width) * scaleX * downscaleRatio;
+        const actualHeight = Number(signature.height) * scaleY * downscaleRatio;
 
         // Calculate the signature's aspect ratio
-        const signatureAspectRatio =
-          signatureImage.width / signatureImage.height;
+        const signatureAspectRatio = signatureImage.width / signatureImage.height;
 
         // Calculate dimensions that maintain the signature's aspect ratio
-        // while fitting within the designated area
-        let drawWidth,
-          drawHeight,
-          offsetX = 0,
-          offsetY = 0;
-
+        let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
         const areaAspectRatio = actualWidth / actualHeight;
 
         if (signatureAspectRatio > areaAspectRatio) {
-          // Signature is wider than the area (relative to height)
           drawWidth = actualWidth;
           drawHeight = drawWidth / signatureAspectRatio;
-          offsetY = (actualHeight - drawHeight) / 2; // Center vertically
+          offsetY = (actualHeight - drawHeight) / 2;
         } else {
-          // Signature is taller than the area (relative to width)
           drawHeight = actualHeight;
           drawWidth = drawHeight * signatureAspectRatio;
-          offsetX = (actualWidth - drawWidth) / 2; // Center horizontally
+          offsetX = (actualWidth - drawWidth) / 2;
         }
 
-        // Draw the signature at the correct position and size, maintaining aspect ratio
+        // Draw the signature
         ctx.drawImage(
           signatureImage,
           actualX + offsetX,
@@ -228,10 +253,33 @@ export default function SignPageComponent({
         );
       }
 
-      // Convert to data URL
-      const dataUrl = canvas.toDataURL("image/png");
+      // 🚀 Performance optimization: Use optimized compression
+      setGeneratingProgress("이미지 압축 중...");
+      let blob: Blob;
+      if ('toBlob' in canvas) {
+        // Use toBlob for better performance and memory management
+        blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((result) => {
+            if (result) resolve(result);
+            else reject(new Error('Failed to create blob'));
+          }, 'image/jpeg', 0.85); // Use JPEG with 85% quality for smaller size
+        });
+      } else {
+        // Fallback to toDataURL
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const response = await fetch(dataUrl);
+        blob = await response.blob();
+      }
+
+      // Convert blob to data URL for upload
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
 
       // Upload signed document to Supabase Storage
+      setGeneratingProgress("서명된 문서 업로드 중...");
       const uploadResult = await uploadSignedDocument(documentData.id, dataUrl);
 
       if (uploadResult.error) {
@@ -240,6 +288,7 @@ export default function SignPageComponent({
       }
 
       // Mark document as completed
+      setGeneratingProgress("문서 완료 처리 중...");
       await markDocumentCompleted(documentData.id);
 
       // Navigate to completion page
@@ -253,6 +302,7 @@ export default function SignPageComponent({
       );
     } finally {
       setIsGenerating(false);
+      setGeneratingProgress("");
     }
   };
 
@@ -532,7 +582,7 @@ export default function SignPageComponent({
             {isGenerating ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                {t("sign.generating")}
+                {generatingProgress || t("sign.generating")}
               </>
             ) : (
               t("sign.saveDocument")
