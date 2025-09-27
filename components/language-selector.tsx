@@ -13,6 +13,10 @@ import { Globe } from "lucide-react";
 export default function LanguageSelector() {
   const { language, setLanguage, t } = useLanguage();
 
+  const handleLanguageChange = async (newLanguage: Language) => {
+    await setLanguage(newLanguage);
+  };
+
   const languages: { value: Language; label: string }[] = [
     { value: "ko", label: t("language.ko") },
     { value: "en", label: t("language.en") },
@@ -34,7 +38,7 @@ export default function LanguageSelector() {
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.value}
-            onClick={() => setLanguage(lang.value)}
+            onClick={() => handleLanguageChange(lang.value)}
             className={language === lang.value ? "bg-primary/10" : ""}
           >
             {lang.label}

@@ -5,15 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, TrendingUp, AlertTriangle } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { FileText, TrendingUp, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { getUserUsageLimits, getCurrentSubscription } from "@/app/actions/subscription-actions";
 import type { UsageLimits, Subscription } from "@/app/actions/subscription-actions";
+import { useLanguage } from "@/contexts/language-context";
+import Link from "next/link";
 
 export function UsageWidget() {
+  const { t } = useLanguage();
   const [limits, setLimits] = useState<UsageLimits | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     async function fetchUsageData() {
@@ -48,39 +53,61 @@ export function UsageWidget() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            사용량 현황
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="h-4 bg-muted rounded animate-pulse" />
-            <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-            <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
-          </div>
-        </CardContent>
-      </Card>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {t("usage.title")}
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="space-y-4">
+                <div className="h-4 bg-muted rounded animate-pulse" />
+                <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+                <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     );
   }
 
   if (error || !limits || !subscription) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            사용량 정보 오류
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            {error || "사용량 정보를 불러올 수 없습니다."}
-          </p>
-        </CardContent>
-      </Card>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                {t("usage.error.title")}
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground">
+                {error || t("usage.error.message")}
+              </p>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     );
   }
 
@@ -96,29 +123,38 @@ export function UsageWidget() {
   const isActiveNearLimit = activeProgress >= 80;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            <CardTitle>사용량 현황</CardTitle>
-          </div>
-          <Badge variant={subscription.plan.name === "Free" ? "secondary" : "default"}>
-            {subscription.plan.name === "Free" ? "무료" : subscription.plan.name} 플랜
-          </Badge>
-        </div>
-        <CardDescription>
-          현재 월 사용량과 활성 문서 현황을 확인하세요
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                <CardTitle>{t("usage.title")}</CardTitle>
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+              <Badge variant={subscription.plan.name === "Free" ? "secondary" : "default"}>
+                {subscription.plan.name === "Free" ? t("usage.plan.free") : subscription.plan.name} {t("usage.plan.suffix")}
+              </Badge>
+            </div>
+            <CardDescription>
+              {t("usage.description")}
+            </CardDescription>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="space-y-6 pt-0">
         {/* Monthly Creation Usage */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">이번 달 문서 생성</span>
+            <span className="font-medium">{t("usage.monthly.title")}</span>
             <span className={isMonthlyNearLimit ? "text-destructive font-medium" : ""}>
               {limits.currentMonthlyCreated}{" "}
-              {limits.monthlyCreationLimit === -1 ? "/ 무제한" : `/ ${limits.monthlyCreationLimit}`}
+              {limits.monthlyCreationLimit === -1 ? `/ ${t("usage.monthly.unlimited")}` : `/ ${limits.monthlyCreationLimit}`}
             </span>
           </div>
           {limits.monthlyCreationLimit !== -1 && (
@@ -130,7 +166,7 @@ export function UsageWidget() {
           {!limits.canCreateNew && (
             <div className="flex items-center gap-2 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4" />
-              월별 문서 생성 제한에 도달했습니다
+              {t("usage.monthly.limit.reached")}
             </div>
           )}
         </div>
@@ -138,10 +174,10 @@ export function UsageWidget() {
         {/* Active Documents Usage */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">활성 문서 (게시됨 + 완료됨)</span>
+            <span className="font-medium">{t("usage.active.title")}</span>
             <span className={isActiveNearLimit ? "text-destructive font-medium" : ""}>
               {limits.currentActiveDocuments}{" "}
-              {limits.activeDocumentLimit === -1 ? "/ 무제한" : `/ ${limits.activeDocumentLimit}`}
+              {limits.activeDocumentLimit === -1 ? `/ ${t("usage.monthly.unlimited")}` : `/ ${limits.activeDocumentLimit}`}
             </span>
           </div>
           {limits.activeDocumentLimit !== -1 && (
@@ -153,7 +189,7 @@ export function UsageWidget() {
           {!limits.canPublishMore && (
             <div className="flex items-center gap-2 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4" />
-              활성 문서 제한에 도달했습니다
+              {t("usage.active.limit.reached")}
             </div>
           )}
         </div>
@@ -163,13 +199,15 @@ export function UsageWidget() {
           <div className="pt-4 border-t">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">더 많은 문서가 필요하신가요?</p>
-                <p className="text-xs text-muted-foreground">Pro 플랜으로 업그레이드하세요</p>
+                <p className="text-sm font-medium">{t("usage.upgrade.title")}</p>
+                <p className="text-xs text-muted-foreground">{t("usage.upgrade.description")}</p>
               </div>
-              <Button size="sm" className="gap-2">
-                <TrendingUp className="h-4 w-4" />
-                업그레이드
-              </Button>
+              <Link href="/pricing">
+                <Button size="sm" className="gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  {t("usage.upgrade.button")}
+                </Button>
+              </Link>
             </div>
           </div>
         )}
@@ -177,7 +215,7 @@ export function UsageWidget() {
         {/* Plan Features Summary */}
         {subscription.plan.features && subscription.plan.features.length > 0 && (
           <div className="pt-4 border-t">
-            <p className="text-sm font-medium mb-2">현재 플랜 혜택</p>
+            <p className="text-sm font-medium mb-2">{t("usage.features.title")}</p>
             <ul className="text-xs text-muted-foreground space-y-1">
               {subscription.plan.features.slice(0, 2).map((feature, index) => (
                 <li key={index} className="flex items-center gap-2">
@@ -188,7 +226,9 @@ export function UsageWidget() {
             </ul>
           </div>
         )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }
