@@ -47,15 +47,15 @@ export default function HomePageComponent() {
 
   const pricingPlans = [
     {
-      name: t("pricing.light.name"),
-      description: t("pricing.light.description"),
-      price: "$5",
+      name: t("pricing.free.name"),
+      description: t("pricing.free.description"),
+      price: t("pricing.free.price"),
       features: [
-        t("pricing.light.feature1"),
-        t("pricing.light.feature2"),
-        t("pricing.light.feature3"),
+        t("pricing.free.feature1"),
+        t("pricing.free.feature2"),
+        t("pricing.free.feature3"),
       ],
-      cta: t("pricing.light.cta"),
+      cta: t("pricing.free.cta"),
       popular: false,
     },
     {
@@ -66,7 +66,6 @@ export default function HomePageComponent() {
         t("pricing.pro.feature1"),
         t("pricing.pro.feature2"),
         t("pricing.pro.feature3"),
-        t("pricing.pro.feature4"),
       ],
       cta: t("pricing.pro.cta"),
       popular: true,
@@ -79,7 +78,6 @@ export default function HomePageComponent() {
         t("pricing.enterprise.feature1"),
         t("pricing.enterprise.feature2"),
         t("pricing.enterprise.feature3"),
-        t("pricing.enterprise.feature4"),
       ],
       cta: t("pricing.enterprise.cta"),
       popular: false,
