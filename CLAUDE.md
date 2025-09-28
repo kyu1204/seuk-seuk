@@ -89,3 +89,4 @@ Authentication uses Supabase Auth with route protection logic defined in `lib/su
 - Client Components for interactivity (signature capture, modals)
 - Consistent use of TypeScript with proper type definitions
 - Form handling with proper loading states and error handling
+- 개발환경은 백그라운드에서 따로 띄우면 안됨. 직접 띄울 예정.

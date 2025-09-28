@@ -15,15 +15,24 @@ import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/language-context";
 import type { ClientDocument, Signature } from "@/lib/supabase/database.types";
 import {
+  getImageNaturalDimensions,
+  ensureRelativeCoordinate,
+  convertSignatureAreaToPixels,
+  type RelativeSignatureArea,
+} from "@/lib/utils";
+import {
   CheckCircle,
   Clock,
   FileSignature,
   Lock,
   RefreshCw,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 interface SignPageComponentProps {
   documentData: ClientDocument;
@@ -55,6 +64,13 @@ export default function SignPageComponent({
   const [isVerifyingPassword, setIsVerifyingPassword] =
     useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [lastTouchDistance, setLastTouchDistance] = useState<number>(0);
+  const [lastTapTime, setLastTapTime] = useState<number>(0);
+  const [touchStartZoom, setTouchStartZoom] = useState<number>(1);
+  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
 
   const handleAreaClick = (index: number) => {
     setSelectedArea(index);
@@ -183,19 +199,37 @@ export default function SignPageComponent({
 
       // 🚀 Performance optimization: Preload all signature images in parallel
       setGeneratingProgress("서명 이미지 처리 중...");
+      console.log('📝 Available signatures for composition:', localSignatures);
+
       const signatureImages = await Promise.all(
         localSignatures
           .filter(sig => sig.signature_data)
-          .map(signature => {
+          .map((signature, index) => {
+            console.log(`🖼️ Loading signature image ${index}:`, {
+              area_index: signature.area_index,
+              hasData: !!signature.signature_data,
+              coordinates: { x: signature.x, y: signature.y, width: signature.width, height: signature.height }
+            });
             return new Promise<{ signature: typeof signature; image: HTMLImageElement }>((resolve, reject) => {
               const signatureImage = new Image();
               signatureImage.crossOrigin = "anonymous";
-              signatureImage.onload = () => resolve({ signature, image: signatureImage });
-              signatureImage.onerror = reject;
+              signatureImage.onload = () => {
+                console.log(`✅ Signature image ${index} loaded:`, {
+                  naturalWidth: signatureImage.naturalWidth,
+                  naturalHeight: signatureImage.naturalHeight
+                });
+                resolve({ signature, image: signatureImage });
+              };
+              signatureImage.onerror = (err) => {
+                console.error(`❌ Failed to load signature image ${index}:`, err);
+                reject(err);
+              };
               signatureImage.src = signature.signature_data!;
             });
           })
       );
+
+      console.log(`🎨 Total signature images loaded: ${signatureImages.length}`);
 
       // Create a canvas with optimized dimensions
       const canvas = document.createElement("canvas");
@@ -216,15 +250,48 @@ export default function SignPageComponent({
 
       // Draw the original document with downscaling
       setGeneratingProgress("문서 합성 중...");
+      console.log('🖼️ Drawing original document on canvas:', {
+        canvasSize: { width: canvasWidth, height: canvasHeight },
+        originalSize: { width: naturalWidth, height: naturalHeight },
+        downscaleRatio
+      });
       ctx.drawImage(originalImage, 0, 0, canvasWidth, canvasHeight);
 
       // Draw each signature at the correct position
       for (const { signature, image: signatureImage } of signatureImages) {
+        // Convert signature coordinates to absolute pixels based on original image size
+        let pixelCoords;
+        try {
+          const relativeArea = ensureRelativeCoordinate(signature, naturalWidth, naturalHeight);
+          pixelCoords = convertSignatureAreaToPixels(relativeArea, naturalWidth, naturalHeight);
+          console.log('🖊️ Signature coordinates conversion:', {
+            signature: signature,
+            relativeArea: relativeArea,
+            pixelCoords: pixelCoords,
+            naturalDimensions: { width: naturalWidth, height: naturalHeight }
+          });
+        } catch (error) {
+          console.warn('Failed to convert signature coordinates, using as-is:', error);
+          pixelCoords = {
+            x: Number(signature.x),
+            y: Number(signature.y),
+            width: Number(signature.width),
+            height: Number(signature.height),
+          };
+        }
+
         // Calculate the actual position and size with downscaling
-        const actualX = Number(signature.x) * scaleX * downscaleRatio;
-        const actualY = Number(signature.y) * scaleY * downscaleRatio;
-        const actualWidth = Number(signature.width) * scaleX * downscaleRatio;
-        const actualHeight = Number(signature.height) * scaleY * downscaleRatio;
+        // pixelCoords are already in original image coordinates, only apply downscale ratio
+        const actualX = pixelCoords.x * downscaleRatio;
+        const actualY = pixelCoords.y * downscaleRatio;
+        const actualWidth = pixelCoords.width * downscaleRatio;
+        const actualHeight = pixelCoords.height * downscaleRatio;
+
+        console.log('🎯 Final drawing coordinates:', {
+          actualX, actualY, actualWidth, actualHeight,
+          downscaleRatio,
+          canvasDimensions: { width: canvasWidth, height: canvasHeight }
+        });
 
         // Calculate the signature's aspect ratio
         const signatureAspectRatio = signatureImage.width / signatureImage.height;
@@ -310,6 +377,132 @@ export default function SignPageComponent({
     localSignatures.length > 0 &&
     localSignatures.every((s) => s.signature_data !== null);
 
+  // Touch gesture helpers
+  const getTouchDistance = (touches: TouchList) => {
+    if (touches.length < 2) return 0;
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    return Math.sqrt(
+      Math.pow(touch2.clientX - touch1.clientX, 2) +
+      Math.pow(touch2.clientY - touch1.clientY, 2)
+    );
+  };
+
+  const getTouchCenter = (touches: TouchList) => {
+    if (touches.length === 0) return { x: 0, y: 0 };
+    if (touches.length === 1) {
+      return { x: touches[0].clientX, y: touches[0].clientY };
+    }
+    const x = (touches[0].clientX + touches[1].clientX) / 2;
+    const y = (touches[0].clientY + touches[1].clientY) / 2;
+    return { x, y };
+  };
+
+  // Touch event handlers for document viewing
+  const handleDocumentTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      // Single touch - check for double tap
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastTapTime;
+
+      if (timeDiff < 300 && timeDiff > 0) {
+        // Double tap detected - toggle zoom
+        e.preventDefault();
+        if (zoomLevel === 1) {
+          setZoomLevel(2);
+        } else {
+          setZoomLevel(1);
+        }
+        return;
+      }
+      setLastTapTime(currentTime);
+
+      // Start dragging for panning if zoomed
+      if (zoomLevel > 1) {
+        e.preventDefault();
+        setIsDragging(true);
+        setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      }
+    } else if (e.touches.length === 2) {
+      // Pinch gesture start
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches);
+      setLastTouchDistance(distance);
+      setTouchStartZoom(zoomLevel);
+      setIsDragging(false);
+    }
+  };
+
+  const handleDocumentTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging && documentContainerRef.current) {
+      // Single touch panning
+      e.preventDefault();
+      const deltaX = e.touches[0].clientX - dragStart.x;
+      const deltaY = e.touches[0].clientY - dragStart.y;
+
+      documentContainerRef.current.scrollLeft -= deltaX;
+      documentContainerRef.current.scrollTop -= deltaY;
+
+      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    } else if (e.touches.length === 2) {
+      // Pinch zoom
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches);
+      if (lastTouchDistance > 0) {
+        const scale = distance / lastTouchDistance;
+        const newZoom = Math.min(Math.max(touchStartZoom * scale, 0.5), 3);
+        setZoomLevel(newZoom);
+      }
+    }
+  };
+
+  const handleDocumentTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      setIsDragging(false);
+      setLastTouchDistance(0);
+    } else if (e.touches.length === 1) {
+      // Switch from pinch to pan
+      setLastTouchDistance(0);
+      setTouchStartZoom(zoomLevel);
+    }
+  };
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const handleZoomReset = () => {
+    setZoomLevel(1);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && documentContainerRef.current) {
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+
+      documentContainerRef.current.scrollLeft -= deltaX;
+      documentContainerRef.current.scrollTop -= deltaY;
+
+      setDragStart({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
   const handlePasswordSubmit = async () => {
     if (!password.trim()) {
       setError(t("sign.password.required"));
@@ -342,6 +535,17 @@ export default function SignPageComponent({
       setIsVerifyingPassword(false);
     }
   };
+
+  // Force re-render when image loads to ensure signature areas display correctly
+  useEffect(() => {
+    if (imageLoaded && documentContainerRef.current) {
+      // Trigger a small state update to force re-render
+      const timer = setTimeout(() => {
+        setLocalSignatures(prev => [...prev]);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [imageLoaded]);
 
   // Show completed document screen if document is completed
   if (isCompleted) {
@@ -525,14 +729,70 @@ export default function SignPageComponent({
         </div>
 
         <div className="relative border rounded-lg mb-6">
-          <div ref={documentContainerRef} className="relative">
-            <img
-              src={documentData.file_url}
-              alt="Document"
-              className="w-full h-auto object-contain"
-              draggable="false"
-              style={{ userSelect: "none" }}
-            />
+          {/* Zoom Controls */}
+          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleZoomIn}
+              disabled={zoomLevel >= 3}
+              className="p-2 h-8 w-8"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleZoomOut}
+              disabled={zoomLevel <= 0.5}
+              className="p-2 h-8 w-8"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleZoomReset}
+              disabled={zoomLevel === 1}
+              className="p-2 h-8 w-8"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+            <div className="text-xs text-center font-medium px-1 py-0.5 bg-gray-100 rounded">
+              {Math.round(zoomLevel * 100)}%
+            </div>
+          </div>
+          <div
+            ref={documentContainerRef}
+            className="relative overflow-auto max-h-[70vh]"
+            style={{
+              cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+              touchAction: 'none'
+            }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleDocumentTouchStart}
+            onTouchMove={handleDocumentTouchMove}
+            onTouchEnd={handleDocumentTouchEnd}
+          >
+            <div
+              className="relative inline-block"
+              style={{
+                width: `${100 * zoomLevel}%`,
+                height: 'auto'
+              }}
+            >
+              <img
+                src={documentData.file_url}
+                alt="Document"
+                className="w-full h-auto object-contain block"
+                draggable="false"
+                style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageLoaded(false)}
+              />
 
             {localSignatures.map((signature, index) => {
               const isSigned = signature.signature_data !== null;
@@ -545,12 +805,49 @@ export default function SignPageComponent({
                       ? "border-green-500 bg-green-500/10"
                       : "border-2 border-red-500 bg-red-500/10 animate-pulse"
                   }`}
-                  style={{
-                    left: `${signature.x}px`,
-                    top: `${signature.y}px`,
-                    width: `${signature.width}px`,
-                    height: `${signature.height}px`,
-                  }}
+                  style={(() => {
+                    // Convert to relative coordinates for display
+                    try {
+                      if (!documentContainerRef.current) {
+                        return {
+                          left: `${signature.x}px`,
+                          top: `${signature.y}px`,
+                          width: `${signature.width}px`,
+                          height: `${signature.height}px`,
+                        };
+                      }
+
+                      // Get the image element and check if it's loaded
+                      const imgElement = documentContainerRef.current.querySelector('img') as HTMLImageElement;
+                      if (!imgElement || imgElement.naturalWidth === 0 || imgElement.naturalHeight === 0) {
+                        // Image not loaded yet, return pixel coordinates as fallback
+                        return {
+                          left: `${signature.x}px`,
+                          top: `${signature.y}px`,
+                          width: `${signature.width}px`,
+                          height: `${signature.height}px`,
+                        };
+                      }
+
+                      const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
+                      const relativeArea = ensureRelativeCoordinate(signature, originalWidth, originalHeight);
+                      return {
+                        left: `${relativeArea.x}%`,
+                        top: `${relativeArea.y}%`,
+                        width: `${relativeArea.width}%`,
+                        height: `${relativeArea.height}%`,
+                      };
+                    } catch (error) {
+                      console.warn('Failed to convert signature coordinates:', error);
+                      // Fallback to pixel coordinates
+                      return {
+                        left: `${signature.x}px`,
+                        top: `${signature.y}px`,
+                        width: `${signature.width}px`,
+                        height: `${signature.height}px`,
+                      };
+                    }
+                  })()}
                   onClick={() => handleAreaClick(signature.area_index)}
                 >
                   {isSigned ? (
@@ -571,6 +868,7 @@ export default function SignPageComponent({
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
 
