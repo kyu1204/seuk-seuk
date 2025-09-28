@@ -18,7 +18,14 @@ import type {
   Signature,
   SignatureArea,
 } from "@/lib/supabase/database.types";
-import { ArrowLeft, Copy, Edit, ExternalLink, Share, Download, Trash2 } from "lucide-react";
+import {
+  getImageNaturalDimensions,
+  convertSignatureAreaToPercent,
+  ensureRelativeCoordinate,
+  convertSignatureAreaToPixels,
+  type RelativeSignatureArea,
+} from "@/lib/utils";
+import { ArrowLeft, Copy, Edit, ExternalLink, Share, Download, Trash2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
@@ -44,6 +51,7 @@ export default function DocumentDetailComponent({
       height: sig.height,
     }))
   );
+  const [signatureData, setSignatureData] = useState<Signature[]>(signatures);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -58,6 +66,10 @@ export default function DocumentDetailComponent({
     left: number;
   }>({ top: 0, left: 0 });
   const [signedDocumentUrl, setSignedDocumentUrl] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -93,9 +105,25 @@ export default function DocumentDetailComponent({
     setIsSelecting(true);
   };
 
-  const handleAreaSelected = (area: SignatureArea) => {
-    // Simply store the area coordinates as they are
-    setSignatureAreas([...signatureAreas, area]);
+  const handleAreaSelected = (area: RelativeSignatureArea) => {
+    // Convert relative coordinates to absolute for database storage
+    try {
+      if (documentContainerRef.current) {
+        const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
+        const pixelArea = convertSignatureAreaToPixels(area, originalWidth, originalHeight);
+        const absoluteArea: SignatureArea = {
+          x: pixelArea.x,
+          y: pixelArea.y,
+          width: pixelArea.width,
+          height: pixelArea.height,
+        };
+        setSignatureAreas([...signatureAreas, absoluteArea]);
+      }
+    } catch (error) {
+      console.warn('Failed to convert area coordinates:', error);
+      // Fallback: treat as pixel coordinates
+      setSignatureAreas([...signatureAreas, area as SignatureArea]);
+    }
     setIsSelecting(false);
   };
 
@@ -247,110 +275,298 @@ export default function DocumentDetailComponent({
     }
   }, [isCompleted, document.id, document.signed_file_url]);
 
+  // Force re-render when image loads to ensure signature areas display correctly
+  useEffect(() => {
+    if (imageLoaded && documentContainerRef.current) {
+      // Trigger a small state update to force re-render
+      const timer = setTimeout(() => {
+        setSignatureAreas(prev => [...prev]);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [imageLoaded]);
+
+  // Zoom handlers
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const handleZoomReset = () => {
+    setZoomLevel(1);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && documentContainerRef.current) {
+      e.preventDefault();
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+
+      documentContainerRef.current.scrollLeft -= deltaX;
+      documentContainerRef.current.scrollTop -= deltaY;
+
+      setDragStart({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
   // 상태에 따라 표시할 이미지 결정
-  const displayImageUrl =
-    isCompleted && signedDocumentUrl
-      ? signedDocumentUrl
-      : document.file_url;
+  const displayImageUrl = (() => {
+    // 완료된 문서이고 서명된 문서 URL이 있으면 서명된 문서 표시
+    if (isCompleted && signedDocumentUrl) {
+      console.log('📄 Displaying signed document:', signedDocumentUrl);
+      return signedDocumentUrl;
+    }
+    // 그 외의 경우 원본 문서 표시
+    console.log('📄 Displaying original document:', document.file_url);
+    return document.file_url;
+  })();
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-6 py-6 sm:px-4 sm:py-8">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-8"></div>
+        <div className="mb-6 sm:mb-8"></div>
 
         {/* Document Info */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold tracking-tight">
+        <div className="mb-8 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight break-words">
               {document.filename}
             </h1>
-            {getStatusBadge(document.status)}
+            <div className="self-start sm:self-center">
+              {getStatusBadge(document.status)}
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex gap-4">
-              {canEdit && (
-                <Button
-                  variant="outline"
-                  onClick={handleEditModeToggle}
-                  disabled={isLoading}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  {isEditMode ? "편집 취소" : "수정하기"}
-                </Button>
-              )}
-
-              {canEdit && !isEditMode && (
-                <Button
-                  variant="destructive"
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  disabled={isLoading}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  문서 삭제
-                </Button>
-              )}
-
-              {isEditMode && (
-                <Button onClick={handleAddSignatureArea} disabled={isLoading}>
-                  서명 영역 추가
-                </Button>
-              )}
-
-              {isCompleted && signedDocumentUrl && (
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadSignedDocument}
-                  disabled={isLoading}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  서명완료 문서 다운로드
-                </Button>
+          <div className="mb-8">
+            {/* Mobile Layout */}
+            <div className="sm:hidden">
+              {!isEditMode ? (
+                <>
+                  {/* Draft State - Single Line Actions */}
+                  {canEdit && (
+                    <div className="flex justify-between items-center mb-8">
+                      {/* Left Group - Edit & Delete */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={handleEditModeToggle}
+                          disabled={isLoading}
+                          className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                        >
+                          <Edit className="mr-1 h-3 w-3" />
+                          수정
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => setIsDeleteModalOpen(true)}
+                          disabled={isLoading}
+                          className="h-9 px-3 text-sm font-medium"
+                        >
+                          <Trash2 className="mr-1 h-3 w-3" />
+                          삭제
+                        </Button>
+                      </div>
+                      {/* Right Group - Publish */}
+                      {canPublish && (
+                        <Button
+                          onClick={() => setIsPublishModalOpen(true)}
+                          disabled={isLoading}
+                          className="h-9 px-3 text-sm font-medium bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Share className="mr-1 h-3 w-3" />
+                          발급
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {/* Completed State - Download Button */}
+                  {isCompleted && signedDocumentUrl && (
+                    <div className="flex justify-center mb-8">
+                      <Button
+                        variant="outline"
+                        onClick={handleDownloadSignedDocument}
+                        disabled={isLoading}
+                        className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                      >
+                        <Download className="mr-1 h-3 w-3" />
+                        다운로드
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Edit Mode - Single Line Actions */}
+                  <div className="flex justify-between items-center mb-8">
+                    {/* Left Group - Cancel & Add Area */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleEditModeToggle}
+                        disabled={isLoading}
+                        className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        취소
+                      </Button>
+                      <Button
+                        onClick={handleAddSignatureArea}
+                        disabled={isLoading}
+                        className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                        variant="outline"
+                      >
+                        영역추가
+                      </Button>
+                    </div>
+                    {/* Right Group - Save */}
+                    <Button
+                      onClick={handleSaveChanges}
+                      disabled={isLoading}
+                      className="h-9 px-3 text-sm font-medium bg-green-600 hover:bg-green-700"
+                    >
+                      {isLoading ? "저장중" : "저장"}
+                    </Button>
+                  </div>
+                </>
               )}
             </div>
 
-            <div className="flex gap-4">
-              {isEditMode && (
-                <Button onClick={handleSaveChanges} disabled={isLoading}>
-                  {isLoading ? "저장 중..." : "변경사항 저장"}
-                </Button>
-              )}
-
-              {canPublish && !isEditMode && (
-                <Button
-                  onClick={() => setIsPublishModalOpen(true)}
-                  disabled={isLoading}
-                >
-                  <Share className="mr-2 h-4 w-4" />
-                  발급하기
-                </Button>
+            {/* Desktop Layout */}
+            <div className="hidden sm:block">
+              {!isEditMode ? (
+                <>
+                  {/* Draft State - Single Line Actions */}
+                  {canEdit && (
+                    <div className="flex justify-between items-center mb-8">
+                      {/* Left Group - Edit & Delete */}
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={handleEditModeToggle}
+                          disabled={isLoading}
+                          className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          수정
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => setIsDeleteModalOpen(true)}
+                          disabled={isLoading}
+                          className="h-10 px-4 text-sm font-medium"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          삭제
+                        </Button>
+                      </div>
+                      {/* Right Group - Publish */}
+                      {canPublish && (
+                        <Button
+                          onClick={() => setIsPublishModalOpen(true)}
+                          disabled={isLoading}
+                          className="h-10 px-4 text-sm font-medium bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Share className="mr-2 h-4 w-4" />
+                          발급
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {/* Completed State - Download Button */}
+                  {isCompleted && signedDocumentUrl && (
+                    <div className="flex justify-center mb-8">
+                      <Button
+                        variant="outline"
+                        onClick={handleDownloadSignedDocument}
+                        disabled={isLoading}
+                        className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        다운로드
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Edit Mode - Single Line Actions */}
+                  <div className="flex justify-between items-center mb-8">
+                    {/* Left Group - Cancel & Add Area */}
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={handleEditModeToggle}
+                        disabled={isLoading}
+                        className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        취소
+                      </Button>
+                      <Button
+                        onClick={handleAddSignatureArea}
+                        disabled={isLoading}
+                        className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                        variant="outline"
+                      >
+                        영역추가
+                      </Button>
+                    </div>
+                    {/* Right Group - Save */}
+                    <Button
+                      onClick={handleSaveChanges}
+                      disabled={isLoading}
+                      className="h-10 px-4 text-sm font-medium bg-green-600 hover:bg-green-700"
+                    >
+                      {isLoading ? "저장중" : "저장"}
+                    </Button>
+                  </div>
+                </>
               )}
             </div>
           </div>
 
           {/* Published URL Display */}
           {isPublished && document.short_url && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-lg">발행된 서명 URL</CardTitle>
+            <Card className="mb-6 sm:mb-6 mx-1 sm:mx-0">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base sm:text-lg">발행된 서명 URL</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 p-3 bg-gray-50 rounded-lg font-mono text-sm">
+              <CardContent className="pt-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-4">
+                  <div className="flex-1 p-3 sm:p-3 bg-gray-50 rounded-lg font-mono text-xs sm:text-sm break-all">
                     {`${window.location.origin}/sign/${document.short_url}`}
                   </div>
-                  <Button variant="outline" size="sm" onClick={handleCopyUrl}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Link href={`/sign/${document.short_url}`} target="_blank">
-                    <Button variant="outline" size="sm">
-                      <ExternalLink className="h-4 w-4" />
+                  <div className="flex gap-3 self-start sm:self-center">
+                    <Button variant="outline" size="sm" onClick={handleCopyUrl} className="h-10 px-4 sm:h-9">
+                      <Copy className="h-4 w-4 sm:h-4 sm:w-4" />
+                      <span className="ml-2 sm:hidden text-sm">복사</span>
                     </Button>
-                  </Link>
+                    <Link href={`/sign/${document.short_url}`} target="_blank">
+                      <Button variant="outline" size="sm" className="h-10 px-4 sm:h-9">
+                        <ExternalLink className="h-4 w-4 sm:h-4 sm:w-4" />
+                        <span className="ml-2 sm:hidden text-sm">열기</span>
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm sm:text-sm text-gray-600 mt-4">
                   이 URL을 통해 서명자가 문서에 서명할 수 있습니다.
                   {!canEdit && " 발행된 문서는 더 이상 수정할 수 없습니다."}
                 </p>
@@ -360,14 +576,47 @@ export default function DocumentDetailComponent({
 
 
           {error && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+            <div className="mb-6 sm:mb-6 mx-1 sm:mx-0 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm sm:text-sm">
               {error}
             </div>
           )}
         </div>
 
         {/* Document Viewer */}
-        <div className="relative border rounded-lg overflow-hidden">
+        <div className="relative border rounded-lg overflow-hidden mx-1 sm:mx-0 mb-6">
+          {/* Zoom Controls */}
+          <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-10 flex flex-col gap-2 sm:gap-2 bg-white/95 backdrop-blur-sm rounded-lg p-2 sm:p-2 shadow-lg border border-gray-200">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleZoomIn}
+              disabled={zoomLevel >= 3 || (isEditMode && isSelecting)}
+              className="p-1 sm:p-2 h-6 w-6 sm:h-8 sm:w-8"
+            >
+              <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleZoomOut}
+              disabled={zoomLevel <= 0.5 || (isEditMode && isSelecting)}
+              className="p-1 sm:p-2 h-6 w-6 sm:h-8 sm:w-8"
+            >
+              <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleZoomReset}
+              disabled={zoomLevel === 1 || (isEditMode && isSelecting)}
+              className="p-1 sm:p-2 h-6 w-6 sm:h-8 sm:w-8"
+            >
+              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+            </Button>
+            <div className="text-xs text-center font-medium px-1 py-0.5 bg-gray-100 rounded">
+              {Math.round(zoomLevel * 100)}%
+            </div>
+          </div>
           {isEditMode && isSelecting ? (
             <AreaSelector
               image={document.file_url}
@@ -377,44 +626,126 @@ export default function DocumentDetailComponent({
               initialScrollPosition={scrollPosition}
             />
           ) : (
-            <div ref={documentContainerRef} className="relative">
-              <img
-                src={displayImageUrl}
-                alt={document.filename}
-                className="w-full h-auto object-contain"
-                draggable="false"
-              />
-              {/* Signature Area Overlays - 완료된 문서의 경우 서명 영역 오버레이 숨김 */}
-              {!isCompleted && signatureAreas.map((area, index) => (
-                <div
-                  key={index}
-                  className={`absolute border-2 flex items-center justify-center ${
-                    isEditMode
-                      ? "border-red-500 bg-red-500/10 cursor-pointer"
-                      : "border-blue-500 bg-blue-500/10"
-                  }`}
-                  style={{
-                    position: "absolute",
-                    left: `${area.x}px`,
-                    top: `${area.y}px`,
-                    width: `${area.width}px`,
-                    height: `${area.height}px`,
-                    pointerEvents: "auto",
-                    cursor: isEditMode ? "pointer" : "default",
-                  }}
-                  onClick={
-                    isEditMode ? () => handleRemoveArea(index) : undefined
+            <div
+              ref={documentContainerRef}
+              className="relative overflow-auto max-h-[50vh] sm:max-h-[70vh]"
+              style={{
+                cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                touchAction: 'none'
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              <div
+                className="relative inline-block"
+                style={{
+                  width: `${100 * zoomLevel}%`,
+                  height: 'auto'
+                }}
+              >
+                <img
+                  src={displayImageUrl}
+                  alt={document.filename}
+                  className="w-full h-auto object-contain block"
+                  draggable="false"
+                  style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageLoaded(false)}
+                />
+              {/* Signature Area Overlays - Only show for non-completed documents */}
+              {!isCompleted && signatureAreas.map((area, index) => {
+                // Find matching signature data
+                const signatureInfo = signatureData.find(sig => sig.area_index === index);
+                const hasSignature = signatureInfo && signatureInfo.signature_data;
+
+                // Convert to relative coordinates for display
+                const displayStyle = (() => {
+                  try {
+                    if (!documentContainerRef.current) {
+                      return {
+                        left: `${area.x}px`,
+                        top: `${area.y}px`,
+                        width: `${area.width}px`,
+                        height: `${area.height}px`,
+                      };
+                    }
+
+                    // Get the image element and check if it's loaded
+                    const imgElement = documentContainerRef.current.querySelector('img') as HTMLImageElement;
+                    if (!imgElement || imgElement.naturalWidth === 0 || imgElement.naturalHeight === 0) {
+                      // Image not loaded yet, return pixel coordinates as fallback
+                      return {
+                        left: `${area.x}px`,
+                        top: `${area.y}px`,
+                        width: `${area.width}px`,
+                        height: `${area.height}px`,
+                      };
+                    }
+
+                    const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
+                    const relativeArea = ensureRelativeCoordinate(area, originalWidth, originalHeight);
+                    return {
+                      left: `${relativeArea.x}%`,
+                      top: `${relativeArea.y}%`,
+                      width: `${relativeArea.width}%`,
+                      height: `${relativeArea.height}%`,
+                    };
+                  } catch (error) {
+                    console.warn('Failed to convert signature coordinates:', error);
+                    // Fallback to pixel coordinates
+                    return {
+                      left: `${area.x}px`,
+                      top: `${area.y}px`,
+                      width: `${area.width}px`,
+                      height: `${area.height}px`,
+                    };
                   }
-                >
-                  <span
-                    className={`text-xs font-medium ${
-                      isEditMode ? "text-red-600" : "text-blue-600"
+                })();
+
+                return (
+                  <div
+                    key={index}
+                    className={`absolute border-2 flex items-center justify-center ${
+                      hasSignature
+                        ? "border-green-500 bg-green-500/10"
+                        : isEditMode
+                        ? "border-red-500 bg-red-500/10 cursor-pointer"
+                        : "border-blue-500 bg-blue-500/10"
                     }`}
+                    style={{
+                      position: "absolute",
+                      ...displayStyle,
+                      pointerEvents: (isCompleted || hasSignature) ? "none" : "auto",
+                      cursor: isEditMode ? "pointer" : "default",
+                    }}
+                    onClick={
+                      isEditMode ? () => handleRemoveArea(index) : undefined
+                    }
                   >
-                    서명 영역 {index + 1}
-                  </span>
-                </div>
-              ))}
+                    {hasSignature ? (
+                      <div className="w-full h-full relative">
+                        <img
+                          src={signatureInfo.signature_data!}
+                          alt="Signature"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <span
+                        className={`text-xs font-medium ${
+                          isEditMode ? "text-red-600" : "text-blue-600"
+                        }`}
+                      >
+                        <span className="hidden sm:inline">서명 영역 {index + 1}</span>
+                        <span className="sm:hidden">{index + 1}</span>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              </div>
             </div>
           )}
         </div>
