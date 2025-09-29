@@ -28,6 +28,9 @@ interface AreaSelectorProps {
     height: number;
   }>;
   initialScrollPosition?: { top: number; left: number };
+  // Zoom 상태를 부모로부터 받아옵니다
+  zoomLevel?: number;
+  onZoomChange?: (zoom: number) => void;
 }
 
 export default function AreaSelector({
@@ -36,6 +39,8 @@ export default function AreaSelector({
   onCancel,
   existingAreas = [],
   initialScrollPosition = { top: 0, left: 0 },
+  zoomLevel: propZoomLevel,
+  onZoomChange,
 }: AreaSelectorProps) {
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(
     null
@@ -47,13 +52,10 @@ export default function AreaSelector({
   const containerRef = useRef<HTMLDivElement>(null);
   const [originalOverflow, setOriginalOverflow] = useState<string>("");
   const [scrollPositionApplied, setScrollPositionApplied] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  // 부모로부터 전달받은 zoomLevel을 사용하거나, 없으면 기본값 1 사용
+  const zoomLevel = propZoomLevel ?? 1;
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [lastTouchDistance, setLastTouchDistance] = useState<number>(0);
-  const [lastTapTime, setLastTapTime] = useState<number>(0);
-  const [touchStartZoom, setTouchStartZoom] = useState<number>(1);
-  const [isPinching, setIsPinching] = useState<boolean>(false);
 
   // Add the useLanguage hook inside the component
   const { t } = useLanguage();
@@ -103,15 +105,17 @@ export default function AreaSelector({
   };
 
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+    const newZoom = Math.min(zoomLevel + 0.25, 3);
+    onZoomChange?.(newZoom);
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+    const newZoom = Math.max(zoomLevel - 0.25, 0.5);
+    onZoomChange?.(newZoom);
   };
 
   const handleZoomReset = () => {
-    setZoomLevel(1);
+    onZoomChange?.(1);
   };
 
   const handleContainerMouseDown = (e: React.MouseEvent) => {
@@ -147,114 +151,69 @@ export default function AreaSelector({
     handleMouseUp(e);
   };
 
-  // Touch gesture helpers
-  const getTouchDistance = (touches: TouchList) => {
-    if (touches.length < 2) return 0;
-    const touch1 = touches[0];
-    const touch2 = touches[1];
-    return Math.sqrt(
-      Math.pow(touch2.clientX - touch1.clientX, 2) +
-      Math.pow(touch2.clientY - touch1.clientY, 2)
-    );
-  };
 
-  const getTouchCenter = (touches: TouchList) => {
-    if (touches.length === 0) return { x: 0, y: 0 };
-    if (touches.length === 1) {
-      return { x: touches[0].clientX, y: touches[0].clientY };
-    }
-    const x = (touches[0].clientX + touches[1].clientX) / 2;
-    const y = (touches[0].clientY + touches[1].clientY) / 2;
-    return { x, y };
-  };
-
-  // Enhanced touch event handlers
+  // Simplified touch event handlers
   const handleEnhancedTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
-      // Single touch - check for double tap or start selection
-      const currentTime = Date.now();
-      const timeDiff = currentTime - lastTapTime;
-
-      if (timeDiff < 300 && timeDiff > 0) {
-        // Double tap detected - toggle zoom
-        e.preventDefault();
-        if (zoomLevel === 1) {
-          setZoomLevel(2);
-        } else {
-          setZoomLevel(1);
-        }
-        return;
-      }
-      setLastTapTime(currentTime);
-
-      // Start dragging for panning if zoomed
-      if (zoomLevel > 1 && !isSelecting) {
-        e.preventDefault();
-        setIsDragging(true);
-        setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-        return;
-      }
-
-      // Otherwise, handle as area selection
+      // Single touch - start area selection
       handleTouchStart(e);
     } else if (e.touches.length === 2) {
-      // Pinch gesture start
+      // Two finger touch - start document panning
       e.preventDefault();
-      setIsPinching(true);
-      const distance = getTouchDistance(e.touches);
-      setLastTouchDistance(distance);
-      setTouchStartZoom(zoomLevel);
-      setIsDragging(false);
-      setIsSelecting(false);
+      setIsDragging(true);
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      setDragStart({ x: centerX, y: centerY });
+      
+      // Cancel any ongoing area selection
+      if (isSelecting) {
+        setIsSelecting(false);
+        setStartPos(null);
+        setCurrentPos(null);
+        if (containerRef.current) {
+          containerRef.current.style.overflow = originalOverflow;
+        }
+      }
     }
   };
 
   const handleEnhancedTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && isDragging && containerRef.current) {
-      // Single touch panning
+    if (e.touches.length === 1 && !isDragging) {
+      // Single touch - area selection
+      handleTouchMove(e);
+    } else if (e.touches.length === 2 && isDragging && containerRef.current) {
+      // Two finger touch - document panning
       e.preventDefault();
-      const deltaX = e.touches[0].clientX - dragStart.x;
-      const deltaY = e.touches[0].clientY - dragStart.y;
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      
+      const deltaX = centerX - dragStart.x;
+      const deltaY = centerY - dragStart.y;
 
       containerRef.current.scrollLeft -= deltaX;
       containerRef.current.scrollTop -= deltaY;
 
-      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-    } else if (e.touches.length === 2 && isPinching) {
-      // Pinch zoom
-      e.preventDefault();
-      const distance = getTouchDistance(e.touches);
-      if (lastTouchDistance > 0) {
-        const scale = distance / lastTouchDistance;
-        const newZoom = Math.min(Math.max(touchStartZoom * scale, 0.5), 3);
-        setZoomLevel(newZoom);
-      }
-    } else if (!isPinching) {
-      // Handle normal area selection touch move
-      handleTouchMove(e);
+      setDragStart({ x: centerX, y: centerY });
     }
   };
 
   const handleEnhancedTouchEnd = (e: React.TouchEvent) => {
     if (e.touches.length === 0) {
-      if (isPinching) {
-        e.preventDefault();
-        setIsPinching(false);
-        setLastTouchDistance(0);
-        return;
-      }
+      // All touches ended
       if (isDragging) {
-        e.preventDefault();
+        // End document panning
         setIsDragging(false);
         return;
       }
-      // Handle normal area selection touch end
+      // End area selection
       handleTouchEnd(e);
-    } else if (e.touches.length === 1) {
-      // Switch from pinch to pan
-      setIsPinching(false);
-      setLastTouchDistance(0);
-      setTouchStartZoom(zoomLevel);
+    } else if (e.touches.length === 1 && isDragging) {
+      // From two fingers to one finger - stop panning
+      setIsDragging(false);
     }
   };
 
@@ -444,7 +403,7 @@ export default function AreaSelector({
         className="relative overflow-auto max-h-[50vh] sm:max-h-[70vh]"
         style={{
           touchAction: "none",
-          cursor: zoomLevel > 1 && !isSelecting ? (isDragging ? 'grabbing' : 'grab') : 'crosshair'
+          cursor: 'crosshair'
         }}
         onMouseDown={handleContainerMouseDown}
         onMouseMove={handleContainerMouseMove}
