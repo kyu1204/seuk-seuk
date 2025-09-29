@@ -81,7 +81,6 @@ export default function DocumentDetailComponent({
     if (document.status === "draft") {
       if (!isEditMode) {
         // Entering edit mode - load existing signature areas
-        console.log('📝 수정 모드 진입 - 기존 서명영역 로드:', signatures.length);
         setSignatureAreas(signatures.map((sig) => ({
           x: sig.x,
           y: sig.y,
@@ -90,7 +89,6 @@ export default function DocumentDetailComponent({
         })));
       } else {
         // Exiting edit mode - clear signature areas
-        console.log('📝 수정 모드 종료 - 서명영역 초기화');
         setSignatureAreas([]);
       }
       setIsEditMode(!isEditMode);
@@ -139,10 +137,6 @@ export default function DocumentDetailComponent({
         height: area.height,
       }));
 
-      console.log('🔍 저장할 서명영역들 (신규만):', {
-        new_areas_count: signatureAreas.length,
-        relativeAreas_to_save: relativeAreas
-      });
 
       const result = await updateSignatureAreas(document.id, relativeAreas);
 
@@ -214,36 +208,28 @@ export default function DocumentDetailComponent({
   };
 
   const handleDeleteDocument = async () => {
-    console.log('🗑️ Delete button clicked, document:', { id: document.id, status: document.status });
 
     if (document.status !== "draft") {
-      console.log('❌ Cannot delete: document status is not draft:', document.status);
       return;
     }
 
-    console.log('✅ Starting delete process...');
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log('📤 Calling deleteDocument action...');
       const result = await deleteDocument(document.id);
-      console.log('📥 Delete result:', result);
 
       if (result.error) {
-        console.log('❌ Delete failed with error:', result.error);
         setError(result.error);
         return;
       }
 
-      console.log('✅ Delete successful, redirecting to dashboard...');
       // 삭제 성공시 대시보드로 강제 새로고침하여 이동
       window.location.href = '/dashboard';
     } catch (error) {
       console.error("❌ Error deleting document:", error);
       setError("문서 삭제 중 오류가 발생했습니다");
     } finally {
-      console.log('🔄 Cleaning up delete process...');
       setIsLoading(false);
       setIsDeleteModalOpen(false);
     }
@@ -254,17 +240,6 @@ export default function DocumentDetailComponent({
   const isPublished = document.status === "published";
   const isCompleted = document.status === "completed";
 
-  // Debug UI conditions
-  console.log('🎛️ UI Conditions:', {
-    documentStatus: document.status,
-    canEdit,
-    isEditMode,
-    canDelete: canEdit && !isEditMode,
-    isLoading,
-    canPublish,
-    isPublished,
-    isCompleted
-  });
 
 
   // 완료된 문서의 경우 signed URL 가져오기
@@ -378,11 +353,9 @@ export default function DocumentDetailComponent({
   const displayImageUrl = (() => {
     // 완료된 문서이고 서명된 문서 URL이 있으면 서명된 문서 표시
     if (isCompleted && signedDocumentUrl) {
-      console.log('📄 Displaying signed document:', signedDocumentUrl);
       return signedDocumentUrl;
     }
     // 그 외의 경우 원본 문서 표시
-    console.log('📄 Displaying original document:', document.file_url);
     return document.file_url;
   })();
 
