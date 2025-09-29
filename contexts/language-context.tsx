@@ -66,6 +66,7 @@ const translations: Record<Language, Record<string, string>> = {
     "signature.instruction": "위에 마우스나 손가락으로 서명을 그리세요",
     "signature.clear": "지우기",
     "signature.sign": "문서 서명",
+    "signature.signing": "서명 중...",
 
     // Language Selector
     "language.ko": "한국어",
@@ -365,6 +366,7 @@ const translations: Record<Language, Record<string, string>> = {
       "Draw your signature above using your mouse or finger",
     "signature.clear": "Clear",
     "signature.sign": "Sign Document",
+    "signature.signing": "Signing...",
 
     // Language Selector
     "language.ko": "한국어",
