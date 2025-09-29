@@ -398,7 +398,7 @@ export default function DocumentDetailComponent({
                           className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
                         >
                           <Edit className="mr-1 h-3 w-3" />
-                          수정
+                          {t("document.actions.edit")}
                         </Button>
                         <Button
                           variant="destructive"
@@ -407,7 +407,7 @@ export default function DocumentDetailComponent({
                           className="h-9 px-3 text-sm font-medium"
                         >
                           <Trash2 className="mr-1 h-3 w-3" />
-                          삭제
+                          {t("document.actions.delete")}
                         </Button>
                       </div>
                       {/* Right Group - Publish */}
@@ -418,7 +418,7 @@ export default function DocumentDetailComponent({
                           className="h-9 px-3 text-sm font-medium bg-blue-600 hover:bg-blue-700"
                         >
                           <Share className="mr-1 h-3 w-3" />
-                          발급
+                          {t("document.actions.publish")}
                         </Button>
                       )}
                     </div>
@@ -491,7 +491,7 @@ export default function DocumentDetailComponent({
                           className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
                         >
                           <Edit className="mr-2 h-4 w-4" />
-                          수정
+                          {t("document.actions.edit")}
                         </Button>
                         <Button
                           variant="destructive"
@@ -500,7 +500,7 @@ export default function DocumentDetailComponent({
                           className="h-10 px-4 text-sm font-medium"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          삭제
+                          {t("document.actions.delete")}
                         </Button>
                       </div>
                       {/* Right Group - Publish */}
@@ -511,7 +511,7 @@ export default function DocumentDetailComponent({
                           className="h-10 px-4 text-sm font-medium bg-blue-600 hover:bg-blue-700"
                         >
                           <Share className="mr-2 h-4 w-4" />
-                          발급
+                          {t("document.actions.publish")}
                         </Button>
                       )}
                     </div>

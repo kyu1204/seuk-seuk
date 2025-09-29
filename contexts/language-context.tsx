@@ -330,6 +330,11 @@ const translations: Record<Language, Record<string, string>> = {
     "breadcrumb.dashboard": "대시보드",
     "breadcrumb.upload": "문서 업로드",
     "breadcrumb.details": "문서 상세",
+
+    // Document Actions
+    "document.actions.edit": "수정",
+    "document.actions.delete": "삭제",
+    "document.actions.publish": "발급",
   },
   en: {
     // Header
@@ -641,6 +646,11 @@ const translations: Record<Language, Record<string, string>> = {
     "breadcrumb.dashboard": "Dashboard",
     "breadcrumb.upload": "Upload Document",
     "breadcrumb.details": "Document Details",
+
+    // Document Actions
+    "document.actions.edit": "Edit",
+    "document.actions.delete": "Delete",
+    "document.actions.publish": "Publish",
   },
 };
 
