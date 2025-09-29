@@ -199,25 +199,15 @@ export default function SignPageComponent({
 
       // 🚀 Performance optimization: Preload all signature images in parallel
       setGeneratingProgress("서명 이미지 처리 중...");
-      console.log('📝 Available signatures for composition:', localSignatures);
 
       const signatureImages = await Promise.all(
         localSignatures
           .filter(sig => sig.signature_data)
           .map((signature, index) => {
-            console.log(`🖼️ Loading signature image ${index}:`, {
-              area_index: signature.area_index,
-              hasData: !!signature.signature_data,
-              coordinates: { x: signature.x, y: signature.y, width: signature.width, height: signature.height }
-            });
             return new Promise<{ signature: typeof signature; image: HTMLImageElement }>((resolve, reject) => {
               const signatureImage = new Image();
               signatureImage.crossOrigin = "anonymous";
               signatureImage.onload = () => {
-                console.log(`✅ Signature image ${index} loaded:`, {
-                  naturalWidth: signatureImage.naturalWidth,
-                  naturalHeight: signatureImage.naturalHeight
-                });
                 resolve({ signature, image: signatureImage });
               };
               signatureImage.onerror = (err) => {
@@ -229,7 +219,6 @@ export default function SignPageComponent({
           })
       );
 
-      console.log(`🎨 Total signature images loaded: ${signatureImages.length}`);
 
       // Create a canvas with optimized dimensions
       const canvas = document.createElement("canvas");
@@ -250,11 +239,6 @@ export default function SignPageComponent({
 
       // Draw the original document with downscaling
       setGeneratingProgress("문서 합성 중...");
-      console.log('🖼️ Drawing original document on canvas:', {
-        canvasSize: { width: canvasWidth, height: canvasHeight },
-        originalSize: { width: naturalWidth, height: naturalHeight },
-        downscaleRatio
-      });
       ctx.drawImage(originalImage, 0, 0, canvasWidth, canvasHeight);
 
       // Draw each signature at the correct position
@@ -264,12 +248,6 @@ export default function SignPageComponent({
         try {
           const relativeArea = ensureRelativeCoordinate(signature, naturalWidth, naturalHeight);
           pixelCoords = convertSignatureAreaToPixels(relativeArea, naturalWidth, naturalHeight);
-          console.log('🖊️ Signature coordinates conversion:', {
-            signature: signature,
-            relativeArea: relativeArea,
-            pixelCoords: pixelCoords,
-            naturalDimensions: { width: naturalWidth, height: naturalHeight }
-          });
         } catch (error) {
           console.warn('Failed to convert signature coordinates, using as-is:', error);
           pixelCoords = {
@@ -287,7 +265,6 @@ export default function SignPageComponent({
         const actualWidth = pixelCoords.width * downscaleRatio;
         const actualHeight = pixelCoords.height * downscaleRatio;
 
-        console.log('🎯 Final drawing coordinates:', {
           actualX, actualY, actualWidth, actualHeight,
           downscaleRatio,
           canvasDimensions: { width: canvasWidth, height: canvasHeight }

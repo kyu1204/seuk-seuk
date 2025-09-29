@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') as EmailOtpType | null
   const next = searchParams.get('next') ?? '/'
 
-  console.log('Auth confirm params:', { token_hash, token, code, type, next })
 
   const supabase = await createServerSupabase()
 
@@ -21,7 +20,6 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.session) {
-      console.log('Code exchange successful')
       redirect(next)
     } else {
       console.error('Code exchange error:', error)
@@ -34,7 +32,6 @@ export async function GET(request: NextRequest) {
     })
 
     if (!error) {
-      console.log('Token hash verification successful')
       redirect(next)
     } else {
       console.error('Token hash verification error:', error)
@@ -47,14 +44,12 @@ export async function GET(request: NextRequest) {
     })
 
     if (!error) {
-      console.log('Token verification successful')
       redirect(next)
     } else {
       console.error('Token verification error:', error)
     }
   }
 
-  console.log('Auth confirmation failed, redirecting to error')
   // redirect the user to an error page with some instructions
   redirect('/error')
 }

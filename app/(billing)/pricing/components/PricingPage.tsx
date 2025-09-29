@@ -86,7 +86,6 @@ export function PricingPage() {
 
   const handleSelectPlan = (planId: string, planName: string) => {
     // TODO: 결제 모듈 연동 구현
-    console.log(`Selected plan: ${planName} (${planId})`);
     alert(t("pricingPage.alertMessage", { planName }));
   };
 

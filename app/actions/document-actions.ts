@@ -236,7 +236,6 @@ export async function saveSignature(
  */
 export async function markDocumentCompleted(documentId: string) {
   try {
-    console.log("🔄 markDocumentCompleted called with documentId:", documentId);
     const supabase = await createServerSupabase();
 
     // First check if document exists and is in the right state
@@ -252,7 +251,6 @@ export async function markDocumentCompleted(documentId: string) {
     }
 
     if (document.status === "completed") {
-      console.log("ℹ️ Document already completed");
       return { success: true };
     }
 
@@ -267,7 +265,6 @@ export async function markDocumentCompleted(documentId: string) {
       return { error: "Failed to mark document as completed: " + error.message };
     }
 
-    console.log("✅ Document marked as completed successfully, rows affected:", count);
     return { success: true };
   } catch (error) {
     console.error("❌ Mark completed error:", error);
@@ -487,7 +484,6 @@ export async function updateSignatureAreas(
       return { error: "Database transaction failed: " + data.error };
     }
 
-    console.log("✅ Transaction completed successfully:", data);
     
     // Revalidate document detail page
     revalidatePath(`/document/${documentId}`);
@@ -787,32 +783,26 @@ export async function deleteDocument(documentId: string): Promise<{
   success?: boolean;
   error?: string;
 }> {
-  console.log('🚀 SERVER: deleteDocument called with ID:', documentId);
 
   try {
     const supabase = await createServerSupabase();
 
     // Get current user
-    console.log('👤 SERVER: Getting current user...');
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
     if (authError) {
-      console.log('❌ SERVER: Auth error:', authError);
       return { error: "User not authenticated" };
     }
 
     if (!user) {
-      console.log('❌ SERVER: No user found');
       return { error: "User not authenticated" };
     }
 
-    console.log('✅ SERVER: User authenticated:', user.id);
 
     // Get document to verify ownership and status
-    console.log('📄 SERVER: Fetching document...');
     const { data: document, error: docError } = await supabase
       .from("documents")
       .select("id, user_id, status, file_url")
@@ -821,27 +811,21 @@ export async function deleteDocument(documentId: string): Promise<{
       .single();
 
     if (docError) {
-      console.log('❌ SERVER: Document query error:', docError);
       return { error: "Document not found" };
     }
 
     if (!document) {
-      console.log('❌ SERVER: No document found');
       return { error: "Document not found" };
     }
 
-    console.log('✅ SERVER: Document found:', { id: document.id, status: document.status, user_id: document.user_id });
 
     // Only allow deletion of draft documents
     if (document.status !== "draft") {
-      console.log('❌ SERVER: Document is not draft status:', document.status);
       return { error: "Only draft documents can be deleted" };
     }
 
-    console.log('✅ SERVER: Document is draft, proceeding with deletion...');
 
     // Delete associated signatures first (cascade delete)
-    console.log('🗂️ SERVER: Deleting signatures...');
     const { error: sigError } = await supabase
       .from("signatures")
       .delete()
@@ -852,17 +836,14 @@ export async function deleteDocument(documentId: string): Promise<{
       return { error: "Failed to delete signature areas" };
     }
 
-    console.log('✅ SERVER: Signatures deleted successfully');
 
     // Delete the document file from storage
     if (document.file_url) {
-      console.log('📁 SERVER: Deleting file from storage:', document.file_url);
       try {
         const url = new URL(document.file_url);
         const pathParts = url.pathname.split('/');
         const filename = pathParts[pathParts.length - 1];
 
-        console.log('📁 SERVER: Extracted filename:', filename);
 
         const { error: storageError } = await supabase.storage
           .from("documents")
@@ -872,7 +853,6 @@ export async function deleteDocument(documentId: string): Promise<{
           console.error("⚠️ SERVER: Delete file error:", storageError);
           // Continue with document deletion even if file deletion fails
         } else {
-          console.log('✅ SERVER: File deleted successfully');
         }
       } catch (storageError) {
         console.error("⚠️ SERVER: Error parsing file URL:", storageError);
@@ -881,7 +861,6 @@ export async function deleteDocument(documentId: string): Promise<{
     }
 
     // Delete the document record
-    console.log('📄 SERVER: Deleting document record...');
     const { error: deleteError } = await supabase
       .from("documents")
       .delete()
@@ -894,24 +873,19 @@ export async function deleteDocument(documentId: string): Promise<{
       return { error: "Failed to delete document" };
     }
 
-    console.log('✅ SERVER: Document deleted successfully');
 
     // Decrement monthly usage count
-    console.log('📊 SERVER: Decrementing monthly usage count...');
     const { success: usageUpdated, error: usageError } = await decrementDocumentCreated();
     if (!usageUpdated || usageError) {
       console.error("⚠️ SERVER: Failed to update usage:", usageError);
       // Don't fail the entire operation, just log the error
     } else {
-      console.log('✅ SERVER: Monthly usage count decremented successfully');
     }
 
     // Revalidate any relevant pages
-    console.log('🔄 SERVER: Revalidating pages...');
     revalidatePath('/dashboard');
     revalidatePath(`/document/${documentId}`);
 
-    console.log('🎉 SERVER: Delete operation completed successfully');
     return { success: true };
   } catch (error) {
     console.error("❌ SERVER: Unexpected error in deleteDocument:", error);
