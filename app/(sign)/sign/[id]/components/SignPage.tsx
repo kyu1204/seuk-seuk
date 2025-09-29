@@ -356,7 +356,13 @@ export default function SignPageComponent({
 
       // Mark document as completed
       setGeneratingProgress("문서 완료 처리 중...");
-      await markDocumentCompleted(documentData.id);
+      const completeResult = await markDocumentCompleted(documentData.id);
+
+      if (completeResult.error) {
+        console.error("Failed to mark document as completed:", completeResult.error);
+        setError("문서 완료 처리에 실패했습니다: " + completeResult.error);
+        return;
+      }
 
       // Navigate to completion page
       router.push(`/sign/${documentData.id}/completed`);

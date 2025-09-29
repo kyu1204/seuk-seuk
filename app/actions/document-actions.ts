@@ -217,6 +217,7 @@ export async function saveSignature(
       return { error: "Failed to update signature" };
     }
 
+
     // Get document to revalidate the specific signing page
     const { document } = await getDocumentById(documentId);
     if (document?.short_url) {
@@ -235,21 +236,41 @@ export async function saveSignature(
  */
 export async function markDocumentCompleted(documentId: string) {
   try {
+    console.log("🔄 markDocumentCompleted called with documentId:", documentId);
     const supabase = await createServerSupabase();
 
-    const { error } = await supabase
+    // First check if document exists and is in the right state
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, status")
+      .eq("id", documentId)
+      .single();
+
+    if (docError || !document) {
+      console.error("❌ Document not found:", docError);
+      return { error: "Document not found" };
+    }
+
+    if (document.status === "completed") {
+      console.log("ℹ️ Document already completed");
+      return { success: true };
+    }
+
+    // Update document status to completed
+    const { error, count } = await supabase
       .from("documents")
       .update({ status: "completed" })
       .eq("id", documentId);
 
     if (error) {
-      console.error("Mark completed error:", error);
-      return { error: "Failed to mark document as completed" };
+      console.error("❌ Mark completed error:", error);
+      return { error: "Failed to mark document as completed: " + error.message };
     }
 
+    console.log("✅ Document marked as completed successfully, rows affected:", count);
     return { success: true };
   } catch (error) {
-    console.error("Mark completed error:", error);
+    console.error("❌ Mark completed error:", error);
     return { error: "An unexpected error occurred" };
   }
 }

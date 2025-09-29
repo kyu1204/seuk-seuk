@@ -53,7 +53,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.clickAreas": "강조된 영역을 클릭하여 서명을 추가하세요",
     "sign.clickToSign": "클릭하여 서명",
     "sign.generating": "생성 중...",
-    "sign.saveDocument": "문서 저장",
+    "sign.saveDocument": "문서 제출",
     "sign.signedDocument": "서명된 문서",
     "sign.close": "닫기",
     "sign.download": "다운로드",
@@ -139,7 +139,8 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Pricing Page Specific Keys
     "pricingPage.title": "요금제 선택",
-    "pricingPage.description": "필요에 맞는 플랜을 선택하고 더 많은 기능을 이용하세요",
+    "pricingPage.description":
+      "필요에 맞는 플랜을 선택하고 더 많은 기능을 이용하세요",
     "pricingPage.currentPlan": "현재 {planName} 플랜을 이용 중입니다",
     "pricingPage.popular": "인기",
     "pricingPage.currentBadge": "현재 플랜",
@@ -154,22 +155,27 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.startFree": "무료로 시작하기",
     "pricingPage.contactUs": "문의하기",
     "pricingPage.selectPlan": "플랜 선택하기",
-    "pricingPage.additionalInfo": "모든 플랜에는 기본 전자서명 기능이 포함되어 있습니다.",
-    "pricingPage.additionalInfo2": "언제든지 플랜을 변경하거나 취소할 수 있습니다.",
+    "pricingPage.additionalInfo":
+      "모든 플랜에는 기본 전자서명 기능이 포함되어 있습니다.",
+    "pricingPage.additionalInfo2":
+      "언제든지 플랜을 변경하거나 취소할 수 있습니다.",
     "pricingPage.errorTitle": "오류가 발생했습니다",
     "pricingPage.backButton": "뒤로 가기",
     "pricingPage.loadError": "Failed to load pricing data",
-    "pricingPage.alertMessage": "{planName} 플랜이 선택되었습니다. 결제 모듈 연동 예정입니다.",
+    "pricingPage.alertMessage":
+      "{planName} 플랜이 선택되었습니다. 결제 모듈 연동 예정입니다.",
 
     // Pricing Page - Plan Details
     "pricingPage.plans.free.description": "개인 사용자를 위한 기본 플랜",
     "pricingPage.plans.free.feature1": "기본 문서 관리",
     "pricingPage.plans.free.feature2": "표준 지원",
-    "pricingPage.plans.pro.description": "전문가와 소규모 팀을 위한 향상된 기능",
+    "pricingPage.plans.pro.description":
+      "전문가와 소규모 팀을 위한 향상된 기능",
     "pricingPage.plans.pro.feature1": "이메일 알림",
     "pricingPage.plans.pro.feature2": "우선순위 지원",
     "pricingPage.plans.pro.feature3": "고급 분석",
-    "pricingPage.plans.enterprise.description": "대규모 조직을 위한 완전한 솔루션",
+    "pricingPage.plans.enterprise.description":
+      "대규모 조직을 위한 완전한 솔루션",
     "pricingPage.plans.enterprise.feature1": "맞춤형 워크플로우",
     "pricingPage.plans.enterprise.feature2": "전용 지원",
     "pricingPage.plans.enterprise.feature3": "API 액세스",
@@ -253,7 +259,8 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.header.description": "문서를 관리하고 서명을 수집하세요",
     "dashboard.upload": "문서 업로드",
     "dashboard.empty.title": "아직 업로드된 문서가 없습니다",
-    "dashboard.empty.description": "첫 번째 문서를 업로드하여 시작해보세요. 문서를 업로드하고 서명 영역을 지정한 후 다른 사람과 공유할 수 있습니다.",
+    "dashboard.empty.description":
+      "첫 번째 문서를 업로드하여 시작해보세요. 문서를 업로드하고 서명 영역을 지정한 후 다른 사람과 공유할 수 있습니다.",
     "dashboard.empty.action": "첫 문서 업로드하기",
     "dashboard.loading.more": "추가 문서 로딩 중...",
     "dashboard.retry": "다시 시도",
@@ -288,14 +295,17 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Forgot Password Page
     "forgotPassword.title": "비밀번호 찾기",
-    "forgotPassword.subtitle": "이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.",
+    "forgotPassword.subtitle":
+      "이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.",
     "forgotPassword.emailLabel": "이메일 주소",
     "forgotPassword.sendReset": "재설정 링크 보내기",
     "forgotPassword.sending": "전송 중...",
     "forgotPassword.backToLogin": "로그인으로 돌아가기",
     "forgotPassword.checkEmail": "이메일을 확인하세요",
-    "forgotPassword.emailSentMessage": "비밀번호 재설정 링크가 이메일로 전송되었습니다.",
-    "forgotPassword.checkInbox": "이메일 받은함을 확인하시고 링크를 클릭하여 비밀번호를 재설정하세요.",
+    "forgotPassword.emailSentMessage":
+      "비밀번호 재설정 링크가 이메일로 전송되었습니다.",
+    "forgotPassword.checkInbox":
+      "이메일 받은함을 확인하시고 링크를 클릭하여 비밀번호를 재설정하세요.",
     "forgotPassword.didntReceive": "이메일을 받지 못하셨나요?",
     "forgotPassword.sendAnother": "다시 보내기",
 
@@ -308,10 +318,12 @@ const translations: Record<Language, Record<string, string>> = {
     "resetPassword.updating": "업데이트 중...",
     "resetPassword.backToLogin": "로그인으로 돌아가기",
     "resetPassword.invalidLink": "유효하지 않은 링크",
-    "resetPassword.invalidLinkMessage": "이 링크는 유효하지 않거나 만료되었습니다. 새로운 비밀번호 재설정을 요청해주세요.",
+    "resetPassword.invalidLinkMessage":
+      "이 링크는 유효하지 않거나 만료되었습니다. 새로운 비밀번호 재설정을 요청해주세요.",
     "resetPassword.requestNew": "새 재설정 링크 요청",
     "resetPassword.successTitle": "비밀번호가 변경되었습니다",
-    "resetPassword.successMessage": "새 비밀번호로 로그인해주세요. 잠시 후 로그인 페이지로 이동합니다.",
+    "resetPassword.successMessage":
+      "새 비밀번호로 로그인해주세요. 잠시 후 로그인 페이지로 이동합니다.",
   },
   en: {
     // Header
@@ -339,7 +351,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.clickAreas": "Click on the highlighted areas to add your signature",
     "sign.clickToSign": "Click to sign",
     "sign.generating": "Generating...",
-    "sign.saveDocument": "Save Document",
+    "sign.saveDocument": "Submit Document",
     "sign.signedDocument": "Your Signed Document",
     "sign.close": "Close",
     "sign.download": "Download",
@@ -427,7 +439,8 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Pricing Page Specific Keys
     "pricingPage.title": "Choose Your Plan",
-    "pricingPage.description": "Select a plan that fits your needs and unlock more features",
+    "pricingPage.description":
+      "Select a plan that fits your needs and unlock more features",
     "pricingPage.currentPlan": "Currently using {planName} plan",
     "pricingPage.popular": "Popular",
     "pricingPage.currentBadge": "Current Plan",
@@ -442,22 +455,27 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.startFree": "Start Free",
     "pricingPage.contactUs": "Contact Us",
     "pricingPage.selectPlan": "Select Plan",
-    "pricingPage.additionalInfo": "All plans include basic electronic signature features.",
-    "pricingPage.additionalInfo2": "You can change or cancel your plan anytime.",
+    "pricingPage.additionalInfo":
+      "All plans include basic electronic signature features.",
+    "pricingPage.additionalInfo2":
+      "You can change or cancel your plan anytime.",
     "pricingPage.errorTitle": "An error occurred",
     "pricingPage.backButton": "Go Back",
     "pricingPage.loadError": "Failed to load pricing data",
-    "pricingPage.alertMessage": "{planName} plan has been selected. Payment integration coming soon.",
+    "pricingPage.alertMessage":
+      "{planName} plan has been selected. Payment integration coming soon.",
 
     // Pricing Page - Plan Details
     "pricingPage.plans.free.description": "Basic plan for individual users",
     "pricingPage.plans.free.feature1": "Basic document management",
     "pricingPage.plans.free.feature2": "Standard support",
-    "pricingPage.plans.pro.description": "Enhanced features for professionals and small teams",
+    "pricingPage.plans.pro.description":
+      "Enhanced features for professionals and small teams",
     "pricingPage.plans.pro.feature1": "Email notifications",
     "pricingPage.plans.pro.feature2": "Priority support",
     "pricingPage.plans.pro.feature3": "Advanced analytics",
-    "pricingPage.plans.enterprise.description": "Complete solution for large organizations",
+    "pricingPage.plans.enterprise.description":
+      "Complete solution for large organizations",
     "pricingPage.plans.enterprise.feature1": "Custom workflows",
     "pricingPage.plans.enterprise.feature2": "Dedicated support",
     "pricingPage.plans.enterprise.feature3": "API access",
@@ -540,15 +558,18 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.title": "My Documents",
     "dashboard.description": "You are managing a total of {total} documents.",
     "dashboard.header.title": "My Documents",
-    "dashboard.header.description": "Manage your documents and collect signatures",
+    "dashboard.header.description":
+      "Manage your documents and collect signatures",
     "dashboard.upload": "Upload Document",
     "dashboard.empty.title": "No documents uploaded yet",
-    "dashboard.empty.description": "Get started by uploading your first document. You can upload documents, define signature areas, and share them with others.",
+    "dashboard.empty.description":
+      "Get started by uploading your first document. You can upload documents, define signature areas, and share them with others.",
     "dashboard.empty.action": "Upload First Document",
     "dashboard.loading.more": "Loading more documents...",
     "dashboard.retry": "Retry",
     "dashboard.end.message": "All documents have been loaded.",
-    "dashboard.error.loadMore": "An error occurred while loading more documents.",
+    "dashboard.error.loadMore":
+      "An error occurred while loading more documents.",
     "dashboard.filter.all": "All",
     "dashboard.filter.draft": "Draft",
     "dashboard.filter.published": "Published",
@@ -561,7 +582,8 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Usage Widget
     "usage.title": "Usage Overview",
-    "usage.description": "Check your current monthly usage and active document status",
+    "usage.description":
+      "Check your current monthly usage and active document status",
     "usage.error.title": "Usage Information Error",
     "usage.error.message": "Unable to load usage information.",
     "usage.monthly.title": "Monthly Document Creation",
@@ -578,14 +600,17 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Forgot Password Page
     "forgotPassword.title": "Forgot Password",
-    "forgotPassword.subtitle": "Enter your email address and we'll send you a password reset link.",
+    "forgotPassword.subtitle":
+      "Enter your email address and we'll send you a password reset link.",
     "forgotPassword.emailLabel": "Email Address",
     "forgotPassword.sendReset": "Send Reset Link",
     "forgotPassword.sending": "Sending...",
     "forgotPassword.backToLogin": "Back to Login",
     "forgotPassword.checkEmail": "Check Your Email",
-    "forgotPassword.emailSentMessage": "A password reset link has been sent to your email.",
-    "forgotPassword.checkInbox": "Please check your inbox and click the link to reset your password.",
+    "forgotPassword.emailSentMessage":
+      "A password reset link has been sent to your email.",
+    "forgotPassword.checkInbox":
+      "Please check your inbox and click the link to reset your password.",
     "forgotPassword.didntReceive": "Didn't receive an email?",
     "forgotPassword.sendAnother": "Send Another",
 
@@ -598,10 +623,12 @@ const translations: Record<Language, Record<string, string>> = {
     "resetPassword.updating": "Updating...",
     "resetPassword.backToLogin": "Back to Login",
     "resetPassword.invalidLink": "Invalid Link",
-    "resetPassword.invalidLinkMessage": "This link is invalid or has expired. Please request a new password reset.",
+    "resetPassword.invalidLinkMessage":
+      "This link is invalid or has expired. Please request a new password reset.",
     "resetPassword.requestNew": "Request New Reset Link",
     "resetPassword.successTitle": "Password Changed Successfully",
-    "resetPassword.successMessage": "Please log in with your new password. You will be redirected to the login page shortly.",
+    "resetPassword.successMessage":
+      "Please log in with your new password. You will be redirected to the login page shortly.",
   },
 };
 
@@ -637,8 +664,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     // Replace parameters in the translation string
     if (params) {
-      Object.keys(params).forEach(param => {
-        translation = translation.replace(new RegExp(`\\{${param}\\}`, 'g'), String(params[param]));
+      Object.keys(params).forEach((param) => {
+        translation = translation.replace(
+          new RegExp(`\\{${param}\\}`, "g"),
+          String(params[param])
+        );
       });
     }
 
