@@ -1,12 +1,13 @@
 import type React from "react";
+import * as Sentry from "@sentry/nextjs";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/language-context";
 import { cookies } from "next/headers";
-import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,6 +29,9 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: "/favicon.svg",
     },
+    other: {
+      ...Sentry.getTraceData(),
+    },
   };
 
   return {
@@ -35,6 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: metadata[language].description,
     generator: "MINT",
     icons: metadata.icons,
+    other: metadata.other,
   };
 }
 
