@@ -33,6 +33,7 @@ export default function SignatureModal({
   const [hasSignature, setHasSignature] = useState(!!existingSignature);
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const PEN_WIDTH = 5; // Increased from default
 
   // Initialize canvas when component mounts or when isOpen changes
@@ -171,11 +172,17 @@ export default function SignatureModal({
   };
 
   // Complete signature
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!canvasRef.current || !hasSignature) return;
 
-    const signatureData = canvasRef.current.toDataURL("image/png");
-    onComplete(signatureData);
+    setIsSubmitting(true);
+
+    try {
+      const signatureData = canvasRef.current.toDataURL("image/png");
+      await onComplete(signatureData);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -206,17 +213,29 @@ export default function SignatureModal({
           {t("signature.instruction")}
         </p>
 
-        <DialogFooter className="flex justify-between sm:justify-between">
-          <Button type="button" variant="outline" onClick={clearCanvas}>
+        <DialogFooter className="flex justify-between sm:justify-between gap-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={clearCanvas}
+            disabled={isSubmitting}
+          >
             <Trash2 className="mr-2 h-4 w-4" />
             {t("signature.clear")}
           </Button>
           <Button
             type="button"
             onClick={handleComplete}
-            disabled={!hasSignature}
+            disabled={!hasSignature || isSubmitting}
           >
-            {t("signature.sign")}
+            {isSubmitting ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                {t("signature.signing")}
+              </>
+            ) : (
+              t("signature.sign")
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
