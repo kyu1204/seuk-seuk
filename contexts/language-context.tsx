@@ -325,6 +325,11 @@ const translations: Record<Language, Record<string, string>> = {
     "resetPassword.successTitle": "비밀번호가 변경되었습니다",
     "resetPassword.successMessage":
       "새 비밀번호로 로그인해주세요. 잠시 후 로그인 페이지로 이동합니다.",
+
+    // Breadcrumb
+    "breadcrumb.dashboard": "대시보드",
+    "breadcrumb.upload": "문서 업로드",
+    "breadcrumb.details": "문서 상세",
   },
   en: {
     // Header
@@ -631,6 +636,11 @@ const translations: Record<Language, Record<string, string>> = {
     "resetPassword.successTitle": "Password Changed Successfully",
     "resetPassword.successMessage":
       "Please log in with your new password. You will be redirected to the login page shortly.",
+
+    // Breadcrumb
+    "breadcrumb.dashboard": "Dashboard",
+    "breadcrumb.upload": "Upload Document",
+    "breadcrumb.details": "Document Details",
   },
 };
 
