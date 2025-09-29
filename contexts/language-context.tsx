@@ -257,7 +257,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.description": "총 {total}개의 문서를 관리하고 있습니다.",
     "dashboard.header.title": "내 문서",
     "dashboard.header.description": "문서를 관리하고 서명을 수집하세요",
-    "dashboard.upload": "문서 업로드",
+    "dashboard.upload": "업로드",
     "dashboard.empty.title": "아직 업로드된 문서가 없습니다",
     "dashboard.empty.description":
       "첫 번째 문서를 업로드하여 시작해보세요. 문서를 업로드하고 서명 영역을 지정한 후 다른 사람과 공유할 수 있습니다.",
@@ -560,7 +560,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.header.title": "My Documents",
     "dashboard.header.description":
       "Manage your documents and collect signatures",
-    "dashboard.upload": "Upload Document",
+    "dashboard.upload": "Upload",
     "dashboard.empty.title": "No documents uploaded yet",
     "dashboard.empty.description":
       "Get started by uploading your first document. You can upload documents, define signature areas, and share them with others.",

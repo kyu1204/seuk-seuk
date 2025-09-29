@@ -83,9 +83,13 @@ export default function SignatureModal({
       clientY = e.clientY;
     }
 
+    // Calculate the actual canvas coordinates considering the scale
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
   };
 
