@@ -659,10 +659,10 @@ export async function getUserDocumentsClient(
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Build query (exclude password field for client)
+    // Build query with optimized field selection (exclude password field for client)
     let query = supabase
       .from("documents")
-      .select("id, filename, status, file_url, signed_file_url, short_url, created_at, expires_at, user_id, password", { count: "exact" })
+      .select("id, filename, status, signed_file_url, short_url, created_at, expires_at", { count: "exact" })
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -962,6 +962,126 @@ export async function getUserDocumentCounts(): Promise<{
       draft: 0,
       published: 0,
       completed: 0,
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Get dashboard data optimized - combines counts and documents in minimal queries
+ */
+export async function getDashboardData(
+  page: number = 1,
+  limit: number = 12,
+  status?: "draft" | "published" | "completed"
+): Promise<{
+  documents: Document[];
+  hasMore: boolean;
+  total: number;
+  counts: {
+    all: number;
+    draft: number;
+    published: number;
+    completed: number;
+  };
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return {
+        documents: [],
+        hasMore: false,
+        total: 0,
+        counts: { all: 0, draft: 0, published: 0, completed: 0 },
+        error: "User not authenticated",
+      };
+    }
+
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Execute both queries in parallel for optimal performance
+    const [documentsResult, countsResult] = await Promise.all([
+      // Get documents with optimized field selection
+      (() => {
+        let query = supabase
+          .from("documents")
+          .select("id, filename, status, created_at, short_url, signed_file_url, expires_at", { count: "exact" })
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        if (status) {
+          query = query.eq("status", status);
+        }
+
+        return query;
+      })(),
+
+      // Get status counts using a single aggregation query
+      supabase
+        .from("documents")
+        .select("status")
+        .eq("user_id", user.id)
+    ]);
+
+    if (documentsResult.error) {
+      console.error("Documents query error:", documentsResult.error);
+      return {
+        documents: [],
+        hasMore: false,
+        total: 0,
+        counts: { all: 0, draft: 0, published: 0, completed: 0 },
+        error: "Failed to load documents",
+      };
+    }
+
+    if (countsResult.error) {
+      console.error("Counts query error:", countsResult.error);
+      return {
+        documents: documentsResult.data || [],
+        hasMore: false,
+        total: documentsResult.count || 0,
+        counts: { all: 0, draft: 0, published: 0, completed: 0 },
+        error: "Failed to load document counts",
+      };
+    }
+
+    // Process counts from status data
+    const statusCounts = (countsResult.data || []).reduce(
+      (acc, doc) => {
+        acc.all++;
+        if (doc.status === "draft") acc.draft++;
+        else if (doc.status === "published") acc.published++;
+        else if (doc.status === "completed") acc.completed++;
+        return acc;
+      },
+      { all: 0, draft: 0, published: 0, completed: 0 }
+    );
+
+    const total = documentsResult.count || 0;
+    const hasMore = offset + limit < total;
+
+    return {
+      documents: documentsResult.data || [],
+      hasMore,
+      total,
+      counts: statusCounts,
+    };
+  } catch (error) {
+    console.error("Get dashboard data error:", error);
+    return {
+      documents: [],
+      hasMore: false,
+      total: 0,
+      counts: { all: 0, draft: 0, published: 0, completed: 0 },
       error: "An unexpected error occurred",
     };
   }
