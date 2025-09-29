@@ -56,6 +56,7 @@ export default function SignPageComponent({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatingProgress, setGeneratingProgress] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [password, setPassword] = useState<string>("");
   const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
@@ -338,6 +339,7 @@ export default function SignPageComponent({
       }
 
       // Navigate to completion page
+      setIsNavigating(true);
       router.push(`/sign/${documentData.id}/completed`);
     } catch (err) {
       console.error("Error generating signed document:", err);
@@ -346,7 +348,6 @@ export default function SignPageComponent({
           ? err.message
           : "Failed to generate signed document"
       );
-    } finally {
       setIsGenerating(false);
       setGeneratingProgress("");
     }
@@ -867,12 +868,12 @@ export default function SignPageComponent({
         <div className="flex justify-end gap-2">
           <Button
             onClick={handleGenerateDocument}
-            disabled={!allAreasSigned || isGenerating}
+            disabled={!allAreasSigned || isGenerating || isNavigating}
           >
-            {isGenerating ? (
+            {isGenerating || isNavigating ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                {generatingProgress || t("sign.generating")}
+                {isNavigating ? "페이지 이동 중..." : (generatingProgress || t("sign.generating"))}
               </>
             ) : (
               t("sign.saveDocument")
