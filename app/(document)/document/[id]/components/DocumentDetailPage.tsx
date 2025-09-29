@@ -336,32 +336,37 @@ export default function DocumentDetailComponent({
     setIsDragging(false);
   };
 
-  // Touch event handlers for mobile support
+  // Simplified touch event handlers for mobile support
   const handleTouchStart = (e: React.TouchEvent) => {
-    const container = documentContainerRef.current;
-    const canScroll = container && (
-      container.scrollWidth > container.clientWidth ||
-      container.scrollHeight > container.clientHeight
-    );
-
-    if (canScroll && !isSelecting && e.touches.length === 1) {
-      const touch = e.touches[0];
+    if (e.touches.length === 2 && !isSelecting) {
+      // Two finger touch - start document panning
+      e.preventDefault();
       setIsDragging(true);
-      setDragStart({ x: touch.clientX, y: touch.clientY });
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      setDragStart({ x: centerX, y: centerY });
     }
+    // Single touch does nothing in document view mode (unless in selection mode)
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isDragging && documentContainerRef.current && e.touches.length === 1) {
+    if (e.touches.length === 2 && isDragging && documentContainerRef.current) {
+      // Two finger panning
       e.preventDefault();
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - dragStart.x;
-      const deltaY = touch.clientY - dragStart.y;
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      
+      const deltaX = centerX - dragStart.x;
+      const deltaY = centerY - dragStart.y;
 
       documentContainerRef.current.scrollLeft -= deltaX;
       documentContainerRef.current.scrollTop -= deltaY;
 
-      setDragStart({ x: touch.clientX, y: touch.clientY });
+      setDragStart({ x: centerX, y: centerY });
     }
   };
 
@@ -669,6 +674,8 @@ export default function DocumentDetailComponent({
               onCancel={() => setIsSelecting(false)}
               existingAreas={signatureAreas}
               initialScrollPosition={scrollPosition}
+              zoomLevel={zoomLevel}
+              onZoomChange={setZoomLevel}
             />
           ) : (
             <div

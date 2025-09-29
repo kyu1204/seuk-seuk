@@ -40,9 +40,6 @@ export default function DocumentUpload() {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [lastTouchDistance, setLastTouchDistance] = useState<number>(0);
-  const [lastTapTime, setLastTapTime] = useState<number>(0);
-  const [touchStartZoom, setTouchStartZoom] = useState<number>(1);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -138,99 +135,48 @@ export default function DocumentUpload() {
     setIsDragging(false);
   };
 
-  // Touch gesture helpers
-  const getTouchDistance = (touches: TouchList) => {
-    if (touches.length < 2) return 0;
-    const touch1 = touches[0];
-    const touch2 = touches[1];
-    return Math.sqrt(
-      Math.pow(touch2.clientX - touch1.clientX, 2) +
-      Math.pow(touch2.clientY - touch1.clientY, 2)
-    );
-  };
 
-  const getTouchCenter = (touches: TouchList) => {
-    if (touches.length === 0) return { x: 0, y: 0 };
-    if (touches.length === 1) {
-      return { x: touches[0].clientX, y: touches[0].clientY };
-    }
-    const x = (touches[0].clientX + touches[1].clientX) / 2;
-    const y = (touches[0].clientY + touches[1].clientY) / 2;
-    return { x, y };
-  };
-
-  // Touch event handlers
+  // Simplified touch event handlers for document viewing
   const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-
-    if (e.touches.length === 1) {
-      // Single touch - check for double tap
-      const currentTime = Date.now();
-      const timeDiff = currentTime - lastTapTime;
-
-      if (timeDiff < 300 && timeDiff > 0) {
-        // Double tap detected - toggle zoom
-        if (zoomLevel === 1) {
-          setZoomLevel(2);
-        } else {
-          setZoomLevel(1);
-        }
-      }
-      setLastTapTime(currentTime);
-
-      // Start dragging for panning - allow at any zoom level if content overflows
-      const container = documentContainerRef.current;
-      const canScroll = container && (
-        container.scrollWidth > container.clientWidth ||
-        container.scrollHeight > container.clientHeight
-      );
-
-      if (canScroll) {
-        setIsDragging(true);
-        setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-      }
-    } else if (e.touches.length === 2) {
-      // Pinch gesture start
-      const distance = getTouchDistance(e.touches);
-      setLastTouchDistance(distance);
-      setTouchStartZoom(zoomLevel);
-      setIsDragging(false);
+    if (e.touches.length === 2) {
+      // Two finger touch - start document panning
+      e.preventDefault();
+      setIsDragging(true);
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      setDragStart({ x: centerX, y: centerY });
     }
+    // Single touch does nothing in document view mode (no area selection here)
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
-
-    if (e.touches.length === 1 && isDragging && documentContainerRef.current) {
-      // Single touch panning
-      const deltaX = e.touches[0].clientX - dragStart.x;
-      const deltaY = e.touches[0].clientY - dragStart.y;
+    if (e.touches.length === 2 && isDragging && documentContainerRef.current) {
+      // Two finger panning
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      
+      const deltaX = centerX - dragStart.x;
+      const deltaY = centerY - dragStart.y;
 
       documentContainerRef.current.scrollLeft -= deltaX;
       documentContainerRef.current.scrollTop -= deltaY;
 
-      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-    } else if (e.touches.length === 2) {
-      // Pinch zoom
-      const distance = getTouchDistance(e.touches);
-      if (lastTouchDistance > 0) {
-        const scale = distance / lastTouchDistance;
-        const newZoom = Math.min(Math.max(touchStartZoom * scale, 0.5), 3);
-        setZoomLevel(newZoom);
-      }
+      setDragStart({ x: centerX, y: centerY });
     }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
-
     if (e.touches.length === 0) {
+      // All touches ended - stop panning
       setIsDragging(false);
-      setLastTouchDistance(0);
-    } else if (e.touches.length === 1) {
-      // Switch from pinch to pan
-      setLastTouchDistance(0);
-      setTouchStartZoom(zoomLevel);
+    } else if (e.touches.length === 1 && isDragging) {
+      // From two fingers to one finger - stop panning
+      setIsDragging(false);
     }
   };
 
@@ -378,6 +324,8 @@ export default function DocumentUpload() {
                 onCancel={() => setIsSelecting(false)}
                 existingAreas={signatureAreas}
                 initialScrollPosition={scrollPosition}
+                zoomLevel={zoomLevel}
+                onZoomChange={setZoomLevel}
               />
             ) : (
               <div
