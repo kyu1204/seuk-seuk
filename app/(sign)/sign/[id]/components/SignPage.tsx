@@ -417,8 +417,14 @@ export default function SignPageComponent({
       }
       setLastTapTime(currentTime);
 
-      // Start dragging for panning if zoomed
-      if (zoomLevel > 1) {
+      // Allow dragging when content overflows container
+      const container = documentContainerRef.current;
+      const canScroll = container && (
+        container.scrollWidth > container.clientWidth ||
+        container.scrollHeight > container.clientHeight
+      );
+
+      if (canScroll) {
         e.preventDefault();
         setIsDragging(true);
         setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
@@ -480,10 +486,17 @@ export default function SignPageComponent({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (zoomLevel > 1) {
+    // Allow dragging when content overflows container
+    const container = documentContainerRef.current;
+    const canScroll = container && (
+      container.scrollWidth > container.clientWidth ||
+      container.scrollHeight > container.clientHeight
+    );
+
+    if (canScroll) {
+      e.preventDefault();
       setIsDragging(true);
       setDragStart({ x: e.clientX, y: e.clientY });
-      e.preventDefault();
     }
   };
 

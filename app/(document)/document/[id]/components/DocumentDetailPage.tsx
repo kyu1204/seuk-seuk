@@ -312,7 +312,7 @@ export default function DocumentDetailComponent({
       container.scrollHeight > container.clientHeight
     );
 
-    if (canScroll) {
+    if (canScroll && !isSelecting) {
       e.preventDefault();
       setIsDragging(true);
       setDragStart({ x: e.clientX, y: e.clientY });
@@ -333,6 +333,39 @@ export default function DocumentDetailComponent({
   };
 
   const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Touch event handlers for mobile support
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const container = documentContainerRef.current;
+    const canScroll = container && (
+      container.scrollWidth > container.clientWidth ||
+      container.scrollHeight > container.clientHeight
+    );
+
+    if (canScroll && !isSelecting && e.touches.length === 1) {
+      const touch = e.touches[0];
+      setIsDragging(true);
+      setDragStart({ x: touch.clientX, y: touch.clientY });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isDragging && documentContainerRef.current && e.touches.length === 1) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - dragStart.x;
+      const deltaY = touch.clientY - dragStart.y;
+
+      documentContainerRef.current.scrollLeft -= deltaX;
+      documentContainerRef.current.scrollTop -= deltaY;
+
+      setDragStart({ x: touch.clientX, y: touch.clientY });
+    }
+  };
+
+  const handleTouchEnd = () => {
     setIsDragging(false);
   };
 
@@ -656,6 +689,9 @@ export default function DocumentDetailComponent({
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
               <div
                 className="relative inline-block"
