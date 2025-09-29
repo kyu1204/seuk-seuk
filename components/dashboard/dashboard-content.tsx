@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUserDocuments, getUserDocumentCounts } from "@/app/actions/document-actions";
+import { getDashboardData } from "@/app/actions/document-actions";
 import { FileX, Upload } from "lucide-react";
 import { InfiniteScrollDocuments } from "@/components/dashboard/infinite-scroll-documents";
 import { StatusFilter } from "@/components/dashboard/status-filter";
@@ -35,7 +35,7 @@ export function DashboardContent() {
     completed: 0,
   });
 
-  // Load status counts once on mount
+  // Load dashboard data (documents + counts) when filter changes or on mount
   useEffect(() => {
     if (authLoading) return;
 
@@ -44,34 +44,14 @@ export function DashboardContent() {
       return;
     }
 
-    const loadStatusCounts = async () => {
-      try {
-        const counts = await getUserDocumentCounts();
-        if (counts.error) {
-          console.error("Error loading counts:", counts.error);
-        } else {
-          setStatusCounts(counts);
-        }
-      } catch (err) {
-        console.error("Error loading status counts:", err);
-      }
-    };
-
-    loadStatusCounts();
-  }, [authLoading, isAuthenticated, router]);
-
-  // Load documents when filter changes
-  useEffect(() => {
-    if (authLoading || !isAuthenticated) return;
-
-    const loadDocuments = async () => {
+    const loadDashboardData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Load documents with current filter
+        // Load both documents and counts in one optimized call
         const statusFilter = selectedStatus === "all" ? undefined : selectedStatus;
-        const result = await getUserDocuments(1, 12, statusFilter);
+        const result = await getDashboardData(1, 12, statusFilter);
 
         if (result.error) {
           setError(result.error);
@@ -79,17 +59,18 @@ export function DashboardContent() {
           setDocuments(result.documents);
           setHasMore(result.hasMore);
           setTotal(result.total);
+          setStatusCounts(result.counts);
         }
       } catch (err) {
-        setError("Failed to load documents");
-        console.error("Error loading documents:", err);
+        setError("Failed to load dashboard data");
+        console.error("Error loading dashboard data:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadDocuments();
-  }, [authLoading, isAuthenticated, selectedStatus]);
+    loadDashboardData();
+  }, [authLoading, isAuthenticated, selectedStatus, router]);
 
   // Show loading while checking auth or loading documents
   if (authLoading || loading) {
