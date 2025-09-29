@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/language-context";
+import { ProjectBreadcrumb } from "@/components/breadcrumb";
 import type {
   Document,
   Signature,
@@ -362,6 +363,9 @@ export default function DocumentDetailComponent({
   return (
     <div className="container mx-auto px-6 py-6 sm:px-4 sm:py-8">
       <div className="max-w-5xl mx-auto">
+        {/* Breadcrumb */}
+        <ProjectBreadcrumb />
+
         {/* Header */}
         <div className="mb-6 sm:mb-8"></div>
 

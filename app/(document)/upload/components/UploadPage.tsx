@@ -2,6 +2,7 @@
 
 import DocumentUpload from "@/components/document-upload";
 import { useLanguage } from "@/contexts/language-context";
+import { ProjectBreadcrumb } from "@/components/breadcrumb";
 
 export default function UploadPageComponent() {
   const { t } = useLanguage();
@@ -9,7 +10,8 @@ export default function UploadPageComponent() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-8"></div>
+        {/* Breadcrumb */}
+        <ProjectBreadcrumb />
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">
