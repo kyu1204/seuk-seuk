@@ -141,14 +141,10 @@ export default function SignatureModal({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Ensure the line width is set correctly for each stroke
-    ctx.lineWidth = PEN_WIDTH;
-
     const coords = getCoordinates(e.nativeEvent, canvas);
 
-    // Draw line from last position to current position
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
+    // Draw line from last position to current position without beginPath
+    // This creates a continuous line
     ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
 

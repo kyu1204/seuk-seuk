@@ -265,10 +265,6 @@ export default function SignPageComponent({
         const actualWidth = pixelCoords.width * downscaleRatio;
         const actualHeight = pixelCoords.height * downscaleRatio;
 
-          actualX, actualY, actualWidth, actualHeight,
-          downscaleRatio,
-          canvasDimensions: { width: canvasWidth, height: canvasHeight }
-        });
 
         // Calculate the signature's aspect ratio
         const signatureAspectRatio = signatureImage.width / signatureImage.height;
