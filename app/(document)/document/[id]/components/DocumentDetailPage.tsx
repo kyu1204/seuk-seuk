@@ -43,14 +43,7 @@ export default function DocumentDetailComponent({
   const router = useRouter();
 
   const [document, setDocument] = useState<Document>(documentData);
-  const [signatureAreas, setSignatureAreas] = useState<SignatureArea[]>(
-    signatures.map((sig) => ({
-      x: sig.x,
-      y: sig.y,
-      width: sig.width,
-      height: sig.height,
-    }))
-  );
+  const [signatureAreas, setSignatureAreas] = useState<RelativeSignatureArea[]>([]);
   const [signatureData, setSignatureData] = useState<Signature[]>(signatures);
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -86,6 +79,20 @@ export default function DocumentDetailComponent({
 
   const handleEditModeToggle = () => {
     if (document.status === "draft") {
+      if (!isEditMode) {
+        // Entering edit mode - load existing signature areas
+        console.log('📝 수정 모드 진입 - 기존 서명영역 로드:', signatures.length);
+        setSignatureAreas(signatures.map((sig) => ({
+          x: sig.x,
+          y: sig.y,
+          width: sig.width,
+          height: sig.height,
+        })));
+      } else {
+        // Exiting edit mode - clear signature areas
+        console.log('📝 수정 모드 종료 - 서명영역 초기화');
+        setSignatureAreas([]);
+      }
       setIsEditMode(!isEditMode);
       setError(null);
     }
@@ -106,24 +113,8 @@ export default function DocumentDetailComponent({
   };
 
   const handleAreaSelected = (area: RelativeSignatureArea) => {
-    // Convert relative coordinates to absolute for database storage
-    try {
-      if (documentContainerRef.current) {
-        const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
-        const pixelArea = convertSignatureAreaToPixels(area, originalWidth, originalHeight);
-        const absoluteArea: SignatureArea = {
-          x: pixelArea.x,
-          y: pixelArea.y,
-          width: pixelArea.width,
-          height: pixelArea.height,
-        };
-        setSignatureAreas([...signatureAreas, absoluteArea]);
-      }
-    } catch (error) {
-      console.warn('Failed to convert area coordinates:', error);
-      // Fallback: treat as pixel coordinates
-      setSignatureAreas([...signatureAreas, area as SignatureArea]);
-    }
+    // Store the area coordinates as relative percentages (same as DocumentUpload)
+    setSignatureAreas([...signatureAreas, area]);
     setIsSelecting(false);
   };
 
@@ -140,7 +131,20 @@ export default function DocumentDetailComponent({
     setError(null);
 
     try {
-      const result = await updateSignatureAreas(document.id, signatureAreas);
+      // Store relative coordinates directly (no conversion needed)
+      const relativeAreas: SignatureArea[] = signatureAreas.map(area => ({
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+      }));
+
+      console.log('🔍 저장할 서명영역들 (신규만):', {
+        new_areas_count: signatureAreas.length,
+        relativeAreas_to_save: relativeAreas
+      });
+
+      const result = await updateSignatureAreas(document.id, relativeAreas);
 
       if (result.error) {
         setError(result.error);
@@ -159,7 +163,7 @@ export default function DocumentDetailComponent({
   };
 
   const handlePublish = async (password: string, expiresAt: string) => {
-    if (document.status !== "draft" || signatureAreas.length === 0) return;
+    if (document.status !== "draft" || signatures.length === 0) return;
 
     setIsLoading(true);
     setError(null);
@@ -246,7 +250,7 @@ export default function DocumentDetailComponent({
   };
 
   const canEdit = document.status === "draft";
-  const canPublish = document.status === "draft" && signatureAreas.length > 0;
+  const canPublish = document.status === "draft" && signatures.length > 0;
   const isPublished = document.status === "published";
   const isCompleted = document.status === "completed";
 
@@ -261,6 +265,7 @@ export default function DocumentDetailComponent({
     isPublished,
     isCompleted
   });
+
 
   // 완료된 문서의 경우 signed URL 가져오기
   useEffect(() => {
@@ -300,10 +305,17 @@ export default function DocumentDetailComponent({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (zoomLevel > 1) {
+    // Allow dragging when zoomed or when content overflows container
+    const container = documentContainerRef.current;
+    const canScroll = container && (
+      container.scrollWidth > container.clientWidth ||
+      container.scrollHeight > container.clientHeight
+    );
+
+    if (canScroll) {
+      e.preventDefault();
       setIsDragging(true);
       setDragStart({ x: e.clientX, y: e.clientY });
-      e.preventDefault();
     }
   };
 
@@ -630,7 +642,14 @@ export default function DocumentDetailComponent({
               ref={documentContainerRef}
               className="relative overflow-auto max-h-[50vh] sm:max-h-[70vh]"
               style={{
-                cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                cursor: (() => {
+                  const container = documentContainerRef.current;
+                  const canScroll = container && (
+                    container.scrollWidth > container.clientWidth ||
+                    container.scrollHeight > container.clientHeight
+                  );
+                  return canScroll ? (isDragging ? 'grabbing' : 'grab') : 'default';
+                })(),
                 touchAction: 'none'
               }}
               onMouseDown={handleMouseDown}
@@ -655,54 +674,10 @@ export default function DocumentDetailComponent({
                   onError={() => setImageLoaded(false)}
                 />
               {/* Signature Area Overlays - Only show for non-completed documents */}
-              {!isCompleted && signatureAreas.map((area, index) => {
+              {!isCompleted && (isEditMode ? signatureAreas : signatures).map((area, index) => {
                 // Find matching signature data
                 const signatureInfo = signatureData.find(sig => sig.area_index === index);
                 const hasSignature = signatureInfo && signatureInfo.signature_data;
-
-                // Convert to relative coordinates for display
-                const displayStyle = (() => {
-                  try {
-                    if (!documentContainerRef.current) {
-                      return {
-                        left: `${area.x}px`,
-                        top: `${area.y}px`,
-                        width: `${area.width}px`,
-                        height: `${area.height}px`,
-                      };
-                    }
-
-                    // Get the image element and check if it's loaded
-                    const imgElement = documentContainerRef.current.querySelector('img') as HTMLImageElement;
-                    if (!imgElement || imgElement.naturalWidth === 0 || imgElement.naturalHeight === 0) {
-                      // Image not loaded yet, return pixel coordinates as fallback
-                      return {
-                        left: `${area.x}px`,
-                        top: `${area.y}px`,
-                        width: `${area.width}px`,
-                        height: `${area.height}px`,
-                      };
-                    }
-
-                    const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
-                    const relativeArea = ensureRelativeCoordinate(area, originalWidth, originalHeight);
-                    return {
-                      left: `${relativeArea.x}%`,
-                      top: `${relativeArea.y}%`,
-                      width: `${relativeArea.width}%`,
-                      height: `${relativeArea.height}%`,
-                    };
-                  } catch (error) {
-                    console.warn('Failed to convert signature coordinates:', error);
-                    // Fallback to pixel coordinates
-                    return {
-                      left: `${area.x}px`,
-                      top: `${area.y}px`,
-                      width: `${area.width}px`,
-                      height: `${area.height}px`,
-                    };
-                  }
-                })();
 
                 return (
                   <div
@@ -716,7 +691,10 @@ export default function DocumentDetailComponent({
                     }`}
                     style={{
                       position: "absolute",
-                      ...displayStyle,
+                      left: `${area.x}%`,
+                      top: `${area.y}%`,
+                      width: `${area.width}%`,
+                      height: `${area.height}%`,
                       pointerEvents: (isCompleted || hasSignature) ? "none" : "auto",
                       cursor: isEditMode ? "pointer" : "default",
                     }}

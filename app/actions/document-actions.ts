@@ -441,7 +441,7 @@ export async function publishDocument(
 }
 
 /**
- * Update signature areas for a document (delete existing and create new ones)
+ * Update signature areas for a document using PostgreSQL transaction
  */
 export async function updateSignatureAreas(
   documentId: string,
@@ -449,51 +449,31 @@ export async function updateSignatureAreas(
 ) {
   try {
     const supabase = await createServerSupabase();
+    
+    // Use PostgreSQL function with transaction for atomic operation
+    const { data, error } = await supabase.rpc('update_signature_areas_transaction', {
+      p_document_id: documentId,
+      p_signature_areas: signatureAreas
+    });
 
-    // Start transaction-like operations
-    // First, delete existing signature areas
-    const { error: deleteError } = await supabase
-      .from("signatures")
-      .delete()
-      .eq("document_id", documentId);
-
-    if (deleteError) {
-      console.error("Delete signature areas error:", deleteError);
-      return { error: "Failed to delete existing signature areas" };
+    if (error) {
+      console.error("Transaction function error:", error);
+      return { error: "Failed to update signature areas: " + error.message };
     }
 
-    // Then create new signature areas if any exist
-    if (signatureAreas.length > 0) {
-      const signatureInserts: SignatureInsert[] = signatureAreas.map(
-        (area, index) => ({
-          document_id: documentId,
-          area_index: index,
-          x: area.x,
-          y: area.y,
-          width: area.width,
-          height: area.height,
-          status: "pending",
-          signature_data: null,
-        })
-      );
-
-      const { error: insertError } = await supabase
-        .from("signatures")
-        .insert(signatureInserts);
-
-      if (insertError) {
-        console.error("Create new signature areas error:", insertError);
-        return { error: "Failed to create new signature areas" };
-      }
+    if (data && !data.success) {
+      console.error("Function returned error:", data.error);
+      return { error: "Database transaction failed: " + data.error };
     }
 
+    console.log("✅ Transaction completed successfully:", data);
+    
     // Revalidate document detail page
     revalidatePath(`/document/${documentId}`);
-
     return { success: true };
   } catch (error) {
     console.error("Update signature areas error:", error);
-    return { error: "An unexpected error occurred" };
+    return { error: "An unexpected error occurred while updating signature areas" };
   }
 }
 

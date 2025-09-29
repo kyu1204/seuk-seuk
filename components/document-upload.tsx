@@ -107,7 +107,14 @@ export default function DocumentUpload() {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (zoomLevel > 1 && !isSelecting) {
+    // Allow dragging when zoomed or when content overflows container
+    const container = documentContainerRef.current;
+    const canScroll = container && (
+      container.scrollWidth > container.clientWidth ||
+      container.scrollHeight > container.clientHeight
+    );
+
+    if (canScroll && !isSelecting) {
       e.preventDefault();
       setIsDragging(true);
       setDragStart({ x: e.clientX, y: e.clientY });
@@ -171,8 +178,14 @@ export default function DocumentUpload() {
       }
       setLastTapTime(currentTime);
 
-      // Start dragging for panning
-      if (zoomLevel > 1) {
+      // Start dragging for panning - allow at any zoom level if content overflows
+      const container = documentContainerRef.current;
+      const canScroll = container && (
+        container.scrollWidth > container.clientWidth ||
+        container.scrollHeight > container.clientHeight
+      );
+
+      if (canScroll) {
         setIsDragging(true);
         setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
       }
@@ -249,30 +262,17 @@ export default function DocumentUpload() {
       }
 
       // Step 2: Create signature areas
-      // Convert relative coordinates to absolute pixels for database storage
-      let absoluteAreas: SignatureArea[] = [];
-      try {
-        if (documentContainerRef.current) {
-          const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
-          absoluteAreas = signatureAreas.map(area => {
-            const pixelArea = convertSignatureAreaToPixels(area, originalWidth, originalHeight);
-            return {
-              x: pixelArea.x,
-              y: pixelArea.y,
-              width: pixelArea.width,
-              height: pixelArea.height,
-            } as SignatureArea;
-          });
-        }
-      } catch (error) {
-        console.error('Failed to convert coordinates:', error);
-        setError('Failed to process signature areas');
-        return;
-      }
+      // Store relative coordinates directly (no conversion needed)
+      const relativeAreas: SignatureArea[] = signatureAreas.map(area => ({
+        x: area.x,
+        y: area.y,
+        width: area.width,
+        height: area.height,
+      }));
 
       const areasResult = await createSignatureAreas(
         uploadResult.document.id,
-        absoluteAreas
+        relativeAreas
       );
 
       if (areasResult.error) {
@@ -384,7 +384,14 @@ export default function DocumentUpload() {
                 ref={documentContainerRef}
                 className="relative overflow-auto max-h-[70vh]"
                 style={{
-                  cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                  cursor: (() => {
+                    const container = documentContainerRef.current;
+                    const canScroll = container && (
+                      container.scrollWidth > container.clientWidth ||
+                      container.scrollHeight > container.clientHeight
+                    );
+                    return canScroll ? (isDragging ? 'grabbing' : 'grab') : 'default';
+                  })(),
                   touchAction: 'none'
                 }}
                 onMouseDown={handleMouseDown}
