@@ -50,3 +50,15 @@ export async function login(_: any, formData: FormData) {
   revalidatePath("/", "layout");
   redirect("/dashboard");
 }
+
+export async function signInWithKakao() {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "kakao",
+    options: {
+      redirectTo: process.env.NEXT_PUBLIC_SITE_URL
+        ? `https://${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+        : "http://localhost:3000/auth/callback",
+    },
+  });
+}
