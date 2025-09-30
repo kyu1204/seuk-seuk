@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { useLanguage } from "@/contexts/language-context";
-import { FileSignature, Github, KeyRound, Mail } from "lucide-react";
+import { FileSignature, KeyRound, Mail } from "lucide-react";
 import Link from "next/link";
 import { useFormState } from "react-dom";
 import { login } from "./actions";
 import KakaoLoginButton from "./components/kakao-login-button";
+import GithubLoginButton from "./components/github-login-button";
 
 export default function LoginPage() {
   const { t } = useLanguage();
@@ -149,10 +150,7 @@ export default function LoginPage() {
                 </svg>
                 Google
               </Button>
-              <Button variant="outline" type="button" className="w-full">
-                <Github className="mr-2 h-4 w-4" />
-                Github
-              </Button>
+              <GithubLoginButton />
               <KakaoLoginButton />
             </div>
 
