@@ -427,7 +427,7 @@ export async function getSubscriptionPlans(): Promise<{
       .from("subscription_plans")
       .select("*")
       .eq("is_active", true)
-      .order("price_cents", { ascending: true });
+      .order("order", { ascending: true });
 
     if (error) {
       console.error("Get subscription plans error:", error);

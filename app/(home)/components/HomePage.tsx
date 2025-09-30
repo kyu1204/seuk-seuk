@@ -1,31 +1,35 @@
 "use client";
 
-import { useLanguage } from "@/contexts/language-context";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { useLanguage } from "@/contexts/language-context";
+import { cn } from "@/lib/utils";
 import {
   ArrowRight,
   Check,
+  ChevronUp,
   FileSignature,
   Shield,
   Zap,
-  ChevronUp,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+  getSubscriptionPlans,
+  type SubscriptionPlan,
+} from "@/app/actions/subscription-actions";
 
 export default function HomePageComponent() {
   const { t } = useLanguage();
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+
+  useEffect(() => {
+    async function loadPlans() {
+      const { plans: fetchedPlans } = await getSubscriptionPlans();
+      setPlans(fetchedPlans);
+    }
+    loadPlans();
+  }, []);
 
   const features = [
     {
@@ -45,44 +49,38 @@ export default function HomePageComponent() {
     },
   ];
 
-  const pricingPlans = [
-    {
-      name: t("pricing.free.name"),
-      description: t("pricing.free.description"),
-      price: t("pricing.free.price"),
+  // 가격 정보 포매팅 함수
+  const formatPrice = (priceCents: number) => {
+    if (priceCents === 0) return t("pricing.free.price");
+    if (priceCents === -1) return t("pricing.enterprise.price");
+    return `$${(priceCents / 100).toFixed(0)}`;
+  };
+
+  // DB 데이터를 기반으로 pricing plans 생성
+  const pricingPlans = plans.map((plan, index) => {
+    const planKey = plan.name.toLowerCase();
+    const isEnterprise = plan.price_cents === -1;
+    const isPro = plan.price_cents > 0 && !isEnterprise;
+
+    // 월 문서 제한 feature 생성
+    const limitFeature =
+      plan.monthly_document_limit === -1
+        ? t("pricing.enterprise.feature1")
+        : `${t("pricing.free.feature1").replace("5", plan.monthly_document_limit.toString())}`;
+
+    return {
+      name: t(`pricing.${planKey}.name`),
+      description: t(`pricing.${planKey}.description`),
+      price: formatPrice(plan.price_cents),
       features: [
-        t("pricing.free.feature1"),
-        t("pricing.free.feature2"),
-        t("pricing.free.feature3"),
+        limitFeature,
+        t(`pricing.${planKey}.feature2`),
+        t(`pricing.${planKey}.feature3`),
       ],
-      cta: t("pricing.free.cta"),
-      popular: false,
-    },
-    {
-      name: t("pricing.pro.name"),
-      description: t("pricing.pro.description"),
-      price: "$20",
-      features: [
-        t("pricing.pro.feature1"),
-        t("pricing.pro.feature2"),
-        t("pricing.pro.feature3"),
-      ],
-      cta: t("pricing.pro.cta"),
-      popular: true,
-    },
-    {
-      name: t("pricing.enterprise.name"),
-      description: t("pricing.enterprise.description"),
-      price: t("pricing.enterprise.price"),
-      features: [
-        t("pricing.enterprise.feature1"),
-        t("pricing.enterprise.feature2"),
-        t("pricing.enterprise.feature3"),
-      ],
-      cta: t("pricing.enterprise.cta"),
-      popular: false,
-    },
-  ];
+      cta: t(`pricing.${planKey}.cta`),
+      popular: isPro,
+    };
+  });
 
   const testimonials = [
     {
@@ -250,8 +248,8 @@ export default function HomePageComponent() {
                   index === 0
                     ? "card-angled"
                     : index === 2
-                    ? "card-angled-right"
-                    : ""
+                      ? "card-angled-right"
+                      : ""
                 )}
               >
                 {plan.popular && (
