@@ -5,6 +5,7 @@ import {
   saveSignature,
   uploadSignedDocument,
   verifyDocumentPassword,
+  getDocumentSignedUrl,
 } from "@/app/actions/document-actions";
 import LanguageSelector from "@/components/language-selector";
 import SignatureModal from "@/components/signature-modal";
@@ -72,6 +73,8 @@ export default function SignPageComponent({
   const [lastTapTime, setLastTapTime] = useState<number>(0);
   const [touchStartZoom, setTouchStartZoom] = useState<number>(1);
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
+  const [documentSignedUrl, setDocumentSignedUrl] = useState<string | null>(null);
+  const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
 
   const handleAreaClick = (index: number) => {
     setSelectedArea(index);
@@ -195,7 +198,7 @@ export default function SignPageComponent({
       await new Promise((resolve, reject) => {
         originalImage.onload = resolve;
         originalImage.onerror = reject;
-        originalImage.src = documentData.file_url;
+        originalImage.src = documentSignedUrl || documentData.file_url;
       });
 
       // 🚀 Performance optimization: Preload all signature images in parallel
@@ -496,6 +499,28 @@ export default function SignPageComponent({
     setIsDragging(false);
   };
 
+  const loadDocumentSignedUrl = async (pwd?: string) => {
+    setIsLoadingSignedUrl(true);
+    try {
+      const result = await getDocumentSignedUrl(
+        documentData.short_url,
+        documentData.requiresPassword ? pwd : undefined
+      );
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      setDocumentSignedUrl(result.signedUrl);
+    } catch (err) {
+      console.error("Failed to load signed URL:", err);
+      setError("Failed to load document");
+    } finally {
+      setIsLoadingSignedUrl(false);
+    }
+  };
+
   const handlePasswordSubmit = async () => {
     if (!password.trim()) {
       setError(t("sign.password.required"));
@@ -518,6 +543,8 @@ export default function SignPageComponent({
 
       if (result.isValid) {
         setIsPasswordVerified(true);
+        // Load signed URL after password verification
+        await loadDocumentSignedUrl(password);
       } else {
         setError(t("sign.password.incorrect"));
       }
@@ -528,6 +555,13 @@ export default function SignPageComponent({
       setIsVerifyingPassword(false);
     }
   };
+
+  // Load signed URL on component mount for non-password documents
+  useEffect(() => {
+    if (!documentData.requiresPassword && !documentSignedUrl) {
+      loadDocumentSignedUrl();
+    }
+  }, [documentData.requiresPassword, documentSignedUrl]);
 
   // Force re-render when image loads to ensure signature areas display correctly
   useEffect(() => {
@@ -778,7 +812,7 @@ export default function SignPageComponent({
               }}
             >
               <img
-                src={documentData.file_url}
+                src={documentSignedUrl || documentData.file_url}
                 alt="Document"
                 className="w-full h-auto object-contain block"
                 draggable="false"

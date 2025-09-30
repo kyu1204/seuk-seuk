@@ -54,21 +54,20 @@ export async function uploadDocument(formData: FormData) {
     // Generate unique filename using UUID
     const fileExtension = file.name.split(".").pop() || "";
     const uniqueFilename = `${randomUUID()}.${fileExtension}`;
+    const filePath = `${user.id}/${uniqueFilename}`;
 
-    // Upload file to Supabase Storage
+    // Upload file to Supabase Storage with user_id folder structure
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("documents")
-      .upload(uniqueFilename, file);
+      .upload(filePath, file);
 
     if (uploadError) {
       console.error("Upload error:", uploadError);
       return { error: "Failed to upload file" };
     }
 
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("documents").getPublicUrl(uniqueFilename);
+    // Store the file path (not public URL since bucket is now private)
+    const fileUrl = filePath;
 
     // Generate short URL
     const shortUrl = generateShortUrl();
@@ -76,7 +75,7 @@ export async function uploadDocument(formData: FormData) {
     // Create document record with user_id
     const documentData: DocumentInsert = {
       filename,
-      file_url: publicUrl,
+      file_url: fileUrl,
       short_url: shortUrl,
       status: "draft",
       user_id: user.id,
@@ -528,6 +527,68 @@ export async function verifyDocumentPassword(
 }
 
 /**
+ * Get signed URL for document with password verification
+ */
+export async function getDocumentSignedUrl(
+  shortUrl: string,
+  password?: string
+): Promise<{
+  signedUrl: string | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get document
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, file_url, password, status, expires_at")
+      .eq("short_url", shortUrl)
+      .single();
+
+    if (docError || !document) {
+      return { signedUrl: null, error: "Document not found" };
+    }
+
+    // Check expiration
+    if (document.expires_at && new Date(document.expires_at) < new Date()) {
+      return { signedUrl: null, error: "Document expired" };
+    }
+
+    // Check completion
+    if (document.status === "completed") {
+      return { signedUrl: null, error: "Document already completed" };
+    }
+
+    // Verify password if required
+    if (document.password) {
+      if (!password) {
+        return { signedUrl: null, error: "Password required" };
+      }
+      const isValid = await bcrypt.compare(password, document.password);
+      if (!isValid) {
+        return { signedUrl: null, error: "Invalid password" };
+      }
+    }
+
+    // Generate signed URL (1 hour validity)
+    const { data, error: signError } = await supabase.storage
+      .from("documents")
+      .createSignedUrl(document.file_url, 3600);
+
+    if (signError || !data) {
+      console.error("Error creating signed URL:", signError);
+      return { signedUrl: null, error: "Failed to generate signed URL" };
+    }
+
+    return { signedUrl: data.signedUrl };
+  } catch (error) {
+    console.error("Get document signed URL error:", error);
+    return { signedUrl: null, error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * Get document by ID (for server components)
  */
 export async function getDocumentById(id: string): Promise<{
@@ -840,14 +901,10 @@ export async function deleteDocument(documentId: string): Promise<{
     // Delete the document file from storage
     if (document.file_url) {
       try {
-        const url = new URL(document.file_url);
-        const pathParts = url.pathname.split('/');
-        const filename = pathParts[pathParts.length - 1];
-
-
+        // file_url now contains the storage path: {user_id}/{filename}
         const { error: storageError } = await supabase.storage
           .from("documents")
-          .remove([filename]);
+          .remove([document.file_url]);
 
         if (storageError) {
           console.error("⚠️ SERVER: Delete file error:", storageError);
