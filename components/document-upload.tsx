@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,14 @@ export default function DocumentUpload() {
     // Store the area coordinates as relative percentages
     setSignatureAreas([...signatureAreas, area]);
     setIsSelecting(false);
+
+    // Restore scroll position after state updates
+    requestAnimationFrame(() => {
+      if (documentContainerRef.current) {
+        documentContainerRef.current.scrollTop = scrollPosition.top;
+        documentContainerRef.current.scrollLeft = scrollPosition.left;
+      }
+    });
   };
 
   const handleRemoveArea = (index: number) => {
@@ -102,6 +110,19 @@ export default function DocumentUpload() {
   const handleZoomReset = () => {
     setZoomLevel(1);
   };
+
+  // Restore scroll position when exiting selection mode
+  useEffect(() => {
+    if (!isSelecting && documentContainerRef.current && (scrollPosition.top !== 0 || scrollPosition.left !== 0)) {
+      // Use setTimeout to ensure DOM has updated
+      setTimeout(() => {
+        if (documentContainerRef.current) {
+          documentContainerRef.current.scrollTop = scrollPosition.top;
+          documentContainerRef.current.scrollLeft = scrollPosition.left;
+        }
+      }, 0);
+    }
+  }, [isSelecting, scrollPosition]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Allow dragging when zoomed or when content overflows container

@@ -3,8 +3,6 @@
 import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
-import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 // Import the useLanguage hook at the top of the file
 import { useLanguage } from "@/contexts/language-context";
@@ -102,20 +100,6 @@ export default function AreaSelector({
       console.warn('Failed to get image container dimensions:', error);
       return { x: 0, y: 0 };
     }
-  };
-
-  const handleZoomIn = () => {
-    const newZoom = Math.min(zoomLevel + 0.25, 3);
-    onZoomChange?.(newZoom);
-  };
-
-  const handleZoomOut = () => {
-    const newZoom = Math.max(zoomLevel - 0.25, 0.5);
-    onZoomChange?.(newZoom);
-  };
-
-  const handleZoomReset = () => {
-    onZoomChange?.(1);
   };
 
   const handleContainerMouseDown = (e: React.MouseEvent) => {
@@ -365,39 +349,6 @@ export default function AreaSelector({
 
   return (
     <div className="relative">
-      {/* Zoom Controls */}
-      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10 flex flex-col gap-1 sm:gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-1 sm:p-2 shadow-lg">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleZoomIn}
-          disabled={zoomLevel >= 3}
-          className="p-1 sm:p-2 h-6 w-6 sm:h-8 sm:w-8"
-        >
-          <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleZoomOut}
-          disabled={zoomLevel <= 0.5}
-          className="p-1 sm:p-2 h-6 w-6 sm:h-8 sm:w-8"
-        >
-          <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleZoomReset}
-          disabled={zoomLevel === 1}
-          className="p-1 sm:p-2 h-6 w-6 sm:h-8 sm:w-8"
-        >
-          <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
-        </Button>
-        <div className="text-xs text-center font-medium px-1 py-0.5 bg-gray-100 rounded">
-          {Math.round(zoomLevel * 100)}%
-        </div>
-      </div>
       <div
         ref={containerRef}
         className="relative overflow-auto max-h-[50vh] sm:max-h-[70vh]"
