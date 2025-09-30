@@ -120,6 +120,14 @@ export default function DocumentDetailComponent({
     // Store the area coordinates as relative percentages (same as DocumentUpload)
     setSignatureAreas([...signatureAreas, area]);
     setIsSelecting(false);
+
+    // Restore scroll position after state updates
+    requestAnimationFrame(() => {
+      if (documentContainerRef.current) {
+        documentContainerRef.current.scrollTop = scrollPosition.top;
+        documentContainerRef.current.scrollLeft = scrollPosition.left;
+      }
+    });
   };
 
   const handleRemoveArea = (index: number) => {
@@ -361,6 +369,19 @@ export default function DocumentDetailComponent({
   const handleZoomReset = () => {
     setZoomLevel(1);
   };
+
+  // Restore scroll position when exiting selection mode
+  useEffect(() => {
+    if (!isEditMode && documentContainerRef.current && (scrollPosition.top !== 0 || scrollPosition.left !== 0)) {
+      // Use setTimeout to ensure DOM has updated
+      setTimeout(() => {
+        if (documentContainerRef.current) {
+          documentContainerRef.current.scrollTop = scrollPosition.top;
+          documentContainerRef.current.scrollLeft = scrollPosition.left;
+        }
+      }, 0);
+    }
+  }, [isEditMode, scrollPosition]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Allow dragging when zoomed or when content overflows container
