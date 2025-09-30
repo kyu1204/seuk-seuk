@@ -33,10 +33,7 @@ export default function DocumentUpload() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentContainerRef = useRef<HTMLDivElement>(null);
-  const [scrollPosition, setScrollPosition] = useState<{
-    top: number;
-    left: number;
-  }>({ top: 0, left: 0 });
+  const scrollPositionRef = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -59,13 +56,10 @@ export default function DocumentUpload() {
   const handleAddSignatureArea = () => {
     // Save current scroll position before switching to selection mode
     if (documentContainerRef.current) {
-      const scrollTop = documentContainerRef.current.scrollTop;
-      const scrollLeft = documentContainerRef.current.scrollLeft;
-
-      setScrollPosition({
-        top: scrollTop,
-        left: scrollLeft,
-      });
+      scrollPositionRef.current = {
+        top: documentContainerRef.current.scrollTop,
+        left: documentContainerRef.current.scrollLeft,
+      };
     }
     setIsSelecting(true);
   };
@@ -78,8 +72,8 @@ export default function DocumentUpload() {
     // Restore scroll position after state updates
     requestAnimationFrame(() => {
       if (documentContainerRef.current) {
-        documentContainerRef.current.scrollTop = scrollPosition.top;
-        documentContainerRef.current.scrollLeft = scrollPosition.left;
+        documentContainerRef.current.scrollTop = scrollPositionRef.current.top;
+        documentContainerRef.current.scrollLeft = scrollPositionRef.current.left;
       }
     });
   };
@@ -111,18 +105,6 @@ export default function DocumentUpload() {
     setZoomLevel(1);
   };
 
-  // Restore scroll position when exiting selection mode
-  useEffect(() => {
-    if (!isSelecting && documentContainerRef.current && (scrollPosition.top !== 0 || scrollPosition.left !== 0)) {
-      // Use setTimeout to ensure DOM has updated
-      setTimeout(() => {
-        if (documentContainerRef.current) {
-          documentContainerRef.current.scrollTop = scrollPosition.top;
-          documentContainerRef.current.scrollLeft = scrollPosition.left;
-        }
-      }, 0);
-    }
-  }, [isSelecting, scrollPosition]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Allow dragging when zoomed or when content overflows container
@@ -296,13 +278,35 @@ export default function DocumentUpload() {
         </Card>
       ) : (
         <div className="space-y-6">
+          {/* Button Group */}
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">{fileName}</h2>
-            <Button variant="outline" onClick={handleClearDocument}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              {t("upload.clear")}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleAddSignatureArea}
+                disabled={isSelecting}
+              >
+                {t("upload.addSignatureArea")}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleClearDocument}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t("upload.clear")}
+              </Button>
+            </div>
+            <Button
+              onClick={handleSaveDocument}
+              disabled={
+                signatureAreas.length === 0 || isLoading || !originalFile
+              }
+            >
+              {isLoading ? "저장 중..." : "저장하기"}
             </Button>
           </div>
+
+          <h2 className="text-2xl font-semibold">{fileName}</h2>
 
           <div className="relative border rounded-lg overflow-hidden">
             {/* Zoom Controls */}
@@ -344,7 +348,7 @@ export default function DocumentUpload() {
                 onAreaSelected={handleAreaSelected}
                 onCancel={() => setIsSelecting(false)}
                 existingAreas={signatureAreas}
-                initialScrollPosition={scrollPosition}
+                initialScrollPosition={scrollPositionRef.current}
                 zoomLevel={zoomLevel}
                 onZoomChange={setZoomLevel}
               />
@@ -408,22 +412,6 @@ export default function DocumentUpload() {
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="flex flex-wrap gap-4">
-            <Button onClick={handleAddSignatureArea} disabled={isSelecting}>
-              {t("upload.addSignatureArea")}
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleSaveDocument}
-              disabled={
-                signatureAreas.length === 0 || isLoading || !originalFile
-              }
-              className="ml-auto"
-            >
-              {isLoading ? "저장 중..." : "저장하기"}
-            </Button>
           </div>
 
           {error && (

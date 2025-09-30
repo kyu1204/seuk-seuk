@@ -58,10 +58,7 @@ export default function DocumentDetailComponent({
   const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
-  const [scrollPosition, setScrollPosition] = useState<{
-    top: number;
-    left: number;
-  }>({ top: 0, left: 0 });
+  const scrollPositionRef = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
   const [signedDocumentUrl, setSignedDocumentUrl] = useState<string | null>(null);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
@@ -105,13 +102,10 @@ export default function DocumentDetailComponent({
   const handleAddSignatureArea = () => {
     // Save current scroll position before switching to selection mode
     if (documentContainerRef.current) {
-      const scrollTop = documentContainerRef.current.scrollTop;
-      const scrollLeft = documentContainerRef.current.scrollLeft;
-
-      setScrollPosition({
-        top: scrollTop,
-        left: scrollLeft,
-      });
+      scrollPositionRef.current = {
+        top: documentContainerRef.current.scrollTop,
+        left: documentContainerRef.current.scrollLeft,
+      };
     }
     setIsSelecting(true);
   };
@@ -124,8 +118,8 @@ export default function DocumentDetailComponent({
     // Restore scroll position after state updates
     requestAnimationFrame(() => {
       if (documentContainerRef.current) {
-        documentContainerRef.current.scrollTop = scrollPosition.top;
-        documentContainerRef.current.scrollLeft = scrollPosition.left;
+        documentContainerRef.current.scrollTop = scrollPositionRef.current.top;
+        documentContainerRef.current.scrollLeft = scrollPositionRef.current.left;
       }
     });
   };
@@ -370,18 +364,6 @@ export default function DocumentDetailComponent({
     setZoomLevel(1);
   };
 
-  // Restore scroll position when exiting selection mode
-  useEffect(() => {
-    if (!isEditMode && documentContainerRef.current && (scrollPosition.top !== 0 || scrollPosition.left !== 0)) {
-      // Use setTimeout to ensure DOM has updated
-      setTimeout(() => {
-        if (documentContainerRef.current) {
-          documentContainerRef.current.scrollTop = scrollPosition.top;
-          documentContainerRef.current.scrollLeft = scrollPosition.left;
-        }
-      }, 0);
-    }
-  }, [isEditMode, scrollPosition]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Allow dragging when zoomed or when content overflows container
@@ -755,7 +737,7 @@ export default function DocumentDetailComponent({
               onAreaSelected={handleAreaSelected}
               onCancel={() => setIsSelecting(false)}
               existingAreas={signatureAreas}
-              initialScrollPosition={scrollPosition}
+              initialScrollPosition={scrollPositionRef.current}
               zoomLevel={zoomLevel}
               onZoomChange={setZoomLevel}
             />
