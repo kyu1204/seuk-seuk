@@ -30,6 +30,8 @@ import { ArrowLeft, Copy, Edit, ExternalLink, Share, Download, Trash2, ZoomIn, Z
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
+import { createClientSupabase } from "@/lib/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface DocumentDetailComponentProps {
   documentData: Document;
@@ -42,6 +44,7 @@ export default function DocumentDetailComponent({
 }: DocumentDetailComponentProps) {
   const { t } = useLanguage();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [document, setDocument] = useState<Document>(documentData);
   const [signatureAreas, setSignatureAreas] = useState<RelativeSignatureArea[]>([]);
@@ -60,10 +63,12 @@ export default function DocumentDetailComponent({
     left: number;
   }>({ top: 0, left: 0 });
   const [signedDocumentUrl, setSignedDocumentUrl] = useState<string | null>(null);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -173,7 +178,7 @@ export default function DocumentDetailComponent({
 
       // Update local state
       setDocument({ ...document, status: "published" });
-      if (result.shortUrl) {
+      if (result.shortUrl && typeof window !== 'undefined') {
         setPublishedUrl(`${window.location.origin}/sign/${result.shortUrl}`);
       }
 
@@ -189,15 +194,55 @@ export default function DocumentDetailComponent({
 
   const handleCopyUrl = async () => {
     if (publishedUrl || document.short_url) {
+      // Ensure this only runs on client side
+      if (typeof window === 'undefined') return;
+
       const urlToCopy =
         publishedUrl || `${window.location.origin}/sign/${document.short_url}`;
-      await navigator.clipboard.writeText(urlToCopy);
-      // TODO: Add toast notification
+
+      try {
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(urlToCopy);
+        } else {
+          // Fallback for older browsers or non-HTTPS contexts
+          const textArea = window.document.createElement("textarea");
+          textArea.value = urlToCopy;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          textArea.style.top = "-999999px";
+          window.document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+
+          try {
+            window.document.execCommand('copy');
+            textArea.remove();
+          } catch (err) {
+            console.error('Fallback copy failed:', err);
+            textArea.remove();
+            throw err;
+          }
+        }
+
+        toast({
+          title: "복사 완료",
+          description: "서명 URL이 클립보드에 복사되었습니다.",
+        });
+      } catch (err) {
+        console.error('Failed to copy:', err);
+        toast({
+          title: "복사 실패",
+          description: "URL 복사에 실패했습니다. 다시 시도해주세요.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const handleDownloadSignedDocument = () => {
     if (!isCompleted || !signedDocumentUrl) return;
+    if (typeof window === 'undefined') return;
 
     try {
       // 새 탭에서 다운로드 URL 열기
@@ -226,7 +271,9 @@ export default function DocumentDetailComponent({
       }
 
       // 삭제 성공시 대시보드로 강제 새로고침하여 이동
-      window.location.href = '/dashboard';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/dashboard';
+      }
     } catch (error) {
       console.error("❌ Error deleting document:", error);
       setError("문서 삭제 중 오류가 발생했습니다");
@@ -241,7 +288,42 @@ export default function DocumentDetailComponent({
   const isPublished = document.status === "published";
   const isCompleted = document.status === "completed";
 
+  // Set mounted state on client side
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
+  // Load original document URL from private storage using authenticated download
+  useEffect(() => {
+    const loadDocumentUrl = async () => {
+      if (document.file_url) {
+        const supabase = createClientSupabase();
+        const { data, error } = await supabase.storage
+          .from('documents')
+          .download(document.file_url);
+
+        if (error) {
+          console.error('Failed to load document:', error);
+          return;
+        }
+
+        if (data) {
+          // Create blob URL from downloaded data
+          const url = URL.createObjectURL(data);
+          setDocumentUrl(url);
+        }
+      }
+    };
+
+    loadDocumentUrl();
+
+    // Cleanup: revoke blob URL when component unmounts
+    return () => {
+      if (documentUrl) {
+        URL.revokeObjectURL(documentUrl);
+      }
+    };
+  }, [document.file_url]);
 
   // 완료된 문서의 경우 signed URL 가져오기
   useEffect(() => {
@@ -356,8 +438,8 @@ export default function DocumentDetailComponent({
     if (isCompleted && signedDocumentUrl) {
       return signedDocumentUrl;
     }
-    // 그 외의 경우 원본 문서 표시
-    return document.file_url;
+    // 그 외의 경우 원본 문서 표시 (Blob URL만 사용, 로드 전까지는 빈 문자열)
+    return documentUrl || "";
   })();
 
   return (
@@ -578,7 +660,9 @@ export default function DocumentDetailComponent({
               <CardContent className="pt-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-4">
                   <div className="flex-1 p-3 sm:p-3 bg-gray-50 rounded-lg font-mono text-xs sm:text-sm break-all">
-                    {`${window.location.origin}/sign/${document.short_url}`}
+                    {isMounted && typeof window !== 'undefined'
+                      ? `${window.location.origin}/sign/${document.short_url}`
+                      : `/sign/${document.short_url}`}
                   </div>
                   <div className="flex gap-3 self-start sm:self-center">
                     <Button variant="outline" size="sm" onClick={handleCopyUrl} className="h-10 px-4 sm:h-9">
@@ -646,7 +730,7 @@ export default function DocumentDetailComponent({
           </div>
           {isEditMode && isSelecting ? (
             <AreaSelector
-              image={document.file_url}
+              image={documentUrl || ""}
               onAreaSelected={handleAreaSelected}
               onCancel={() => setIsSelecting(false)}
               existingAreas={signatureAreas}
@@ -684,15 +768,21 @@ export default function DocumentDetailComponent({
                   height: 'auto'
                 }}
               >
-                <img
-                  src={displayImageUrl}
-                  alt={document.filename}
-                  className="w-full h-auto object-contain block"
-                  draggable="false"
-                  style={{ userSelect: "none", WebkitUserSelect: "none" }}
-                  onLoad={() => setImageLoaded(true)}
-                  onError={() => setImageLoaded(false)}
-                />
+                {!displayImageUrl ? (
+                  <div className="w-full h-96 flex items-center justify-center bg-gray-100">
+                    <p className="text-gray-500">문서 로딩 중...</p>
+                  </div>
+                ) : (
+                  <img
+                    src={displayImageUrl}
+                    alt={document.filename}
+                    className="w-full h-auto object-contain block"
+                    draggable="false"
+                    style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageLoaded(false)}
+                  />
+                )}
               {/* Signature Area Overlays - Only show for non-completed documents */}
               {!isCompleted && (isEditMode ? signatureAreas : signatures).map((area, index) => {
                 // Find matching signature data
