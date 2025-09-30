@@ -27,7 +27,11 @@ export async function forgotPassword(prevState: any, formData: FormData) {
 
     // Send password reset email
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001'}/auth/confirm?next=${encodeURIComponent('/reset-password')}`,
+      redirectTo: `${
+        process.env.NEXT_PUBLIC_SITE_URL
+          ? process.env.NEXT_PUBLIC_SITE_URL
+          : "http://localhost:3000"
+      }/auth/confirm?next=${encodeURIComponent("/reset-password")}`,
     });
 
     if (error) {
