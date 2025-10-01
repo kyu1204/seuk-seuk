@@ -149,6 +149,14 @@ export default function RegisterPage() {
                   >
                     {t("register.privacyAgree")}{" "}
                     <Link
+                      href="/term"
+                      target="_blank"
+                      className="text-primary hover:underline"
+                    >
+                      {t("register.terms")}
+                    </Link>
+                    {" & "}
+                    <Link
                       href="/privacy"
                       target="_blank"
                       className="text-primary hover:underline"

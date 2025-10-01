@@ -328,6 +328,10 @@ export default function HomePageComponent() {
               <span className="font-bold">{t("app.title")}</span>
             </div>
             <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-muted-foreground">
+              <Link href="/term" className="hover:text-primary transition-colors">
+                {t("footer.terms")}
+              </Link>
+              <span className="hidden md:inline">•</span>
               <Link href="/privacy" className="hover:text-primary transition-colors">
                 {t("footer.privacy")}
               </Link>

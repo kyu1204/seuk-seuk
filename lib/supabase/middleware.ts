@@ -13,6 +13,7 @@ const publicRoutes: Routes = {
   "/forgot-password": true,
   "/reset-password": true,
   "/privacy": true,
+  "/term": true,
 };
 
 // Routes that should redirect to dashboard if user is authenticated
@@ -40,7 +41,6 @@ function isPublicRoute(pathname: string): boolean {
 const protectedRoutes: Routes = {
   "/upload": true,
   "/document": true,
-  "/private": true,
   "/pricing": true,
 };
 

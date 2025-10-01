@@ -27,9 +27,7 @@ export default function PrivacyPage() {
         <div className="prose prose-slate dark:prose-invert max-w-none">
           <h1 className="text-3xl font-bold mb-6">{t("privacy.title")}</h1>
 
-          <p className="text-muted-foreground mb-8">
-            {t("privacy.intro")}
-          </p>
+          <p className="text-muted-foreground mb-8">{t("privacy.intro")}</p>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">
