@@ -537,6 +537,8 @@ export async function getDocumentSignedUrl(
   error?: string;
 }> {
   try {
+    // Use service role to bypass RLS for signed URL generation
+    const supabaseService = createServiceSupabase();
     const supabase = await createServerSupabase();
 
     // Get document
@@ -571,8 +573,8 @@ export async function getDocumentSignedUrl(
       }
     }
 
-    // Generate signed URL (1 hour validity)
-    const { data, error: signError } = await supabase.storage
+    // Generate signed URL (1 hour validity) using service role to bypass RLS
+    const { data, error: signError } = await supabaseService.storage
       .from("documents")
       .createSignedUrl(document.file_url, 3600);
 
