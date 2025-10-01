@@ -227,6 +227,9 @@ const translations: Record<Language, Record<string, string>> = {
     "register.joinMessage":
       "슥슥에 가입하여 문서 서명 및 관리를 시작하세요. 간편하고 안전한 서명 경험을 제공합니다.",
     "register.kakaoTalk": "카카오",
+    "register.privacyAgree": "본인은",
+    "register.privacyPolicy": "개인정보 처리방침",
+    "register.privacyAgree2": "에 동의합니다.",
 
     // Sign Page - Password Protection & Status
     "sign.password.title": "보안 문서",
@@ -330,6 +333,228 @@ const translations: Record<Language, Record<string, string>> = {
     "breadcrumb.dashboard": "대시보드",
     "breadcrumb.upload": "문서 업로드",
     "breadcrumb.details": "문서 상세",
+
+    // Footer
+    "footer.privacy": "개인정보 처리방침",
+
+    // Privacy Policy Page
+    "privacy.backToHome": "홈으로 돌아가기",
+    "privacy.title": "슥슥 개인정보 처리방침",
+    "privacy.intro":
+      '본 개인정보 처리방침은 슥슥(이하 "서비스")이 제공하는 전자 문서 서명 및 관리 서비스와 관련하여 개인정보보호법 제30조에 따라 정보주체의 개인정보를 보호하고 관련한 고충을 신속하고 원활하게 처리하기 위하여 다음과 같이 개인정보 처리방침을 수립·공개합니다.',
+
+    // Section 1
+    "privacy.section1.title": "1. 개인정보의 처리 목적",
+    "privacy.section1.intro":
+      "서비스는 다음과 같은 목적을 위하여 개인정보를 수집·이용하며, 목적이 변경되는 경우에는 사전에 이용자의 동의를 받습니다.",
+    "privacy.section1.item1.title": "회원 가입 및 관리",
+    "privacy.section1.item1.content":
+      "회원 가입 의사 확인, 이용자 식별·인증, 계정 유지·관리, 부정이용 방지 및 각종 고지·통지를 위한 목적.",
+    "privacy.section1.item2.title": "전자 문서 서명 서비스 제공",
+    "privacy.section1.item2.content":
+      "전자 서명 요청·작성·보관·공유 등 서비스 제공을 위한 업무 처리, 문서 전송 및 처리 현황 알림 등.",
+    "privacy.section1.item3.title": "결제 및 정산",
+    "privacy.section1.item3.content":
+      "유료 서비스 이용에 따른 본인 인증, 요금 결제, 청구서 발송 및 결제 내역 관리.",
+    "privacy.section1.item4.title": "고객지원",
+    "privacy.section1.item4.content":
+      "문의·요청사항 처리, 불만처리 및 분쟁조정, 공지사항 전달.",
+    "privacy.section1.item5.title": "서비스 개선 및 통계 활용",
+    "privacy.section1.item5.content":
+      "서비스 이용기록과 접속 정보 분석을 통한 서비스 품질 개선 및 통계적 분석.",
+    "privacy.section1.item6.title": "법령 준수",
+    "privacy.section1.item6.content":
+      "관계 법령에서 정한 의무의 이행 및 법령상 의무사항 준수.",
+
+    // Section 2
+    "privacy.section2.title": "2. 처리하는 개인정보 항목",
+    "privacy.section2.intro":
+      "서비스는 다음과 같은 개인정보를 처리합니다. 슥슥은 서비스 특성상 전자서명 데이터와 문서 파일을 안전하게 취급합니다.",
+    "privacy.section2.sub1.title": "2.1 회원 가입 시 수집 항목",
+    "privacy.section2.sub1.required": "필수 항목",
+    "privacy.section2.sub1.requiredItems":
+      "이름, 이메일 주소, 비밀번호, 서비스 이용 기록, IP 주소, 브라우저 정보, 쿠키 정보.",
+    "privacy.section2.sub1.optional": "선택 항목",
+    "privacy.section2.sub1.optionalItems":
+      "연락처(휴대전화 번호), 직책/직무 정보, 프로필 사진.",
+    "privacy.section2.sub1.social": "소셜 로그인 시 수집 항목",
+    "privacy.section2.sub1.socialItems":
+      "Google/GitHub/카카오 등의 소셜 로그인 서비스를 이용할 경우 해당 서비스에 등록된 프로필 정보(닉네임, 프로필 사진, 이메일 등)와 고유 식별자.",
+    "privacy.section2.sub2.title": "2.2 서명 요청 및 문서 관리 시 수집 항목",
+    "privacy.section2.sub2.signature": "서명 데이터",
+    "privacy.section2.sub2.signatureContent":
+      "전자 서명을 위해 사용자가 입력한 서명 이미지나 서명에 필요한 추적 좌표 등.",
+    "privacy.section2.sub2.document": "문서 및 첨부 파일",
+    "privacy.section2.sub2.documentContent":
+      "서비스에서 생성·전송·저장되는 문서와 첨부 파일의 내용.",
+    "privacy.section2.sub2.recipient": "수신인 정보",
+    "privacy.section2.sub2.recipientContent":
+      "문서 서명을 요청하는 상대방의 이름, 이메일 주소 및 서명 진행 상태.",
+    "privacy.section2.sub2.payment": "결제 정보",
+    "privacy.section2.sub2.paymentContent":
+      "유료 서비스 이용 시 결제를 위한 카드 정보(카드사명, 카드번호 일부, 결제승인 번호 등).",
+
+    // Section 3
+    "privacy.section3.title": "3. 개인정보의 처리 및 보유 기간",
+    "privacy.section3.intro":
+      "서비스는 법령이 정한 기간 또는 이용자로부터 동의를 얻은 기간 동안 개인정보를 보유합니다.",
+    "privacy.section3.item1.title": "회원 정보",
+    "privacy.section3.item1.content":
+      "회원 탈퇴 시까지 보유하며, 요금 정산, 부정이용 방지 등 관련 법령에 따라 일정 기간 보관이 필요한 경우 해당 기간 동안 보유합니다.",
+    "privacy.section3.item2.title": "서명 및 문서 데이터",
+    "privacy.section3.item2.content":
+      "서비스 제공 목적 달성 시 또는 회원이 삭제 요청 또는 탈퇴 시까지 보유합니다.",
+    "privacy.section3.item3.title": "로그 기록",
+    "privacy.section3.item3.content":
+      "보안 및 서비스 개선을 위하여 수집한 접속 로그는 6개월간 보관 후 파기합니다.",
+    "privacy.section3.item4.title": "관련 법령에 따른 보유",
+    "privacy.section3.item4.content":
+      "세법, 전자서명법, 통신비밀보호법 등 관계 법령에서 정한 기간 동안 보유할 필요가 있는 정보는 해당 법령에서 정한 기간 동안 보관합니다.",
+
+    // Section 4
+    "privacy.section4.title": "4. 개인정보의 제3자 제공",
+    "privacy.section4.content":
+      "서비스는 개인정보를 '개인정보의 처리 목적'에서 명시한 범위를 초과하여 제3자에게 제공하지 않습니다. 다만, 이용자의 동의가 있거나 법령의 특별한 규정이 있는 경우에는 예외로 합니다.",
+    "privacy.section4.social": "소셜 로그인 제공사",
+    "privacy.section4.socialContent":
+      "이용자가 Google, GitHub, 카카오 등 외부 계정 연동을 통해 서비스를 이용하는 경우 해당 서비스에 개인정보가 제공될 수 있습니다.",
+    "privacy.section4.legal": "법령 및 수사기관",
+    "privacy.section4.legalContent":
+      "법령에서 정한 절차와 방법에 따라 수사기관이나 감독기관의 요구가 있는 경우.",
+
+    // Section 5
+    "privacy.section5.title": "5. 개인정보 처리의 위탁",
+    "privacy.section5.intro":
+      "서비스는 안정적인 서비스 제공과 업무 처리를 위하여 다음과 같이 개인정보 처리 업무를 외부 전문 업체에 위탁할 수 있습니다.",
+    "privacy.section5.table.header1": "위탁받는 자",
+    "privacy.section5.table.header2": "위탁업무 내용",
+    "privacy.section5.table.header3": "개인정보 보유 및 이용기간",
+    "privacy.section5.table.row1.col1":
+      "클라우드·호스팅 서비스 제공자 (예: AWS, Naver Cloud)",
+    "privacy.section5.table.row1.col2":
+      "데이터 저장, 서버 운영, 문서 및 서명 파일의 보관",
+    "privacy.section5.table.row1.col3": "계약 종료 또는 위탁업무 종료 시까지",
+    "privacy.section5.table.row2.col1": "결제대행사 (PG사)",
+    "privacy.section5.table.row2.col2": "결제 처리 및 결제 내역 관리",
+    "privacy.section5.table.row2.col3": "관련 법령 또는 이용자의 동의 기간까지",
+    "privacy.section5.table.row3.col1": "이메일·SMS 발송업체",
+    "privacy.section5.table.row3.col2": "서비스 알림, 본인 인증, 공지사항 발송",
+    "privacy.section5.table.row3.col3": "위탁업무 목적 달성 후 즉시 파기",
+    "privacy.section5.outro":
+      "서비스는 추가적인 위탁이 발생할 경우 개인정보 처리방침을 통하여 사전에 고지하고 동의를 받습니다.",
+
+    // Section 6
+    "privacy.section6.title": "6. 개인정보 파기 절차 및 방법",
+    "privacy.section6.intro":
+      "개인정보의 처리 목적이 달성되거나 보유 기간이 경과한 경우 서비스는 지체 없이 개인정보를 파기합니다.",
+    "privacy.section6.item1.title": "파기 절차",
+    "privacy.section6.item1.content":
+      "이용자가 회원 가입 등을 위해 입력한 개인정보는 목적 달성 후 별도의 DB로 이동하여 내부 방침 및 기타 관련 법령에 따라 일정 기간 저장한 후 파기합니다.",
+    "privacy.section6.item2.title": "파기 기한",
+    "privacy.section6.item2.content":
+      "개인정보의 보유 기간이 종료된 경우 그 종료일부터 5일 이내에 파기합니다.",
+    "privacy.section6.item3.title": "파기 방법",
+    "privacy.section6.item3.content":
+      "전자적 파일 형태의 정보는 복구 및 재생이 불가능한 방법을 이용하여 영구 삭제하며, 종이 문서 등은 분쇄하거나 소각하는 방법으로 파기합니다.",
+
+    // Section 7
+    "privacy.section7.title":
+      "7. 개인정보 자동 수집 장치의 설치·운영 및 거부에 관한 사항",
+    "privacy.section7.intro":
+      "서비스는 맞춤형 서비스 제공을 위해 쿠키(cookie) 등 개인정보 자동 수집 장치를 이용할 수 있습니다.",
+    "privacy.section7.item1.title": "쿠키의 사용 목적",
+    "privacy.section7.item1.content":
+      "방문 기록과 사용 패턴 분석, 로그인 상태 유지, 맞춤형 정보 제공을 위해 쿠키를 사용합니다.",
+    "privacy.section7.item2.title": "쿠키 설치·운영 및 거부 방법",
+    "privacy.section7.item2.content":
+      "이용자는 웹브라우저 설정을 통해 쿠키 저장을 거부할 수 있습니다.",
+    "privacy.section7.item3.title": "웹 로그 분석 도구",
+    "privacy.section7.item3.content":
+      "서비스 개선을 위해 Google Analytics 등 외부 분석 도구를 사용할 수 있으며, IP 주소 및 기기 정보를 익명 형태로 전송합니다.",
+
+    // Section 8
+    "privacy.section8.title": "8. 개인정보의 안전성 확보 조치",
+    "privacy.section8.intro":
+      "서비스는 개인정보보호법 제29조에 따라 다음과 같은 기술적·관리적·물리적 조치를 취합니다.",
+    "privacy.section8.item1.title": "개인정보 취급 직원의 최소화 및 교육",
+    "privacy.section8.item1.content":
+      "개인정보를 취급하는 직원을 최소한으로 지정하고 정기적인 교육을 실시합니다.",
+    "privacy.section8.item2.title": "접근권한의 관리",
+    "privacy.section8.item2.content":
+      "개인정보를 처리하는 데이터베이스 시스템에 대한 접근권한을 부여·변경·말소하고, 침입차단 시스템 등을 통해 무단 접근을 방지합니다.",
+    "privacy.section8.item3.title": "암호화 및 안전한 저장",
+    "privacy.section8.item3.content":
+      "비밀번호와 서명 데이터 등 중요정보는 암호화하여 저장하며, 전송 시에도 암호화 기법을 사용합니다.",
+    "privacy.section8.item4.title": "해킹 등에 대비한 기술적 대책",
+    "privacy.section8.item4.content":
+      "백신 프로그램과 침입 차단 시스템을 설치하여 주기적으로 업데이트하고, 서버는 외부로부터 접근이 통제된 구역에서 운영합니다.",
+    "privacy.section8.item5.title": "접속 기록의 관리",
+    "privacy.section8.item5.content":
+      "개인정보처리시스템에 접속한 기록을 최소 6개월 이상 보관·관리하며, 위변조 및 도난·분실되지 않도록 보안 기능을 사용합니다.",
+    "privacy.section8.item6.title": "물리적 보안",
+    "privacy.section8.item6.content":
+      "전산실, 자료 보관실 등 개인정보를 보관하는 장소에 대해 출입 통제와 잠금장치 등을 적용합니다.",
+
+    // Section 9
+    "privacy.section9.title":
+      "9. 정보주체와 법정대리인의 권리·의무 및 행사 방법",
+    "privacy.section9.intro":
+      "이용자는 개인정보주체로서 다음과 같은 권리를 행사할 수 있습니다.",
+    "privacy.section9.item1.title": "개인정보 열람요구",
+    "privacy.section9.item1.content":
+      "서비스가 보유한 본인의 개인정보 열람을 요구할 수 있습니다.",
+    "privacy.section9.item2.title": "정정 및 삭제 요구",
+    "privacy.section9.item2.content":
+      "개인정보에 오류가 있을 경우 정정을 요구할 수 있으며, 처리 목적이 달성된 경우 삭제를 요청할 수 있습니다.",
+    "privacy.section9.item3.title": "처리정지 요구",
+    "privacy.section9.item3.content":
+      "개인정보의 처리 정지를 요구할 수 있습니다.",
+    "privacy.section9.item4.title": "권리 행사 방법",
+    "privacy.section9.item4.content":
+      "전자우편(pb1123love@gmail.com)을 통해 서면·이메일·팩스 등으로 요구할 수 있으며, 서비스는 이에 대해 지체 없이 조치합니다.",
+    "privacy.section9.item5.title": "대리인을 통한 권리 행사",
+    "privacy.section9.item5.content":
+      "정보주체의 법정대리인이나 위임을 받은 자 등 대리인을 통하여 권리를 행사할 수 있습니다.",
+    "privacy.section9.item6.title": "권리 행사에 대한 결과 통지",
+    "privacy.section9.item6.content":
+      "서비스는 열람 요구, 정정·삭제 요구, 처리정지 요구를 받은 경우 10일 이내에 조치 결과를 통지합니다.",
+
+    // Section 10
+    "privacy.section10.title": "10. 개인정보 보호책임자 및 담당자 연락처",
+    "privacy.section10.intro":
+      "서비스는 개인정보 처리에 관한 업무를 총괄하여 책임지고, 개인정보 처리와 관련한 이용자 문의·불만처리 및 피해구제를 처리하기 위하여 아래와 같이 개인정보 보호책임자를 지정합니다.",
+    "privacy.section10.responsibility": "개인정보 보호책임자",
+    "privacy.section10.responsibilityName": "김민규",
+    "privacy.section10.contact": "연락처",
+    "privacy.section10.duties": "담당 업무",
+    "privacy.section10.dutiesContent":
+      "개인정보 보호 정책 수립 및 시행, 이용자 문의 대응, 개인정보 유출 사고 예방 및 조치.",
+    "privacy.section10.outro":
+      "이용자는 서비스를 이용하면서 발생하는 모든 개인정보 보호 관련 문의, 불만처리, 피해구제 등에 관하여 개인정보 보호책임자에게 문의할 수 있습니다.",
+
+    // Section 11
+    "privacy.section11.title":
+      "11. 개인정보 관련 분쟁조정 및 권익침해 구제방법",
+    "privacy.section11.intro":
+      "개인정보 침해에 대한 신고나 상담이 필요한 경우 다음 기관에 문의할 수 있습니다.",
+    "privacy.section11.item1.title": "개인정보 침해신고센터 (한국인터넷진흥원)",
+    "privacy.section11.item1.phone": "(국번없이) 118",
+    "privacy.section11.item2.title": "개인정보 분쟁조정위원회",
+    "privacy.section11.item2.phone": "(국번없이) 1833-6972",
+    "privacy.section11.item3.title": "대검찰청 사이버범죄수사단",
+    "privacy.section11.item3.phone": "02-3480-3573",
+    "privacy.section11.item4.title": "경찰청 사이버안전국",
+    "privacy.section11.item4.phone": "(국번없이) 182",
+
+    // Section 12
+    "privacy.section12.title": "12. 개인정보 처리방침의 변경",
+    "privacy.section12.content":
+      "본 개인정보 처리방침은 시행일로부터 적용되며, 법령·정책 또는 서비스 내용의 변경에 따라 수정될 수 있습니다. 변경되는 경우에는 시행 7일 전부터 홈페이지 또는 공지사항을 통하여 변경 내용을 알립니다.",
+
+    // Effective Date
+    "privacy.effectiveDate.title": "시행일",
+    "privacy.effectiveDate.date":
+      "이 개인정보 처리방침은 2025년 10월 01일부터 적용됩니다.",
   },
   en: {
     // Header
@@ -533,6 +758,9 @@ const translations: Record<Language, Record<string, string>> = {
     "register.joinMessage":
       "Sign up for SeukSeuk to start signing and managing your documents. We provide a simple and secure signing experience.",
     "register.kakaoTalk": "Kakao",
+    "register.privacyAgree": "I agree to the",
+    "register.privacyPolicy": "Privacy Policy",
+    "register.privacyAgree2": ".",
 
     // Sign Page - Password Protection & Status
     "sign.password.title": "Protected Document",
@@ -641,6 +869,250 @@ const translations: Record<Language, Record<string, string>> = {
     "breadcrumb.dashboard": "Dashboard",
     "breadcrumb.upload": "Upload Document",
     "breadcrumb.details": "Document Details",
+
+    // Footer
+    "footer.privacy": "Privacy Policy",
+
+    // Privacy Policy Page
+    "privacy.backToHome": "Back to Home",
+    "privacy.title": "SeukSeuk Privacy Policy",
+    "privacy.intro":
+      "This Privacy Policy is established and disclosed in accordance with Article 30 of the Personal Information Protection Act to protect personal information of data subjects and promptly and smoothly handle related grievances regarding the electronic document signing and management service provided by SeukSeuk (hereinafter referred to as 'Service').",
+
+    // Section 1
+    "privacy.section1.title": "1. Purpose of Processing Personal Information",
+    "privacy.section1.intro":
+      "The Service collects and uses personal information for the following purposes and will obtain prior consent from users if the purpose changes.",
+    "privacy.section1.item1.title": "Membership Registration and Management",
+    "privacy.section1.item1.content":
+      "Confirmation of membership intent, user identification and authentication, account maintenance and management, prevention of unauthorized use, and various notifications.",
+    "privacy.section1.item2.title":
+      "Electronic Document Signing Service Provision",
+    "privacy.section1.item2.content":
+      "Business processing for providing services such as electronic signature requests, creation, storage, and sharing, document transmission, and processing status notifications.",
+    "privacy.section1.item3.title": "Payment and Settlement",
+    "privacy.section1.item3.content":
+      "User authentication for paid service usage, fee payment, invoice issuance, and payment history management.",
+    "privacy.section1.item4.title": "Customer Support",
+    "privacy.section1.item4.content":
+      "Handling inquiries and requests, complaint resolution and dispute mediation, announcement delivery.",
+    "privacy.section1.item5.title":
+      "Service Improvement and Statistical Utilization",
+    "privacy.section1.item5.content":
+      "Service quality improvement and statistical analysis through analysis of service usage records and access information.",
+    "privacy.section1.item6.title": "Legal Compliance",
+    "privacy.section1.item6.content":
+      "Fulfillment of obligations stipulated by relevant laws and compliance with legal requirements.",
+
+    // Section 2
+    "privacy.section2.title": "2. Personal Information Items Processed",
+    "privacy.section2.intro":
+      "The Service processes the following personal information. SeukSeuk handles electronic signature data and document files securely due to the nature of the service.",
+    "privacy.section2.sub1.title": "2.1 Items Collected During Registration",
+    "privacy.section2.sub1.required": "Required Items",
+    "privacy.section2.sub1.requiredItems":
+      "Name, email address, password, service usage records, IP address, browser information, cookie information.",
+    "privacy.section2.sub1.optional": "Optional Items",
+    "privacy.section2.sub1.optionalItems":
+      "Contact information (mobile phone number), job title/position information, profile picture.",
+    "privacy.section2.sub1.social": "Items Collected via Social Login",
+    "privacy.section2.sub1.socialItems":
+      "When using social login services such as Google/GitHub/Kakao, profile information registered with the service (nickname, profile picture, email, etc.) and unique identifiers.",
+    "privacy.section2.sub2.title":
+      "2.2 Items Collected During Signature Requests and Document Management",
+    "privacy.section2.sub2.signature": "Signature Data",
+    "privacy.section2.sub2.signatureContent":
+      "Signature images or tracking coordinates required for electronic signatures entered by users.",
+    "privacy.section2.sub2.document": "Documents and Attachments",
+    "privacy.section2.sub2.documentContent":
+      "Contents of documents and attachments created, transmitted, and stored in the service.",
+    "privacy.section2.sub2.recipient": "Recipient Information",
+    "privacy.section2.sub2.recipientContent":
+      "Name, email address, and signature progress status of the recipient requesting document signature.",
+    "privacy.section2.sub2.payment": "Payment Information",
+    "privacy.section2.sub2.paymentContent":
+      "Card information for payment when using paid services (card company name, partial card number, payment approval number, etc.).",
+
+    // Section 3
+    "privacy.section3.title":
+      "3. Processing and Retention Period of Personal Information",
+    "privacy.section3.intro":
+      "The Service retains personal information for the period stipulated by law or for the period agreed upon by the user.",
+    "privacy.section3.item1.title": "Member Information",
+    "privacy.section3.item1.content":
+      "Retained until membership withdrawal. If retention is required for a certain period according to relevant laws for fee settlement, fraud prevention, etc., it will be retained for that period.",
+    "privacy.section3.item2.title": "Signature and Document Data",
+    "privacy.section3.item2.content":
+      "Retained until the service provision purpose is achieved or until the member requests deletion or withdraws.",
+    "privacy.section3.item3.title": "Log Records",
+    "privacy.section3.item3.content":
+      "Access logs collected for security and service improvement are retained for 6 months and then destroyed.",
+    "privacy.section3.item4.title": "Retention According to Relevant Laws",
+    "privacy.section3.item4.content":
+      "Information required to be retained for the period stipulated by relevant laws such as tax law, Electronic Signature Act, and Communication Privacy Act will be retained for the period stipulated by the law.",
+
+    // Section 4
+    "privacy.section4.title":
+      "4. Third-Party Provision of Personal Information",
+    "privacy.section4.content":
+      "The Service does not provide personal information to third parties beyond the scope specified in the 'Purpose of Processing Personal Information'. However, exceptions may be made with user consent or if there are special provisions in the law.",
+    "privacy.section4.social": "Social Login Providers",
+    "privacy.section4.socialContent":
+      "When users access the service through external account linking such as Google, GitHub, Kakao, personal information may be provided to the service.",
+    "privacy.section4.legal": "Law and Investigation Agencies",
+    "privacy.section4.legalContent":
+      "When requested by investigation or supervisory agencies in accordance with procedures and methods stipulated by law.",
+
+    // Section 5
+    "privacy.section5.title":
+      "5. Entrustment of Personal Information Processing",
+    "privacy.section5.intro":
+      "The Service may entrust personal information processing work to external professional companies as follows for stable service provision and business processing.",
+    "privacy.section5.table.header1": "Trustee",
+    "privacy.section5.table.header2": "Entrusted Work",
+    "privacy.section5.table.header3":
+      "Personal Information Retention and Use Period",
+    "privacy.section5.table.row1.col1":
+      "Cloud/Hosting Service Providers (e.g., AWS, Naver Cloud)",
+    "privacy.section5.table.row1.col2":
+      "Data storage, server operation, document and signature file storage",
+    "privacy.section5.table.row1.col3":
+      "Until contract termination or end of entrusted work",
+    "privacy.section5.table.row2.col1": "Payment Gateway (PG) Company",
+    "privacy.section5.table.row2.col2":
+      "Payment processing and payment history management",
+    "privacy.section5.table.row2.col3":
+      "Until the period stipulated by relevant laws or user consent period",
+    "privacy.section5.table.row3.col1": "Email/SMS Sending Company",
+    "privacy.section5.table.row3.col2":
+      "Service notifications, user authentication, announcement sending",
+    "privacy.section5.table.row3.col3":
+      "Immediate destruction after achieving entrusted work purpose",
+    "privacy.section5.outro":
+      "If additional entrustment occurs, the Service will notify in advance through the privacy policy and obtain consent.",
+
+    // Section 6
+    "privacy.section6.title":
+      "6. Personal Information Destruction Procedures and Methods",
+    "privacy.section6.intro":
+      "When the purpose of processing personal information is achieved or the retention period expires, the Service destroys personal information without delay.",
+    "privacy.section6.item1.title": "Destruction Procedure",
+    "privacy.section6.item1.content":
+      "Personal information entered by users for membership registration is moved to a separate DB after achieving the purpose and destroyed after being stored for a certain period according to internal policies and other relevant laws.",
+    "privacy.section6.item2.title": "Destruction Period",
+    "privacy.section6.item2.content":
+      "When the retention period of personal information expires, it is destroyed within 5 days from the end date.",
+    "privacy.section6.item3.title": "Destruction Method",
+    "privacy.section6.item3.content":
+      "Information in electronic file form is permanently deleted using methods that make recovery and regeneration impossible, and paper documents are destroyed by shredding or incineration.",
+
+    // Section 7
+    "privacy.section7.title":
+      "7. Installation, Operation, and Rejection of Automatic Personal Information Collection Devices",
+    "privacy.section7.intro":
+      "The Service may use automatic personal information collection devices such as cookies to provide customized services.",
+    "privacy.section7.item1.title": "Purpose of Cookie Use",
+    "privacy.section7.item1.content":
+      "Cookies are used to analyze visit records and usage patterns, maintain login status, and provide customized information.",
+    "privacy.section7.item2.title":
+      "Cookie Installation, Operation, and Rejection Methods",
+    "privacy.section7.item2.content":
+      "Users can refuse cookie storage through web browser settings.",
+    "privacy.section7.item3.title": "Web Log Analysis Tools",
+    "privacy.section7.item3.content":
+      "External analysis tools such as Google Analytics may be used for service improvement, transmitting IP addresses and device information in anonymous form.",
+
+    // Section 8
+    "privacy.section8.title":
+      "8. Measures to Ensure Safety of Personal Information",
+    "privacy.section8.intro":
+      "The Service takes the following technical, administrative, and physical measures in accordance with Article 29 of the Personal Information Protection Act.",
+    "privacy.section8.item1.title":
+      "Minimization and Training of Personal Information Handling Staff",
+    "privacy.section8.item1.content":
+      "Personnel handling personal information are designated to a minimum and regular training is conducted.",
+    "privacy.section8.item2.title": "Access Authority Management",
+    "privacy.section8.item2.content":
+      "Access authority to database systems processing personal information is granted, changed, or revoked, and unauthorized access is prevented through intrusion prevention systems.",
+    "privacy.section8.item3.title": "Encryption and Secure Storage",
+    "privacy.section8.item3.content":
+      "Important information such as passwords and signature data is encrypted and stored, and encryption techniques are used during transmission.",
+    "privacy.section8.item4.title": "Technical Measures Against Hacking",
+    "privacy.section8.item4.content":
+      "Antivirus programs and intrusion prevention systems are installed and periodically updated, and servers are operated in areas with controlled external access.",
+    "privacy.section8.item5.title": "Access Record Management",
+    "privacy.section8.item5.content":
+      "Records of access to personal information processing systems are retained and managed for at least 6 months, and security functions are used to prevent forgery, alteration, theft, and loss.",
+    "privacy.section8.item6.title": "Physical Security",
+    "privacy.section8.item6.content":
+      "Access control and locking devices are applied to places where personal information is stored, such as computer rooms and data storage rooms.",
+
+    // Section 9
+    "privacy.section9.title":
+      "9. Rights and Obligations of Data Subjects and Legal Representatives and Methods of Exercise",
+    "privacy.section9.intro":
+      "Users can exercise the following rights as data subjects.",
+    "privacy.section9.item1.title": "Request to View Personal Information",
+    "privacy.section9.item1.content":
+      "Users can request to view their personal information held by the Service.",
+    "privacy.section9.item2.title": "Request for Correction and Deletion",
+    "privacy.section9.item2.content":
+      "Users can request correction if there are errors in personal information, and can request deletion if the processing purpose has been achieved.",
+    "privacy.section9.item3.title": "Request to Stop Processing",
+    "privacy.section9.item3.content":
+      "Users can request to stop processing of personal information.",
+    "privacy.section9.item4.title": "Methods of Exercising Rights",
+    "privacy.section9.item4.content":
+      "Requests can be made in writing, email, fax, etc. via pb1123love@gmail.com, and the Service will take action without delay.",
+    "privacy.section9.item5.title":
+      "Exercise of Rights through Representatives",
+    "privacy.section9.item5.content":
+      "Rights can be exercised through representatives such as legal representatives or authorized persons of data subjects.",
+    "privacy.section9.item6.title":
+      "Notification of Results of Rights Exercise",
+    "privacy.section9.item6.content":
+      "When receiving requests for viewing, correction/deletion, or stop of processing, the Service will notify the results within 10 days.",
+
+    // Section 10
+    "privacy.section10.title": "10. Privacy Officer and Contact Information",
+    "privacy.section10.intro":
+      "The Service designates a privacy officer as follows to oversee personal information processing and handle user inquiries, complaints, and remedies related to personal information processing.",
+    "privacy.section10.responsibility": "Privacy Officer",
+    "privacy.section10.responsibilityName": "MINKYU KIM",
+    "privacy.section10.contact": "Contact",
+    "privacy.section10.duties": "Duties",
+    "privacy.section10.dutiesContent":
+      "Establishment and implementation of privacy protection policies, responding to user inquiries, prevention and measures for personal information leakage accidents.",
+    "privacy.section10.outro":
+      "Users can contact the privacy officer regarding all privacy-related inquiries, complaints, and remedies arising from using the Service.",
+
+    // Section 11
+    "privacy.section11.title":
+      "11. Dispute Resolution and Relief Methods for Rights Violations",
+    "privacy.section11.intro":
+      "If you need to report or consult about personal information infringement, you can contact the following organizations.",
+    "privacy.section11.item1.title":
+      "Personal Information Infringement Report Center (KISA)",
+    "privacy.section11.item1.phone": "(No area code) 118",
+    "privacy.section11.item2.title":
+      "Personal Information Dispute Mediation Committee",
+    "privacy.section11.item2.phone": "(No area code) 1833-6972",
+    "privacy.section11.item3.title":
+      "Supreme Prosecutors' Office Cybercrime Investigation Unit",
+    "privacy.section11.item3.phone": "02-3480-3573",
+    "privacy.section11.item4.title":
+      "National Police Agency Cybersecurity Bureau",
+    "privacy.section11.item4.phone": "(No area code) 182",
+
+    // Section 12
+    "privacy.section12.title": "12. Changes to Privacy Policy",
+    "privacy.section12.content":
+      "This privacy policy is effective from the effective date and may be revised according to changes in laws, policies, or service contents. Changes will be announced through the homepage or notifications at least 7 days before implementation.",
+
+    // Effective Date
+    "privacy.effectiveDate.title": "Effective Date",
+    "privacy.effectiveDate.date":
+      "This Privacy Policy is effective from October 1, 2025.",
   },
 };
 

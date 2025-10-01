@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useLanguage } from "@/contexts/language-context";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { useFormState } from "react-dom";
@@ -16,6 +17,7 @@ import { register } from "./actions";
 
 export default function RegisterPage() {
   const { t } = useLanguage();
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   const [state, dispatch] = useFormState(register, null);
 
@@ -131,12 +133,38 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="privacy"
+                    checked={privacyAccepted}
+                    onCheckedChange={(checked) =>
+                      setPrivacyAccepted(checked as boolean)
+                    }
+                    required
+                  />
+                  <label
+                    htmlFor="privacy"
+                    className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {t("register.privacyAgree")}{" "}
+                    <Link
+                      href="/privacy"
+                      target="_blank"
+                      className="text-primary hover:underline"
+                    >
+                      {t("register.privacyPolicy")}
+                    </Link>
+                    {t("register.privacyAgree2")}
+                  </label>
+                </div>
               </div>
 
               <SubmitButton
                 label={t("register.createAccount")}
                 pendingLabel={t("register.registering")}
                 className="w-full bg-primary hover:bg-primary/90"
+                disabled={!privacyAccepted}
               />
             </form>
 

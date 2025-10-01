@@ -322,14 +322,20 @@ export default function HomePageComponent() {
       {/* Footer */}
       <footer className="bg-secondary py-12 mt-auto">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center gap-2 mb-4 md:mb-0">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
               <FileSignature className="h-6 w-6 text-primary" />
               <span className="font-bold">{t("app.title")}</span>
             </div>
-            <div className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} SeukSeuk.{" "}
-              {t("home.footer.rights")}
+            <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-muted-foreground">
+              <Link href="/privacy" className="hover:text-primary transition-colors">
+                {t("footer.privacy")}
+              </Link>
+              <span className="hidden md:inline">•</span>
+              <span>
+                &copy; {new Date().getFullYear()} SeukSeuk.{" "}
+                {t("home.footer.rights")}
+              </span>
             </div>
           </div>
         </div>

@@ -12,6 +12,7 @@ const publicRoutes: Routes = {
   "/": true,
   "/forgot-password": true,
   "/reset-password": true,
+  "/privacy": true,
 };
 
 // Routes that should redirect to dashboard if user is authenticated
