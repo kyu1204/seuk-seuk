@@ -1092,9 +1092,9 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Terms of Service Page
     "term.backToHome": "Back to Home",
-    "term.title": "www.seuk-seuk.com Terms of Service",
+    "term.title": "SeukSeuk Terms of Service",
     "term.intro":
-      'These Terms of Service establish the rights, obligations, responsibilities, and other necessary matters between the operator and members regarding the use of the electronic document signing and management services provided by an individual (hereinafter referred to as the "Operator") through www.seuk-seuk.com (hereinafter referred to as the "Service").',
+      'These Terms of Service establish the rights, obligations, responsibilities, and other necessary matters between the operator and members regarding the use of the electronic document signing and management services provided by an individual (hereinafter referred to as the "Operator") through SeukSeuk (hereinafter referred to as the "Service").',
 
     // Chapter 1
     "term.chapter1.title": "Chapter 1: General Provisions",
