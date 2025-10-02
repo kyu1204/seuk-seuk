@@ -6,7 +6,7 @@ import {
   SubscriptionCreatedEvent,
   SubscriptionUpdatedEvent,
 } from "@paddle/paddle-node-sdk";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServiceSupabase } from "@/lib/supabase/server";
 import { PADDLE_PRICE_TIERS } from "./pricing-config";
 
 export class ProcessWebhook {
@@ -30,7 +30,7 @@ export class ProcessWebhook {
   private async updateSubscriptionData(
     eventData: SubscriptionCreatedEvent | SubscriptionUpdatedEvent
   ) {
-    const supabase = await createServerSupabase();
+    const supabase = createServiceSupabase();
 
     try {
       // 1. customer_id로 customers 테이블에서 user_id 조회
@@ -199,7 +199,7 @@ export class ProcessWebhook {
   private async updateCustomerData(
     eventData: CustomerCreatedEvent | CustomerUpdatedEvent
   ) {
-    const supabase = await createServerSupabase();
+    const supabase = createServiceSupabase();
 
     try {
       // 이메일로 사용자 찾기 (Supabase Auth Admin API 사용)
