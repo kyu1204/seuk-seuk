@@ -248,7 +248,9 @@ export function UsageWidget() {
                       {t("usage.upgrade.title")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {t("usage.upgrade.description")}
+                      {subscription.plan.name?.toLowerCase() === "free"
+                        ? t("usage.upgrade.description.free")
+                        : t("usage.upgrade.description.pro")}
                     </p>
                   </div>
                   <Link href="/pricing">
