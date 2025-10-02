@@ -116,3 +116,9 @@
   text-fill-color: transparent;
 }
 
+/* Paddle checkout customization */
+:root {
+  --paddle-primary-color: #3b82f6;
+  --paddle-button-background: hsl(221, 83%, 53%);
+  --paddle-button-text: white;
+}

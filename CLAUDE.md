@@ -90,3 +90,4 @@ Authentication uses Supabase Auth with route protection logic defined in `lib/su
 - Consistent use of TypeScript with proper type definitions
 - Form handling with proper loading states and error handling
 - 개발환경은 백그라운드에서 따로 띄우면 안됨. 직접 띄울 예정.
+- 항상 시작전 serena project activate 후 최우선으로 사용 project name: new-seuk

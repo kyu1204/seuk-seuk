@@ -134,7 +134,7 @@ seuk-seuk/
 - 🔑 JWT 기반 인증 시스템
 - 📝 입력 데이터 검증 (Zod)
 
-보안 취약점 발견 시 [pb1123love@gmail.com](mailto:pb1123love@gmail.com)으로 연락해주세요.
+보안 취약점 발견 시 [cs.seuk.seuk@gmail.com](mailto:cs.seuk.seuk@gmail.com)으로 연락해주세요.
 
 ## 📄 License
 
