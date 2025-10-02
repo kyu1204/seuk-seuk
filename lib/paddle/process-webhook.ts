@@ -40,45 +40,45 @@ export class ProcessWebhook {
         .eq("customer_id", eventData.data.customerId)
         .single();
 
-      // customer가 없으면 먼저 생성 (이벤트 순서 문제 대응)
+      // customer가 없으면 임시로 생성 (이벤트 순서 문제 대응)
       if (customerError || !customerData) {
-        console.log(`Customer ${eventData.data.customerId} not found, extracting from webhook payload...`);
+        console.log(`Customer ${eventData.data.customerId} not found, creating placeholder...`);
 
-        // Subscription 이벤트의 customer 정보 추출
-        const customerEmail = (eventData.data as any).customer?.email;
-
-        if (!customerEmail) {
-          console.error("Customer email not found in webhook payload");
-          return;
-        }
-
-        // 이메일로 사용자 찾기
-        const { data: { users } } = await supabase.auth.admin.listUsers();
-        const user = users?.find((u) => u.email === customerEmail);
-
-        // customers 테이블에 삽입
+        // customer_id만으로 임시 레코드 생성 (email과 user_id는 나중에 customer.created 이벤트로 업데이트)
         const { data: newCustomer, error: insertError } = await supabase
           .from("customers")
           .insert({
             customer_id: eventData.data.customerId,
-            email: customerEmail,
-            user_id: user?.id ?? null,
+            email: `placeholder-${eventData.data.customerId}@temp.paddle.com`, // 임시 이메일
+            user_id: null,
           })
           .select("user_id")
           .single();
 
         if (insertError) {
-          console.error("Failed to create customer:", insertError);
-          return;
+          // 이미 존재하는 경우 조회 재시도
+          if (insertError.code === "23505") {
+            console.log("Customer already exists, retrying fetch...");
+            const { data: existingCustomer } = await supabase
+              .from("customers")
+              .select("user_id")
+              .eq("customer_id", eventData.data.customerId)
+              .single();
+            customerData = existingCustomer;
+          } else {
+            console.error("Failed to create placeholder customer:", insertError);
+            return;
+          }
+        } else {
+          customerData = newCustomer;
+          console.log(`Created placeholder customer ${eventData.data.customerId}`);
         }
-
-        customerData = newCustomer;
-        console.log(`Created customer ${eventData.data.customerId} for user ${user?.id}`);
       }
 
       if (!customerData?.user_id) {
-        console.error("Customer found but user_id is null");
-        return;
+        console.warn(`Customer ${eventData.data.customerId} has no user_id yet (will be updated by customer.created event)`);
+        // user_id가 없어도 subscription은 생성하되, users 테이블 업데이트는 스킵
+        // return; // 이 줄을 제거하여 계속 진행
       }
 
       // 2. Paddle Price ID로부터 플랜 결정
@@ -134,17 +134,19 @@ export class ProcessWebhook {
         console.log(`Updated Paddle subscription: ${subscriptionId}`);
       } else {
         // 새로운 Paddle 구독 생성
-        // 먼저 해당 유저의 기존 활성 구독 비활성화
-        await supabase
-          .from("subscriptions")
-          .update({ status: "canceled", updated_at: new Date().toISOString() })
-          .eq("user_id", customerData.user_id)
-          .eq("status", "active");
+        // user_id가 있으면 기존 활성 구독 비활성화
+        if (customerData.user_id) {
+          await supabase
+            .from("subscriptions")
+            .update({ status: "canceled", updated_at: new Date().toISOString() })
+            .eq("user_id", customerData.user_id)
+            .eq("status", "active");
+        }
 
         const { data: newSub, error: insertError } = await supabase
           .from("subscriptions")
           .insert({
-            user_id: customerData.user_id,
+            user_id: customerData.user_id || null,
             plan_id: planData.id,
             status: subscriptionStatus,
             paddle_subscription_id: eventData.data.id,
@@ -164,22 +166,28 @@ export class ProcessWebhook {
         console.log(`Created new Paddle subscription: ${subscriptionId}`);
       }
 
-      // 5. users.current_subscription_id 업데이트
-      const { error: userUpdateError } = await supabase
-        .from("users")
-        .update({ current_subscription_id: subscriptionId })
-        .eq("id", customerData.user_id);
+      // 5. users.current_subscription_id 업데이트 (user_id가 있을 때만)
+      if (customerData.user_id) {
+        const { error: userUpdateError } = await supabase
+          .from("users")
+          .update({ current_subscription_id: subscriptionId })
+          .eq("id", customerData.user_id);
 
-      if (userUpdateError) {
-        console.error(
-          "Failed to update user's current_subscription_id:",
-          userUpdateError
+        if (userUpdateError) {
+          console.error(
+            "Failed to update user's current_subscription_id:",
+            userUpdateError
+          );
+        }
+
+        console.log(
+          `Updated user ${customerData.user_id} subscription to ${planName} (${subscriptionStatus})`
+        );
+      } else {
+        console.log(
+          `Created subscription ${subscriptionId} for ${planName} (${subscriptionStatus}) - waiting for customer.created event to link to user`
         );
       }
-
-      console.log(
-        `Updated user ${customerData.user_id} subscription to ${planName} (${subscriptionStatus})`
-      );
     } catch (error) {
       console.error("Error processing subscription webhook:", error);
       throw error;
@@ -213,7 +221,35 @@ export class ProcessWebhook {
         throw error;
       }
 
-      console.log(`Updated customer: ${eventData.data.id}`);
+      console.log(`Updated customer: ${eventData.data.id} with user: ${user?.id}`);
+
+      // user_id가 있으면, 이 customer의 subscription을 찾아서 user_id 연결
+      if (user?.id) {
+        // 1. paddle_subscription_id가 있는 subscription 찾기
+        const { data: subscriptions } = await supabase
+          .from("subscriptions")
+          .select("id")
+          .is("user_id", null)
+          .not("paddle_subscription_id", "is", null);
+
+        if (subscriptions && subscriptions.length > 0) {
+          for (const sub of subscriptions) {
+            // 2. subscription의 user_id 업데이트
+            await supabase
+              .from("subscriptions")
+              .update({ user_id: user.id, updated_at: new Date().toISOString() })
+              .eq("id", sub.id);
+
+            // 3. users 테이블의 current_subscription_id 업데이트
+            await supabase
+              .from("users")
+              .update({ current_subscription_id: sub.id })
+              .eq("id", user.id);
+
+            console.log(`Linked subscription ${sub.id} to user ${user.id}`);
+          }
+        }
+      }
     } catch (error) {
       console.error("Error processing customer webhook:", error);
       throw error;
