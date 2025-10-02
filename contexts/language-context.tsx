@@ -303,7 +303,8 @@ const translations: Record<Language, Record<string, string>> = {
     "usage.plan.free": "무료",
     "usage.plan.suffix": "플랜",
     "usage.upgrade.title": "더 많은 문서가 필요하신가요?",
-    "usage.upgrade.description": "Pro 플랜으로 업그레이드하세요",
+    "usage.upgrade.description.free": "Pro 플랜으로 업그레이드하세요",
+    "usage.upgrade.description.pro": "더 상위 플랜으로 업그레이드하세요",
     "usage.upgrade.button": "업그레이드",
     "usage.features.title": "현재 플랜 혜택",
 
@@ -564,7 +565,8 @@ const translations: Record<Language, Record<string, string>> = {
     // Contact Page
     "contact.backToHome": "홈으로 돌아가기",
     "contact.title": "문의하기",
-    "contact.description": "궁금한 사항이나 제안이 있으시면 언제든지 연락해주세요.",
+    "contact.description":
+      "궁금한 사항이나 제안이 있으시면 언제든지 연락해주세요.",
     "contact.form.name": "이름",
     "contact.form.namePlaceholder": "홍길동",
     "contact.form.email": "이메일",
@@ -576,9 +578,11 @@ const translations: Record<Language, Record<string, string>> = {
     "contact.form.submit": "문의하기",
     "contact.form.submitting": "전송 중...",
     "contact.success.title": "문의가 전송되었습니다",
-    "contact.success.description": "빠른 시일 내에 답변 드리겠습니다. 감사합니다.",
+    "contact.success.description":
+      "빠른 시일 내에 답변 드리겠습니다. 감사합니다.",
     "contact.error.title": "전송 실패",
-    "contact.error.description": "문의 전송 중 오류가 발생했습니다. 다시 시도해주세요.",
+    "contact.error.description":
+      "문의 전송 중 오류가 발생했습니다. 다시 시도해주세요.",
 
     // Privacy Policy Page
     "privacy.backToHome": "홈으로 돌아가기",
@@ -1082,7 +1086,8 @@ const translations: Record<Language, Record<string, string>> = {
     "usage.plan.free": "Free",
     "usage.plan.suffix": "Plan",
     "usage.upgrade.title": "Need more documents?",
-    "usage.upgrade.description": "Upgrade to Pro plan",
+    "usage.upgrade.description.free": "Upgrade to Pro plan",
+    "usage.upgrade.description.pro": "Upgrade to a higher plan",
     "usage.upgrade.button": "Upgrade",
     "usage.features.title": "Current Plan Benefits",
 
@@ -1350,7 +1355,8 @@ const translations: Record<Language, Record<string, string>> = {
     // Contact Page
     "contact.backToHome": "Back to Home",
     "contact.title": "Contact Us",
-    "contact.description": "Feel free to reach out with any questions or suggestions.",
+    "contact.description":
+      "Feel free to reach out with any questions or suggestions.",
     "contact.form.name": "Name",
     "contact.form.namePlaceholder": "John Doe",
     "contact.form.email": "Email",
@@ -1362,9 +1368,11 @@ const translations: Record<Language, Record<string, string>> = {
     "contact.form.submit": "Send Message",
     "contact.form.submitting": "Sending...",
     "contact.success.title": "Message Sent",
-    "contact.success.description": "We'll get back to you as soon as possible. Thank you.",
+    "contact.success.description":
+      "We'll get back to you as soon as possible. Thank you.",
     "contact.error.title": "Send Failed",
-    "contact.error.description": "An error occurred while sending your message. Please try again.",
+    "contact.error.description":
+      "An error occurred while sending your message. Please try again.",
 
     // Privacy Policy Page
     "privacy.backToHome": "Back to Home",
