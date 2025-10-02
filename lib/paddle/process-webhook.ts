@@ -85,56 +85,80 @@ export class ProcessWebhook {
       // 4. 기존 subscriptions 테이블에 Paddle 구독 정보 upsert
       const subscriptionStatus = this.mapPaddleStatus(eventData.data.status);
 
-      // paddle_subscription_id로 기존 구독 찾기
-      const { data: existingSubscription } = await supabase
-        .from("subscriptions")
-        .select("id, user_id")
-        .eq("paddle_subscription_id", eventData.data.id)
-        .single();
-
       let subscriptionId: string;
 
-      if (existingSubscription) {
-        // 기존 Paddle 구독 업데이트
-        const { data: updatedSub, error: updateError } = await supabase
+      // user_id가 있으면 기존 subscription 레코드를 업데이트, 없으면 새로 생성
+      if (customerData?.user_id) {
+        console.log(`[subscription] User ${customerData.user_id} exists, checking for existing subscription...`);
+
+        // 이 user의 기존 subscription 찾기
+        const { data: existingUserSub } = await supabase
           .from("subscriptions")
-          .update({
-            plan_id: planData.id,
-            status: subscriptionStatus,
-            paddle_customer_id: eventData.data.customerId,
-            paddle_price_id: priceId,
-            payment_provider: "paddle",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingSubscription.id)
           .select("id")
+          .eq("user_id", customerData.user_id)
           .single();
 
-        if (updateError) {
-          console.error("Failed to update subscription:", updateError);
-          throw updateError;
-        }
+        if (existingUserSub) {
+          // 기존 subscription 업데이트 (Free → Pro 등)
+          console.log(`[subscription] Updating existing subscription ${existingUserSub.id} to ${planName}`);
 
-        subscriptionId = updatedSub!.id;
-        console.log(`Updated Paddle subscription: ${subscriptionId}`);
-      } else {
-        // 새로운 Paddle 구독 생성
-        // user_id가 있으면 기존 활성 구독 비활성화
-        if (customerData?.user_id) {
-          await supabase
+          const { data: updatedSub, error: updateError } = await supabase
             .from("subscriptions")
             .update({
-              status: "canceled",
+              plan_id: planData.id,
+              status: subscriptionStatus,
+              paddle_subscription_id: eventData.data.id,
+              paddle_customer_id: eventData.data.customerId,
+              paddle_price_id: priceId,
+              payment_provider: "paddle",
               updated_at: new Date().toISOString(),
             })
-            .eq("user_id", customerData?.user_id)
-            .eq("status", "active");
+            .eq("id", existingUserSub.id)
+            .select("id")
+            .single();
+
+          if (updateError) {
+            console.error("[subscription] Failed to update subscription:", updateError);
+            throw updateError;
+          }
+
+          subscriptionId = updatedSub!.id;
+          console.log(`[subscription] Updated subscription to ${planName}: ${subscriptionId}`);
+        } else {
+          // user는 있지만 subscription이 없는 경우 (정상적이지 않은 상황)
+          console.log(`[subscription] User has no subscription, creating new one`);
+
+          const { data: newSub, error: insertError } = await supabase
+            .from("subscriptions")
+            .insert({
+              user_id: customerData.user_id,
+              plan_id: planData.id,
+              status: subscriptionStatus,
+              paddle_subscription_id: eventData.data.id,
+              paddle_customer_id: eventData.data.customerId,
+              paddle_price_id: priceId,
+              payment_provider: "paddle",
+              starts_at: new Date().toISOString(),
+            })
+            .select("id")
+            .single();
+
+          if (insertError) {
+            console.error("[subscription] Failed to create subscription:", insertError);
+            throw insertError;
+          }
+
+          subscriptionId = newSub!.id;
+          console.log(`[subscription] Created subscription: ${subscriptionId}`);
         }
+      } else {
+        // user_id가 없으면 일단 subscription만 생성 (transaction.completed에서 연결됨)
+        console.log(`[subscription] No user linked yet, creating unlinked subscription`);
 
         const { data: newSub, error: insertError } = await supabase
           .from("subscriptions")
           .insert({
-            user_id: customerData?.user_id || null,
+            user_id: null,
             plan_id: planData.id,
             status: subscriptionStatus,
             paddle_subscription_id: eventData.data.id,
@@ -147,12 +171,12 @@ export class ProcessWebhook {
           .single();
 
         if (insertError) {
-          console.error("Failed to create subscription:", insertError);
+          console.error("[subscription] Failed to create subscription:", insertError);
           throw insertError;
         }
 
         subscriptionId = newSub!.id;
-        console.log(`Created new Paddle subscription: ${subscriptionId}`);
+        console.log(`[subscription] Created unlinked subscription: ${subscriptionId}`);
       }
 
       // 5. users.current_subscription_id 업데이트 (user_id가 있을 때만)
