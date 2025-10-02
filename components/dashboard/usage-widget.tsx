@@ -239,28 +239,27 @@ export function UsageWidget() {
               )}
             </div>
 
-            {/* Upgrade CTA for Free Plan */}
-            {subscription.plan.name === "Free" &&
-              (isMonthlyNearLimit || isActiveNearLimit) && (
-                <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">
-                        {t("usage.upgrade.title")}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t("usage.upgrade.description")}
-                      </p>
-                    </div>
-                    <Link href="/pricing">
-                      <Button size="sm" className="gap-2">
-                        <TrendingUp className="h-4 w-4" />
-                        {t("usage.upgrade.button")}
-                      </Button>
-                    </Link>
+            {/* Upgrade CTA - Show only for Free and Pro plans */}
+            {subscription.plan.name !== "Enterprise" && (
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {t("usage.upgrade.title")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("usage.upgrade.description")}
+                    </p>
                   </div>
+                  <Link href="/pricing">
+                    <Button size="sm" className="gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      {t("usage.upgrade.button")}
+                    </Button>
+                  </Link>
                 </div>
-              )}
+              </div>
+            )}
 
             {/* Plan Features Summary */}
             {subscription.plan.features &&

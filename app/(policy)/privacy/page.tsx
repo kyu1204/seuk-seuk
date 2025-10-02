@@ -332,10 +332,10 @@ export default function PrivacyPage() {
               <li>
                 <strong>{t("privacy.section10.contact")}:</strong>{" "}
                 <a
-                  href="mailto:pb1123love@gmail.com"
+                  href="mailto:cs.seuk.seuk@gmail.com"
                   className="text-primary hover:underline"
                 >
-                  pb1123love@gmail.com
+                  cs.seuk.seuk@gmail.com
                 </a>
               </li>
               <li>

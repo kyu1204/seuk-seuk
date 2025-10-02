@@ -31,7 +31,9 @@ export default function LanguageSelector() {
           className="gap-2 border-primary/20 hover:bg-primary/5"
         >
           <Globe className="h-4 w-4" />
-          <span>{language.toUpperCase()}</span>
+          <span className="sr-only sm:not-sr-only sm:text-xs">
+            {language.toUpperCase()}
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

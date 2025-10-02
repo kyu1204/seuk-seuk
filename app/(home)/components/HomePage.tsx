@@ -18,10 +18,16 @@ import {
   getSubscriptionPlans,
   type SubscriptionPlan,
 } from "@/app/actions/subscription-actions";
+import { Environments, initializePaddle, Paddle } from "@paddle/paddle-js";
+import { usePaddlePrices } from "@/hooks/usePaddlePrices";
+import { PADDLE_PRICE_TIERS } from "@/lib/paddle/pricing-config";
 
 export default function HomePageComponent() {
   const { t } = useLanguage();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [paddle, setPaddle] = useState<Paddle | undefined>(undefined);
+  const { prices: paddlePrices, loading: paddleLoading } =
+    usePaddlePrices(paddle);
 
   useEffect(() => {
     async function loadPlans() {
@@ -29,6 +35,23 @@ export default function HomePageComponent() {
       setPlans(fetchedPlans);
     }
     loadPlans();
+  }, []);
+
+  // Paddle 초기화
+  useEffect(() => {
+    if (
+      process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN &&
+      process.env.NEXT_PUBLIC_PADDLE_ENV
+    ) {
+      initializePaddle({
+        token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
+        environment: process.env.NEXT_PUBLIC_PADDLE_ENV as Environments,
+      }).then((paddleInstance) => {
+        if (paddleInstance) {
+          setPaddle(paddleInstance);
+        }
+      });
+    }
   }, []);
 
   const features = [
@@ -49,29 +72,60 @@ export default function HomePageComponent() {
     },
   ];
 
-  // 가격 정보 포매팅 함수
-  const formatPrice = (priceCents: number) => {
-    if (priceCents === 0) return t("pricing.free.price");
-    if (priceCents === -1) return t("pricing.enterprise.price");
-    return `$${(priceCents / 100).toFixed(0)}`;
-  };
-
-  // DB 데이터를 기반으로 pricing plans 생성
+  // DB 데이터와 Paddle 가격을 기반으로 pricing plans 생성
   const pricingPlans = plans.map((plan, index) => {
     const planKey = plan.name.toLowerCase();
     const isEnterprise = plan.price_cents === -1;
     const isPro = plan.price_cents > 0 && !isEnterprise;
 
+    // Paddle 가격 가져오기
+    let displayPrice = "";
+    if (plan.price_cents === 0) {
+      displayPrice = t("pricing.free.price");
+      console.log(`[HomePage] ${plan.name}: Using Free plan (no price)`);
+    } else if (plan.price_cents === -1) {
+      displayPrice = t("pricing.enterprise.price");
+      console.log(
+        `[HomePage] ${plan.name}: Using Enterprise plan (contact us)`
+      );
+    } else {
+      // Pro 플랜인 경우 Paddle 가격 사용
+      const paddleTier = PADDLE_PRICE_TIERS.find(
+        (tier) => tier.name.toLowerCase() === planKey
+      );
+      if (paddleTier && paddlePrices[paddleTier.priceId.month]) {
+        const price = paddlePrices[paddleTier.priceId.month];
+        // 포맷된 가격 문자열에서 숫자만 추출 (예: "$10.00" -> "10.00")
+        const numericPrice = price.replace(/[^0-9.]/g, "");
+        displayPrice = `$${Math.floor(parseFloat(numericPrice))}`;
+        console.log(
+          `[HomePage] ${plan.name}: Using Paddle price - ${displayPrice} (Price ID: ${paddleTier.priceId.month})`
+        );
+      } else if (paddleLoading) {
+        displayPrice = "...";
+        console.log(`[HomePage] ${plan.name}: Paddle loading...`);
+      } else {
+        // Fallback to DB price
+        displayPrice = `$${(plan.price_cents / 100).toFixed(0)}`;
+        console.log(
+          `[HomePage] ${plan.name}: Using DB fallback price - ${displayPrice} (${plan.price_cents} cents)`
+        );
+      }
+    }
+
     // 월 문서 제한 feature 생성
     const limitFeature =
       plan.monthly_document_limit === -1
         ? t("pricing.enterprise.feature1")
-        : `${t("pricing.free.feature1").replace("5", plan.monthly_document_limit.toString())}`;
+        : `${t("pricing.free.feature1").replace(
+            "5",
+            plan.monthly_document_limit.toString()
+          )}`;
 
     return {
       name: t(`pricing.${planKey}.name`),
       description: t(`pricing.${planKey}.description`),
-      price: formatPrice(plan.price_cents),
+      price: displayPrice,
       features: [
         limitFeature,
         t(`pricing.${planKey}.feature2`),
@@ -238,60 +292,72 @@ export default function HomePageComponent() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingPlans.map((plan, index) => (
-              <Card
-                key={index}
-                className={cn(
-                  "flex flex-col bg-card border-primary/10 hover:border-primary/30 transition-all duration-300",
-                  plan.popular ? "border-primary shadow-lg relative" : "",
-                  index === 0
-                    ? "card-angled"
-                    : index === 2
+          {paddleLoading ? (
+            <div className="flex justify-center items-center min-h-[400px]">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {pricingPlans.map((plan, index) => (
+                <Card
+                  key={index}
+                  className={cn(
+                    "flex flex-col bg-card border-primary/10 hover:border-primary/30 transition-all duration-300",
+                    plan.popular ? "border-primary shadow-lg relative" : "",
+                    index === 0
+                      ? "card-angled"
+                      : index === 2
                       ? "card-angled-right"
                       : ""
-                )}
-              >
-                {plan.popular && (
-                  <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/3">
-                    <div className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
-                      {t("pricing.popular")}
+                  )}
+                >
+                  {plan.popular && (
+                    <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/3">
+                      <div className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
+                        {t("pricing.popular")}
+                      </div>
                     </div>
-                  </div>
-                )}
-                <CardContent className="p-8">
-                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                  <p className="text-muted-foreground text-sm mb-6">
-                    {plan.description}
-                  </p>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.price !== t("pricing.enterprise.price") && (
-                      <span className="text-muted-foreground ml-2">
-                        {t("pricing.perMonth")}
-                      </span>
-                    )}
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start">
-                        <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/pricing">
-                    <Button
-                      variant={plan.popular ? "default" : "outline"}
-                      className="w-full"
+                  )}
+                  <CardContent className="p-8">
+                    <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                    <p className="text-muted-foreground text-sm mb-6">
+                      {plan.description}
+                    </p>
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold">{plan.price}</span>
+                      {plan.price !== t("pricing.enterprise.price") && (
+                        <span className="text-muted-foreground ml-2">
+                          {t("pricing.perMonth")}
+                        </span>
+                      )}
+                    </div>
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-start">
+                          <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      href={`${
+                        plan.price === t("pricing.enterprise.price")
+                          ? "/contact"
+                          : "/pricing"
+                      }`}
                     >
-                      {plan.cta}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      <Button
+                        variant={plan.popular ? "default" : "outline"}
+                        className="w-full"
+                      >
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -328,11 +394,17 @@ export default function HomePageComponent() {
               <span className="font-bold">{t("app.title")}</span>
             </div>
             <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-muted-foreground">
-              <Link href="/term" className="hover:text-primary transition-colors">
+              <Link
+                href="/term"
+                className="hover:text-primary transition-colors"
+              >
                 {t("footer.terms")}
               </Link>
               <span className="hidden md:inline">•</span>
-              <Link href="/privacy" className="hover:text-primary transition-colors">
+              <Link
+                href="/privacy"
+                className="hover:text-primary transition-colors"
+              >
                 {t("footer.privacy")}
               </Link>
               <span className="hidden md:inline">•</span>

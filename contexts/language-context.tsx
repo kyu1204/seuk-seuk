@@ -153,6 +153,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.unlimited": "무제한",
     "pricingPage.documents": "개",
     "pricingPage.currentlyUsing": "현재 이용 중",
+    "pricingPage.lowerPlan": "상위 플랜 사용중",
     "pricingPage.startFree": "무료로 시작하기",
     "pricingPage.contactUs": "문의하기",
     "pricingPage.selectPlan": "플랜 선택하기",
@@ -181,6 +182,14 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.plans.enterprise.feature2": "전용 지원",
     "pricingPage.plans.enterprise.feature3": "API 액세스",
     "pricingPage.plans.enterprise.feature4": "SSO 통합",
+
+    // Checkout Success
+    "checkout.success.title": "결제가 완료되었습니다!",
+    "checkout.success.message":
+      "구독해 주셔서 감사합니다. 결제가 성공적으로 처리되었습니다.",
+    "checkout.success.emailInfo":
+      "구독 세부 정보가 포함된 확인 이메일이 곧 발송됩니다.",
+    "checkout.success.dashboard": "대시보드로 이동",
 
     "home.cta.title": "지금 바로 시작하세요",
     "home.cta.description":
@@ -552,6 +561,25 @@ const translations: Record<Language, Record<string, string>> = {
     "term.effectiveDate.title": "시행일",
     "term.effectiveDate.date": "이 이용약관은 2025년 10월 1일부터 적용됩니다.",
 
+    // Contact Page
+    "contact.backToHome": "홈으로 돌아가기",
+    "contact.title": "문의하기",
+    "contact.description": "궁금한 사항이나 제안이 있으시면 언제든지 연락해주세요.",
+    "contact.form.name": "이름",
+    "contact.form.namePlaceholder": "홍길동",
+    "contact.form.email": "이메일",
+    "contact.form.emailPlaceholder": "example@email.com",
+    "contact.form.subject": "제목",
+    "contact.form.subjectPlaceholder": "문의 제목을 입력하세요",
+    "contact.form.message": "메시지",
+    "contact.form.messagePlaceholder": "문의 내용을 입력해주세요...",
+    "contact.form.submit": "문의하기",
+    "contact.form.submitting": "전송 중...",
+    "contact.success.title": "문의가 전송되었습니다",
+    "contact.success.description": "빠른 시일 내에 답변 드리겠습니다. 감사합니다.",
+    "contact.error.title": "전송 실패",
+    "contact.error.description": "문의 전송 중 오류가 발생했습니다. 다시 시도해주세요.",
+
     // Privacy Policy Page
     "privacy.backToHome": "홈으로 돌아가기",
     "privacy.title": "슥슥 개인정보 처리방침",
@@ -726,7 +754,7 @@ const translations: Record<Language, Record<string, string>> = {
       "개인정보의 처리 정지를 요구할 수 있습니다.",
     "privacy.section9.item4.title": "권리 행사 방법",
     "privacy.section9.item4.content":
-      "전자우편(pb1123love@gmail.com)을 통해 서면·이메일·팩스 등으로 요구할 수 있으며, 서비스는 이에 대해 지체 없이 조치합니다.",
+      "전자우편(cs.seuk.seuk@gmail.com)을 통해 서면·이메일·팩스 등으로 요구할 수 있으며, 서비스는 이에 대해 지체 없이 조치합니다.",
     "privacy.section9.item5.title": "대리인을 통한 권리 행사",
     "privacy.section9.item5.content":
       "정보주체의 법정대리인이나 위임을 받은 자 등 대리인을 통하여 권리를 행사할 수 있습니다.",
@@ -899,6 +927,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.unlimited": "Unlimited",
     "pricingPage.documents": "",
     "pricingPage.currentlyUsing": "Currently Using",
+    "pricingPage.lowerPlan": "Using Higher Plan",
     "pricingPage.startFree": "Start Free",
     "pricingPage.contactUs": "Contact Us",
     "pricingPage.selectPlan": "Select Plan",
@@ -927,6 +956,14 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.plans.enterprise.feature2": "Dedicated support",
     "pricingPage.plans.enterprise.feature3": "API access",
     "pricingPage.plans.enterprise.feature4": "SSO integration",
+
+    // Checkout Success
+    "checkout.success.title": "Payment Successful!",
+    "checkout.success.message":
+      "Thank you for subscribing. Your payment has been processed successfully.",
+    "checkout.success.emailInfo":
+      "You will receive a confirmation email shortly with your subscription details.",
+    "checkout.success.dashboard": "Go to Dashboard",
 
     "home.cta.title": "Get Started Today",
     "home.cta.description":
@@ -1310,6 +1347,25 @@ const translations: Record<Language, Record<string, string>> = {
     "term.effectiveDate.date":
       "These Terms of Service are effective from October 1, 2025.",
 
+    // Contact Page
+    "contact.backToHome": "Back to Home",
+    "contact.title": "Contact Us",
+    "contact.description": "Feel free to reach out with any questions or suggestions.",
+    "contact.form.name": "Name",
+    "contact.form.namePlaceholder": "John Doe",
+    "contact.form.email": "Email",
+    "contact.form.emailPlaceholder": "example@email.com",
+    "contact.form.subject": "Subject",
+    "contact.form.subjectPlaceholder": "Enter your inquiry subject",
+    "contact.form.message": "Message",
+    "contact.form.messagePlaceholder": "Please enter your message...",
+    "contact.form.submit": "Send Message",
+    "contact.form.submitting": "Sending...",
+    "contact.success.title": "Message Sent",
+    "contact.success.description": "We'll get back to you as soon as possible. Thank you.",
+    "contact.error.title": "Send Failed",
+    "contact.error.description": "An error occurred while sending your message. Please try again.",
+
     // Privacy Policy Page
     "privacy.backToHome": "Back to Home",
     "privacy.title": "SeukSeuk Privacy Policy",
@@ -1500,7 +1556,7 @@ const translations: Record<Language, Record<string, string>> = {
       "Users can request to stop processing of personal information.",
     "privacy.section9.item4.title": "Methods of Exercising Rights",
     "privacy.section9.item4.content":
-      "Requests can be made in writing, email, fax, etc. via pb1123love@gmail.com, and the Service will take action without delay.",
+      "Requests can be made in writing, email, fax, etc. via cs.seuk.seuk@gmail.com, and the Service will take action without delay.",
     "privacy.section9.item5.title":
       "Exercise of Rights through Representatives",
     "privacy.section9.item5.content":
