@@ -6,7 +6,7 @@ import {
   SubscriptionCreatedEvent,
   SubscriptionUpdatedEvent,
 } from "@paddle/paddle-node-sdk";
-import { createClient } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { PADDLE_PRICE_TIERS } from "./pricing-config";
 
 export class ProcessWebhook {
@@ -30,7 +30,7 @@ export class ProcessWebhook {
   private async updateSubscriptionData(
     eventData: SubscriptionCreatedEvent | SubscriptionUpdatedEvent
   ) {
-    const supabase = await createClient();
+    const supabase = await createServerSupabase();
 
     try {
       // 1. customer_id로 customers 테이블에서 user_id 조회
@@ -135,7 +135,10 @@ export class ProcessWebhook {
         .eq("id", customerData.user_id);
 
       if (userUpdateError) {
-        console.error("Failed to update user's current_subscription_id:", userUpdateError);
+        console.error(
+          "Failed to update user's current_subscription_id:",
+          userUpdateError
+        );
       }
 
       console.log(
@@ -150,12 +153,15 @@ export class ProcessWebhook {
   private async updateCustomerData(
     eventData: CustomerCreatedEvent | CustomerUpdatedEvent
   ) {
-    const supabase = await createClient();
+    const supabase = await createServerSupabase();
 
     try {
       // 이메일로 사용자 찾기 (Supabase Auth Admin API 사용)
-      const { data: { users }, error: userError } = await supabase.auth.admin.listUsers();
-      const user = users?.find(u => u.email === eventData.data.email);
+      const {
+        data: { users },
+        error: userError,
+      } = await supabase.auth.admin.listUsers();
+      const user = users?.find((u) => u.email === eventData.data.email);
 
       const { error } = await supabase
         .from("customers")
