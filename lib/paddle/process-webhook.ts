@@ -42,41 +42,38 @@ export class ProcessWebhook {
 
       // customer가 없으면 먼저 생성 (이벤트 순서 문제 대응)
       if (customerError || !customerData) {
-        console.log(`Customer ${eventData.data.customerId} not found, fetching from Paddle...`);
+        console.log(`Customer ${eventData.data.customerId} not found, extracting from webhook payload...`);
 
-        // Paddle API에서 customer 정보 가져오기
-        const { getPaddleInstance } = await import("./get-paddle-instance");
-        const paddle = getPaddleInstance();
+        // Subscription 이벤트의 customer 정보 추출
+        const customerEmail = (eventData.data as any).customer?.email;
 
-        try {
-          const customer = await paddle.customers.get(eventData.data.customerId);
-
-          // 이메일로 사용자 찾기
-          const { data: { users }, error: userError } = await supabase.auth.admin.listUsers();
-          const user = users?.find((u) => u.email === customer.email);
-
-          // customers 테이블에 삽입
-          const { data: newCustomer, error: insertError } = await supabase
-            .from("customers")
-            .insert({
-              customer_id: customer.id,
-              email: customer.email,
-              user_id: user?.id ?? null,
-            })
-            .select("user_id")
-            .single();
-
-          if (insertError) {
-            console.error("Failed to create customer:", insertError);
-            return;
-          }
-
-          customerData = newCustomer;
-          console.log(`Created customer ${customer.id} for user ${user?.id}`);
-        } catch (paddleError) {
-          console.error("Failed to fetch customer from Paddle:", paddleError);
+        if (!customerEmail) {
+          console.error("Customer email not found in webhook payload");
           return;
         }
+
+        // 이메일로 사용자 찾기
+        const { data: { users } } = await supabase.auth.admin.listUsers();
+        const user = users?.find((u) => u.email === customerEmail);
+
+        // customers 테이블에 삽입
+        const { data: newCustomer, error: insertError } = await supabase
+          .from("customers")
+          .insert({
+            customer_id: eventData.data.customerId,
+            email: customerEmail,
+            user_id: user?.id ?? null,
+          })
+          .select("user_id")
+          .single();
+
+        if (insertError) {
+          console.error("Failed to create customer:", insertError);
+          return;
+        }
+
+        customerData = newCustomer;
+        console.log(`Created customer ${eventData.data.customerId} for user ${user?.id}`);
       }
 
       if (!customerData?.user_id) {
