@@ -34,15 +34,54 @@ export class ProcessWebhook {
 
     try {
       // 1. customer_id로 customers 테이블에서 user_id 조회
-      const { data: customerData, error: customerError } = await supabase
+      let { data: customerData, error: customerError } = await supabase
         .from("customers")
         .select("user_id")
         .eq("customer_id", eventData.data.customerId)
         .single();
 
-      if (customerError || !customerData || !customerData.user_id) {
-        console.error("Failed to find customer:", customerError);
-        return; // customer가 아직 없을 수 있음 (CustomerCreated 이벤트가 나중에 올 수도 있음)
+      // customer가 없으면 먼저 생성 (이벤트 순서 문제 대응)
+      if (customerError || !customerData) {
+        console.log(`Customer ${eventData.data.customerId} not found, fetching from Paddle...`);
+
+        // Paddle API에서 customer 정보 가져오기
+        const { getPaddleInstance } = await import("./get-paddle-instance");
+        const paddle = getPaddleInstance();
+
+        try {
+          const customer = await paddle.customers.get(eventData.data.customerId);
+
+          // 이메일로 사용자 찾기
+          const { data: { users }, error: userError } = await supabase.auth.admin.listUsers();
+          const user = users?.find((u) => u.email === customer.email);
+
+          // customers 테이블에 삽입
+          const { data: newCustomer, error: insertError } = await supabase
+            .from("customers")
+            .insert({
+              customer_id: customer.id,
+              email: customer.email,
+              user_id: user?.id ?? null,
+            })
+            .select("user_id")
+            .single();
+
+          if (insertError) {
+            console.error("Failed to create customer:", insertError);
+            return;
+          }
+
+          customerData = newCustomer;
+          console.log(`Created customer ${customer.id} for user ${user?.id}`);
+        } catch (paddleError) {
+          console.error("Failed to fetch customer from Paddle:", paddleError);
+          return;
+        }
+      }
+
+      if (!customerData?.user_id) {
+        console.error("Customer found but user_id is null");
+        return;
       }
 
       // 2. Paddle Price ID로부터 플랜 결정
