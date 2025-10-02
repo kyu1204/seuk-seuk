@@ -117,6 +117,7 @@ export class ProcessWebhook {
           .update({
             plan_id: planData.id,
             status: subscriptionStatus,
+            paddle_customer_id: eventData.data.customerId,
             paddle_price_id: priceId,
             payment_provider: "paddle",
             updated_at: new Date().toISOString(),
@@ -150,6 +151,7 @@ export class ProcessWebhook {
             plan_id: planData.id,
             status: subscriptionStatus,
             paddle_subscription_id: eventData.data.id,
+            paddle_customer_id: eventData.data.customerId,
             paddle_price_id: priceId,
             payment_provider: "paddle",
             starts_at: new Date().toISOString(),
@@ -225,28 +227,35 @@ export class ProcessWebhook {
 
       // user_id가 있으면, 이 customer의 subscription을 찾아서 user_id 연결
       if (user?.id) {
-        // 1. paddle_subscription_id가 있는 subscription 찾기
+        // paddle_customer_id로 정확하게 이 customer의 subscription 찾기
         const { data: subscriptions } = await supabase
           .from("subscriptions")
-          .select("id")
-          .is("user_id", null)
-          .not("paddle_subscription_id", "is", null);
+          .select("id, paddle_subscription_id")
+          .eq("paddle_customer_id", eventData.data.id)
+          .is("user_id", null);
 
         if (subscriptions && subscriptions.length > 0) {
           for (const sub of subscriptions) {
-            // 2. subscription의 user_id 업데이트
-            await supabase
+            // subscription의 user_id 업데이트
+            const { error: subUpdateError } = await supabase
               .from("subscriptions")
               .update({ user_id: user.id, updated_at: new Date().toISOString() })
               .eq("id", sub.id);
 
-            // 3. users 테이블의 current_subscription_id 업데이트
-            await supabase
-              .from("users")
-              .update({ current_subscription_id: sub.id })
-              .eq("id", user.id);
+            if (subUpdateError) {
+              console.error(`Failed to link subscription ${sub.id}:`, subUpdateError);
+              continue;
+            }
 
-            console.log(`Linked subscription ${sub.id} to user ${user.id}`);
+            // users 테이블의 current_subscription_id 업데이트 (가장 최근 것만)
+            if (sub === subscriptions[0]) {
+              await supabase
+                .from("users")
+                .update({ current_subscription_id: sub.id })
+                .eq("id", user.id);
+            }
+
+            console.log(`Linked subscription ${sub.id} (${sub.paddle_subscription_id}) to user ${user.id}`);
           }
         }
       }
