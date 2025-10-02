@@ -13,7 +13,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - .*\\.(?:ico|png|svg|jpg|jpeg|gif|webp)$ (image files)
+     * - api/webhook (Paddle webhook endpoint)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:ico|png|svg|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/webhook|.*\\.(?:ico|png|svg|jpg|jpeg|gif|webp)$).*)",
   ],
 };
