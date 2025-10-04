@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/language-context";
 import { User } from "@supabase/supabase-js";
-import { LogOut, User as UserIcon, LayoutDashboard } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Receipt } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { signOut } from "@/app/actions/auth-actions";
@@ -74,6 +74,12 @@ export default function UserAvatar({ user }: UserAvatarProps) {
           <Link href="/dashboard" className="cursor-pointer">
             <LayoutDashboard className="mr-2 h-4 w-4" />
             {t("dashboard.title")}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/bills" className="cursor-pointer">
+            <Receipt className="mr-2 h-4 w-4" />
+            {t("bills.title")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

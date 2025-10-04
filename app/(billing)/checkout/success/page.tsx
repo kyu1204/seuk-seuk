@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
-import SiteHeader from "@/components/site-header";
 import { useLanguage } from "@/contexts/language-context";
 
 export default function CheckoutSuccessPage() {
@@ -12,7 +11,6 @@ export default function CheckoutSuccessPage() {
 
   return (
     <div className="w-full min-h-screen">
-      <SiteHeader showScrollEffect={false} />
       <div className="container mx-auto px-4 py-16 max-w-2xl">
         <Card className="text-center">
           <CardHeader>

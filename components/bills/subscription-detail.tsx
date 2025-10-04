@@ -1,0 +1,254 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getSubscription } from "@/lib/paddle/get-subscription";
+import { getTransactions } from "@/lib/paddle/get-transactions";
+import type { Subscription, Transaction } from "@paddle/paddle-node-sdk";
+import { LoadingScreen } from "@/components/bills/loading-screen";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Status } from "@/components/bills/status";
+import { parseMoney } from "@/lib/paddle/parse-money";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { cancelSubscription } from "@/lib/paddle/cancel-subscription";
+import { toast } from "@/components/ui/use-toast";
+import { useLanguage } from "@/contexts/language-context";
+import { formatDateByLang } from "@/lib/date/format";
+
+interface Props {
+  subscriptionId: string;
+}
+
+export function SubscriptionDetail({ subscriptionId }: Props) {
+  const { t, language } = useLanguage();
+  const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [canceling, setCanceling] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [subscriptionResponse, transactionsResponse] = await Promise.all([
+          getSubscription(subscriptionId),
+          getTransactions(subscriptionId, ""),
+        ]);
+
+        if (subscriptionResponse.error) {
+          setError(subscriptionResponse.error);
+        } else if (subscriptionResponse.data) {
+          setSubscription(subscriptionResponse.data);
+        }
+
+        if (transactionsResponse.data) {
+          setTransactions(transactionsResponse.data);
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        setError(t("bills.error.loadSubscriptionDetail"));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [subscriptionId]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (error || !subscription) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error || "Failed to load subscription"}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const subscriptionItem = subscription.items[0];
+  const price =
+    subscriptionItem.quantity *
+    parseFloat(subscription?.recurringTransactionDetails?.totals.total ?? "0");
+  const formattedPrice = parseMoney(
+    price.toString(),
+    subscription.currencyCode
+  );
+  const frequency =
+    subscription.billingCycle.frequency === 1
+      ? `/${subscription.billingCycle.interval}`
+      : `every ${subscription.billingCycle.frequency} ${subscription.billingCycle.interval}s`;
+
+  const formattedStartedDate = formatDateByLang(
+    subscription.startedAt as string,
+    "date",
+    language
+  );
+
+  const showCancel = ["active", "trialing", "past_due", "paused"].includes(
+    (subscription.status || "").toLowerCase()
+  );
+
+  async function onConfirmCancel() {
+    if (!subscription) return;
+    try {
+      setCanceling(true);
+      const subscriptionIdToCancel = subscription.id;
+      const res = await cancelSubscription(
+        subscriptionIdToCancel,
+        "next_billing_period"
+      );
+      if (!res.ok) {
+        toast({ title: t("bills.cancel.failed"), description: res.error });
+        return;
+      }
+      toast({ title: t("bills.cancel.scheduled") });
+      // Refresh subscription details
+      const fresh = await getSubscription(subscriptionId);
+      if (fresh.data) setSubscription(fresh.data);
+    } catch (err: any) {
+      toast({ title: t("bills.cancel.failed"), description: err?.message });
+    } finally {
+      setCanceling(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Subscription Header */}
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-3xl font-medium truncate">
+              {subscriptionItem.product.name}
+            </h2>
+            <div className="mt-3 flex items-center gap-6 flex-wrap">
+              <div className="flex gap-1 items-end">
+                <span className="text-3xl font-medium">{formattedPrice}</span>
+                <span className="text-muted-foreground text-sm">
+                  {frequency}
+                </span>
+              </div>
+              <Status status={subscription.status} />
+            </div>
+          </div>
+          {showCancel && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" disabled={canceling}>
+                  {canceling
+                    ? t("bills.cancel.canceling")
+                    : t("bills.cancel.action")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("bills.cancel.title")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t("bills.cancel.description")}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>
+                    {t("bills.cancel.keep")}
+                  </AlertDialogCancel>
+                  <AlertDialogAction onClick={onConfirmCancel}>
+                    {t("bills.cancel.confirm")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+        <div className="text-muted-foreground text-base">
+          {t("bills.startedOn")} {formattedStartedDate}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Next Payment */}
+      {subscription.nextBilledAt && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("bills.nextPayment")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 items-end flex-wrap">
+              <span className="text-xl font-medium text-primary">
+                {parseMoney(
+                  subscription?.nextTransaction?.details.totals.total,
+                  subscription?.currencyCode
+                )}
+              </span>
+              <span className="text-muted-foreground">{t("bills.due")}</span>
+              <span className="font-semibold text-primary">
+                {formatDateByLang(subscription.nextBilledAt, "date", language)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Past Payments */}
+      {transactions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("bills.pastPayments")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {transactions.slice(0, 5).map((transaction) => (
+                <div
+                  key={transaction.id}
+                  className="flex justify-between items-center py-2 border-b last:border-b-0"
+                >
+                  <div>
+                    <div className="font-medium">
+                      {transaction.billedAt
+                        ? formatDateByLang(
+                            transaction.billedAt,
+                            "date",
+                            language
+                          )
+                        : "-"}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {transaction.details?.lineItems[0].product?.name}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">
+                      {parseMoney(
+                        transaction.details?.totals?.total,
+                        transaction.currencyCode
+                      )}
+                    </div>
+                    <Status status={transaction.status} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
