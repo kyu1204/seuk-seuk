@@ -8,7 +8,6 @@ import {
   getCurrentSubscription,
   getSubscriptionPlans,
 } from "@/app/actions/subscription-actions";
-import SiteHeader from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -183,7 +182,6 @@ export function PricingPage() {
 
   return (
     <>
-      <SiteHeader showScrollEffect={false} />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}

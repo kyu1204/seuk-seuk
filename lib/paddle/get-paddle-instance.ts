@@ -1,4 +1,4 @@
-import { Paddle } from "@paddle/paddle-node-sdk";
+import { Environment, Paddle } from "@paddle/paddle-node-sdk";
 
 let paddleInstance: Paddle | null = null;
 
@@ -10,7 +10,12 @@ export function getPaddleInstance(): Paddle {
       throw new Error("PADDLE_API_KEY environment variable is not set");
     }
 
-    paddleInstance = new Paddle(apiKey);
+    const environment =
+      process.env.NEXT_PUBLIC_PADDLE_ENV === "sandbox"
+        ? Environment.sandbox
+        : Environment.production;
+
+    paddleInstance = new Paddle(apiKey, { environment });
   }
 
   return paddleInstance;
