@@ -23,7 +23,7 @@ import { usePaddlePrices } from "@/hooks/usePaddlePrices";
 import { PADDLE_PRICE_TIERS } from "@/lib/paddle/pricing-config";
 
 export default function HomePageComponent() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [paddle, setPaddle] = useState<Paddle | undefined>(undefined);
   const { prices: paddlePrices, loading: paddleLoading } =
@@ -76,18 +76,13 @@ export default function HomePageComponent() {
   const pricingPlans = plans.map((plan, index) => {
     const planKey = plan.name.toLowerCase();
     const isEnterprise = plan.price_cents === -1;
-    const isPro = plan.price_cents > 0 && !isEnterprise;
 
     // Paddle 가격 가져오기
     let displayPrice = "";
     if (plan.price_cents === 0) {
       displayPrice = t("pricing.free.price");
-      console.log(`[HomePage] ${plan.name}: Using Free plan (no price)`);
     } else if (plan.price_cents === -1) {
       displayPrice = t("pricing.enterprise.price");
-      console.log(
-        `[HomePage] ${plan.name}: Using Enterprise plan (contact us)`
-      );
     } else {
       // Pro 플랜인 경우 Paddle 가격 사용
       const paddleTier = PADDLE_PRICE_TIERS.find(
@@ -103,38 +98,66 @@ export default function HomePageComponent() {
         );
       } else if (paddleLoading) {
         displayPrice = "...";
-        console.log(`[HomePage] ${plan.name}: Paddle loading...`);
       } else {
         // Fallback to DB price
         displayPrice = `$${(plan.price_cents / 100).toFixed(0)}`;
-        console.log(
-          `[HomePage] ${plan.name}: Using DB fallback price - ${displayPrice} (${plan.price_cents} cents)`
-        );
       }
     }
 
-    // 월 문서 제한 feature 생성
+    // Features from DB by language: features column shape { ko: string[]; en: string[] }
+    const planFeatures = extractFeaturesByLanguage(plan.features, language);
     const limitFeature =
       plan.monthly_document_limit === -1
-        ? t("pricing.enterprise.feature1")
-        : `${t("pricing.free.feature1").replace(
-            "5",
-            plan.monthly_document_limit.toString()
-          )}`;
+        ? t("pricing.limitUnlimitedPerMonth")
+        : t("pricing.limitPerMonth", {
+            count: plan.monthly_document_limit,
+          });
+    const mergedFeatures = [limitFeature, ...planFeatures];
 
     return {
       name: t(`pricing.${planKey}.name`),
       description: t(`pricing.${planKey}.description`),
       price: displayPrice,
-      features: [
-        limitFeature,
-        t(`pricing.${planKey}.feature2`),
-        t(`pricing.${planKey}.feature3`),
-      ],
+      features: mergedFeatures,
       cta: t(`pricing.${planKey}.cta`),
-      popular: isPro,
+      popular: !!plan.is_popular,
     };
   });
+
+  function extractFeaturesByLanguage(
+    raw: unknown,
+    lang: "ko" | "en"
+  ): string[] {
+    try {
+      if (!raw) return [];
+      // If already an array of strings
+      if (Array.isArray(raw) && raw.every((x) => typeof x === "string")) {
+        return raw as string[];
+      }
+      // If stringified JSON
+      if (typeof raw === "string") {
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          Array.isArray(parsed[lang])
+        ) {
+          return parsed[lang] as string[];
+        }
+      }
+      // If JSON object
+      if (
+        typeof raw === "object" &&
+        raw !== null &&
+        Array.isArray((raw as any)[lang])
+      ) {
+        return (raw as Record<string, string[]>)[lang] || [];
+      }
+    } catch (e) {
+      console.warn("Failed to parse plan features by language", e);
+    }
+    return [];
+  }
 
   const testimonials = [
     {
@@ -302,7 +325,7 @@ export default function HomePageComponent() {
                 <Card
                   key={index}
                   className={cn(
-                    "flex flex-col bg-card border-primary/10 hover:border-primary/30 transition-all duration-300",
+                    "flex flex-col h-full bg-card border-primary/10 hover:border-primary/30 transition-all duration-300",
                     plan.popular ? "border-primary shadow-lg relative" : "",
                     index === 0
                       ? "card-angled"
@@ -318,7 +341,7 @@ export default function HomePageComponent() {
                       </div>
                     </div>
                   )}
-                  <CardContent className="p-8">
+                  <CardContent className="p-8 h-full flex flex-col">
                     <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
                     <p className="text-muted-foreground text-sm mb-6">
                       {plan.description}
@@ -340,6 +363,7 @@ export default function HomePageComponent() {
                       ))}
                     </ul>
                     <Link
+                      className="mt-auto block"
                       href={`${
                         plan.price === t("pricing.enterprise.price")
                           ? "/contact"
