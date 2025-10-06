@@ -11,6 +11,7 @@ export interface SubscriptionPlan {
   price_cents: number;
   features: string[];
   is_active: boolean;
+  is_popular?: boolean;
   order: number;
 }
 
