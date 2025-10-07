@@ -9,6 +9,7 @@ import { getSubscriptions } from "@/lib/paddle/get-subscriptions";
 import { formatDateByLang } from "@/lib/date/format";
 import { useLanguage } from "@/contexts/language-context";
 import { Environments, initializePaddle, Paddle } from "@paddle/paddle-js";
+import { toast } from "@/components/ui/use-toast";
 import { createPaymentMethodChangeTransaction } from "@/lib/paddle/get-payment-method-change-transaction";
 
 export function PaymentMethodCard() {
@@ -66,9 +67,16 @@ export function PaymentMethodCard() {
     try {
       setUpdating(true);
       const res = await createPaymentMethodChangeTransaction();
-      if (res.transactionId && paddle) {
-        paddle.checkout.open({ transactionId: res.transactionId });
+      if (!res.transactionId) {
+        toast({ title: "Failed to start card update", description: res.error || "No transaction created" });
+        return;
       }
+      if (!paddle) {
+        toast({ title: "Paddle not initialized", description: "Please try again later." });
+        return;
+      }
+      // Use correct Paddle JS API (capitalized Checkout)
+      paddle.Checkout.open({ transactionId: res.transactionId });
     } finally {
       setUpdating(false);
     }
