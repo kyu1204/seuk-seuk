@@ -294,6 +294,7 @@ const translations: Record<Language, Record<string, string>> = {
       "프리미엄 플랜을 구독하여 더 많은 기능을 이용하세요",
     "bills.noSubscription.action": "플랜 보기",
     "bills.noTransactions": "결제 내역이 없습니다",
+    "bills.paymentMethod": "결제 수단",
     // Billing payment reasons
     "bills.payment.reason.new": "신규",
     "bills.payment.reason.renewalOf": "갱신",
@@ -1110,6 +1111,7 @@ const translations: Record<Language, Record<string, string>> = {
       "Subscribe to a premium plan to unlock more features",
     "bills.noSubscription.action": "View Plans",
     "bills.noTransactions": "No payment history available",
+    "bills.paymentMethod": "Payment Method",
     // Billing payment reasons
     "bills.payment.reason.new": "New",
     "bills.payment.reason.renewalOf": "Renewal of",

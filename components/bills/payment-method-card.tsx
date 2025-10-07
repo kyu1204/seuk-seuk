@@ -12,7 +12,7 @@ import { Environments, initializePaddle, Paddle } from "@paddle/paddle-js";
 import { createPaymentMethodChangeTransaction } from "@/lib/paddle/get-payment-method-change-transaction";
 
 export function PaymentMethodCard() {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const [brand, setBrand] = useState<string | undefined>(undefined);
   const [last4, setLast4] = useState<string | undefined>(undefined);
   const [expiry, setExpiry] = useState<string | undefined>(undefined);
@@ -78,7 +78,7 @@ export function PaymentMethodCard() {
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4" /> Payment Method
+          <CreditCard className="h-4 w-4" /> {t("bills.paymentMethod")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 h-full flex flex-col">
