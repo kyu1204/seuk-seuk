@@ -9,6 +9,7 @@ import { paymentsColumns } from "@/components/bills/payments-columns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+// Payment method details are shown in Subscriptions tab footer, not here
 
 export function PaymentsTab() {
   const { t } = useLanguage();
@@ -67,15 +68,11 @@ export function PaymentsTab() {
     );
   }
 
-  if (transactions.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">{t("bills.noTransactions")}</p>
-      </div>
-    );
-  }
-
-  return (
+  return transactions.length === 0 ? (
+    <div className="text-center py-12">
+      <p className="text-muted-foreground">{t("bills.noTransactions")}</p>
+    </div>
+  ) : (
     <PaymentsDataTable
       columns={paymentsColumns}
       data={transactions}
