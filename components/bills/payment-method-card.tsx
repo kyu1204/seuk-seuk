@@ -55,6 +55,19 @@ export function PaymentMethodCard() {
       initializePaddle({
         token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
         environment: process.env.NEXT_PUBLIC_PADDLE_ENV as Environments,
+        eventCallback: async (event) => {
+          // When checkout completes, refresh card data
+          if (event?.name === "checkout.completed") {
+            const pm = await getPrimaryPaymentMethod();
+            if (pm.method) {
+              setBrand(pm.method.brand);
+              setLast4(pm.method.last4);
+              if (pm.method.expiryMonth && pm.method.expiryYear) {
+                setExpiry(`${pm.method.expiryMonth}/${pm.method.expiryYear}`);
+              }
+            }
+          }
+        },
       })
         .then((p) => setPaddle(p))
         .catch(() => setPaddle(undefined));
@@ -77,6 +90,17 @@ export function PaymentMethodCard() {
       }
       // Use correct Paddle JS API (capitalized Checkout)
       paddle.Checkout.open({ transactionId: res.transactionId });
+      // Also set a delayed refresh in case events are missed
+      setTimeout(async () => {
+        const pm = await getPrimaryPaymentMethod();
+        if (pm.method) {
+          setBrand(pm.method.brand);
+          setLast4(pm.method.last4);
+          if (pm.method.expiryMonth && pm.method.expiryYear) {
+            setExpiry(`${pm.method.expiryMonth}/${pm.method.expiryYear}`);
+          }
+        }
+      }, 3000);
     } finally {
       setUpdating(false);
     }
