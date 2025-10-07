@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSubscription } from "@/lib/paddle/get-subscription";
-import { getTransactions } from "@/lib/paddle/get-transactions";
-import type { Subscription, Transaction } from "@paddle/paddle-node-sdk";
+import type { Subscription } from "@paddle/paddle-node-sdk";
 import { LoadingScreen } from "@/components/bills/loading-screen";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -36,16 +35,15 @@ export function SubscriptionDetail({ subscriptionId }: Props) {
   const { t, language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
   const [error, setError] = useState<string | null>(null);
   const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [subscriptionResponse, transactionsResponse] = await Promise.all([
+        const [subscriptionResponse] = await Promise.all([
           getSubscription(subscriptionId),
-          getTransactions(subscriptionId, ""),
         ]);
 
         if (subscriptionResponse.error) {
@@ -54,9 +52,7 @@ export function SubscriptionDetail({ subscriptionId }: Props) {
           setSubscription(subscriptionResponse.data);
         }
 
-        if (transactionsResponse.data) {
-          setTransactions(transactionsResponse.data);
-        }
+        
       } catch (err) {
         console.error("Error:", err);
         setError(t("bills.error.loadSubscriptionDetail"));
@@ -207,48 +203,7 @@ export function SubscriptionDetail({ subscriptionId }: Props) {
         </Card>
       )}
 
-      {/* Past Payments */}
-      {transactions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("bills.pastPayments")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {transactions.slice(0, 5).map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex justify-between items-center py-2 border-b last:border-b-0"
-                >
-                  <div>
-                    <div className="font-medium">
-                      {transaction.billedAt
-                        ? formatDateByLang(
-                            transaction.billedAt,
-                            "date",
-                            language
-                          )
-                        : "-"}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {transaction.details?.lineItems[0].product?.name}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium">
-                      {parseMoney(
-                        transaction.details?.totals?.total,
-                        transaction.currencyCode
-                      )}
-                    </div>
-                    <Status status={transaction.status} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Past Payments moved to SubscriptionsTab footer */}
     </div>
   );
 }
