@@ -8,7 +8,8 @@ export interface SubscriptionPlan {
   name: string;
   monthly_document_limit: number;
   active_document_limit: number;
-  price_cents: number;
+  monthly_price?: number; // USD
+  yearly_price?: number; // USD
   features: string[];
   is_active: boolean;
   is_popular?: boolean;
@@ -80,6 +81,10 @@ export async function getCurrentSubscription(): Promise<{
       .single();
 
     if (error) {
+      // No rows -> user has no active subscription; not an error
+      if ((error as any).code === "PGRST116") {
+        return { subscription: null };
+      }
       console.error("Get subscription error:", error);
       return {
         subscription: null,
@@ -187,13 +192,6 @@ export async function getUserUsageLimits(): Promise<{
       getCurrentMonthUsage(),
     ]);
 
-    if (subscriptionResult.error || !subscriptionResult.subscription) {
-      return {
-        limits: null,
-        error: subscriptionResult.error || "No active subscription",
-      };
-    }
-
     if (usageResult.error || !usageResult.usage) {
       return {
         limits: null,
@@ -206,14 +204,35 @@ export async function getUserUsageLimits(): Promise<{
 
     // Calculate current published + completed documents count
     const supabase = await createServerSupabase();
+
+    // Determine user id for querying documents
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const targetUserId = subscription?.user_id || user?.id || "";
     const { count: activeDocumentsCount } = await supabase
       .from("documents")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", subscription.user_id)
+      .eq("user_id", targetUserId)
       .in("status", ["published", "completed"]);
 
-    const monthlyLimit = subscription.plan.monthly_document_limit;
-    const activeLimit = subscription.plan.active_document_limit;
+    // If no active subscription, fall back to the lowest (by order) active plan (Free)
+    let monthlyLimit: number;
+    let activeLimit: number;
+    if (!subscription) {
+      const { data: fallbackPlans } = await supabase
+        .from("subscription_plans")
+        .select("monthly_document_limit, active_document_limit")
+        .eq("is_active", true)
+        .order("order", { ascending: true })
+        .limit(1);
+      monthlyLimit = fallbackPlans?.[0]?.monthly_document_limit ?? 0;
+      activeLimit = fallbackPlans?.[0]?.active_document_limit ?? 0;
+    } else {
+      monthlyLimit = subscription.plan.monthly_document_limit;
+      activeLimit = subscription.plan.active_document_limit;
+    }
 
     const limits: UsageLimits = {
       monthlyCreationLimit: monthlyLimit,

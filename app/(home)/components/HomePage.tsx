@@ -24,6 +24,9 @@ import { PADDLE_PRICE_TIERS } from "@/lib/paddle/pricing-config";
 
 export default function HomePageComponent() {
   const { t, language } = useLanguage();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "monthly"
+  );
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [paddle, setPaddle] = useState<Paddle | undefined>(undefined);
   const { prices: paddlePrices, loading: paddleLoading } =
@@ -75,32 +78,41 @@ export default function HomePageComponent() {
   // DB 데이터와 Paddle 가격을 기반으로 pricing plans 생성
   const pricingPlans = plans.map((plan, index) => {
     const planKey = plan.name.toLowerCase();
-    const isEnterprise = plan.price_cents === -1;
+    const isEnterprise =
+      (plan as any).monthly_price === -1 || (plan as any).yearly_price === -1;
 
     // Paddle 가격 가져오기
     let displayPrice = "";
-    if (plan.price_cents === 0) {
+    if ((plan as any).monthly_price === 0) {
       displayPrice = t("pricing.free.price");
-    } else if (plan.price_cents === -1) {
-      displayPrice = t("pricing.enterprise.price");
+    } else if (isEnterprise) {
+      displayPrice = t("pricingPage.contact");
     } else {
       // Pro 플랜인 경우 Paddle 가격 사용
       const paddleTier = PADDLE_PRICE_TIERS.find(
         (tier) => tier.name.toLowerCase() === planKey
       );
-      if (paddleTier && paddlePrices[paddleTier.priceId.month]) {
-        const price = paddlePrices[paddleTier.priceId.month];
+      const priceId =
+        billingCycle === "yearly"
+          ? paddleTier?.priceId.year
+          : paddleTier?.priceId.month;
+      if (paddleTier && priceId && paddlePrices[priceId]) {
+        const price = paddlePrices[priceId];
         // 포맷된 가격 문자열에서 숫자만 추출 (예: "$10.00" -> "10.00")
         const numericPrice = price.replace(/[^0-9.]/g, "");
         displayPrice = `$${Math.floor(parseFloat(numericPrice))}`;
         console.log(
-          `[HomePage] ${plan.name}: Using Paddle price - ${displayPrice} (Price ID: ${paddleTier.priceId.month})`
+          `[HomePage] ${plan.name}: Using Paddle price - ${displayPrice} (Price ID: ${priceId})`
         );
       } else if (paddleLoading) {
         displayPrice = "...";
       } else {
-        // Fallback to DB price
-        displayPrice = `$${(plan.price_cents / 100).toFixed(0)}`;
+        // Fallback to DB price (USD in monthly_price/yearly_price)
+        const dbPrice =
+          billingCycle === "yearly"
+            ? (plan as any).yearly_price
+            : (plan as any).monthly_price;
+        displayPrice = dbPrice != null ? `$${Math.floor(dbPrice)}` : "...";
       }
     }
 
@@ -306,13 +318,37 @@ export default function HomePageComponent() {
       <section id="pricing" className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-8">
             <h2 className="text-3xl font-bold mb-4 gradient-text">
               {t("home.pricingTitle")}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               {t("home.pricingDescription")}
             </p>
+          </div>
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center rounded-md border p-1 bg-muted">
+              <button
+                className={`px-3 py-1 rounded-sm text-sm ${
+                  billingCycle === "monthly"
+                    ? "bg-background text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => setBillingCycle("monthly")}
+              >
+                {t("pricing.billing.monthly")}
+              </button>
+              <button
+                className={`px-3 py-1 rounded-sm text-sm ${
+                  billingCycle === "yearly"
+                    ? "bg-background text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => setBillingCycle("yearly")}
+              >
+                {t("pricing.billing.yearly")}
+              </button>
+            </div>
           </div>
 
           {paddleLoading ? (
@@ -348,9 +384,11 @@ export default function HomePageComponent() {
                     </p>
                     <div className="mb-6">
                       <span className="text-4xl font-bold">{plan.price}</span>
-                      {plan.price !== t("pricing.enterprise.price") && (
+                      {plan.price !== t("pricingPage.contact") && (
                         <span className="text-muted-foreground ml-2">
-                          {t("pricing.perMonth")}
+                          {billingCycle === "monthly"
+                            ? t("pricingPage.perMonth")
+                            : t("pricingPage.perYear")}
                         </span>
                       )}
                     </div>
@@ -365,9 +403,7 @@ export default function HomePageComponent() {
                     <Link
                       className="mt-auto block"
                       href={`${
-                        plan.price === t("pricing.enterprise.price")
-                          ? "/contact"
-                          : "/pricing"
+                        plan.price === t("pricingPage.contact") ? "/contact" : "/pricing"
                       }`}
                     >
                       <Button

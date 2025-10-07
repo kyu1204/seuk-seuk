@@ -104,7 +104,7 @@ export function UsageWidget() {
     );
   }
 
-  if (error || !limits || !subscription) {
+  if (error || !limits) {
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <Card>
@@ -146,6 +146,7 @@ export function UsageWidget() {
   const isMonthlyNearLimit = monthlyProgress >= 80;
   const isActiveNearLimit = activeProgress >= 80;
 
+  const planName = subscription?.plan?.name ?? "Free";
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <Card>
@@ -161,15 +162,8 @@ export function UsageWidget() {
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 )}
               </div>
-              <Badge
-                variant={
-                  subscription.plan.name === "Free" ? "secondary" : "default"
-                }
-              >
-                {subscription.plan.name === "Free"
-                  ? t("usage.plan.free")
-                  : subscription.plan.name}{" "}
-                {t("usage.plan.suffix")}
+              <Badge variant={planName === "Free" ? "secondary" : "default"}>
+                {planName === "Free" ? t("usage.plan.free") : planName} {t("usage.plan.suffix")}
               </Badge>
             </div>
             <CardDescription>{t("usage.description")}</CardDescription>
@@ -239,8 +233,8 @@ export function UsageWidget() {
               )}
             </div>
 
-            {/* Upgrade CTA - Show only for Free and Pro plans */}
-            {subscription.plan.name !== "Enterprise" && (
+            {/* Upgrade CTA - Show only when not Enterprise or when no subscription (treat as Free) */}
+            {planName !== "Enterprise" && (
               <div className="pt-4 border-t">
                 <div className="flex items-center justify-between">
                   <div>
@@ -248,7 +242,7 @@ export function UsageWidget() {
                       {t("usage.upgrade.title")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {subscription.plan.name?.toLowerCase() === "free"
+                      {planName.toLowerCase() === "free"
                         ? t("usage.upgrade.description.free")
                         : t("usage.upgrade.description.pro")}
                     </p>
@@ -264,7 +258,7 @@ export function UsageWidget() {
             )}
 
             {/* Plan Features Summary */}
-            {subscription.plan.features &&
+            {subscription?.plan?.features &&
               subscription.plan.features.length > 0 && (
                 <div className="pt-4 border-t">
                   <p className="text-sm font-medium mb-2">

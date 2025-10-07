@@ -127,6 +127,9 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.pro.cta": "프로 시작하기",
     "pricing.popular": "인기",
     "pricing.perMonth": "월",
+    "pricing.perYear": "년",
+    "pricing.billing.monthly": "월간",
+    "pricing.billing.yearly": "연간",
     // Pricing limits (dynamic count)
     "pricing.limitPerMonth": "월 최대 {count}개 문서 생성",
     "pricing.limitUnlimitedPerMonth": "문서 무제한 생성",
@@ -141,6 +144,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.free": "무료",
     "pricingPage.contact": "문의",
     "pricingPage.perMonth": "/월",
+    "pricingPage.perYear": "/년",
     "pricingPage.documentsPerMonth": "월 문서 생성",
     "pricingPage.activeDocuments": "활성 문서",
     "pricingPage.unlimited": "무제한",
@@ -161,14 +165,9 @@ const translations: Record<Language, Record<string, string>> = {
       "{planName} 플랜이 선택되었습니다. 결제 모듈 연동 예정입니다.",
 
     // Pricing Page - Plan Details
-    "pricingPage.plans.free.description": "개인 사용자를 위한 기본 플랜",
-    "pricingPage.plans.free.feature1": "기본 문서 관리",
-    "pricingPage.plans.pro.description":
-      "전문가와 소규모 팀을 위한 향상된 기능",
-    "pricingPage.plans.pro.feature1": "이메일 알림",
-    "pricingPage.plans.enterprise.description":
-      "대규모 조직을 위한 완전한 솔루션",
-    "pricingPage.plans.enterprise.feature2": "전용 지원",
+    "pricingPage.plans.free.description": "개인 사용자를 위한 무료 플랜",
+    "pricingPage.plans.starter.description": "개인 또는 소규모 팀을 위한 플랜",
+    "pricingPage.plans.pro.description": "전문가를 위한 플랜",
 
     // Checkout Success
     "checkout.success.title": "결제가 완료되었습니다!",
@@ -940,6 +939,9 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.pro.cta": "Go Pro",
     "pricing.popular": "Popular",
     "pricing.perMonth": "/month",
+    "pricing.perYear": "/year",
+    "pricing.billing.monthly": "monthly",
+    "pricing.billing.yearly": "yearly",
     // Pricing limits (dynamic count)
     "pricing.limitPerMonth": "Up to {count} documents per month",
     "pricing.limitUnlimitedPerMonth": "Unlimited documents per month",
@@ -954,6 +956,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.free": "Free",
     "pricingPage.contact": "Contact Us",
     "pricingPage.perMonth": "/month",
+    "pricingPage.perYear": "/year",
     "pricingPage.documentsPerMonth": "Monthly documents",
     "pricingPage.activeDocuments": "Active documents",
     "pricingPage.unlimited": "Unlimited",
@@ -975,19 +978,8 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Pricing Page - Plan Details
     "pricingPage.plans.free.description": "Basic plan for individual users",
-    "pricingPage.plans.free.feature1": "Basic document management",
-    "pricingPage.plans.free.feature2": "Standard support",
-    "pricingPage.plans.pro.description":
-      "Enhanced features for professionals and small teams",
-    "pricingPage.plans.pro.feature1": "Email notifications",
-    "pricingPage.plans.pro.feature2": "Priority support",
-    "pricingPage.plans.pro.feature3": "Advanced analytics",
-    "pricingPage.plans.enterprise.description":
-      "Complete solution for large organizations",
-    "pricingPage.plans.enterprise.feature1": "Custom workflows",
-    "pricingPage.plans.enterprise.feature2": "Dedicated support",
-    "pricingPage.plans.enterprise.feature3": "API access",
-    "pricingPage.plans.enterprise.feature4": "SSO integration",
+    "pricingPage.plans.starter.description": "For individuals and small teams",
+    "pricingPage.plans.pro.description": "Enhanced features for professionals",
 
     // Checkout Success
     "checkout.success.title": "Payment Successful!",
