@@ -216,6 +216,7 @@ export default function TermPage() {
               <li>{t("term.article17.para1")}</li>
               <li>{t("term.article17.para2")}</li>
               <li>{t("term.article17.para3")}</li>
+              <li>{t("term.article17.para4")}</li>
             </ol>
 
             <h3 className="text-xl font-semibold mb-3">

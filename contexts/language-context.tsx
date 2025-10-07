@@ -558,10 +558,12 @@ const translations: Record<Language, Record<string, string>> = {
 
     "term.article17.title": "제17조 (청약 철회 및 환불)",
     "term.article17.para1":
-      "회원은 유료서비스 결제 후 7일 이내에 서비스를 전혀 이용하지 않은 경우 청약 철회 및 환불을 요청할 수 있습니다. 운영자는 회원이 제시한 자료에 따라 적정한 절차를 거쳐 환불을 진행합니다.",
+      "회원은 유료서비스 결제 후 14일 이내에 서비스를 전혀 이용하지 않은 경우 청약 철회 및 환불을 요청할 수 있습니다. 운영자는 회원이 제시한 자료에 따라 적정한 절차를 거쳐 환불을 진행합니다.",
     "term.article17.para2":
-      "회원이 이미 서비스를 이용한 경우에는 환불이 제한될 수 있으며, 프로모션을 통해 무상으로 취득한 혜택은 환불 대상에서 제외됩니다.",
+      "환불이 필요한 경우 결제/구독 페이지에서 구독 해지 후 cs.seuk.seuk@gmail.com으로 환불 요청을 해주시면 내용 확인 후 환불이 진행됩니다",
     "term.article17.para3":
+      "회원이 이미 서비스를 이용한 경우에는 환불이 제한될 수 있으며, 프로모션을 통해 무상으로 취득한 혜택은 환불 대상에서 제외됩니다.",
+    "term.article17.para4":
       "환불 및 과오금 처리와 관련하여 회원이 제공해야 하는 정보, 환불 기한 등은 운영정책에서 별도로 정합니다.",
 
     "term.article18.title": "제18조 (유료서비스 내용 변경 및 서비스 중지)",
@@ -1390,10 +1392,12 @@ const translations: Record<Language, Record<string, string>> = {
 
     "term.article17.title": "Article 17 (Withdrawal and Refund)",
     "term.article17.para1":
-      "Members may request withdrawal and refund if they have not used the service at all within 7 days after paid service payment. The Operator shall process refunds through appropriate procedures according to the materials provided by members.",
+      "Members may request withdrawal and refund if they have not used the service at all within 14 days after paid service payment. The Operator shall process refunds through appropriate procedures according to the materials provided by members.",
     "term.article17.para2":
-      "Refunds may be restricted if members have already used the service, and benefits acquired free through promotions are excluded from refund targets.",
+      "If a refund is needed, please request a refund from the subscription/payment page by unsubscribing from the subscription and then sending an email to cs.seuk.seuk@gmail.com. The refund will be processed after the content is checked.",
     "term.article17.para3":
+      "Refunds may be restricted if members have already used the service, and benefits acquired free through promotions are excluded from refund targets.",
+    "term.article17.para4":
       "Information to be provided by members regarding refunds and overpayment processing, refund deadlines, etc. shall be separately determined in operational policies.",
 
     "term.article18.title":
