@@ -15,20 +15,12 @@ export function BillsContent() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm">
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-primary/10 to-transparent" />
-        <div className="flex items-start gap-4">
-          <div className="rounded-md bg-primary/10 p-2 text-primary">
-            <CreditCard className="h-6 w-6" />
-          </div>
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {t("bills.title")}
-            </h1>
-            <p className="text-muted-foreground">
-              {t("bills.description")}
-            </p>
-          </div>
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("bills.title")}
+          </h1>
+          <p className="text-muted-foreground">{t("bills.description")}</p>
         </div>
       </div>
 
