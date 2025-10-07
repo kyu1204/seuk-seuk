@@ -72,6 +72,8 @@ export function SubscriptionsTab() {
   }
 
   // For now, show only the first subscription
+  const isCanceling = subscriptions[0]?.scheduledChange?.action === "cancel";
+
   return (
     <div className="space-y-6">
       <SubscriptionDetail subscriptionId={subscriptions[0].id} />
@@ -79,7 +81,16 @@ export function SubscriptionsTab() {
         <div className="h-full">
           <PaymentMethodCard transactions={transactions} subscription={subscriptions[0]} />
         </div>
-        <div className="h-full">{txError ? <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{txError}</AlertDescription></Alert> : <PreviousPayments transactions={transactions} />}</div>
+        <div className="h-full">
+          {txError ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{txError}</AlertDescription>
+            </Alert>
+          ) : (
+            <PreviousPayments transactions={transactions} />
+          )}
+        </div>
       </div>
     </div>
   );
