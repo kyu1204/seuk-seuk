@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSubscriptions } from "@/lib/paddle/get-subscriptions";
-import type { Subscription } from "@paddle/paddle-node-sdk";
+import type { Subscription, Transaction } from "@paddle/paddle-node-sdk";
 import { LoadingScreen } from "@/components/bills/loading-screen";
 import { NoSubscriptionView } from "@/components/bills/no-subscription-view";
 import { SubscriptionDetail } from "@/components/bills/subscription-detail";
@@ -11,10 +11,12 @@ import { AlertCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import { PaymentMethodCard } from "@/components/bills/payment-method-card";
 import { PreviousPayments } from "@/components/bills/previous-payments";
+import { getTransactions } from "@/lib/paddle/get-transactions";
 
 export function SubscriptionsTab() {
   const { t } = useLanguage();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
@@ -37,7 +39,17 @@ export function SubscriptionsTab() {
       }
     }
 
+    async function fetchTransactions() {
+      try {
+        const { data } = await getTransactions("", "");
+        setTransactions(data || []);
+      } catch (err) {
+        console.error("Error fetching transactions:", err);
+      }
+    }
+
     fetchSubscriptions();
+    fetchTransactions();
   }, []);
 
   // Previous payments load within PreviousPayments component
@@ -65,9 +77,9 @@ export function SubscriptionsTab() {
       <SubscriptionDetail subscriptionId={subscriptions[0].id} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr items-stretch">
         <div className="h-full">
-          <PaymentMethodCard />
+          <PaymentMethodCard transactions={transactions} subscription={subscriptions[0]} />
         </div>
-        <div className="h-full">{txError ? <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{txError}</AlertDescription></Alert> : <PreviousPayments />}</div>
+        <div className="h-full">{txError ? <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{txError}</AlertDescription></Alert> : <PreviousPayments transactions={transactions} />}</div>
       </div>
     </div>
   );

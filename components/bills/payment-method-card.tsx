@@ -4,15 +4,27 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CreditCard, RefreshCw } from "lucide-react";
-import { getPrimaryPaymentMethod } from "@/lib/paddle/get-payment-methods";
-import { getSubscriptions } from "@/lib/paddle/get-subscriptions";
 import { formatDateByLang } from "@/lib/date/format";
 import { useLanguage } from "@/contexts/language-context";
 import { Environments, initializePaddle, Paddle } from "@paddle/paddle-js";
 import { toast } from "@/components/ui/use-toast";
 import { createPaymentMethodChangeTransaction } from "@/lib/paddle/get-payment-method-change-transaction";
+import type { Transaction, Subscription } from "@paddle/paddle-node-sdk";
 
-export function PaymentMethodCard() {
+interface PaymentMethodCardProps {
+  transactions?: Transaction[];
+  subscription?: Subscription;
+}
+
+function findPaymentMethodDetails(transactions?: Transaction[]) {
+  const transactionWithPaymentDetails = transactions?.find(
+    (transaction) => transaction.payments?.[0]?.methodDetails
+  );
+  const firstValidPaymentMethod = transactionWithPaymentDetails?.payments?.[0]?.methodDetails;
+  return firstValidPaymentMethod || null;
+}
+
+export function PaymentMethodCard({ transactions, subscription }: PaymentMethodCardProps) {
   const { t, language } = useLanguage();
   const [brand, setBrand] = useState<string | undefined>(undefined);
   const [last4, setLast4] = useState<string | undefined>(undefined);
@@ -25,26 +37,23 @@ export function PaymentMethodCard() {
   useEffect(() => {
     async function load() {
       try {
-        const subs = await getSubscriptions();
-        const first = subs.data && subs.data.length > 0 ? subs.data[0] : undefined;
-        const customerId = first?.customerId;
-        const pm = await getPrimaryPaymentMethod(customerId);
-        if (pm.method) {
-          setBrand(pm.method.brand);
-          setLast4(pm.method.last4);
-          if (pm.method.expiryMonth && pm.method.expiryYear) {
-            setExpiry(`${pm.method.expiryMonth}/${pm.method.expiryYear}`);
+        const paymentDetails = findPaymentMethodDetails(transactions);
+        if (paymentDetails?.type === "card" && paymentDetails.card) {
+          setBrand(paymentDetails.card.type);
+          setLast4(paymentDetails.card.last4);
+          if (paymentDetails.card.expiryMonth && paymentDetails.card.expiryYear) {
+            setExpiry(`${paymentDetails.card.expiryMonth}/${paymentDetails.card.expiryYear}`);
           }
         }
-        if (first?.nextBilledAt) {
-          setNextBilling(formatDateByLang(first.nextBilledAt, "date", language));
+        if (subscription?.nextBilledAt) {
+          setNextBilling(formatDateByLang(subscription.nextBilledAt, "date", language));
         }
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, [language]);
+  }, [language, transactions, subscription]);
 
   useEffect(() => {
     if (
@@ -57,17 +66,8 @@ export function PaymentMethodCard() {
         eventCallback: async (event) => {
           // When checkout completes, refresh card data
           if (event?.name === "checkout.completed") {
-            const subs = await getSubscriptions();
-            const first = subs.data && subs.data.length > 0 ? subs.data[0] : undefined;
-            const customerId = first?.customerId;
-            const pm = await getPrimaryPaymentMethod(customerId);
-            if (pm.method) {
-              setBrand(pm.method.brand);
-              setLast4(pm.method.last4);
-              if (pm.method.expiryMonth && pm.method.expiryYear) {
-                setExpiry(`${pm.method.expiryMonth}/${pm.method.expiryYear}`);
-              }
-            }
+            // Refresh the page to get updated transactions
+            window.location.reload();
           }
         },
       })
@@ -93,18 +93,8 @@ export function PaymentMethodCard() {
       // Use correct Paddle JS API (capitalized Checkout)
       paddle.Checkout.open({ transactionId: res.transactionId });
       // Also set a delayed refresh in case events are missed
-      setTimeout(async () => {
-        const subs = await getSubscriptions();
-        const first = subs.data && subs.data.length > 0 ? subs.data[0] : undefined;
-        const customerId = first?.customerId;
-        const pm = await getPrimaryPaymentMethod(customerId);
-        if (pm.method) {
-          setBrand(pm.method.brand);
-          setLast4(pm.method.last4);
-          if (pm.method.expiryMonth && pm.method.expiryYear) {
-            setExpiry(`${pm.method.expiryMonth}/${pm.method.expiryYear}`);
-          }
-        }
+      setTimeout(() => {
+        window.location.reload();
       }, 3000);
     } finally {
       setUpdating(false);
