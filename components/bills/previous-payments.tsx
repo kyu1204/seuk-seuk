@@ -1,25 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { Transaction } from "@paddle/paddle-node-sdk";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/language-context";
 import { parseMoney } from "@/lib/paddle/parse-money";
 import { Status } from "@/components/bills/status";
 import { formatDateByLang } from "@/lib/date/format";
-import { getTransactions } from "@/lib/paddle/get-transactions";
 
-export function PreviousPayments() {
+interface PreviousPaymentsProps {
+  transactions?: Transaction[];
+}
+
+export function PreviousPayments({ transactions = [] }: PreviousPaymentsProps) {
   const { t, language } = useLanguage();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-  useEffect(() => {
-    async function load() {
-      const { data } = await getTransactions("", "");
-      setTransactions(data || []);
-    }
-    load();
-  }, []);
 
   return (
     <Card className="h-full">
