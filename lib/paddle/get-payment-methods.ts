@@ -22,7 +22,10 @@ export async function getPrimaryPaymentMethod(): Promise<{
     if (!customerId) return { method: null };
 
     const paddle = getPaddleInstance();
-    const collection = paddle.paymentMethods.list(customerId, { perPage: 10 });
+    const collection = paddle.paymentMethods.list(customerId, {
+      perPage: 50,
+      supportsCheckout: true,
+    });
     const list = await collection.next();
     const methods = parseSDKResponse(list || []);
     if (!methods || methods.length === 0) return { method: null };
@@ -46,4 +49,3 @@ export async function getPrimaryPaymentMethod(): Promise<{
     return { method: null, error: e?.message || "Failed to fetch payment methods" };
   }
 }
-
