@@ -26,11 +26,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export function PricingPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [paddle, setPaddle] = useState<Paddle | undefined>(undefined);
   const { prices: paddlePrices, loading: paddleLoading } =
     usePaddlePrices(paddle);
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "monthly"
+  );
 
   // Static plan mapping based on plan names
   const getPlanDescription = (planName: string) => {
@@ -38,22 +41,34 @@ export function PricingPage() {
     return t(`pricingPage.plans.${planKey}.description`);
   };
 
-  const getPlanFeatures = (planName: string) => {
-    const planKey = planName.toLowerCase();
-    const features = [];
-
-    // Try to get features dynamically, fallback if key doesn't exist
-    for (let i = 1; i <= 4; i++) {
-      const featureKey = `pricingPage.plans.${planKey}.feature${i}`;
-      const feature = t(featureKey);
-      if (feature !== featureKey) {
-        // If translation exists
-        features.push(feature);
+  function extractFeaturesByLanguage(raw: unknown): string[] {
+    try {
+      if (!raw) return [];
+      if (Array.isArray(raw) && raw.every((x) => typeof x === "string")) {
+        return raw as string[];
       }
+      if (typeof raw === "string") {
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          Array.isArray(parsed[language])
+        ) {
+          return parsed[language] as string[];
+        }
+      }
+      if (
+        typeof raw === "object" &&
+        raw !== null &&
+        Array.isArray((raw as any)[language])
+      ) {
+        return (raw as Record<string, string[]>)[language] || [];
+      }
+    } catch (e) {
+      console.warn("Failed to parse plan features by language", e);
     }
-
-    return features;
-  };
+    return [];
+  }
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [currentSubscription, setCurrentSubscription] =
     useState<Subscription | null>(null);
@@ -98,37 +113,71 @@ export function PricingPage() {
       initializePaddle({
         token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
         environment: process.env.NEXT_PUBLIC_PADDLE_ENV as Environments,
-      }).then((paddleInstance) => {
-        if (paddleInstance) {
-          setPaddle(paddleInstance);
-        }
-      });
+      })
+        .then((paddleInstance) => {
+          if (paddleInstance) {
+            setPaddle(paddleInstance);
+          }
+        })
+        .catch((err) => {
+          console.warn("Paddle initialization skipped (likely local/no access)", err);
+          setPaddle(undefined);
+        });
     }
   }, []);
 
   const handleSelectPlan = (planId: string, planName: string) => {
-    // Pro 플랜인 경우 Paddle Checkout으로 이동
-    const proPlan = PADDLE_PRICE_TIERS.find(
-      (tier) => tier.name.toLowerCase() === "pro"
-    );
-
-    if (planName.toLowerCase().includes("pro") && proPlan) {
-      // Pro 플랜의 월간 구독 가격 ID로 체크아웃 페이지 이동
-      router.push(`/checkout/${proPlan.priceId.month}`);
-    } else if (planName.toLowerCase() === "free") {
+    const nameKey = planName.toLowerCase();
+    // Free plan: no checkout
+    if (nameKey === "free") {
       // Free 플랜은 별도 처리 불필요
       alert(t("pricingPage.alertMessage", { planName }));
-    } else if (planName.toLowerCase().includes("enterprise")) {
+      return;
+    }
+
+    // Enterprise plan: contact
+    if (nameKey.includes("enterprise")) {
       // Enterprise 플랜은 Contact Us 페이지로 이동
       router.push("/contact");
-    } else {
-      // 기타 플랜
-      alert(t("pricingPage.alertMessage", { planName }));
+      return;
     }
+
+    // Paid plans (Starter, Pro, etc.) → Paddle checkout
+    const tier = PADDLE_PRICE_TIERS.find(
+      (t) => t.name.toLowerCase() === nameKey || t.id === nameKey
+    );
+
+    if (tier) {
+      const priceId =
+        billingCycle === "yearly" ? tier.priceId.year : tier.priceId.month;
+      if (priceId) {
+        router.push(`/checkout/${priceId}`);
+        return;
+      }
+    }
+
+    // Fallback
+    alert(t("pricingPage.alertMessage", { planName }));
+  };
+
+  const resolveCurrentPlanId = (): string | undefined => {
+    // 1) Direct by plan_id
+    if (currentSubscription?.plan_id) return currentSubscription.plan_id;
+    // 2) Match by plan name from joined relation
+    const joinedName = currentSubscription?.plan?.name;
+    if (joinedName) {
+      const match = plans.find(
+        (p) => p.name.toLowerCase() === joinedName.toLowerCase()
+      );
+      if (match) return match.id;
+    }
+    // 3) Fallback to lowest tier (first in sorted list) so Free is treated as current
+    return plans[0]?.id;
   };
 
   const isCurrentPlan = (planId: string) => {
-    return currentSubscription?.plan_id === planId;
+    const resolved = resolveCurrentPlanId();
+    return resolved ? resolved === planId : false;
   };
 
   const isLowerPlan = (plan: SubscriptionPlan) => {
@@ -139,8 +188,8 @@ export function PricingPage() {
   };
 
   const getPopularPlanId = () => {
-    // Pro 플랜을 인기 플랜으로 설정 (이름이 'Pro'인 플랜)
-    return plans.find((plan) => plan.name.toLowerCase().includes("pro"))?.id;
+    // 인기 플랜은 DB의 is_popular 기준
+    return plans.find((plan) => plan.is_popular)?.id;
   };
 
   if (loading) {
@@ -193,17 +242,47 @@ export function PricingPage() {
               {t("pricingPage.description")}
             </p>
           </div>
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center rounded-md border p-1 bg-muted">
+              <button
+                className={`px-3 py-1 rounded-sm text-sm ${
+                  billingCycle === "monthly"
+                    ? "bg-background text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => setBillingCycle("monthly")}
+              >
+                {t("pricing.billing.monthly")}
+              </button>
+              <button
+                className={`px-3 py-1 rounded-sm text-sm ${
+                  billingCycle === "yearly"
+                    ? "bg-background text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => setBillingCycle("yearly")}
+              >
+                {t("pricing.billing.yearly")}
+              </button>
+            </div>
+          </div>
 
           {/* Current Subscription Info */}
-          {currentSubscription && (
+          {(() => {
+            const nameFromSub = currentSubscription?.plan?.name;
+            const resolvedId = resolveCurrentPlanId();
+            const nameFromResolved = plans.find((p) => p.id === resolvedId)?.name;
+            const displayName = nameFromSub || nameFromResolved;
+            return displayName ? (
             <div className="mb-8 p-4 bg-muted/50 rounded-lg text-center">
               <p className="text-sm text-muted-foreground">
                 {t("pricingPage.currentPlan", {
-                  planName: currentSubscription.plan.name,
+                  planName: displayName,
                 })}
               </p>
             </div>
-          )}
+            ) : null;
+          })()}
 
           {/* Pricing Cards */}
           {paddleLoading ? (
@@ -263,36 +342,36 @@ export function PricingPage() {
                             const paddleTier = PADDLE_PRICE_TIERS.find(
                               (tier) => tier.name.toLowerCase() === planKey
                             );
+                            const priceId =
+                              billingCycle === "yearly"
+                                ? paddleTier?.priceId.year
+                                : paddleTier?.priceId.month;
 
                             // Paddle 가격이 있는 경우 사용
-                            if (
-                              paddleTier &&
-                              paddlePrices[paddleTier.priceId.month]
-                            ) {
-                              const price =
-                                paddlePrices[paddleTier.priceId.month];
-                              // 포맷된 가격 문자열에서 숫자만 추출 (예: "$10.00" -> "10.00")
-                              const numericPrice = price.replace(
-                                /[^0-9.]/g,
-                                ""
-                              );
+                            if (paddleTier && priceId && paddlePrices[priceId]) {
+                              const price = paddlePrices[priceId];
+                              const numericPrice = price.replace(/[^\d.]/g, "");
                               return `$${Math.floor(parseFloat(numericPrice))}`;
                             }
 
-                            // Paddle 가격이 없는 경우 DB 가격 사용
-                            const fallbackPrice =
-                              plan.price_cents === 0
-                                ? t("pricingPage.free")
-                                : plan.price_cents === -1
-                                ? t("pricingPage.contact")
-                                : `$${plan.price_cents}`;
-
-                            return fallbackPrice;
+                            // DB 가격 사용 (USD)
+                            const dbPrice =
+                              billingCycle === "yearly"
+                                ? (plan as any).yearly_price
+                                : (plan as any).monthly_price;
+                            if (dbPrice === 0) return t("pricingPage.free");
+                            if (dbPrice === -1) return t("pricingPage.contact");
+                            return dbPrice != null
+                              ? `$${Math.floor(dbPrice)}`
+                              : "...";
                           })()}
                         </span>
-                        {plan.price_cents > 0 && plan.price_cents !== -1 && (
+                        {(((plan as any).monthly_price ?? 0) > 0 ||
+                          ((plan as any).yearly_price ?? 0) > 0) && (
                           <span className="text-muted-foreground ml-1">
-                            {t("pricingPage.perMonth")}
+                            {billingCycle === "monthly"
+                              ? t("pricingPage.perMonth")
+                              : t("pricingPage.perYear")}
                           </span>
                         )}
                       </div>
@@ -304,22 +383,15 @@ export function PricingPage() {
                         <div className="flex items-center gap-3">
                           <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                           <span className="text-sm">
-                            {t("pricingPage.documentsPerMonth")}:{" "}
                             {plan.monthly_document_limit === -1
-                              ? t("pricingPage.unlimited")
-                              : `${plan.monthly_document_limit}`}
+                              ? t("pricing.limitUnlimitedPerMonth")
+                              : t("pricing.limitPerMonth", {
+                                  count: plan.monthly_document_limit,
+                                })}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                          <span className="text-sm">
-                            {t("pricingPage.activeDocuments")}:{" "}
-                            {plan.active_document_limit === -1
-                              ? t("pricingPage.unlimited")
-                              : `${plan.active_document_limit}`}
-                          </span>
-                        </div>
-                        {getPlanFeatures(plan.name).map((feature, index) => (
+                        {/* Removed Active Documents line as requested */}
+                        {extractFeaturesByLanguage((plan as any).features).map((feature, index) => (
                           <div key={index} className="flex items-center gap-3">
                             <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                             <span className="text-sm">{feature}</span>
@@ -340,9 +412,10 @@ export function PricingPage() {
                           ? t("pricingPage.currentlyUsing")
                           : isLower
                           ? t("pricingPage.lowerPlan")
-                          : !plan.price_cents || plan.price_cents === 0
+                          : ((plan as any).monthly_price ?? 0) === 0
                           ? t("pricingPage.startFree")
-                          : plan.price_cents === -1
+                          : ((plan as any).monthly_price ?? 0) === -1 ||
+                            ((plan as any).yearly_price ?? 0) === -1
                           ? t("pricingPage.contactUs")
                           : t("pricingPage.selectPlan")}
                       </Button>
