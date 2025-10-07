@@ -146,7 +146,7 @@ export function UsageWidget() {
   const isMonthlyNearLimit = monthlyProgress >= 80;
   const isActiveNearLimit = activeProgress >= 80;
 
-  const planName = subscription?.plan?.name ?? "Free";
+  const planName = subscription?.plan?.name ?? "Basic";
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <Card>
@@ -162,8 +162,8 @@ export function UsageWidget() {
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 )}
               </div>
-              <Badge variant={planName === "Free" ? "secondary" : "default"}>
-                {planName === "Free" ? t("usage.plan.free") : planName} {t("usage.plan.suffix")}
+              <Badge variant={planName === "Basic" ? "secondary" : "default"}>
+                {planName === "Basic" ? t("usage.plan.free") : planName} {t("usage.plan.suffix")}
               </Badge>
             </div>
             <CardDescription>{t("usage.description")}</CardDescription>
@@ -242,7 +242,10 @@ export function UsageWidget() {
                       {t("usage.upgrade.title")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {planName.toLowerCase() === "free"
+                      {(() => {
+                        const key = planName.toLowerCase();
+                        return key === "free" || key === "basic";
+                      })()
                         ? t("usage.upgrade.description.free")
                         : t("usage.upgrade.description.pro")}
                     </p>

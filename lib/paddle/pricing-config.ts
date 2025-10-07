@@ -10,7 +10,7 @@ export interface PaddlePriceTier {
 // Paddle Price IDs - 실제 Paddle Dashboard에서 생성한 가격 ID로 교체 필요
 export const PADDLE_PRICE_TIERS: PaddlePriceTier[] = [
   {
-    name: "Free",
+    name: "Basic",
     id: "free",
     priceId: {
       month: "pri_free_month", // Free plan은 가격 ID가 없지만 구조 통일을 위해 추가

@@ -5,7 +5,7 @@ import Link from "next/link";
 export function CheckoutHeader() {
   return (
     <div>
-      <Link href={"/"} className="inline-block">
+      <Link href={"/pricing"} className="inline-block">
         <Button
           variant={"secondary"}
           className={
@@ -13,7 +13,7 @@ export function CheckoutHeader() {
           }
         >
           <ChevronLeft className="w-4 h-4" />
-          <span className="text-sm">홈으로 돌아가기</span>
+          <span className="text-sm">요금제 페이지로 돌아가기</span>
         </Button>
       </Link>
     </div>

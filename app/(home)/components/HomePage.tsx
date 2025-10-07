@@ -90,7 +90,9 @@ export default function HomePageComponent() {
     } else {
       // Pro 플랜인 경우 Paddle 가격 사용
       const paddleTier = PADDLE_PRICE_TIERS.find(
-        (tier) => tier.name.toLowerCase() === planKey
+        (tier) =>
+          tier.name.toLowerCase() === planKey ||
+          (["free", "basic"].includes(planKey) && tier.id === "free")
       );
       const priceId =
         billingCycle === "yearly"
@@ -384,7 +386,8 @@ export default function HomePageComponent() {
                     </p>
                     <div className="mb-6">
                       <span className="text-4xl font-bold">{plan.price}</span>
-                      {plan.price !== t("pricingPage.contact") && (
+                      {plan.price !== t("pricingPage.contact") &&
+                        plan.price !== t("pricing.free.price") && (
                         <span className="text-muted-foreground ml-2">
                           {billingCycle === "monthly"
                             ? t("pricingPage.perMonth")

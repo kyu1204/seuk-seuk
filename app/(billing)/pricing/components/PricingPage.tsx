@@ -129,7 +129,7 @@ export function PricingPage() {
   const handleSelectPlan = (planId: string, planName: string) => {
     const nameKey = planName.toLowerCase();
     // Free plan: no checkout
-    if (nameKey === "free") {
+    if (nameKey === "free" || nameKey === "basic") {
       // Free 플랜은 별도 처리 불필요
       alert(t("pricingPage.alertMessage", { planName }));
       return;
@@ -272,15 +272,18 @@ export function PricingPage() {
             const nameFromSub = currentSubscription?.plan?.name;
             const resolvedId = resolveCurrentPlanId();
             const nameFromResolved = plans.find((p) => p.id === resolvedId)?.name;
-            const displayName = nameFromSub || nameFromResolved;
+            const rawName = nameFromSub || nameFromResolved;
+            const planKey = (rawName || "").toLowerCase();
+            const translated = t(`pricing.${planKey}.name`);
+            const displayName = translated === `pricing.${planKey}.name` ? rawName : translated;
             return displayName ? (
-            <div className="mb-8 p-4 bg-muted/50 rounded-lg text-center">
-              <p className="text-sm text-muted-foreground">
-                {t("pricingPage.currentPlan", {
-                  planName: displayName,
-                })}
-              </p>
-            </div>
+              <div className="mb-8 p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">
+                  {t("pricingPage.currentPlan", {
+                    planName: displayName,
+                  })}
+                </p>
+              </div>
             ) : null;
           })()}
 
@@ -329,7 +332,13 @@ export function PricingPage() {
 
                     <CardHeader className="text-center pb-4">
                       <CardTitle className="text-xl font-bold">
-                        {plan.name}
+                        {(() => {
+                          const key = plan.name.toLowerCase();
+                          const translated = t(`pricing.${key}.name`);
+                          return translated === `pricing.${key}.name`
+                            ? plan.name
+                            : translated;
+                        })()}
                       </CardTitle>
                       <CardDescription className="text-sm">
                         {getPlanDescription(plan.name)}
@@ -340,7 +349,10 @@ export function PricingPage() {
                             // 플랜 이름으로 Paddle Tier 찾기
                             const planKey = plan.name.toLowerCase();
                             const paddleTier = PADDLE_PRICE_TIERS.find(
-                              (tier) => tier.name.toLowerCase() === planKey
+                              (tier) =>
+                                tier.name.toLowerCase() === planKey ||
+                                (["free", "basic"].includes(planKey) &&
+                                  tier.id === "free")
                             );
                             const priceId =
                               billingCycle === "yearly"
@@ -366,8 +378,13 @@ export function PricingPage() {
                               : "...";
                           })()}
                         </span>
-                        {(((plan as any).monthly_price ?? 0) > 0 ||
-                          ((plan as any).yearly_price ?? 0) > 0) && (
+                        {(() => {
+                          const cycleDbPrice =
+                            billingCycle === "yearly"
+                              ? (plan as any).yearly_price
+                              : (plan as any).monthly_price;
+                          return cycleDbPrice != null && cycleDbPrice > 0;
+                        })() && (
                           <span className="text-muted-foreground ml-1">
                             {billingCycle === "monthly"
                               ? t("pricingPage.perMonth")
