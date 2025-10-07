@@ -573,7 +573,7 @@ export class ProcessWebhook {
    * pricing-config.ts의 PADDLE_PRICE_TIERS를 단일 소스로 사용
    */
   private determinePlanFromPriceId(priceId: string | undefined): string {
-    if (!priceId) return "Free";
+    if (!priceId) return "Basic";
 
     // PADDLE_PRICE_TIERS를 순회하며 매칭
     for (const tier of PADDLE_PRICE_TIERS) {
@@ -583,7 +583,7 @@ export class ProcessWebhook {
     }
 
     // 매칭 실패 시 기본값
-    return "Free";
+    return "Basic";
   }
 
   /**
