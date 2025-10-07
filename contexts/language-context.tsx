@@ -169,6 +169,9 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.plans.starter.description": "개인 또는 소규모 팀을 위한 플랜",
     "pricingPage.plans.pro.description": "전문가를 위한 플랜",
 
+    // Checkout Page
+    "checkout.backButton": "요금제 페이지로 돌아가기",
+
     // Checkout Success
     "checkout.success.title": "결제가 완료되었습니다!",
     "checkout.success.message":
@@ -988,6 +991,9 @@ const translations: Record<Language, Record<string, string>> = {
     "pricingPage.plans.basic.description": "Basic plan for individual users",
     "pricingPage.plans.starter.description": "For individuals and small teams",
     "pricingPage.plans.pro.description": "Enhanced features for professionals",
+
+    // Checkout Page
+    "checkout.backButton": "Go Back",
 
     // Checkout Success
     "checkout.success.title": "Payment Successful!",
