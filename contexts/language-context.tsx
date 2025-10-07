@@ -418,7 +418,7 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article2.item5":
       "서명자: 서명 요청자로부터 전자문서에 서명을 요청받거나 서명을 하는 이용자를 말합니다.",
     "term.article2.item6":
-      "유료서비스: 운영자가 제공하는 서비스 중 회원이 요금을 결제한 후 이용할 수 있는 서비스(추후 도입 가능)를 말합니다.",
+      "유료서비스: 운영자가 제공하는 서비스 중 회원이 요금을 결제한 후 이용할 수 있는 서비스를 말합니다.",
 
     "term.article3.title": "제3조 (약관의 게시와 개정)",
     "term.article3.para1":
@@ -542,9 +542,8 @@ const translations: Record<Language, Record<string, string>> = {
       "운영자가 이용계약을 해지하는 경우 운영자는 회원에게 해지사유를 밝혀 통지하며, 회원은 통지일로부터 7일 이내 이의를 제기할 수 있습니다.",
 
     // Chapter 4
-    "term.chapter4.title": "제4장 유료서비스 (추후 도입 시 적용)",
-    "term.chapter4.intro":
-      "현재 서비스는 무료로 제공되며, 향후 유료 서비스 도입 시 다음 규정이 적용됩니다.",
+    "term.chapter4.title": "제4장 유료서비스",
+    "term.chapter4.intro": "유료 서비스 이용 시 다음 규정이 적용됩니다.",
 
     "term.article16.title": "제16조 (유료서비스 이용 계약 및 요금제)",
     "term.article16.para1":
