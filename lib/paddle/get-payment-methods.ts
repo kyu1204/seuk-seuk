@@ -13,28 +13,31 @@ export interface PaymentMethodSummary {
   savedAt?: string;
 }
 
-export async function getPrimaryPaymentMethod(): Promise<{
+export async function getPrimaryPaymentMethod(
+  overrideCustomerId?: string
+): Promise<{
   method: PaymentMethodSummary | null;
   error?: string;
 }> {
   try {
-    const customerId = await getCustomerId();
+    const customerId = overrideCustomerId || (await getCustomerId());
     if (!customerId) return { method: null };
 
     const paddle = getPaddleInstance();
-    const collection = paddle.paymentMethods.list(customerId, {
-      perPage: 50,
-      supportsCheckout: true,
-    });
+    const collection = paddle.paymentMethods.list(customerId, { perPage: 50 });
     const list = await collection.next();
     const methods = parseSDKResponse(list || []);
     if (!methods || methods.length === 0) return { method: null };
 
-    // Pick the most recently saved
-    const sorted = methods.sort((a: any, b: any) =>
-      (b.savedAt || "").localeCompare(a.savedAt || "")
-    );
-    const m = sorted[0];
+    // Prefer card methods first, then most recently updated
+    const sorted = methods
+      .filter((m: any) => !!m.card)
+      .sort((a: any, b: any) =>
+        (b.updatedAt || b.savedAt || "").localeCompare(
+          a.updatedAt || a.savedAt || ""
+        )
+      );
+    const m = (sorted[0] || methods[0]) as any;
     const summary: PaymentMethodSummary = {
       id: m.id,
       brand: m.card?.type,

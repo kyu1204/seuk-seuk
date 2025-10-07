@@ -25,10 +25,10 @@ export function PaymentMethodCard() {
   useEffect(() => {
     async function load() {
       try {
-        const [pm, subs] = await Promise.all([
-          getPrimaryPaymentMethod(),
-          getSubscriptions(),
-        ]);
+        const subs = await getSubscriptions();
+        const first = subs.data && subs.data.length > 0 ? subs.data[0] : undefined;
+        const customerId = first?.customerId;
+        const pm = await getPrimaryPaymentMethod(customerId);
         if (pm.method) {
           setBrand(pm.method.brand);
           setLast4(pm.method.last4);
@@ -36,7 +36,6 @@ export function PaymentMethodCard() {
             setExpiry(`${pm.method.expiryMonth}/${pm.method.expiryYear}`);
           }
         }
-        const first = subs.data && subs.data.length > 0 ? subs.data[0] : undefined;
         if (first?.nextBilledAt) {
           setNextBilling(formatDateByLang(first.nextBilledAt, "date", language));
         }
@@ -58,7 +57,10 @@ export function PaymentMethodCard() {
         eventCallback: async (event) => {
           // When checkout completes, refresh card data
           if (event?.name === "checkout.completed") {
-            const pm = await getPrimaryPaymentMethod();
+            const subs = await getSubscriptions();
+            const first = subs.data && subs.data.length > 0 ? subs.data[0] : undefined;
+            const customerId = first?.customerId;
+            const pm = await getPrimaryPaymentMethod(customerId);
             if (pm.method) {
               setBrand(pm.method.brand);
               setLast4(pm.method.last4);
@@ -92,7 +94,10 @@ export function PaymentMethodCard() {
       paddle.Checkout.open({ transactionId: res.transactionId });
       // Also set a delayed refresh in case events are missed
       setTimeout(async () => {
-        const pm = await getPrimaryPaymentMethod();
+        const subs = await getSubscriptions();
+        const first = subs.data && subs.data.length > 0 ? subs.data[0] : undefined;
+        const customerId = first?.customerId;
+        const pm = await getPrimaryPaymentMethod(customerId);
         if (pm.method) {
           setBrand(pm.method.brand);
           setLast4(pm.method.last4);
