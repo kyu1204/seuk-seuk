@@ -98,9 +98,14 @@ export function SubscriptionDetail({ subscriptionId }: Props) {
     language
   );
 
-  const showCancel = ["active", "trialing", "past_due", "paused"].includes(
-    (subscription.status || "").toLowerCase()
-  );
+  const isCanceling = subscription.scheduledChange?.action === "cancel";
+  const cancelEffectiveAt = isCanceling ? subscription.scheduledChange?.effectiveAt : null;
+
+  const showCancel =
+    !isCanceling &&
+    ["active", "trialing", "past_due", "paused"].includes(
+      (subscription.status || "").toLowerCase()
+    );
 
   async function onConfirmCancel() {
     if (!subscription) return;
@@ -178,32 +183,6 @@ export function SubscriptionDetail({ subscriptionId }: Props) {
         </div>
       </div>
 
-      <Separator />
-
-      {/* Next Payment */}
-      {subscription.nextBilledAt && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("bills.nextPayment")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 items-end flex-wrap">
-              <span className="text-xl font-medium text-primary">
-                {parseMoney(
-                  subscription?.nextTransaction?.details.totals.total,
-                  subscription?.currencyCode
-                )}
-              </span>
-              <span className="text-muted-foreground">{t("bills.due")}</span>
-              <span className="font-semibold text-primary">
-                {formatDateByLang(subscription.nextBilledAt, "date", language)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Past Payments moved to SubscriptionsTab footer */}
     </div>
   );
 }
