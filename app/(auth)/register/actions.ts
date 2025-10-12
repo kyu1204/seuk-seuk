@@ -77,5 +77,5 @@ export async function register(_: any, formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect("/register/success");
 }

@@ -230,6 +230,16 @@ const translations: Record<Language, Record<string, string>> = {
     "register.privacyPolicy": "개인정보 처리방침",
     "register.privacyAgree2": "에 동의합니다.",
 
+    // Register Success
+    "register.success.title": "회원가입이 완료되었습니다!",
+    "register.success.subtitle": "이메일 인증",
+    "register.success.emailSent": "이메일 인증 메일이 발송되었습니다",
+    "register.success.description":
+      "가입하신 이메일 주소로 인증 메일이 발송되었습니다. 이메일을 확인하여 계정을 활성화해주세요.",
+    "register.success.checkSpam":
+      "메일이 보이지 않으면 스팸 폴더를 확인해주세요.",
+    "register.success.goToLogin": "로그인 화면으로",
+
     // Sign Page - Password Protection & Status
     "sign.password.title": "보안 문서",
     "sign.password.description": "이 문서는 비밀번호로 보호되어 있습니다.",
@@ -1054,6 +1064,16 @@ const translations: Record<Language, Record<string, string>> = {
     "register.terms": "Terms of Service",
     "register.privacyPolicy": "Privacy Policy",
     "register.privacyAgree2": ".",
+
+    // Register Success
+    "register.success.title": "Registration Complete!",
+    "register.success.subtitle": "Email Verification",
+    "register.success.emailSent": "Verification email has been sent",
+    "register.success.description":
+      "A verification email has been sent to your registered email address. Please check your email to activate your account.",
+    "register.success.checkSpam":
+      "If you don't see the email, please check your spam folder.",
+    "register.success.goToLogin": "Go to Login",
 
     // Sign Page - Password Protection & Status
     "sign.password.title": "Protected Document",

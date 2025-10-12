@@ -7,6 +7,7 @@ interface Routes {
 const publicRoutes: Routes = {
   "/login": true,
   "/register": true,
+  "/register/success": true,
   "/auth": true,
   "/error": true,
   "/": true,
@@ -21,6 +22,7 @@ const publicRoutes: Routes = {
 const publicOnlyRoutes: Routes = {
   "/login": true,
   "/register": true,
+  "/register/success": true,
   "/": true,
 };
 
