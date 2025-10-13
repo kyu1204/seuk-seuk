@@ -166,9 +166,9 @@ export async function deleteAccount(
         }
       }
 
-      // Delete signatures tied to the user's documents
+      // Delete signatures tied to the user's documents (using service role)
       if (documentIds.length > 0) {
-        const { error: signaturesError } = await supabase
+        const { error: signaturesError } = await serviceSupabase
           .from("signatures")
           .delete()
           .in("document_id", documentIds);
@@ -182,8 +182,8 @@ export async function deleteAccount(
       }
     }
 
-    // 5. Delete documents
-    const { error: documentsError } = await supabase
+    // 5. Delete documents (using service role to bypass RLS)
+    const { error: documentsError } = await serviceSupabase
       .from("documents")
       .delete()
       .eq("user_id", user.id);
@@ -195,8 +195,21 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted documents");
     }
 
-    // 6. Delete subscriptions
-    const { error: subscriptionsError } = await supabase
+    // 6. Break circular reference: Set users.current_subscription_id to NULL (using service role)
+    const { error: updateUserError } = await serviceSupabase
+      .from("users")
+      .update({ current_subscription_id: null })
+      .eq("id", user.id);
+
+    if (updateUserError) {
+      console.error("[Account Deletion] Error updating users.current_subscription_id:", updateUserError);
+      // Continue with deletion
+    } else {
+      console.log("[Account Deletion] Cleared users.current_subscription_id");
+    }
+
+    // 7. Delete subscriptions (using service role to bypass RLS)
+    const { error: subscriptionsError } = await serviceSupabase
       .from("subscriptions")
       .delete()
       .eq("user_id", user.id);
@@ -208,8 +221,8 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted subscriptions");
     }
 
-    // 7. Delete monthly_usage
-    const { error: usageError } = await supabase
+    // 8. Delete monthly_usage (using service role to bypass RLS)
+    const { error: usageError } = await serviceSupabase
       .from("monthly_usage")
       .delete()
       .eq("user_id", user.id);
@@ -221,8 +234,8 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted monthly_usage");
     }
 
-    // 8. Delete customers record
-    const { error: customersError } = await supabase
+    // 9. Delete customers record (using service role to bypass RLS)
+    const { error: customersError } = await serviceSupabase
       .from("customers")
       .delete()
       .eq("user_id", user.id);
@@ -234,8 +247,8 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted customers");
     }
 
-    // 9. Delete users profile
-    const { error: usersError } = await supabase
+    // 10. Delete users profile (using service role to bypass RLS)
+    const { error: usersError } = await serviceSupabase
       .from("users")
       .delete()
       .eq("id", user.id);
@@ -247,7 +260,8 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted users profile");
     }
 
-    // 10. Delete auth.users account (using service role)
+    // 11. Delete auth.users account (using service role)
+    // This will cascade delete auth schema tables (sessions, identities, etc.)
     const { error: authDeleteError } = await serviceSupabase.auth.admin.deleteUser(
       user.id
     );
@@ -262,13 +276,14 @@ export async function deleteAccount(
 
     console.log("[Account Deletion] Successfully deleted auth user");
 
-    // 11. Sign out the user
+    // 12. Sign out the user
     await supabase.auth.signOut();
 
     console.log("[Account Deletion] Deletion completed successfully");
 
-    // 12. Revalidate and redirect
+    // 13. Revalidate
     revalidatePath("/");
+
   } catch (error) {
     console.error("[Account Deletion] Unexpected error:", error);
     return {
@@ -277,6 +292,7 @@ export async function deleteAccount(
     };
   }
 
-  // Redirect to home page after successful deletion
-  redirect("/");
+  return {
+    success: true,
+  };
 }

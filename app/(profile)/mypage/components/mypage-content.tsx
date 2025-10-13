@@ -1,8 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { AlertTriangle } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import DeleteAccountForm from "./delete-account-form";
@@ -34,6 +42,7 @@ interface MyPageContentProps {
 
 export function MyPageContent({ user, profile, subscription, usage }: MyPageContentProps) {
   const { t, language } = useLanguage();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Display name and avatar
   const displayName = profile?.name || user.user_metadata?.full_name || user.email;
@@ -86,6 +95,14 @@ export function MyPageContent({ user, profile, subscription, usage }: MyPageCont
                 <span className="text-muted-foreground">{t("mypage.profile.joinedAt")}</span>
                 <span className="font-medium">{joinedDate}</span>
               </div>
+            </div>
+            <div className="pt-2">
+              <button
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors underline"
+              >
+                {t("mypage.dangerZone.deleteAccount")}
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -167,19 +184,21 @@ export function MyPageContent({ user, profile, subscription, usage }: MyPageCont
         </CardContent>
       </Card>
 
-      {/* Danger Zone */}
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            {t("mypage.dangerZone.title")}
-          </CardTitle>
-          <CardDescription>{t("mypage.dangerZone.deleteWarning")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      {/* Delete Account Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              {t("mypage.dangerZone.title")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("mypage.dangerZone.deleteWarning")}
+            </DialogDescription>
+          </DialogHeader>
           <DeleteAccountForm userEmail={user.email || ""} />
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

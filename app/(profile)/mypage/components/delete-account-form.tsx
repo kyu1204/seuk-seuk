@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/language-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ interface DeleteAccountFormProps {
 export default function DeleteAccountForm({ userEmail }: DeleteAccountFormProps) {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm] = useState(false);
   const [emailInput, setEmailInput] = useState("");
@@ -43,11 +45,13 @@ export default function DeleteAccountForm({ userEmail }: DeleteAccountFormProps)
             variant: "destructive",
           });
         } else {
-          // Success - user will be redirected by the server action
+          // Success - show toast and redirect immediately
           toast({
             title: t("mypage.dangerZone.deleteSuccess"),
-            description: "",
           });
+
+          // Redirect to home page immediately
+          router.push("/");
         }
       } catch (err) {
         console.error("Delete account error:", err);
