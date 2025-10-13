@@ -4,10 +4,73 @@ import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/serv
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+// Types
+export type UserProfile = {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+};
+
 type DeleteAccountResult = {
   success: boolean;
   error?: string;
 };
+
+/**
+ * Get current user's profile information
+ */
+export async function getUserProfile(): Promise<{
+  user: any | null;
+  profile: UserProfile | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        user: null,
+        profile: null,
+        error: "User not authenticated",
+      };
+    }
+
+    // Get user profile from users table
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("id, name, avatar_url, created_at")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      console.error("Get user profile error:", profileError);
+      return {
+        user,
+        profile: null,
+        error: "Failed to get user profile",
+      };
+    }
+
+    return {
+      user,
+      profile: profile as UserProfile,
+    };
+  } catch (error) {
+    console.error("Get user profile error:", error);
+    return {
+      user: null,
+      profile: null,
+      error: "An unexpected error occurred",
+    };
+  }
+}
 
 export async function deleteAccount(
   formData: FormData
