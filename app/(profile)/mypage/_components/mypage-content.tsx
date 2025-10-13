@@ -33,14 +33,17 @@ interface MyPageContentProps {
 }
 
 export function MyPageContent({ user, profile, subscription, usage }: MyPageContentProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // Display name and avatar
   const displayName = profile?.name || user.user_metadata?.full_name || user.email;
   const fallbackText = user.email?.charAt(0).toUpperCase() || "U";
   const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url;
+
+  // Format date with explicit locale to prevent hydration mismatch
+  const locale = language === 'ko' ? 'ko-KR' : 'en-US';
   const joinedDate = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString()
+    ? new Date(profile.created_at).toLocaleDateString(locale)
     : "N/A";
 
   // Usage calculations
@@ -105,7 +108,7 @@ export function MyPageContent({ user, profile, subscription, usage }: MyPageCont
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t("mypage.subscription.startsAt")}</span>
                 <span className="font-medium">
-                  {new Date(subscription.starts_at).toLocaleDateString()}
+                  {new Date(subscription.starts_at).toLocaleDateString(locale)}
                 </span>
               </div>
             )}
@@ -113,7 +116,7 @@ export function MyPageContent({ user, profile, subscription, usage }: MyPageCont
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t("mypage.subscription.endsAt")}</span>
                 <span className="font-medium">
-                  {new Date(subscription.ends_at).toLocaleDateString()}
+                  {new Date(subscription.ends_at).toLocaleDateString(locale)}
                 </span>
               </div>
             )}
