@@ -3,7 +3,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { getUserProfile } from "@/app/actions/account-actions";
 import { getCurrentSubscription, getCurrentMonthUsage } from "@/app/actions/subscription-actions";
-import { MyPageContent } from "./_components/mypage-content";
+import { MyPageContent } from "./components/mypage-content";
 
 // Force dynamic rendering since this page requires authentication
 export const dynamic = 'force-dynamic';
