@@ -12,6 +12,7 @@ export interface SubscriptionPlan {
   yearly_price?: number; // USD
   features: string[];
   is_active: boolean;
+  is_hidden: boolean;
   is_popular?: boolean;
   order: number;
 }
@@ -75,7 +76,7 @@ export async function getCurrentSubscription(): Promise<{
       .select(
         `
         *,
-        plan:subscription_plans!subscriptions_plan_id_fkey(*)
+        plan:subscription_plans!plan_id(*)
       `
       )
       .eq("user_id", user.id)
@@ -458,6 +459,7 @@ export async function getSubscriptionPlans(): Promise<{
       .from("subscription_plans")
       .select("*")
       .eq("is_active", true)
+      .eq("is_hidden", false)
       .order("order", { ascending: true });
 
     if (error) {
