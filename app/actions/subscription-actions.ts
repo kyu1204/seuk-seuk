@@ -75,7 +75,7 @@ export async function getCurrentSubscription(): Promise<{
       .select(
         `
         *,
-        plan:subscription_plans(*)
+        plan:subscription_plans!subscriptions_plan_id_fkey(*)
       `
       )
       .eq("user_id", user.id)
