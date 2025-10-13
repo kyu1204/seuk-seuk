@@ -21,16 +21,16 @@ export const PADDLE_PRICE_TIERS: PaddlePriceTier[] = [
     name: "Starter",
     id: "starter",
     priceId: {
-      month: "pri_01k6t62f9p22z50pr5hy4mfk7j", // 실제 Paddle Price ID로 교체
-      year: "pri_01k6yr8v1904d21fcnq80w7a8c", // 실제 Paddle Price ID로 교체
+      month: "pri_01k76kp29qese6bdsc4b8djhd2", // 실제 Paddle Price ID로 교체
+      year: "pri_01k76kpkr2h39pdbzykm8dvxqe", // 실제 Paddle Price ID로 교체
     },
   },
   {
     name: "Pro",
     id: "pro",
     priceId: {
-      month: "pri_01k6fxz394tm9v7sx6vbdq6esw", // 실제 Paddle Price ID로 교체
-      year: "pri_01k6hfe2186s3mr286txzssxyn", // 실제 Paddle Price ID로 교체
+      month: "pri_01k76kga3rtj5ny7s59n500s89", // 실제 Paddle Price ID로 교체
+      year: "pri_01k76kh19g45q021rq1k7ps878", // 실제 Paddle Price ID로 교체
     },
   },
 ];
