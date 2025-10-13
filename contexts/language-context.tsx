@@ -876,6 +876,12 @@ const translations: Record<Language, Record<string, string>> = {
     "mypage.subscription.endsAt": "종료일",
     "mypage.subscription.documentsLimit": "문서 제한",
     "mypage.subscription.unlimited": "무제한",
+
+    // Plan Names
+    "plan.Basic": "베이직",
+    "plan.Starter": "스타터",
+    "plan.Pro": "프로",
+    "plan.Enterprise": "엔터프라이즈",
     "mypage.usage.title": "사용량 현황",
     "mypage.usage.thisMonth": "이번 달",
     "mypage.usage.documents": "문서",
@@ -1780,6 +1786,12 @@ const translations: Record<Language, Record<string, string>> = {
     "mypage.subscription.endsAt": "End Date",
     "mypage.subscription.documentsLimit": "Document Limit",
     "mypage.subscription.unlimited": "Unlimited",
+
+    // Plan Names
+    "plan.Basic": "Basic",
+    "plan.Starter": "Starter",
+    "plan.Pro": "Pro",
+    "plan.Enterprise": "Enterprise",
     "mypage.usage.title": "Usage",
     "mypage.usage.thisMonth": "This Month",
     "mypage.usage.documents": "Documents",

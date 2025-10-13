@@ -98,7 +98,9 @@ export function MyPageContent({ user, profile, subscription, usage }: MyPageCont
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{t("mypage.subscription.plan")}</span>
-              <span className="font-medium">{subscription?.plan?.name || "베이직"}</span>
+              <span className="font-medium">
+                {subscription?.plan?.name ? t(`plan.${subscription.plan.name}`) : t("plan.Basic")}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{t("mypage.subscription.status")}</span>
