@@ -12,6 +12,7 @@ export interface SubscriptionPlan {
   yearly_price?: number; // USD
   features: string[];
   is_active: boolean;
+  is_hidden: boolean;
   is_popular?: boolean;
   order: number;
 }
@@ -68,12 +69,14 @@ export async function getCurrentSubscription(): Promise<{
     }
 
     // Get user's current subscription with plan details
+    // Note: We don't filter by plan.is_active because users may have
+    // subscriptions to hidden/inactive plans (e.g., Enterprise)
     const { data: subscription, error } = await supabase
       .from("subscriptions")
       .select(
         `
         *,
-        plan:subscription_plans(*)
+        plan:subscription_plans!plan_id(*)
       `
       )
       .eq("user_id", user.id)
@@ -83,14 +86,23 @@ export async function getCurrentSubscription(): Promise<{
     if (error) {
       // No rows -> user has no active subscription; not an error
       if ((error as any).code === "PGRST116") {
+        console.log("[getCurrentSubscription] No active subscription found for user:", user.id);
         return { subscription: null };
       }
-      console.error("Get subscription error:", error);
+      console.error("[getCurrentSubscription] Error:", error, "for user:", user.id);
       return {
         subscription: null,
         error: "Failed to get subscription",
       };
     }
+
+    console.log("[getCurrentSubscription] Found subscription:", {
+      id: subscription.id,
+      plan_name: (subscription as any).plan?.name,
+      monthly_limit: (subscription as any).plan?.monthly_document_limit,
+      active_limit: (subscription as any).plan?.active_document_limit,
+      is_active: (subscription as any).plan?.is_active,
+    });
 
     return {
       subscription: subscription as Subscription,
@@ -447,6 +459,7 @@ export async function getSubscriptionPlans(): Promise<{
       .from("subscription_plans")
       .select("*")
       .eq("is_active", true)
+      .eq("is_hidden", false)
       .order("order", { ascending: true });
 
     if (error) {
