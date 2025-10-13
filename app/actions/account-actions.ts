@@ -1,0 +1,212 @@
+"use server";
+
+import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+
+type DeleteAccountResult = {
+  success: boolean;
+  error?: string;
+};
+
+export async function deleteAccount(
+  formData: FormData
+): Promise<DeleteAccountResult> {
+  const supabase = await createServerSupabase();
+  const serviceSupabase = createServiceSupabase();
+
+  try {
+    // 1. Verify user is authenticated
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: "인증되지 않은 사용자입니다.",
+      };
+    }
+
+    // 2. Verify email confirmation
+    const confirmEmail = formData.get("email") as string;
+    if (confirmEmail !== user.email) {
+      return {
+        success: false,
+        error: "이메일 주소가 일치하지 않습니다.",
+      };
+    }
+
+    console.log(`[Account Deletion] Starting deletion for user: ${user.id}`);
+
+    // 3. Query user's documents to get file paths
+    const { data: documents, error: docQueryError } = await supabase
+      .from("documents")
+      .select("file_url, signed_file_url")
+      .eq("user_id", user.id);
+
+    if (docQueryError) {
+      console.error("[Account Deletion] Error querying documents:", docQueryError);
+      // Continue with deletion even if query fails
+    }
+
+    // 4. Delete files from Storage buckets
+    if (documents && documents.length > 0) {
+      const filePaths: string[] = [];
+      const signedFilePaths: string[] = [];
+
+      documents.forEach((doc) => {
+        if (doc.file_url) {
+          // Extract path from URL
+          const urlParts = doc.file_url.split("/");
+          const fileName = urlParts[urlParts.length - 1];
+          filePaths.push(fileName);
+        }
+        if (doc.signed_file_url) {
+          const urlParts = doc.signed_file_url.split("/");
+          const fileName = urlParts[urlParts.length - 1];
+          signedFilePaths.push(fileName);
+        }
+      });
+
+      // Delete from documents bucket
+      if (filePaths.length > 0) {
+        const { error: storageError } = await serviceSupabase.storage
+          .from("documents")
+          .remove(filePaths);
+
+        if (storageError) {
+          console.error("[Account Deletion] Error deleting from documents storage:", storageError);
+          // Continue with deletion
+        } else {
+          console.log(`[Account Deletion] Deleted ${filePaths.length} files from documents storage`);
+        }
+      }
+
+      // Delete from signed-documents bucket
+      if (signedFilePaths.length > 0) {
+        const { error: signedStorageError } = await serviceSupabase.storage
+          .from("signed-documents")
+          .remove(signedFilePaths);
+
+        if (signedStorageError) {
+          console.error("[Account Deletion] Error deleting from signed-documents storage:", signedStorageError);
+          // Continue with deletion
+        } else {
+          console.log(`[Account Deletion] Deleted ${signedFilePaths.length} files from signed-documents storage`);
+        }
+      }
+    }
+
+    // 5. Delete signatures (CASCADE should handle this, but delete explicitly for clarity)
+    const { error: signaturesError } = await supabase
+      .from("signatures")
+      .delete()
+      .in("document_id", supabase.from("documents").select("id").eq("user_id", user.id));
+
+    if (signaturesError) {
+      console.error("[Account Deletion] Error deleting signatures:", signaturesError);
+      // Continue with deletion
+    } else {
+      console.log("[Account Deletion] Deleted signatures");
+    }
+
+    // 6. Delete documents
+    const { error: documentsError } = await supabase
+      .from("documents")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (documentsError) {
+      console.error("[Account Deletion] Error deleting documents:", documentsError);
+      // Continue with deletion
+    } else {
+      console.log("[Account Deletion] Deleted documents");
+    }
+
+    // 7. Delete subscriptions
+    const { error: subscriptionsError } = await supabase
+      .from("subscriptions")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (subscriptionsError) {
+      console.error("[Account Deletion] Error deleting subscriptions:", subscriptionsError);
+      // Continue with deletion
+    } else {
+      console.log("[Account Deletion] Deleted subscriptions");
+    }
+
+    // 8. Delete monthly_usage
+    const { error: usageError } = await supabase
+      .from("monthly_usage")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (usageError) {
+      console.error("[Account Deletion] Error deleting monthly_usage:", usageError);
+      // Continue with deletion
+    } else {
+      console.log("[Account Deletion] Deleted monthly_usage");
+    }
+
+    // 9. Delete customers record
+    const { error: customersError } = await supabase
+      .from("customers")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (customersError) {
+      console.error("[Account Deletion] Error deleting customers:", customersError);
+      // Continue with deletion
+    } else {
+      console.log("[Account Deletion] Deleted customers");
+    }
+
+    // 10. Delete users profile
+    const { error: usersError } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", user.id);
+
+    if (usersError) {
+      console.error("[Account Deletion] Error deleting users profile:", usersError);
+      // Continue with deletion
+    } else {
+      console.log("[Account Deletion] Deleted users profile");
+    }
+
+    // 11. Delete auth.users account (using service role)
+    const { error: authDeleteError } = await serviceSupabase.auth.admin.deleteUser(
+      user.id
+    );
+
+    if (authDeleteError) {
+      console.error("[Account Deletion] Error deleting auth user:", authDeleteError);
+      return {
+        success: false,
+        error: "계정 삭제 중 오류가 발생했습니다.",
+      };
+    }
+
+    console.log("[Account Deletion] Successfully deleted auth user");
+
+    // 12. Sign out the user
+    await supabase.auth.signOut();
+
+    console.log("[Account Deletion] Deletion completed successfully");
+
+    // 13. Revalidate and redirect
+    revalidatePath("/");
+  } catch (error) {
+    console.error("[Account Deletion] Unexpected error:", error);
+    return {
+      success: false,
+      error: "계정 삭제 중 예기치 않은 오류가 발생했습니다.",
+    };
+  }
+
+  // Redirect to home page after successful deletion
+  redirect("/");
+}

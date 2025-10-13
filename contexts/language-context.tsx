@@ -861,6 +861,40 @@ const translations: Record<Language, Record<string, string>> = {
     "privacy.effectiveDate.title": "시행일",
     "privacy.effectiveDate.date":
       "이 개인정보 처리방침은 2025년 10월 01일부터 적용됩니다.",
+
+    // My Page
+    "mypage.title": "마이페이지",
+    "mypage.profile.title": "프로필 정보",
+    "mypage.profile.email": "이메일",
+    "mypage.profile.name": "이름",
+    "mypage.profile.joinedAt": "가입일",
+    "mypage.subscription.title": "구독 정보",
+    "mypage.subscription.plan": "플랜",
+    "mypage.subscription.status": "상태",
+    "mypage.subscription.startsAt": "시작일",
+    "mypage.subscription.endsAt": "종료일",
+    "mypage.subscription.documentsLimit": "문서 제한",
+    "mypage.subscription.unlimited": "무제한",
+    "mypage.usage.title": "사용량 현황",
+    "mypage.usage.thisMonth": "이번 달",
+    "mypage.usage.documents": "문서",
+    "mypage.usage.activeDocuments": "활성 문서",
+    "mypage.dangerZone.title": "위험 구역",
+    "mypage.dangerZone.deleteAccount": "회원 탈퇴",
+    "mypage.dangerZone.deleteWarning":
+      "계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.",
+    "mypage.dangerZone.deleteDescription":
+      "회원 탈퇴 시 업로드한 모든 문서, 서명, 구독 정보가 즉시 삭제되며 복구할 수 없습니다. 이 작업은 되돌릴 수 없으니 신중하게 결정해주세요.",
+    "mypage.dangerZone.confirmEmail": "계속하려면 이메일 주소를 입력하세요",
+    "mypage.dangerZone.emailPlaceholder": "이메일 주소 입력",
+    "mypage.dangerZone.confirmDelete": "계정 삭제",
+    "mypage.dangerZone.deleting": "삭제 중...",
+    "mypage.dangerZone.emailMismatch": "이메일 주소가 일치하지 않습니다.",
+    "mypage.dangerZone.deleteSuccess": "계정이 성공적으로 삭제되었습니다.",
+    "mypage.dangerZone.deleteError": "계정 삭제 중 오류가 발생했습니다.",
+    "mypage.error.loadProfile": "프로필 정보를 불러올 수 없습니다.",
+    "mypage.error.loadSubscription": "구독 정보를 불러올 수 없습니다.",
+    "mypage.error.loadUsage": "사용량 정보를 불러올 수 없습니다.",
   },
   en: {
     // Header
@@ -1730,6 +1764,40 @@ const translations: Record<Language, Record<string, string>> = {
     "privacy.effectiveDate.title": "Effective Date",
     "privacy.effectiveDate.date":
       "This Privacy Policy is effective from October 1, 2025.",
+
+    // My Page
+    "mypage.title": "My Page",
+    "mypage.profile.title": "Profile Information",
+    "mypage.profile.email": "Email",
+    "mypage.profile.name": "Name",
+    "mypage.profile.joinedAt": "Joined",
+    "mypage.subscription.title": "Subscription",
+    "mypage.subscription.plan": "Plan",
+    "mypage.subscription.status": "Status",
+    "mypage.subscription.startsAt": "Start Date",
+    "mypage.subscription.endsAt": "End Date",
+    "mypage.subscription.documentsLimit": "Document Limit",
+    "mypage.subscription.unlimited": "Unlimited",
+    "mypage.usage.title": "Usage",
+    "mypage.usage.thisMonth": "This Month",
+    "mypage.usage.documents": "Documents",
+    "mypage.usage.activeDocuments": "Active Documents",
+    "mypage.dangerZone.title": "Danger Zone",
+    "mypage.dangerZone.deleteAccount": "Delete Account",
+    "mypage.dangerZone.deleteWarning":
+      "Deleting your account will permanently delete all your data.",
+    "mypage.dangerZone.deleteDescription":
+      "When you delete your account, all uploaded documents, signatures, and subscription information will be immediately deleted and cannot be recovered. This action cannot be undone, so please consider carefully.",
+    "mypage.dangerZone.confirmEmail": "Enter your email address to continue",
+    "mypage.dangerZone.emailPlaceholder": "Enter email address",
+    "mypage.dangerZone.confirmDelete": "Delete Account",
+    "mypage.dangerZone.deleting": "Deleting...",
+    "mypage.dangerZone.emailMismatch": "Email address does not match.",
+    "mypage.dangerZone.deleteSuccess": "Account deleted successfully.",
+    "mypage.dangerZone.deleteError": "An error occurred while deleting account.",
+    "mypage.error.loadProfile": "Failed to load profile information.",
+    "mypage.error.loadSubscription": "Failed to load subscription information.",
+    "mypage.error.loadUsage": "Failed to load usage information.",
   },
 };
 
