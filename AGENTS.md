@@ -1,23 +1,22 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-SeukSeuk uses the Next.js App Router. Route groups in `app/` map to product areas: `(auth)` handles Supabase auth flows, `(document)` covers document upload and management, and `(sign)` powers the external signing experience. Page-only pieces sit under `app/components/`. Shared UI lives in `components/` with design-system atoms inside `components/ui/`. Cross-cutting context and hooks belong in `contexts/` and `hooks/`, while `lib/` holds Supabase clients, server actions, and other feature services (`lib/supabase/*.ts` is the canonical entrypoint). Static assets live in `public/`, Tailwind layers in `styles/`, and database artifacts in `supabase/` alongside the latest `supabase_migration.sql`. Sentry instrumentation files (`instrumentation.ts`, `instrumentation-client.ts`) stay at the repo root and load automatically during build.
+SeukSeuk uses the Next.js App Router. Route groups under `app/` map to product areas: `(auth)` for Supabase auth flows, `(document)` for document upload and management, and `(sign)` for the signing experience. Shared UI belongs in `components/`, with design-system atoms in `components/ui/`. Page-only helpers live in `app/components/`, while cross-cutting logic sits in `contexts/` and `hooks/`. Supabase clients and server actions live in `lib/` (especially `lib/supabase/*`). Static assets stay in `public/`, Tailwind layers in `styles/`, and database artifacts in `supabase/` alongside the latest `supabase_migration.sql`.
 
 ## Build, Test, and Development Commands
-Use Node 18+. Package scripts run identically with `pnpm` or `npm run`.
-- `pnpm dev`: start the local Next.js server on `http://localhost:3000`.
-- `pnpm build`: create the production bundle; verifies that server actions and instrumentation compile.
-- `pnpm start`: serve the prebuilt app (run after `pnpm build`).
-- `pnpm lint`: execute ESLint via Next, covering both server and client components.
+- `pnpm dev`: launch the Next.js dev server at `http://localhost:3000`.
+- `pnpm build`: produce the production bundle; validates server actions and instrumentation.
+- `pnpm start`: serve the prebuilt bundle (run after `pnpm build`).
+- `pnpm lint`: run ESLint via Next across server and client components.
 
 ## Coding Style & Naming Conventions
-Stick to TypeScript with 2-space indentation. Follow React best practices: `PascalCase` for components and context providers, `camelCase` for hooks and utilities (`useDocumentSignature`, `fetchUserProfile`). Co-locate styles via Tailwind utility classes; add shared variants in `styles/globals.css` sparingly. Let ESLint guide import ordering and forbidden browser/server API usage. When introducing new Supabase helpers, mirror the patterns in `lib/supabase/` and expose a single named export per file.
+Use Node 18+ with TypeScript and 2-space indentation. Follow React casing: `PascalCase` for components/providers, `camelCase` for hooks/utilities (e.g., `useDocumentSignature`, `fetchUserProfile`). Prefer Tailwind classes inline; add shared variants only in `styles/globals.css`. Let ESLint enforce import order and guard browser/server APIs. New Supabase helpers should mirror existing files in `lib/supabase/` and expose a single named export.
 
 ## Testing Guidelines
-The repo currently ships without an automated test runner, so exercise critical flows (sign-up, document upload, signing, Paddle webhooks) before every PR. If you add automated coverage, place specs near the feature or in a top-level `tests/` directory and wire a `test` script into `package.json` so others can run `pnpm test`. Prefer React Testing Library for component behaviour and Playwright for signing journeys. Document any new fixtures or seeds inside `supabase/` to keep Supabase states reproducible.
+The repo ships without an automated suite; manually exercise auth sign-up, document upload, signing flows, and Paddle webhooks before merging. If you introduce automated coverage, place specs near the feature or under `tests/`, wire a `test` script into `package.json`, and prefer React Testing Library for UI behaviour plus Playwright for signing journeys. Document any seeds or fixtures in `supabase/`.
 
 ## Commit & Pull Request Guidelines
-Commits in history follow a Conventional Commit style augmented with leading emojis (e.g. `✨ feat(paddle): improve webhook logging`). Keep that format: emoji (optional but encouraged), type, optional scope, and a concise, imperative message. Group related changes into a single commit; avoid WIP commits in shared branches. Pull requests should include: purpose summary, testing notes (manual steps or commands), linked issues, and screenshots or screen recordings for UI-affecting work. Request review from a maintainer familiar with the touched area (auth, documents, signing, or Paddle).
+Commits follow Conventional Commits with an optional leading emoji, e.g., `✨ feat(paddle): improve webhook logging`. Keep changes scoped per commit instead of stacking WIP checkpoints. Pull requests should include a purpose summary, manual testing notes (commands or steps), linked issues, and screenshots or recordings for UI updates. Request review from the maintainer most familiar with the touched area (auth, documents, signing, or Paddle).
 
 ## Security & Configuration Tips
-Copy `.env.example` to `.env.local` and provide Supabase keys: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and, when required, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Never commit secrets; the `.env*` files are gitignored. Server-only keys belong in the Vercel dashboard or local shell exports. Webhook handlers under `app/api/` expect verified Paddle signatures—use the sandbox keys when testing locally. Keep Sentry DSN values in environment config so instrumentation hooks stay active without leaking credentials.
+Copy `.env.example` to `.env.local` and populate Supabase keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and when needed `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`). Keep secrets out of version control; server-only keys belong in Vercel or local shell exports. Paddle webhook handlers under `app/api/` expect verified signatures—use sandbox keys while testing. Sentry DSNs should live in environment config so instrumentation remains active without leaking credentials.

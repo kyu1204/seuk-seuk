@@ -106,7 +106,7 @@ export async function deleteAccount(
     // 3. Query user's documents to get file paths
     const { data: documents, error: docQueryError } = await supabase
       .from("documents")
-      .select("file_url, signed_file_url")
+      .select("id, file_url, signed_file_url")
       .eq("user_id", user.id);
 
     if (docQueryError) {
@@ -119,7 +119,12 @@ export async function deleteAccount(
       const filePaths: string[] = [];
       const signedFilePaths: string[] = [];
 
+      const documentIds: string[] = [];
+
       documents.forEach((doc) => {
+        if (doc.id) {
+          documentIds.push(doc.id);
+        }
         if (doc.file_url) {
           // Extract path from URL
           const urlParts = doc.file_url.split("/");
@@ -160,22 +165,24 @@ export async function deleteAccount(
           console.log(`[Account Deletion] Deleted ${signedFilePaths.length} files from signed-documents storage`);
         }
       }
+
+      // Delete signatures tied to the user's documents
+      if (documentIds.length > 0) {
+        const { error: signaturesError } = await supabase
+          .from("signatures")
+          .delete()
+          .in("document_id", documentIds);
+
+        if (signaturesError) {
+          console.error("[Account Deletion] Error deleting signatures:", signaturesError);
+          // Continue with deletion
+        } else {
+          console.log("[Account Deletion] Deleted signatures");
+        }
+      }
     }
 
-    // 5. Delete signatures (CASCADE should handle this, but delete explicitly for clarity)
-    const { error: signaturesError } = await supabase
-      .from("signatures")
-      .delete()
-      .in("document_id", supabase.from("documents").select("id").eq("user_id", user.id));
-
-    if (signaturesError) {
-      console.error("[Account Deletion] Error deleting signatures:", signaturesError);
-      // Continue with deletion
-    } else {
-      console.log("[Account Deletion] Deleted signatures");
-    }
-
-    // 6. Delete documents
+    // 5. Delete documents
     const { error: documentsError } = await supabase
       .from("documents")
       .delete()
@@ -188,7 +195,7 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted documents");
     }
 
-    // 7. Delete subscriptions
+    // 6. Delete subscriptions
     const { error: subscriptionsError } = await supabase
       .from("subscriptions")
       .delete()
@@ -201,7 +208,7 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted subscriptions");
     }
 
-    // 8. Delete monthly_usage
+    // 7. Delete monthly_usage
     const { error: usageError } = await supabase
       .from("monthly_usage")
       .delete()
@@ -214,7 +221,7 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted monthly_usage");
     }
 
-    // 9. Delete customers record
+    // 8. Delete customers record
     const { error: customersError } = await supabase
       .from("customers")
       .delete()
@@ -227,7 +234,7 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted customers");
     }
 
-    // 10. Delete users profile
+    // 9. Delete users profile
     const { error: usersError } = await supabase
       .from("users")
       .delete()
@@ -240,7 +247,7 @@ export async function deleteAccount(
       console.log("[Account Deletion] Deleted users profile");
     }
 
-    // 11. Delete auth.users account (using service role)
+    // 10. Delete auth.users account (using service role)
     const { error: authDeleteError } = await serviceSupabase.auth.admin.deleteUser(
       user.id
     );
@@ -255,12 +262,12 @@ export async function deleteAccount(
 
     console.log("[Account Deletion] Successfully deleted auth user");
 
-    // 12. Sign out the user
+    // 11. Sign out the user
     await supabase.auth.signOut();
 
     console.log("[Account Deletion] Deletion completed successfully");
 
-    // 13. Revalidate and redirect
+    // 12. Revalidate and redirect
     revalidatePath("/");
   } catch (error) {
     console.error("[Account Deletion] Unexpected error:", error);
