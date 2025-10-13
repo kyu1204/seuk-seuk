@@ -47,7 +47,7 @@ export async function getUserProfile(): Promise<{
       .from("users")
       .select("id, name, avatar_url, created_at")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       console.error("Get user profile error:", profileError);
