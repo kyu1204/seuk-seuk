@@ -68,6 +68,8 @@ export async function getCurrentSubscription(): Promise<{
     }
 
     // Get user's current subscription with plan details
+    // Note: We don't filter by plan.is_active because users may have
+    // subscriptions to hidden/inactive plans (e.g., Enterprise)
     const { data: subscription, error } = await supabase
       .from("subscriptions")
       .select(
@@ -83,14 +85,23 @@ export async function getCurrentSubscription(): Promise<{
     if (error) {
       // No rows -> user has no active subscription; not an error
       if ((error as any).code === "PGRST116") {
+        console.log("[getCurrentSubscription] No active subscription found for user:", user.id);
         return { subscription: null };
       }
-      console.error("Get subscription error:", error);
+      console.error("[getCurrentSubscription] Error:", error, "for user:", user.id);
       return {
         subscription: null,
         error: "Failed to get subscription",
       };
     }
+
+    console.log("[getCurrentSubscription] Found subscription:", {
+      id: subscription.id,
+      plan_name: (subscription as any).plan?.name,
+      monthly_limit: (subscription as any).plan?.monthly_document_limit,
+      active_limit: (subscription as any).plan?.active_document_limit,
+      is_active: (subscription as any).plan?.is_active,
+    });
 
     return {
       subscription: subscription as Subscription,
