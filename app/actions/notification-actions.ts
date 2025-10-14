@@ -1,7 +1,7 @@
 "use server";
 
 import { Resend } from "resend";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -31,8 +31,9 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
       return { email: null, planName: null, error: "Document not found" };
     }
 
-    // Get user email
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(
+    // Get user email using service role client for admin API
+    const serviceSupabase = createServiceSupabase();
+    const { data: userData, error: userError } = await serviceSupabase.auth.admin.getUserById(
       document.user_id
     );
 
