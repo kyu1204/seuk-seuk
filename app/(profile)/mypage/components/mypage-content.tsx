@@ -38,9 +38,13 @@ interface MyPageContentProps {
     documents_created: number;
     published_completed_count: number;
   } | null;
+  basicPlan: {
+    monthly_document_limit: number;
+    active_document_limit: number;
+  } | null;
 }
 
-export function MyPageContent({ user, profile, subscription, usage }: MyPageContentProps) {
+export function MyPageContent({ user, profile, subscription, usage, basicPlan }: MyPageContentProps) {
   const { t, language } = useLanguage();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -55,9 +59,9 @@ export function MyPageContent({ user, profile, subscription, usage }: MyPageCont
     ? new Date(profile.created_at).toLocaleDateString(locale)
     : "N/A";
 
-  // Usage calculations
-  const monthlyLimit = subscription?.plan?.monthly_document_limit || 3;
-  const activeLimit = subscription?.plan?.active_document_limit || 3;
+  // Usage calculations - use actual Basic plan from DB as fallback
+  const monthlyLimit = subscription?.plan?.monthly_document_limit || basicPlan?.monthly_document_limit || 0;
+  const activeLimit = subscription?.plan?.active_document_limit || basicPlan?.active_document_limit || 0;
   const documentsCreated = usage?.documents_created || 0;
   const publishedCompleted = usage?.published_completed_count || 0;
   const monthlyProgress = monthlyLimit === -1 ? 0 : (documentsCreated / monthlyLimit) * 100;

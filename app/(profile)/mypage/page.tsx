@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { getUserProfile } from "@/app/actions/account-actions";
-import { getCurrentSubscription, getCurrentMonthUsage } from "@/app/actions/subscription-actions";
+import { getCurrentSubscription, getCurrentMonthUsage, getBasicPlan } from "@/app/actions/subscription-actions";
 import { MyPageContent } from "./components/mypage-content";
 
 // Force dynamic rendering since this page requires authentication
@@ -14,10 +14,12 @@ export default async function MyPage() {
     { user, profile, error: profileError },
     { subscription },
     { usage },
+    { plan: basicPlan },
   ] = await Promise.all([
     getUserProfile(),
     getCurrentSubscription(),
     getCurrentMonthUsage(),
+    getBasicPlan(),
   ]);
 
   // Redirect if not authenticated
@@ -43,6 +45,7 @@ export default async function MyPage() {
       profile={profile}
       subscription={subscription}
       usage={usage}
+      basicPlan={basicPlan}
     />
   );
 }
