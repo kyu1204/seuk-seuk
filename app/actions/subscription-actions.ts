@@ -485,3 +485,49 @@ export async function getSubscriptionPlans(): Promise<{
     };
   }
 }
+
+/**
+ * Get the Basic (free) plan details as fallback
+ * Used when user has no active subscription
+ */
+export async function getBasicPlan(): Promise<{
+  plan: Pick<SubscriptionPlan, 'monthly_document_limit' | 'active_document_limit'> | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get the lowest order active plan (Basic/Free)
+    const { data: fallbackPlans, error } = await supabase
+      .from("subscription_plans")
+      .select("monthly_document_limit, active_document_limit")
+      .eq("is_active", true)
+      .order("order", { ascending: true })
+      .limit(1);
+
+    if (error) {
+      console.error("Get basic plan error:", error);
+      return {
+        plan: null,
+        error: "Failed to get basic plan",
+      };
+    }
+
+    if (!fallbackPlans || fallbackPlans.length === 0) {
+      return {
+        plan: null,
+        error: "No active plans found",
+      };
+    }
+
+    return {
+      plan: fallbackPlans[0],
+    };
+  } catch (error) {
+    console.error("Get basic plan error:", error);
+    return {
+      plan: null,
+      error: "An unexpected error occurred",
+    };
+  }
+}
