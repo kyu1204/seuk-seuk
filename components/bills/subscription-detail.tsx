@@ -29,9 +29,10 @@ import { formatDateByLang } from "@/lib/date/format";
 
 interface Props {
   subscriptionId: string;
+  onCancelSuccess?: () => void | Promise<void>;
 }
 
-export function SubscriptionDetail({ subscriptionId }: Props) {
+export function SubscriptionDetail({ subscriptionId, onCancelSuccess }: Props) {
   const { t, language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -124,6 +125,8 @@ export function SubscriptionDetail({ subscriptionId }: Props) {
       // Refresh subscription details
       const fresh = await getSubscription(subscriptionId);
       if (fresh.data) setSubscription(fresh.data);
+      // Notify parent to refresh all data
+      if (onCancelSuccess) await onCancelSuccess();
     } catch (err: any) {
       toast({ title: t("bills.cancel.failed"), description: err?.message });
     } finally {

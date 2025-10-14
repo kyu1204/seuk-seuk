@@ -21,33 +21,37 @@ export function SubscriptionsTab() {
   const [error, setError] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
 
+  async function fetchSubscriptions() {
+    try {
+      const { data, error: fetchError } = await getSubscriptions();
+
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setSubscriptions(data || []);
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      setError(t("bills.error.loadSubscriptions"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchTransactions() {
+    try {
+      const { data } = await getTransactions("", "");
+      setTransactions(data || []);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+    }
+  }
+
+  async function refetchData() {
+    await Promise.all([fetchSubscriptions(), fetchTransactions()]);
+  }
+
   useEffect(() => {
-    async function fetchSubscriptions() {
-      try {
-        const { data, error: fetchError } = await getSubscriptions();
-
-        if (fetchError) {
-          setError(fetchError);
-        } else {
-          setSubscriptions(data || []);
-        }
-      } catch (err) {
-        console.error("Error:", err);
-        setError(t("bills.error.loadSubscriptions"));
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    async function fetchTransactions() {
-      try {
-        const { data } = await getTransactions("", "");
-        setTransactions(data || []);
-      } catch (err) {
-        console.error("Error fetching transactions:", err);
-      }
-    }
-
     fetchSubscriptions();
     fetchTransactions();
   }, []);
@@ -76,7 +80,7 @@ export function SubscriptionsTab() {
 
   return (
     <div className="space-y-6">
-      <SubscriptionDetail subscriptionId={subscriptions[0].id} />
+      <SubscriptionDetail subscriptionId={subscriptions[0].id} onCancelSuccess={refetchData} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr items-stretch">
         <div className="h-full">
           <PaymentMethodCard transactions={transactions} subscription={subscriptions[0]} />
