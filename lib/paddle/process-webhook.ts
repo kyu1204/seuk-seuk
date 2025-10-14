@@ -223,11 +223,11 @@ export class ProcessWebhook {
         }
 
         console.log(
-          `Updated user ${customerData.user_id} subscription to ${planName} (${subscriptionStatus})`
+          `Updated user ${customerData.user_id} subscription to ${planName} (${finalStatus})`
         );
       } else {
         console.log(
-          `Created subscription ${subscriptionId} for ${planName} (${subscriptionStatus}) - waiting for transaction.completed to link to user`
+          `Created subscription ${subscriptionId} for ${planName} (${finalStatus}) - waiting for transaction.completed to link to user`
         );
       }
     } catch (error) {
