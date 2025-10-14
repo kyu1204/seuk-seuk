@@ -89,7 +89,15 @@ export class ProcessWebhook {
       }
 
       // 4. 기존 subscriptions 테이블에 Paddle 구독 정보 upsert
-      
+
+      // Log detailed subscription data for debugging
+      console.log('[subscription] Paddle data:', JSON.stringify({
+        status: eventData.data.status,
+        scheduled_change: eventData.data.scheduled_change,
+        next_billed_at: eventData.data.next_billed_at,
+        current_billing_period: eventData.data.currentBillingPeriod,
+      }, null, 2));
+
       // Calculate ends_at from scheduled_change or next_billed_at
       let endsAt: string | null = null;
       let finalStatus = this.mapPaddleStatus(eventData.data.status);
@@ -98,7 +106,7 @@ export class ProcessWebhook {
       if (eventData.data.scheduled_change?.action === 'cancel') {
         endsAt = eventData.data.scheduled_change.effective_at || null;
         console.log(`[subscription] Scheduled cancellation detected, ends_at: ${endsAt}`);
-        
+
         // Check if subscription has already expired
         if (endsAt && new Date(endsAt) < new Date()) {
           finalStatus = 'expired';
@@ -109,6 +117,16 @@ export class ProcessWebhook {
       else if (eventData.data.next_billed_at) {
         endsAt = eventData.data.next_billed_at;
         console.log(`[subscription] Setting ends_at to next billing date: ${endsAt}`);
+      }
+      // Priority 3: Fallback to current billing period end date
+      else if (eventData.data.currentBillingPeriod?.endsAt) {
+        endsAt = eventData.data.currentBillingPeriod.endsAt;
+        console.log(`[subscription] Using current billing period end date: ${endsAt}`);
+      }
+
+      // If still no ends_at and status is canceled, log warning
+      if (!endsAt && (eventData.data.status === 'canceled' || finalStatus === 'canceled')) {
+        console.warn(`[subscription] ⚠️ Canceled subscription has no ends_at date - Paddle data may be incomplete`);
       }
 
       let subscriptionId: string;
