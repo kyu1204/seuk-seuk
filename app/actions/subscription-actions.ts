@@ -71,6 +71,9 @@ export async function getCurrentSubscription(): Promise<{
     // Get user's current subscription with plan details
     // Note: We don't filter by plan.is_active because users may have
     // subscriptions to hidden/inactive plans (e.g., Enterprise)
+    // IMPORTANT: Also check ends_at to handle expired subscriptions
+    // even if webhook hasn't updated status yet
+    const now = new Date().toISOString();
     const { data: subscription, error } = await supabase
       .from("subscriptions")
       .select(
@@ -81,6 +84,7 @@ export async function getCurrentSubscription(): Promise<{
       )
       .eq("user_id", user.id)
       .eq("status", "active")
+      .or(`ends_at.is.null,ends_at.gt.${now}`)
       .single();
 
     if (error) {
