@@ -71,19 +71,25 @@ export function SubscriptionsTab() {
     );
   }
 
-  if (subscriptions.length === 0) {
+  // Filter only active subscriptions (active or trialing)
+  // Canceled/past_due subscriptions should not be shown
+  const activeSubscriptions = subscriptions.filter(
+    (sub) => sub.status === "active" || sub.status === "trialing"
+  );
+
+  if (activeSubscriptions.length === 0) {
     return <NoSubscriptionView />;
   }
 
-  // For now, show only the first subscription
-  const isCanceling = subscriptions[0]?.scheduledChange?.action === "cancel";
+  // For now, show only the first active subscription
+  const isCanceling = activeSubscriptions[0]?.scheduledChange?.action === "cancel";
 
   return (
     <div className="space-y-6">
-      <SubscriptionDetail subscriptionId={subscriptions[0].id} onCancelSuccess={refetchData} />
+      <SubscriptionDetail subscriptionId={activeSubscriptions[0].id} onCancelSuccess={refetchData} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr items-stretch">
         <div className="h-full">
-          <PaymentMethodCard transactions={transactions} subscription={subscriptions[0]} />
+          <PaymentMethodCard transactions={transactions} subscription={activeSubscriptions[0]} />
         </div>
         <div className="h-full">
           {txError ? (
