@@ -14,6 +14,7 @@ import bcrypt from "bcryptjs";
 
 import { randomUUID } from "crypto";
 import { canCreateDocument, canPublishDocument, incrementDocumentCreated, decrementDocumentCreated } from "./subscription-actions";
+import { sendDocumentCompletionEmail } from "./notification-actions";
 
 // Generate a random short URL
 function generateShortUrl(): string {
@@ -240,7 +241,7 @@ export async function markDocumentCompleted(documentId: string) {
     // First check if document exists and is in the right state
     const { data: document, error: docError } = await supabase
       .from("documents")
-      .select("id, status")
+      .select("id, status, filename")
       .eq("id", documentId)
       .single();
 
@@ -254,7 +255,7 @@ export async function markDocumentCompleted(documentId: string) {
     }
 
     // Update document status to completed
-    const { error, count } = await supabase
+    const { error } = await supabase
       .from("documents")
       .update({ status: "completed" })
       .eq("id", documentId);
@@ -263,6 +264,13 @@ export async function markDocumentCompleted(documentId: string) {
       console.error("❌ Mark completed error:", error);
       return { error: "Failed to mark document as completed: " + error.message };
     }
+
+    // 🆕 Send email notification asynchronously (fire-and-forget)
+    // Email failures won't block document completion
+    sendDocumentCompletionEmail(documentId, document.filename)
+      .catch((err) => {
+        console.error("❌ Email notification failed (non-blocking):", err);
+      });
 
     return { success: true };
   } catch (error) {
