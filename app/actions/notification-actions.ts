@@ -17,10 +17,12 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
   error?: string;
 }> {
   try {
-    const supabase = await createServerSupabase();
+    // Use service role client to bypass RLS for all queries
+    // This is necessary because this function is called from anonymous sign page context
+    const serviceSupabase = createServiceSupabase();
 
     // Get document with user info
-    const { data: document, error: docError } = await supabase
+    const { data: document, error: docError } = await serviceSupabase
       .from("documents")
       .select("user_id")
       .eq("id", documentId)
@@ -32,7 +34,6 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
     }
 
     // Get user email using service role client for admin API
-    const serviceSupabase = createServiceSupabase();
     const { data: userData, error: userError } = await serviceSupabase.auth.admin.getUserById(
       document.user_id
     );
@@ -44,8 +45,9 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
 
     // Get user's subscription plan
     // IMPORTANT: Check ends_at to handle expired subscriptions
+    // Use service role client to bypass RLS (called from anonymous context)
     const now = new Date().toISOString();
-    const { data: subscription, error: subError } = await supabase
+    const { data: subscription, error: subError } = await serviceSupabase
       .from("subscriptions")
       .select(`
         *,
@@ -57,9 +59,22 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
       .single();
 
     // If no subscription or error, treat as free plan
+    if (subError) {
+      console.error("Failed to get subscription:", subError);
+    }
+
     const planName = subscription && !subError
       ? (subscription as any).plan?.name
       : null;
+
+    console.log("[getDocumentOwnerInfo] Result:", {
+      documentId,
+      user_id: document.user_id,
+      email: userData.user.email,
+      planName,
+      hasSubscription: !!subscription,
+      hasError: !!subError,
+    });
 
     return {
       email: userData.user.email,
