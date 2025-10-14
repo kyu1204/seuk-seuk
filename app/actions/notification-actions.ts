@@ -8,7 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export interface EmailNotificationResult {
   success: boolean;
   error?: string;
-  skipped?: boolean; // true if user is not Pro plan
+  skipped?: boolean; // true if user is not Pro/Enterprise plan
 }
 
 async function getDocumentOwnerInfo(documentId: string): Promise<{
@@ -42,6 +42,8 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
     }
 
     // Get user's subscription plan
+    // IMPORTANT: Check ends_at to handle expired subscriptions
+    const now = new Date().toISOString();
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
       .select(`
@@ -50,6 +52,7 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
       `)
       .eq("user_id", document.user_id)
       .eq("status", "active")
+      .or(`ends_at.is.null,ends_at.gt.${now}`)
       .single();
 
     // If no subscription or error, treat as free plan
@@ -109,7 +112,7 @@ function generateEmailContent(documentName: string, language: 'ko' | 'en' = 'ko'
 }
 
 /**
- * Send document completion email to Pro plan users
+ * Send document completion email to Pro/Enterprise plan users
  * @param documentId - The completed document ID
  * @param documentName - The document filename for email content
  * @returns Result indicating success, skip, or error
@@ -127,12 +130,13 @@ export async function sendDocumentCompletionEmail(
       return { success: false, error: error || "Owner info unavailable" };
     }
 
-    // Check if user is Pro plan (case-insensitive)
-    const isProPlan = planName?.toLowerCase() === 'pro';
+    // Check if user is Pro or Enterprise plan (case-insensitive)
+    const planNameLower = planName?.toLowerCase();
+    const isPremiumPlan = planNameLower === 'pro' || planNameLower === 'enterprise';
 
-    if (!isProPlan) {
+    if (!isPremiumPlan) {
       console.log(
-        `[sendDocumentCompletionEmail] Skipping email for non-Pro user. Plan: ${planName || 'none'}`
+        `[sendDocumentCompletionEmail] Skipping email for non-premium user. Plan: ${planName || 'none'}`
       );
       return { success: true, skipped: true };
     }
