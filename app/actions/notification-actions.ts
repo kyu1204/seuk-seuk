@@ -86,7 +86,10 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
   }
 }
 
-function generateEmailContent(documentName: string, language: 'ko' | 'en' = 'ko') {
+function generateEmailContent(documentId: string, documentName: string, language: 'ko' | 'en' = 'ko') {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
+  const documentUrl = `${siteUrl}/document/${documentId}`;
+
   const templates = {
     ko: {
       subject: `[슥슥] 문서 서명이 완료되었습니다 - ${documentName}`,
@@ -99,6 +102,9 @@ function generateEmailContent(documentName: string, language: 'ko' | 'en' = 'ko'
           <p><strong>문서명:</strong> ${documentName}</p>
           <p><strong>완료 일시:</strong> ${new Date().toLocaleString('ko-KR')}</p>
           <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;" />
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${documentUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 16px;">문서 바로가기</a>
+          </div>
           <p style="color: #666; font-size: 14px;">
             대시보드에서 완료된 문서를 확인하실 수 있습니다.
           </p>
@@ -116,6 +122,9 @@ function generateEmailContent(documentName: string, language: 'ko' | 'en' = 'ko'
           <p><strong>Document Name:</strong> ${documentName}</p>
           <p><strong>Completed At:</strong> ${new Date().toLocaleString('en-US')}</p>
           <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;" />
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${documentUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 16px;">View Document</a>
+          </div>
           <p style="color: #666; font-size: 14px;">
             You can view the completed document in your dashboard.
           </p>
@@ -158,7 +167,7 @@ export async function sendDocumentCompletionEmail(
     }
 
     // Generate email content (default to Korean)
-    const emailContent = generateEmailContent(documentName, 'ko');
+    const emailContent = generateEmailContent(documentId, documentName, 'ko');
 
     // Send email using Resend
     const { data, error: sendError } = await resend.emails.send({
