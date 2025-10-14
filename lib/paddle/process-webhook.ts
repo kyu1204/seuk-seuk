@@ -3,6 +3,7 @@ import {
   CustomerUpdatedEvent,
   EventEntity,
   EventName,
+  SubscriptionCanceledEvent,
   SubscriptionCreatedEvent,
   SubscriptionUpdatedEvent,
   TransactionCompletedEvent,
@@ -18,6 +19,7 @@ export class ProcessWebhook {
     switch (eventData.eventType) {
       case EventName.SubscriptionCreated:
       case EventName.SubscriptionUpdated:
+      case EventName.SubscriptionCanceled:
         await this.updateSubscriptionData(eventData);
         break;
       case EventName.CustomerCreated:
@@ -33,15 +35,19 @@ export class ProcessWebhook {
   }
 
   private async updateSubscriptionData(
-    eventData: SubscriptionCreatedEvent | SubscriptionUpdatedEvent
+    eventData: SubscriptionCreatedEvent | SubscriptionUpdatedEvent | SubscriptionCanceledEvent
   ) {
     const supabase = createServiceSupabase();
 
     try {
+      const eventType = eventData.eventType.includes("created")
+        ? "created"
+        : eventData.eventType.includes("canceled")
+        ? "canceled"
+        : "updated";
+
       console.log(
-        `[subscription.${
-          eventData.eventType.includes("created") ? "created" : "updated"
-        }] Processing subscription ${eventData.data.id} for customer ${
+        `[subscription.${eventType}] Processing subscription ${eventData.data.id} for customer ${
           eventData.data.customerId
         }`
       );
@@ -83,7 +89,27 @@ export class ProcessWebhook {
       }
 
       // 4. 기존 subscriptions 테이블에 Paddle 구독 정보 upsert
-      const subscriptionStatus = this.mapPaddleStatus(eventData.data.status);
+      
+      // Calculate ends_at from scheduled_change or next_billed_at
+      let endsAt: string | null = null;
+      let finalStatus = this.mapPaddleStatus(eventData.data.status);
+      
+      // Priority 1: If subscription has scheduled cancellation, use effective_at
+      if (eventData.data.scheduled_change?.action === 'cancel') {
+        endsAt = eventData.data.scheduled_change.effective_at || null;
+        console.log(`[subscription] Scheduled cancellation detected, ends_at: ${endsAt}`);
+        
+        // Check if subscription has already expired
+        if (endsAt && new Date(endsAt) < new Date()) {
+          finalStatus = 'expired';
+          console.log(`[subscription] Subscription already expired, changing status to 'expired'`);
+        }
+      }
+      // Priority 2: Use next_billed_at for active recurring subscriptions
+      else if (eventData.data.next_billed_at) {
+        endsAt = eventData.data.next_billed_at;
+        console.log(`[subscription] Setting ends_at to next billing date: ${endsAt}`);
+      }
 
       let subscriptionId: string;
 
@@ -106,11 +132,12 @@ export class ProcessWebhook {
             .from("subscriptions")
             .update({
               plan_id: planData.id,
-              status: subscriptionStatus,
+              status: finalStatus,
               paddle_subscription_id: eventData.data.id,
               paddle_customer_id: eventData.data.customerId,
               paddle_price_id: priceId,
               payment_provider: "paddle",
+              ends_at: endsAt,
               updated_at: new Date().toISOString(),
             })
             .eq("id", existingUserSub.id)
@@ -133,12 +160,13 @@ export class ProcessWebhook {
             .insert({
               user_id: customerData.user_id,
               plan_id: planData.id,
-              status: subscriptionStatus,
+              status: finalStatus,
               paddle_subscription_id: eventData.data.id,
               paddle_customer_id: eventData.data.customerId,
               paddle_price_id: priceId,
               payment_provider: "paddle",
               starts_at: new Date().toISOString(),
+              ends_at: endsAt,
             })
             .select("id")
             .single();
@@ -160,12 +188,13 @@ export class ProcessWebhook {
           .insert({
             user_id: null,
             plan_id: planData.id,
-            status: subscriptionStatus,
+            status: finalStatus,
             paddle_subscription_id: eventData.data.id,
             paddle_customer_id: eventData.data.customerId,
             paddle_price_id: priceId,
             payment_provider: "paddle",
             starts_at: new Date().toISOString(),
+            ends_at: endsAt,
           })
           .select("id")
           .single();
