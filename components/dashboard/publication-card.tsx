@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deletePublication } from "@/app/actions/publication-actions";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface PublicationCardProps {
   publication: ClientPublication;
@@ -117,8 +118,9 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
 
   return (
     <>
-      <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/20 h-64 flex flex-col">
-        <CardHeader className="pb-3 flex-1 flex flex-col justify-between">
+      <Link href={`/publication/${publication.short_url}`} className="block">
+        <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/20 h-64 flex flex-col cursor-pointer">
+          <CardHeader className="pb-3 flex-1 flex flex-col justify-between">
           <div className="flex items-start justify-between gap-2 mb-2">
             <Badge variant={statusBadge.variant} className="flex-shrink-0 text-xs">
               {statusBadge.label}
@@ -188,7 +190,8 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
             </Button>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </Link>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

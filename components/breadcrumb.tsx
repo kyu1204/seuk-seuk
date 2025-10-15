@@ -23,17 +23,38 @@ export function ProjectBreadcrumb() {
 
   // Generate breadcrumb items based on current path
   const getBreadcrumbItems = (): BreadcrumbItem[] => {
-    const items: BreadcrumbItem[] = [
-      {
+    const items: BreadcrumbItem[] = [];
+
+    // Check if it's a sign page (external users)
+    const isSignPage = pathname.startsWith("/sign/");
+
+    // Add first item based on context
+    if (!isSignPage) {
+      // Internal pages - use Dashboard as root
+      items.push({
         label: t("breadcrumb.dashboard"),
         href: "/dashboard",
-      },
-    ];
+      });
+    }
 
     // Upload page
     if (pathname === "/upload") {
       items.push({
         label: t("breadcrumb.upload"),
+      });
+    }
+
+    // Publish page
+    else if (pathname === "/publish") {
+      items.push({
+        label: t("breadcrumb.publish"),
+      });
+    }
+
+    // Publication detail page
+    else if (pathname.startsWith("/publication/")) {
+      items.push({
+        label: t("breadcrumb.publicationDetail"),
       });
     }
 
@@ -43,6 +64,24 @@ export function ProjectBreadcrumb() {
         label: t("breadcrumb.details"),
       });
     }
+
+    // Sign document page (individual document signing)
+    else if (pathname.match(/^\/sign\/[^/]+\/document\/[^/]+/)) {
+      // Extract publication ID from pathname
+      const parts = pathname.split("/");
+      const publicationId = parts[2];
+
+      items.push({
+        label: t("breadcrumb.sign"),
+        href: `/sign/${publicationId}`,
+      });
+
+      items.push({
+        label: t("breadcrumb.signDocument"),
+      });
+    }
+
+    // Sign list page - no breadcrumb needed (only one level)
 
     return items;
   };

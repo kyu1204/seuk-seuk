@@ -260,6 +260,13 @@ const translations: Record<Language, Record<string, string>> = {
       "문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.",
     "sign.expired.date": "만료일:",
     "sign.savingSignature": "서명 저장 중...",
+    "sign.documentList.title": "서명할 문서 목록",
+    "sign.documentList.description": "아래 문서를 선택하여 서명을 시작하세요",
+    "sign.documentList.signaturesCompleted": "{completed}/{total} 서명 완료",
+    "sign.documentList.allSigned": "모든 서명 완료",
+    "sign.documentList.startSigning": "서명 시작",
+    "sign.documentList.continueSign": "서명 계속하기",
+    "sign.documentList.viewDocument": "문서 보기",
 
     // Authentication
     "auth.signOut": "로그아웃",
@@ -270,6 +277,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.description": "총 {total}개의 문서를 관리하고 있습니다.",
     "dashboard.header.title": "내 문서",
     "dashboard.header.description": "문서를 관리하고 서명을 수집하세요",
+    "dashboard.publish": "문서 발행",
     "dashboard.upload": "업로드",
     "dashboard.empty.title": "아직 업로드된 문서가 없습니다",
     "dashboard.empty.description":
@@ -402,7 +410,37 @@ const translations: Record<Language, Record<string, string>> = {
     // Breadcrumb
     "breadcrumb.dashboard": "대시보드",
     "breadcrumb.upload": "문서 업로드",
+    "breadcrumb.publish": "문서 발행",
+    "breadcrumb.publicationDetail": "발행 상세",
     "breadcrumb.details": "문서 상세",
+    "breadcrumb.sign": "서명",
+    "breadcrumb.signDocument": "문서 서명",
+
+    // Publication Detail
+    "publicationDetail.header.title": "발행 상세",
+    "publicationDetail.header.description":
+      "발행된 문서의 상세 정보와 서명 진행 상황을 확인하세요.",
+    "publicationDetail.status.active": "활성",
+    "publicationDetail.status.completed": "완료",
+    "publicationDetail.status.expired": "만료됨",
+    "publicationDetail.status.unknown": "알 수 없음",
+    "publicationDetail.createdAt": "생성일",
+    "publicationDetail.expiresAt": "만료일",
+    "publicationDetail.password": "비밀번호",
+    "publicationDetail.passwordSet": "설정됨",
+    "publicationDetail.passwordNotSet": "설정 안 됨",
+    "publicationDetail.documentCount": "문서 개수",
+    "publicationDetail.countUnit": "개",
+    "publicationDetail.signatureLink": "서명 링크",
+    "publicationDetail.copyLink": "링크 복사",
+    "publicationDetail.openInNewTab": "새 탭에서 열기",
+    "publicationDetail.shareLinkDescription":
+      "이 링크를 서명자에게 공유하세요. 서명자는 이 링크를 통해 문서에 접근하고 서명할 수 있습니다.",
+    "publicationDetail.documentsList": "문서 목록",
+    "publicationDetail.signatures": "서명",
+    "publicationDetail.documentStatus.completed": "완료",
+    "publicationDetail.documentStatus.published": "발행됨",
+    "publicationDetail.noDocuments": "문서가 없습니다.",
 
     // Footer
     "footer.terms": "이용약관",
@@ -1138,6 +1176,13 @@ const translations: Record<Language, Record<string, string>> = {
       "Please contact the document issuer to request a new signature request.",
     "sign.expired.date": "Expired on:",
     "sign.savingSignature": "Saving signature...",
+    "sign.documentList.title": "Documents to Sign",
+    "sign.documentList.description": "Select a document below to start signing",
+    "sign.documentList.signaturesCompleted": "{completed}/{total} signatures completed",
+    "sign.documentList.allSigned": "All signatures completed",
+    "sign.documentList.startSigning": "Start Signing",
+    "sign.documentList.continueSign": "Continue Signing",
+    "sign.documentList.viewDocument": "View Document",
 
     // Authentication
     "auth.signOut": "Sign Out",
@@ -1149,6 +1194,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.header.title": "My Documents",
     "dashboard.header.description":
       "Manage your documents and collect signatures",
+    "dashboard.publish": "Publish Document",
     "dashboard.upload": "Upload",
     "dashboard.empty.title": "No documents uploaded yet",
     "dashboard.empty.description":
@@ -1282,7 +1328,37 @@ const translations: Record<Language, Record<string, string>> = {
     // Breadcrumb
     "breadcrumb.dashboard": "Dashboard",
     "breadcrumb.upload": "Upload Document",
+    "breadcrumb.publish": "Publish Document",
+    "breadcrumb.publicationDetail": "Publication Details",
     "breadcrumb.details": "Document Details",
+    "breadcrumb.sign": "Sign",
+    "breadcrumb.signDocument": "Sign Document",
+
+    // Publication Detail
+    "publicationDetail.header.title": "Publication Details",
+    "publicationDetail.header.description":
+      "View detailed information and signature progress for published documents.",
+    "publicationDetail.status.active": "Active",
+    "publicationDetail.status.completed": "Completed",
+    "publicationDetail.status.expired": "Expired",
+    "publicationDetail.status.unknown": "Unknown",
+    "publicationDetail.createdAt": "Created",
+    "publicationDetail.expiresAt": "Expires",
+    "publicationDetail.password": "Password",
+    "publicationDetail.passwordSet": "Set",
+    "publicationDetail.passwordNotSet": "Not Set",
+    "publicationDetail.documentCount": "Document Count",
+    "publicationDetail.countUnit": "",
+    "publicationDetail.signatureLink": "Signature Link",
+    "publicationDetail.copyLink": "Copy Link",
+    "publicationDetail.openInNewTab": "Open in New Tab",
+    "publicationDetail.shareLinkDescription":
+      "Share this link with signers. They can access and sign documents through this link.",
+    "publicationDetail.documentsList": "Documents List",
+    "publicationDetail.signatures": "Signatures",
+    "publicationDetail.documentStatus.completed": "Completed",
+    "publicationDetail.documentStatus.published": "Published",
+    "publicationDetail.noDocuments": "No documents available.",
 
     // Footer
     "footer.terms": "Terms of Service",

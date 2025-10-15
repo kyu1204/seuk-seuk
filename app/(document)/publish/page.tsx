@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getUserDocuments } from "@/app/actions/document-actions";
-import PublishForm from "@/components/publish/publish-form";
+import PublishPageContent from "./components/PublishPageContent";
 
 export default async function PublishPage() {
   const supabase = await createServerSupabase();
@@ -53,12 +53,5 @@ export default async function PublishPage() {
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">문서 발행</h1>
-        <PublishForm documents={documents} />
-      </div>
-    </div>
-  );
+  return <PublishPageContent documents={documents} />;
 }

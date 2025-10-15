@@ -25,7 +25,7 @@ export function DashboardHeader() {
           <Link href="/publish">
             <Button variant="outline" className="gap-2">
               <Share2 className="h-4 w-4" />
-              문서 발행
+              {t("dashboard.publish")}
             </Button>
           </Link>
           <Link href="/upload">
