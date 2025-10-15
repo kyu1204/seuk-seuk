@@ -1,14 +1,11 @@
 "use client";
 
 import {
-  publishDocument,
   updateSignatureAreas,
   getSignedDocumentUrl,
   deleteDocument,
-  republishDocument,
 } from "@/app/actions/document-actions";
 import AreaSelector from "@/components/area-selector";
-import PublishDocumentModal from "@/components/publish-document-modal";
 import DeleteDocumentModal from "@/components/delete-document-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +24,7 @@ import {
   convertSignatureAreaToPixels,
   type RelativeSignatureArea,
 } from "@/lib/utils";
-import { ArrowLeft, Copy, Edit, ExternalLink, Share, Download, Trash2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
@@ -55,9 +52,6 @@ export default function DocumentDetailComponent({
   const [isSelecting, setIsSelecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
-  const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false);
-  const [isRepublishModalOpen, setIsRepublishModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -166,124 +160,6 @@ export default function DocumentDetailComponent({
     }
   };
 
-  const handlePublish = async (password: string, expiresAt: string) => {
-    if (document.status !== "draft" || signatures.length === 0) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await publishDocument(document.id, password, expiresAt);
-
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-
-      // Update local state
-      setDocument({ ...document, status: "published" });
-      if (result.shortUrl && typeof window !== 'undefined') {
-        setPublishedUrl(`${window.location.origin}/sign/${result.shortUrl}`);
-      }
-
-      // Refresh the page data
-      router.refresh();
-    } catch (error) {
-      console.error("Error publishing document:", error);
-      setError("문서 발행 중 오류가 발생했습니다");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRepublish = async (password: string, expiresAt: string) => {
-    if (document.status !== "published") return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await republishDocument(document.id, password, expiresAt);
-
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-
-      // Update local state with new short URL
-      if (result.shortUrl) {
-        setDocument({ ...document, short_url: result.shortUrl });
-        if (typeof window !== 'undefined') {
-          setPublishedUrl(`${window.location.origin}/sign/${result.shortUrl}`);
-        }
-
-        toast({
-          title: "재발행 완료",
-          description: "문서가 성공적으로 재발행되었습니다.",
-        });
-
-        setIsRepublishModalOpen(false);
-      } else {
-        setError("Failed to get new URL");
-        return;
-      }
-      // Refresh the page data
-      router.refresh();
-    } catch (error) {
-      console.error("Error republishing document:", error);
-      setError("문서 재발행 중 오류가 발생했습니다");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCopyUrl = async () => {
-    if (publishedUrl || document.short_url) {
-      // Ensure this only runs on client side
-      if (typeof window === 'undefined') return;
-
-      const urlToCopy =
-        publishedUrl || `${window.location.origin}/sign/${document.short_url}`;
-
-      try {
-        // Try modern clipboard API first
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(urlToCopy);
-        } else {
-          // Fallback for older browsers or non-HTTPS contexts
-          const textArea = window.document.createElement("textarea");
-          textArea.value = urlToCopy;
-          textArea.style.position = "fixed";
-          textArea.style.left = "-999999px";
-          textArea.style.top = "-999999px";
-          window.document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-
-          try {
-            window.document.execCommand('copy');
-            textArea.remove();
-          } catch (err) {
-            console.error('Fallback copy failed:', err);
-            textArea.remove();
-            throw err;
-          }
-        }
-
-        toast({
-          title: "복사 완료",
-          description: "서명 URL이 클립보드에 복사되었습니다.",
-        });
-      } catch (err) {
-        console.error('Failed to copy:', err);
-        toast({
-          title: "복사 실패",
-          description: "URL 복사에 실패했습니다. 다시 시도해주세요.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
 
   const handleDownloadSignedDocument = () => {
     if (!isCompleted || !signedDocumentUrl) return;
@@ -329,8 +205,6 @@ export default function DocumentDetailComponent({
   };
 
   const canEdit = document.status === "draft";
-  const canPublish = document.status === "draft" && signatures.length > 0;
-  const isPublished = document.status === "published";
   const isCompleted = document.status === "completed";
 
   // Set mounted state on client side
@@ -538,17 +412,6 @@ export default function DocumentDetailComponent({
                           삭제
                         </Button>
                       </div>
-                      {/* Right Group - Publish */}
-                      {canPublish && (
-                        <Button
-                          onClick={() => setIsPublishModalOpen(true)}
-                          disabled={isLoading}
-                          className="h-9 px-3 text-sm font-medium bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Share className="mr-1 h-3 w-3" />
-                          발급
-                        </Button>
-                      )}
                     </div>
                   )}
                   {/* Completed State - Download Button */}
@@ -631,17 +494,6 @@ export default function DocumentDetailComponent({
                           삭제
                         </Button>
                       </div>
-                      {/* Right Group - Publish */}
-                      {canPublish && (
-                        <Button
-                          onClick={() => setIsPublishModalOpen(true)}
-                          disabled={isLoading}
-                          className="h-10 px-4 text-sm font-medium bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Share className="mr-2 h-4 w-4" />
-                          발급
-                        </Button>
-                      )}
                     </div>
                   )}
                   {/* Completed State - Download Button */}
@@ -696,72 +548,6 @@ export default function DocumentDetailComponent({
               )}
             </div>
           </div>
-
-          {/* Published URL Display */}
-          {isPublished && document.short_url && (
-            <Card className="mb-6 sm:mb-6 mx-1 sm:mx-0">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base sm:text-lg">발행된 서명 URL</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {/* URL Display */}
-                <div className="flex-1 p-3 sm:p-3 bg-gray-50 rounded-lg font-mono text-xs sm:text-sm break-all">
-                  {isMounted && typeof window !== 'undefined'
-                    ? `${window.location.origin}/sign/${document.short_url}`
-                    : `/sign/${document.short_url}`}
-                </div>
-
-                {/* Expiration date display */}
-                {document.expires_at && (
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">만료일:</span>{" "}
-                      {new Date(document.expires_at).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                )}
-
-                {/* All buttons on same line */}
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  {/* Left: Copy and Open buttons */}
-                  <div className="flex gap-3">
-                    <Button variant="outline" size="sm" onClick={handleCopyUrl} className="h-10 px-4 sm:h-9">
-                      <Copy className="h-4 w-4 sm:h-4 sm:w-4" />
-                      <span className="ml-2 sm:hidden text-sm">복사</span>
-                    </Button>
-                    <Link href={`/sign/${document.short_url}`} target="_blank">
-                      <Button variant="outline" size="sm" className="h-10 px-4 sm:h-9">
-                        <ExternalLink className="h-4 w-4 sm:h-4 sm:w-4" />
-                        <span className="ml-2 sm:hidden text-sm">열기</span>
-                      </Button>
-                    </Link>
-                  </div>
-
-                  {/* Right: Republish button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsRepublishModalOpen(true)}
-                    disabled={isLoading}
-                    className="h-10 px-4 sm:h-9 text-sm font-medium border-2 hover:bg-gray-50"
-                  >
-                    <Share className="mr-2 h-4 w-4 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">문서 재발행</span>
-                    <span className="sm:hidden">재발행</span>
-                  </Button>
-                </div>
-
-                <p className="text-sm sm:text-sm text-gray-600 mt-4">
-                  이 URL을 통해 서명자가 문서에 서명할 수 있습니다.
-                  {!canEdit && " 발행된 문서는 더 이상 수정할 수 없습니다."}
-                </p>
-              </CardContent>
-            </Card>
-          )}
 
 
           {error && (
@@ -916,24 +702,6 @@ export default function DocumentDetailComponent({
           )}
         </div>
 
-
-        {/* Publish Document Modal */}
-        <PublishDocumentModal
-          isOpen={isPublishModalOpen}
-          onClose={() => setIsPublishModalOpen(false)}
-          onPublish={handlePublish}
-          isLoading={isLoading}
-        />
-
-        {/* Republish Document Modal */}
-        <PublishDocumentModal
-          isOpen={isRepublishModalOpen}
-          onClose={() => setIsRepublishModalOpen(false)}
-          onPublish={handleRepublish}
-          isLoading={isLoading}
-          isRepublishing={true}
-          currentExpiresAt={document.expires_at}
-        />
 
         {/* Delete Document Modal */}
         <DeleteDocumentModal

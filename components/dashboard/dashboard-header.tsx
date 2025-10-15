@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Share2 } from "lucide-react";
 import { UsageWidget } from "./usage-widget";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -21,12 +21,20 @@ export function DashboardHeader() {
             {t("dashboard.header.description")}
           </p>
         </div>
-        <Link href="/upload">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            {t("dashboard.upload")}
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/publish">
+            <Button variant="outline" className="gap-2">
+              <Share2 className="h-4 w-4" />
+              문서 발행
+            </Button>
+          </Link>
+          <Link href="/upload">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              {t("dashboard.upload")}
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Usage Widget */}

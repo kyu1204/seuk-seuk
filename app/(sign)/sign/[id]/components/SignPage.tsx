@@ -1,12 +1,13 @@
 "use client";
 
 import {
-  markDocumentCompleted,
   saveSignature,
   uploadSignedDocument,
-  verifyDocumentPassword,
-  getDocumentSignedUrl,
+  getDocumentFileSignedUrl,
 } from "@/app/actions/document-actions";
+import {
+  verifyPublicationPassword,
+} from "@/app/actions/publication-actions";
 import LanguageSelector from "@/components/language-selector";
 import SignatureModal from "@/components/signature-modal";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/language-context";
-import type { ClientDocument, Signature } from "@/lib/supabase/database.types";
+import type { ClientDocument, Signature, PublicationWithDocuments } from "@/lib/supabase/database.types";
 import {
   getImageNaturalDimensions,
   ensureRelativeCoordinate,
@@ -36,22 +37,39 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
 
 interface SignPageComponentProps {
-  documentData: ClientDocument;
-  signatures: Signature[];
-  isExpired?: boolean;
-  isCompleted?: boolean;
+  publicationData: PublicationWithDocuments;
+  requiresPassword: boolean;
 }
 
+// TODO: In the future, this component should support displaying and signing multiple documents
+// For now, we'll use the first document from the publication as MVP
+
 export default function SignPageComponent({
-  documentData,
-  signatures,
-  isExpired = false,
-  isCompleted = false,
+  publicationData,
+  requiresPassword,
 }: SignPageComponentProps) {
   const { t } = useLanguage();
   const router = useRouter();
+
+  // Extract first document from publication (MVP approach)
+  const documentData = publicationData.documents?.[0];
+  if (!documentData) {
+    throw new Error("Publication has no documents");
+  }
+
+  // Get signatures for this document
+  const documentSignatures = publicationData.documents
+    .find(doc => doc.id === documentData.id)
+    ?.signatures || [];
+
   const [localSignatures, setLocalSignatures] =
-    useState<Signature[]>(signatures);
+    useState<Signature[]>(documentSignatures);
+
+  // Check if publication is expired or completed
+  const isExpired = publicationData.expires_at
+    ? new Date(publicationData.expires_at) < new Date()
+    : false;
+  const isCompleted = publicationData.status === "completed";
   const [selectedArea, setSelectedArea] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -61,7 +79,7 @@ export default function SignPageComponent({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [password, setPassword] = useState<string>("");
   const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
-    !documentData.requiresPassword
+    !requiresPassword
   );
   const [isVerifyingPassword, setIsVerifyingPassword] =
     useState<boolean>(false);
@@ -331,19 +349,13 @@ export default function SignPageComponent({
         return;
       }
 
-      // Mark document as completed
+      // TODO: Check if all documents in publication are signed and mark publication as completed
+      // For MVP, we're only handling the first document, so we can mark it complete immediately
       setGeneratingProgress("문서 완료 처리 중...");
-      const completeResult = await markDocumentCompleted(documentData.id);
 
-      if (completeResult.error) {
-        console.error("Failed to mark document as completed:", completeResult.error);
-        setError("문서 완료 처리에 실패했습니다: " + completeResult.error);
-        return;
-      }
-
-      // Navigate to completion page
+      // Navigate to completion page using publication short_url
       setIsNavigating(true);
-      router.push(`/sign/${documentData.id}/completed`);
+      router.push(`/sign/${publicationData.short_url}/completed`);
     } catch (err) {
       console.error("Error generating signed document:", err);
       setError(
@@ -499,13 +511,10 @@ export default function SignPageComponent({
     setIsDragging(false);
   };
 
-  const loadDocumentSignedUrl = async (pwd?: string) => {
+  const loadDocumentSignedUrl = async () => {
     setIsLoadingSignedUrl(true);
     try {
-      const result = await getDocumentSignedUrl(
-        documentData.short_url,
-        documentData.requiresPassword ? pwd : undefined
-      );
+      const result = await getDocumentFileSignedUrl(documentData.id);
 
       if (result.error) {
         setError(result.error);
@@ -531,8 +540,8 @@ export default function SignPageComponent({
     setError(null);
 
     try {
-      const result = await verifyDocumentPassword(
-        documentData.short_url,
+      const result = await verifyPublicationPassword(
+        publicationData.short_url,
         password
       );
 
@@ -544,7 +553,7 @@ export default function SignPageComponent({
       if (result.isValid) {
         setIsPasswordVerified(true);
         // Load signed URL after password verification
-        await loadDocumentSignedUrl(password);
+        await loadDocumentSignedUrl();
       } else {
         setError(t("sign.password.incorrect"));
       }
@@ -556,12 +565,12 @@ export default function SignPageComponent({
     }
   };
 
-  // Load signed URL on component mount for non-password documents
+  // Load signed URL on component mount for non-password publications
   useEffect(() => {
-    if (!documentData.requiresPassword && !documentSignedUrl) {
+    if (!requiresPassword && !documentSignedUrl) {
       loadDocumentSignedUrl();
     }
-  }, [documentData.requiresPassword, documentSignedUrl]);
+  }, [requiresPassword, documentSignedUrl]);
 
   // Force re-render when image loads to ensure signature areas display correctly
   useEffect(() => {

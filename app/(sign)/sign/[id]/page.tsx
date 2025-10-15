@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getDocumentByShortUrl } from "@/app/actions/document-actions";
+import { getPublicationByShortUrl } from "@/app/actions/publication-actions";
 import SignPageComponent from "./components/SignPage";
 
 // This is now a Server Component that fetches data
@@ -10,27 +10,25 @@ interface PageProps {
 export default async function SignPage({ params }: PageProps) {
   const { id } = params;
 
-  // Fetch document data server-side
-  const { document, signatures, error, isExpired, isCompleted } =
-    await getDocumentByShortUrl(id);
+  // Fetch publication data server-side (includes all documents)
+  const { publication, requiresPassword, error } =
+    await getPublicationByShortUrl(id);
 
-  // Only show 404 if document doesn't exist, not for expired/error states
-  if (!document) {
+  // Only show 404 if publication doesn't exist
+  if (!publication) {
     notFound();
   }
 
   // Log non-fatal errors for monitoring
-  if (error && document) {
-    console.warn(`Non-fatal error for document ${id}:`, error);
+  if (error && publication) {
+    console.warn(`Non-fatal error for publication ${id}:`, error);
   }
 
-  // Pass data to client component, including expiration status and error
+  // Pass data to client component
   return (
     <SignPageComponent
-      documentData={document}
-      signatures={signatures}
-      isExpired={isExpired}
-      isCompleted={isCompleted}
+      publicationData={publication}
+      requiresPassword={requiresPassword || false}
     />
   );
 }

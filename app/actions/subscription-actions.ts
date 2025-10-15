@@ -339,6 +339,51 @@ export async function canPublishDocument(): Promise<{
 }
 
 /**
+ * Check if user can create a new publication
+ * A publication contains documents that will be published, so this checks
+ * if the user has room for more active documents
+ */
+export async function canCreatePublication(documentCount: number = 1): Promise<{
+  canCreate: boolean;
+  reason?: string;
+  error?: string;
+}> {
+  try {
+    const { limits, error } = await getUserUsageLimits();
+
+    if (error || !limits) {
+      return {
+        canCreate: false,
+        error: error || "Failed to check limits",
+      };
+    }
+
+    // Check if adding these documents would exceed the active document limit
+    const wouldExceedLimit =
+      limits.activeDocumentLimit !== -1 &&
+      limits.currentActiveDocuments + documentCount > limits.activeDocumentLimit;
+
+    if (wouldExceedLimit) {
+      const availableSlots = limits.activeDocumentLimit - limits.currentActiveDocuments;
+      return {
+        canCreate: false,
+        reason: `활성 문서 제한을 초과합니다. 현재 ${limits.currentActiveDocuments}/${limits.activeDocumentLimit}개 사용 중이며, ${availableSlots}개의 슬롯만 남아있습니다. 일부 문서를 삭제하거나 플랜을 업그레이드하세요.`,
+      };
+    }
+
+    return {
+      canCreate: true,
+    };
+  } catch (error) {
+    console.error("Can create publication error:", error);
+    return {
+      canCreate: false,
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
  * Update monthly usage when a document is created
  */
 export async function incrementDocumentCreated(): Promise<{
