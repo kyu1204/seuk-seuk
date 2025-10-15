@@ -103,9 +103,6 @@ export default function HomePageComponent() {
         // 포맷된 가격 문자열에서 숫자만 추출 (예: "$10.00" -> "10.00")
         const numericPrice = price.replace(/[^0-9.]/g, "");
         displayPrice = `$${Math.floor(parseFloat(numericPrice))}`;
-        console.log(
-          `[HomePage] ${plan.name}: Using Paddle price - ${displayPrice} (Price ID: ${priceId})`
-        );
       } else if (paddleLoading) {
         displayPrice = "...";
       } else {
