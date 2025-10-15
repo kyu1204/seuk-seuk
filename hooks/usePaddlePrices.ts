@@ -16,8 +16,6 @@ function getLineItems(): PricePreviewParams["items"] {
     .flatMap((tier) => [tier.priceId.month, tier.priceId.year])
     .filter(isValidPaddlePriceId); // 유효한 Paddle Price ID만 필터링
 
-  console.log('[usePaddlePrices] Valid Paddle Price IDs:', priceIds);
-
   return priceIds.map((priceId) => ({ priceId, quantity: 1 }));
 }
 

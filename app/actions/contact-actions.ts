@@ -66,7 +66,6 @@ export async function sendContactEmail(
       };
     }
 
-    console.log("Email sent successfully:", data);
     return {
       success: true,
     };

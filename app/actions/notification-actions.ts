@@ -67,15 +67,6 @@ async function getDocumentOwnerInfo(documentId: string): Promise<{
       ? (subscription as any).plan?.name
       : null;
 
-    console.log("[getDocumentOwnerInfo] Result:", {
-      documentId,
-      user_id: document.user_id,
-      email: userData.user.email,
-      planName,
-      hasSubscription: !!subscription,
-      hasError: !!subError,
-    });
-
     return {
       email: userData.user.email,
       planName,
@@ -160,9 +151,6 @@ export async function sendDocumentCompletionEmail(
     const isPremiumPlan = planNameLower === 'pro' || planNameLower === 'enterprise';
 
     if (!isPremiumPlan) {
-      console.log(
-        `[sendDocumentCompletionEmail] Skipping email for non-premium user. Plan: ${planName || 'none'}`
-      );
       return { success: true, skipped: true };
     }
 
@@ -184,13 +172,6 @@ export async function sendDocumentCompletionEmail(
         error: "Failed to send email",
       };
     }
-
-    console.log("[sendDocumentCompletionEmail] Email sent successfully:", {
-      documentId,
-      documentName,
-      email,
-      messageId: data?.id,
-    });
 
     return { success: true };
   } catch (error) {
