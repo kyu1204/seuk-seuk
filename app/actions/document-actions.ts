@@ -466,6 +466,84 @@ export async function publishDocument(
 }
 
 /**
+ * Republish a document (generate new short URL, update password and expiration)
+ */
+export async function republishDocument(
+  documentId: string,
+  password: string,
+  expiresAt: string | null
+) {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
+    // Verify document ownership and status, and get old short_url for revalidation
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, user_id, status, short_url")
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (docError || !document) {
+      return { error: "Document not found" };
+    }
+
+    if (document.status !== "published") {
+      return { error: "Only published documents can be republished" };
+    }
+
+    // Store old short_url for revalidation
+    const oldShortUrl = document.short_url;
+
+    // Generate new short URL
+    const newShortUrl = generateShortUrl();
+
+    // Hash password or set to null
+    const trimmedPassword = password.trim();
+    const passwordHash = trimmedPassword
+      ? await bcrypt.hash(trimmedPassword, 12)
+      : null;
+
+    const expiresAtISO = expiresAt ? new Date(expiresAt).toISOString() : null;
+
+    // Update document with new credentials and URL
+    const { error: updateError } = await supabase
+      .from("documents")
+      .update({
+        password: passwordHash,
+        expires_at: expiresAtISO,
+        short_url: newShortUrl,
+      })
+      .eq("id", documentId)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("Republish document error:", updateError);
+      return { error: "Failed to republish document" };
+    }
+
+    // Revalidate paths (including old URL to clear cache)
+    revalidatePath(`/document/${documentId}`);
+    revalidatePath(`/sign/${oldShortUrl}`);
+    revalidatePath(`/sign/${newShortUrl}`);
+
+    return { success: true, shortUrl: newShortUrl };
+  } catch (error) {
+    console.error("Republish document error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * Update signature areas for a document using PostgreSQL transaction
  */
 export async function updateSignatureAreas(

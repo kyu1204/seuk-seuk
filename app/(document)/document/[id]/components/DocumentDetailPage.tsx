@@ -5,6 +5,7 @@ import {
   updateSignatureAreas,
   getSignedDocumentUrl,
   deleteDocument,
+  republishDocument,
 } from "@/app/actions/document-actions";
 import AreaSelector from "@/components/area-selector";
 import PublishDocumentModal from "@/components/publish-document-modal";
@@ -56,6 +57,7 @@ export default function DocumentDetailComponent({
   const [error, setError] = useState<string | null>(null);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false);
+  const [isRepublishModalOpen, setIsRepublishModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -189,6 +191,47 @@ export default function DocumentDetailComponent({
     } catch (error) {
       console.error("Error publishing document:", error);
       setError("문서 발행 중 오류가 발생했습니다");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRepublish = async (password: string, expiresAt: string) => {
+    if (document.status !== "published") return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await republishDocument(document.id, password, expiresAt);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      // Update local state with new short URL
+      if (result.shortUrl) {
+        setDocument({ ...document, short_url: result.shortUrl });
+        if (typeof window !== 'undefined') {
+          setPublishedUrl(`${window.location.origin}/sign/${result.shortUrl}`);
+        }
+
+        toast({
+          title: "재발행 완료",
+          description: "문서가 성공적으로 재발행되었습니다.",
+        });
+
+        setIsRepublishModalOpen(false);
+      } else {
+        setError("Failed to get new URL");
+        return;
+      }
+      // Refresh the page data
+      router.refresh();
+    } catch (error) {
+      console.error("Error republishing document:", error);
+      setError("문서 재발행 중 오류가 발생했습니다");
     } finally {
       setIsLoading(false);
     }
@@ -661,13 +704,31 @@ export default function DocumentDetailComponent({
                 <CardTitle className="text-base sm:text-lg">발행된 서명 URL</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-4">
-                  <div className="flex-1 p-3 sm:p-3 bg-gray-50 rounded-lg font-mono text-xs sm:text-sm break-all">
-                    {isMounted && typeof window !== 'undefined'
-                      ? `${window.location.origin}/sign/${document.short_url}`
-                      : `/sign/${document.short_url}`}
+                {/* URL Display */}
+                <div className="flex-1 p-3 sm:p-3 bg-gray-50 rounded-lg font-mono text-xs sm:text-sm break-all">
+                  {isMounted && typeof window !== 'undefined'
+                    ? `${window.location.origin}/sign/${document.short_url}`
+                    : `/sign/${document.short_url}`}
+                </div>
+
+                {/* Expiration date display */}
+                {document.expires_at && (
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">만료일:</span>{" "}
+                      {new Date(document.expires_at).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
                   </div>
-                  <div className="flex gap-3 self-start sm:self-center">
+                )}
+
+                {/* All buttons on same line */}
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  {/* Left: Copy and Open buttons */}
+                  <div className="flex gap-3">
                     <Button variant="outline" size="sm" onClick={handleCopyUrl} className="h-10 px-4 sm:h-9">
                       <Copy className="h-4 w-4 sm:h-4 sm:w-4" />
                       <span className="ml-2 sm:hidden text-sm">복사</span>
@@ -679,7 +740,21 @@ export default function DocumentDetailComponent({
                       </Button>
                     </Link>
                   </div>
+
+                  {/* Right: Republish button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsRepublishModalOpen(true)}
+                    disabled={isLoading}
+                    className="h-10 px-4 sm:h-9 text-sm font-medium border-2 hover:bg-gray-50"
+                  >
+                    <Share className="mr-2 h-4 w-4 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">문서 재발행</span>
+                    <span className="sm:hidden">재발행</span>
+                  </Button>
                 </div>
+
                 <p className="text-sm sm:text-sm text-gray-600 mt-4">
                   이 URL을 통해 서명자가 문서에 서명할 수 있습니다.
                   {!canEdit && " 발행된 문서는 더 이상 수정할 수 없습니다."}
@@ -848,6 +923,16 @@ export default function DocumentDetailComponent({
           onClose={() => setIsPublishModalOpen(false)}
           onPublish={handlePublish}
           isLoading={isLoading}
+        />
+
+        {/* Republish Document Modal */}
+        <PublishDocumentModal
+          isOpen={isRepublishModalOpen}
+          onClose={() => setIsRepublishModalOpen(false)}
+          onPublish={handleRepublish}
+          isLoading={isLoading}
+          isRepublishing={true}
+          currentExpiresAt={document.expires_at}
         />
 
         {/* Delete Document Modal */}
