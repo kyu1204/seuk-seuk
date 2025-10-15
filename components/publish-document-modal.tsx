@@ -17,13 +17,15 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, RefreshCw, Share } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PublishDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPublish: (password: string, expiresAt: string) => Promise<void>;
   isLoading?: boolean;
+  isRepublishing?: boolean;
+  currentExpiresAt?: string | null;
 }
 
 export default function PublishDocumentModal({
@@ -31,6 +33,8 @@ export default function PublishDocumentModal({
   onClose,
   onPublish,
   isLoading = false,
+  isRepublishing = false,
+  currentExpiresAt = null,
 }: PublishDocumentModalProps) {
   const [password, setPassword] = useState("");
   const [expiresAt, setExpiresAt] = useState<Date>();
@@ -40,9 +44,28 @@ export default function PublishDocumentModal({
     expiresAt?: string;
   }>({});
 
+  // Pre-fill expiration date if republishing
+  useEffect(() => {
+    if (isRepublishing && currentExpiresAt) {
+      const date = new Date(currentExpiresAt);
+      setExpiresAt(date);
+    }
+  }, [isRepublishing, currentExpiresAt]);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setPassword("");
+      if (!isRepublishing) {
+        setExpiresAt(undefined);
+      }
+    }
+  }, [isOpen, isRepublishing]);
+
   const validateForm = () => {
     const newErrors: { password?: string; expiresAt?: string } = {};
 
+    // Password validation - always required
     if (!password.trim()) {
       newErrors.password = "비밀번호는 필수입니다";
     } else if (password.length < 4) {
@@ -94,13 +117,15 @@ export default function PublishDocumentModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share className="h-5 w-5" />
-            문서 발급하기
+            {isRepublishing ? "문서 재발행" : "문서 발급하기"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           <div className="text-sm text-gray-600">
-            문서를 발급하기 위해 보안 설정을 완료해주세요.
+            {isRepublishing
+              ? "새로운 비밀번호와 만료일을 설정하면 새로운 서명 URL이 생성됩니다. 기존 URL은 즉시 무효화됩니다."
+              : "문서를 발급하기 위해 보안 설정을 완료해주세요."}
           </div>
 
           {/* Password Input */}
@@ -112,7 +137,7 @@ export default function PublishDocumentModal({
               id="password"
               type="password"
               name="password"
-              placeholder="서명 페이지 접근용 비밀번호"
+              placeholder={isRepublishing ? "새 비밀번호" : "서명 페이지 접근용 비밀번호"}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -199,12 +224,12 @@ export default function PublishDocumentModal({
               {isLoading ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  발급 중...
+                  {isRepublishing ? "재발행 중..." : "발급 중..."}
                 </>
               ) : (
                 <>
                   <Share className="mr-2 h-4 w-4" />
-                  발급하기
+                  {isRepublishing ? "재발행하기" : "발급하기"}
                 </>
               )}
             </Button>
