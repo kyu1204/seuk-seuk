@@ -49,6 +49,8 @@ export default function SignPageContainer({
   const handleDocumentComplete = (documentName: string) => {
     setCompletedDocumentName(documentName);
     setCurrentView("completed");
+    // Refresh data immediately to get updated publication status
+    router.refresh();
   };
 
   // Show document list view
@@ -130,14 +132,17 @@ export default function SignPageContainer({
                     {t("sign.completed.status")}
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={handleBackToList}
-                  className="w-full"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  {t("sign.documentList.backToList")}
-                </Button>
+                {/* Hide back button if publication is already completed */}
+                {publicationData.status !== "completed" && (
+                  <Button
+                    variant="outline"
+                    onClick={handleBackToList}
+                    className="w-full"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    {t("sign.documentList.backToList")}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
