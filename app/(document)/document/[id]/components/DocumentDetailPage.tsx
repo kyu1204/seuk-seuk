@@ -154,7 +154,7 @@ export default function DocumentDetailComponent({
       router.refresh();
     } catch (error) {
       console.error("Error updating signature areas:", error);
-      setError("서명 영역 업데이트 중 오류가 발생했습니다");
+      setError(t("documentDetail.errorUpdateArea"));
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +170,7 @@ export default function DocumentDetailComponent({
       window.open(signedDocumentUrl, '_blank');
     } catch (error) {
       console.error('Download failed:', error);
-      setError('다운로드 중 오류가 발생했습니다.');
+      setError(t("documentDetail.errorDownload"));
     }
   };
 
@@ -197,7 +197,7 @@ export default function DocumentDetailComponent({
       }
     } catch (error) {
       console.error("❌ Error deleting document:", error);
-      setError("문서 삭제 중 오류가 발생했습니다");
+      setError(t("documentDetail.errorDelete"));
     } finally {
       setIsLoading(false);
       setIsDeleteModalOpen(false);
@@ -400,7 +400,7 @@ export default function DocumentDetailComponent({
                           className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
                         >
                           <Edit className="mr-1 h-3 w-3" />
-                          수정
+                          {t("documentDetail.edit")}
                         </Button>
                         <Button
                           variant="destructive"
@@ -409,7 +409,7 @@ export default function DocumentDetailComponent({
                           className="h-9 px-3 text-sm font-medium"
                         >
                           <Trash2 className="mr-1 h-3 w-3" />
-                          삭제
+                          {t("documentDetail.delete")}
                         </Button>
                       </div>
                     </div>
@@ -424,7 +424,7 @@ export default function DocumentDetailComponent({
                         className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
                       >
                         <Download className="mr-1 h-3 w-3" />
-                        다운로드
+                        {t("documentDetail.download")}
                       </Button>
                     </div>
                   )}
@@ -442,7 +442,7 @@ export default function DocumentDetailComponent({
                         className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
                       >
                         <Edit className="mr-1 h-3 w-3" />
-                        취소
+                        {t("documentDetail.cancel")}
                       </Button>
                       <Button
                         onClick={handleAddSignatureArea}
@@ -450,7 +450,7 @@ export default function DocumentDetailComponent({
                         className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
                         variant="outline"
                       >
-                        영역추가
+                        {t("documentDetail.addArea")}
                       </Button>
                     </div>
                     {/* Right Group - Save */}
@@ -459,7 +459,7 @@ export default function DocumentDetailComponent({
                       disabled={isLoading}
                       className="h-9 px-3 text-sm font-medium bg-green-600 hover:bg-green-700"
                     >
-                      {isLoading ? "저장중" : "저장"}
+                      {isLoading ? t("documentDetail.saving") : t("documentDetail.save")}
                     </Button>
                   </div>
                 </>
@@ -482,7 +482,7 @@ export default function DocumentDetailComponent({
                           className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
                         >
                           <Edit className="mr-2 h-4 w-4" />
-                          수정
+                          {t("documentDetail.edit")}
                         </Button>
                         <Button
                           variant="destructive"
@@ -491,7 +491,7 @@ export default function DocumentDetailComponent({
                           className="h-10 px-4 text-sm font-medium"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          삭제
+                          {t("documentDetail.delete")}
                         </Button>
                       </div>
                     </div>
@@ -506,7 +506,7 @@ export default function DocumentDetailComponent({
                         className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
                       >
                         <Download className="mr-2 h-4 w-4" />
-                        다운로드
+                        {t("documentDetail.download")}
                       </Button>
                     </div>
                   )}
@@ -524,7 +524,7 @@ export default function DocumentDetailComponent({
                         className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
                       >
                         <Edit className="mr-2 h-4 w-4" />
-                        취소
+                        {t("documentDetail.cancel")}
                       </Button>
                       <Button
                         onClick={handleAddSignatureArea}
@@ -532,7 +532,7 @@ export default function DocumentDetailComponent({
                         className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
                         variant="outline"
                       >
-                        영역추가
+                        {t("documentDetail.addArea")}
                       </Button>
                     </div>
                     {/* Right Group - Save */}
@@ -541,7 +541,7 @@ export default function DocumentDetailComponent({
                       disabled={isLoading}
                       className="h-10 px-4 text-sm font-medium bg-green-600 hover:bg-green-700"
                     >
-                      {isLoading ? "저장중" : "저장"}
+                      {isLoading ? t("documentDetail.saving") : t("documentDetail.save")}
                     </Button>
                   </div>
                 </>
@@ -634,7 +634,7 @@ export default function DocumentDetailComponent({
               >
                 {!displayImageUrl ? (
                   <div className="w-full h-96 flex items-center justify-center bg-gray-100">
-                    <p className="text-gray-500">문서 로딩 중...</p>
+                    <p className="text-gray-500">{t("documentDetail.loading")}</p>
                   </div>
                 ) : (
                   <img
@@ -690,7 +690,7 @@ export default function DocumentDetailComponent({
                           isEditMode ? "text-red-600" : "text-blue-600"
                         }`}
                       >
-                        <span className="hidden sm:inline">서명 영역 {index + 1}</span>
+                        <span className="hidden sm:inline">{t("documentDetail.signatureArea")} {index + 1}</span>
                         <span className="sm:hidden">{index + 1}</span>
                       </span>
                     )}

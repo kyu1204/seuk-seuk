@@ -17,12 +17,14 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 
 interface PublishFormProps {
   documents: Document[];
 }
 
 export default function PublishForm({ documents }: PublishFormProps) {
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [publicationName, setPublicationName] = useState("");
@@ -53,22 +55,22 @@ export default function PublishForm({ documents }: PublishFormProps) {
     setError("");
 
     if (!publicationName.trim()) {
-      setError("발행 이름을 입력해주세요.");
+      setError(t("publish.errorName"));
       return;
     }
 
     if (!password.trim()) {
-      setError("비밀번호를 입력해주세요.");
+      setError(t("publish.errorPassword"));
       return;
     }
 
     if (!expiresAt) {
-      setError("만료일을 선택해주세요.");
+      setError(t("publish.errorExpiration"));
       return;
     }
 
     if (selectedDocuments.length === 0) {
-      setError("최소 1개 이상의 문서를 선택해주세요.");
+      setError(t("publish.errorDocuments"));
       return;
     }
 
@@ -93,7 +95,7 @@ export default function PublishForm({ documents }: PublishFormProps) {
         router.push(`/publication/${result.shortUrl}`);
       }
     } catch (err) {
-      setError("발행 중 오류가 발생했습니다.");
+      setError(t("publish.errorPublishing"));
       setIsLoading(false);
     }
   };
@@ -111,32 +113,32 @@ export default function PublishForm({ documents }: PublishFormProps) {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="publicationName">발행 이름</Label>
+        <Label htmlFor="publicationName">{t("publish.name")}</Label>
         <Input
           id="publicationName"
           type="text"
           value={publicationName}
           onChange={(e) => setPublicationName(e.target.value)}
-          placeholder="예: 2024년 1분기 계약서"
+          placeholder={t("publish.namePlaceholder")}
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">비밀번호</Label>
+        <Label htmlFor="password">{t("publish.password")}</Label>
         <Input
           id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="서명 페이지 접근 시 필요한 비밀번호"
+          placeholder={t("publish.passwordPlaceholder")}
           required
         />
       </div>
 
       {/* Date Picker with Popover + Calendar (from original modal) */}
       <div className="space-y-2">
-        <Label>만료일</Label>
+        <Label>{t("publish.expiration")}</Label>
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -150,12 +152,15 @@ export default function PublishForm({ documents }: PublishFormProps) {
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {expiresAt
-                ? expiresAt.toLocaleDateString("ko-KR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : "서명 만료 날짜를 선택하세요"}
+                ? expiresAt.toLocaleDateString(
+                    language === "ko" ? "ko-KR" : "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }
+                  )
+                : t("publish.expirationPlaceholder")}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -177,20 +182,20 @@ export default function PublishForm({ documents }: PublishFormProps) {
           </PopoverContent>
         </Popover>
         <p className="text-xs text-gray-500">
-          이 날짜까지 서명자가 문서에 접근할 수 있습니다.
+          {t("publish.expirationHint")}
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Label>문서 선택 ({selectedDocuments.length}/{documents.length})</Label>
+          <Label>{t("publish.documentSelection")} ({selectedDocuments.length}/{documents.length})</Label>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={handleSelectAll}
           >
-            {selectedDocuments.length === documents.length ? "전체 해제" : "전체 선택"}
+            {selectedDocuments.length === documents.length ? t("publish.deselectAll") : t("publish.selectAll")}
           </Button>
         </div>
 
@@ -217,7 +222,9 @@ export default function PublishForm({ documents }: PublishFormProps) {
                   <div className="flex-1">
                     <p className="font-medium">{document.filename}</p>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(document.created_at).toLocaleDateString("ko-KR")}
+                      {new Date(document.created_at).toLocaleDateString(
+                        language === "ko" ? "ko-KR" : "en-US"
+                      )}
                     </p>
                   </div>
                 </Label>
@@ -234,10 +241,10 @@ export default function PublishForm({ documents }: PublishFormProps) {
           onClick={() => router.back()}
           disabled={isLoading}
         >
-          취소
+          {t("publish.cancel")}
         </Button>
         <Button type="submit" disabled={isLoading} className="flex-1">
-          {isLoading ? "발행 중..." : "발행하기"}
+          {isLoading ? t("publish.submitting") : t("publish.submit")}
         </Button>
       </div>
     </form>

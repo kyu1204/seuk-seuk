@@ -44,6 +44,8 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.getSignature": "서명 받기",
     "upload.generating": "생성 중...",
     "upload.signature": "서명",
+    "upload.save": "저장하기",
+    "upload.saving": "저장 중...",
 
     // Sign Page
     "sign.loading": "문서 로딩 중...",
@@ -477,6 +479,41 @@ const translations: Record<Language, Record<string, string>> = {
     "publicationDetail.save": "저장",
     "publicationDetail.saving": "저장 중...",
     "publicationDetail.cannotEditCompleted": "완료된 발행은 수정할 수 없습니다",
+
+    // Document Detail
+    "documentDetail.edit": "수정",
+    "documentDetail.delete": "삭제",
+    "documentDetail.download": "다운로드",
+    "documentDetail.cancel": "취소",
+    "documentDetail.addArea": "영역추가",
+    "documentDetail.save": "저장",
+    "documentDetail.saving": "저장중",
+    "documentDetail.loading": "문서 로딩 중...",
+    "documentDetail.signatureArea": "서명 영역",
+    "documentDetail.errorUpdateArea": "서명 영역 업데이트 중 오류가 발생했습니다",
+    "documentDetail.errorDownload": "다운로드 중 오류가 발생했습니다.",
+    "documentDetail.errorDelete": "문서 삭제 중 오류가 발생했습니다",
+
+    // Publish Page
+    "publish.title": "문서 발행",
+    "publish.errorName": "발행 이름을 입력해주세요.",
+    "publish.errorPassword": "비밀번호를 입력해주세요.",
+    "publish.errorExpiration": "만료일을 선택해주세요.",
+    "publish.errorDocuments": "최소 1개 이상의 문서를 선택해주세요.",
+    "publish.errorPublishing": "발행 중 오류가 발생했습니다.",
+    "publish.name": "발행 이름",
+    "publish.namePlaceholder": "예: 2024년 1분기 계약서",
+    "publish.password": "비밀번호",
+    "publish.passwordPlaceholder": "서명 페이지 접근 시 필요한 비밀번호",
+    "publish.expiration": "만료일",
+    "publish.expirationPlaceholder": "서명 만료 날짜를 선택하세요",
+    "publish.expirationHint": "이 날짜까지 서명자가 문서에 접근할 수 있습니다.",
+    "publish.documentSelection": "문서 선택",
+    "publish.selectAll": "전체 선택",
+    "publish.deselectAll": "전체 해제",
+    "publish.cancel": "취소",
+    "publish.submit": "발행하기",
+    "publish.submitting": "발행 중...",
 
     // Footer
     "footer.terms": "이용약관",
@@ -993,6 +1030,8 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.getSignature": "Get Signature",
     "upload.generating": "Generating...",
     "upload.signature": "Signature",
+    "upload.save": "Save",
+    "upload.saving": "Saving...",
 
     // Sign Page
     "sign.loading": "Loading document...",
@@ -1431,6 +1470,41 @@ const translations: Record<Language, Record<string, string>> = {
     "publicationDetail.save": "Save",
     "publicationDetail.saving": "Saving...",
     "publicationDetail.cannotEditCompleted": "Cannot edit completed publications",
+
+    // Document Detail
+    "documentDetail.edit": "Edit",
+    "documentDetail.delete": "Delete",
+    "documentDetail.download": "Download",
+    "documentDetail.cancel": "Cancel",
+    "documentDetail.addArea": "Add Area",
+    "documentDetail.save": "Save",
+    "documentDetail.saving": "Saving",
+    "documentDetail.loading": "Loading document...",
+    "documentDetail.signatureArea": "Signature area",
+    "documentDetail.errorUpdateArea": "Failed to update signature area",
+    "documentDetail.errorDownload": "Failed to download document.",
+    "documentDetail.errorDelete": "Failed to delete document",
+
+    // Publish Page
+    "publish.title": "Publish Documents",
+    "publish.errorName": "Please enter a publication name.",
+    "publish.errorPassword": "Please enter a password.",
+    "publish.errorExpiration": "Please select an expiration date.",
+    "publish.errorDocuments": "Please select at least one document.",
+    "publish.errorPublishing": "An error occurred while publishing.",
+    "publish.name": "Publication Name",
+    "publish.namePlaceholder": "e.g., Q1 2024 Contracts",
+    "publish.password": "Password",
+    "publish.passwordPlaceholder": "Required password to access signature page",
+    "publish.expiration": "Expiration Date",
+    "publish.expirationPlaceholder": "Select signature expiration date",
+    "publish.expirationHint": "Signers can access documents until this date.",
+    "publish.documentSelection": "Select Documents",
+    "publish.selectAll": "Select All",
+    "publish.deselectAll": "Deselect All",
+    "publish.cancel": "Cancel",
+    "publish.submit": "Publish",
+    "publish.submitting": "Publishing...",
 
     // Footer
     "footer.terms": "Terms of Service",
