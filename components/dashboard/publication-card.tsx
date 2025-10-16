@@ -27,7 +27,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, onDelete }: PublicationCardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -36,15 +36,15 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
   const getStatusBadge = (status: ClientPublication["status"]) => {
     const statusMap = {
       active: {
-        label: "활성",
+        label: t("dashboard.publications.status.active"),
         variant: "default" as const,
       },
       completed: {
-        label: "완료",
+        label: t("dashboard.publications.status.completed"),
         variant: "success" as const,
       },
       expired: {
-        label: "만료",
+        label: t("dashboard.publications.status.expired"),
         variant: "secondary" as const,
       },
     };
@@ -54,7 +54,7 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
 
   const statusBadge = getStatusBadge(publication.status);
   const formattedDate = new Date(publication.created_at).toLocaleDateString(
-    "ko-KR",
+    language === "ko" ? "ko-KR" : "en-US",
     {
       year: "numeric",
       month: "short",
@@ -139,7 +139,7 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
               {truncateName(publication.name)}
             </h3>
             <div className="text-xs text-muted-foreground">
-              {publication.documentCount}개 문서
+              {publication.documentCount}{t("dashboard.publications.card.documentCount")}
             </div>
           </div>
         </CardHeader>
@@ -161,12 +161,12 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
               {isCopied ? (
                 <>
                   <Check className="h-3 w-3 mr-1" />
-                  복사됨
+                  {t("dashboard.publications.card.copied")}
                 </>
               ) : (
                 <>
                   <Copy className="h-3 w-3 mr-1" />
-                  링크
+                  {t("dashboard.publications.card.copyLink")}
                 </>
               )}
             </Button>
@@ -184,7 +184,9 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
               variant="outline"
               size="sm"
               onClick={handleOpenDeleteDialog}
+              disabled={publication.status === "completed"}
               className="h-8 px-2 hover:bg-destructive hover:text-destructive-foreground"
+              title={publication.status === "completed" ? t("dashboard.publications.card.cannotDelete") : undefined}
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -197,21 +199,21 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>발행 삭제</AlertDialogTitle>
+            <AlertDialogTitle>{t("dashboard.publications.delete.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              "{publication.name}" 발행을 삭제하시겠습니까?
+              {t("dashboard.publications.delete.description", { name: publication.name })}
               <br />
-              이 발행에 포함된 모든 문서는 초안 상태로 돌아갑니다.
+              {t("dashboard.publications.delete.warning")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("dashboard.publications.delete.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "삭제 중..." : "삭제"}
+              {isDeleting ? t("dashboard.publications.delete.deleting") : t("dashboard.publications.delete.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

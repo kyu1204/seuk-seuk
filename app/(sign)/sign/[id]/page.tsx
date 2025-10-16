@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { getPublicationByShortUrl } from "@/app/actions/publication-actions";
-import SignDocumentList from "./components/SignDocumentList";
+import SignPageContainer from "./components/SignPageContainer";
 
-// This is now a Server Component that fetches data and shows document list
+// Server Component that fetches data and renders SPA container
 interface PageProps {
   params: { id: string };
 }
@@ -24,9 +24,9 @@ export default async function SignPage({ params }: PageProps) {
     console.warn(`Non-fatal error for publication ${id}:`, error);
   }
 
-  // Pass data to document list component (shows multiple documents)
+  // Pass data to SPA container (handles list ↔ document switching)
   return (
-    <SignDocumentList
+    <SignPageContainer
       publicationData={publication}
       requiresPassword={requiresPassword || false}
     />

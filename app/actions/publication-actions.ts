@@ -115,12 +115,102 @@ export async function createPublication(
       return { error: "Failed to link documents to publication" };
     }
 
+    // Note: monthly_usage.published_completed_count is automatically updated by
+    // the database trigger (trigger_document_status_change) when document status changes
+    // No need to manually increment here
+
     revalidatePath("/dashboard");
     revalidatePath("/publish");
 
     return { success: true, shortUrl: publication.short_url };
   } catch (error) {
     console.error("Create publication error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Update an existing publication (for republish/edit)
+ */
+export async function updatePublication(
+  publicationId: string,
+  name: string,
+  password: string | null,
+  expiresAt: string | null
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
+    // Validate inputs
+    if (!name.trim()) {
+      return { error: "Publication name is required" };
+    }
+
+    // Verify publication belongs to user
+    const { data: publication, error: verifyError } = await supabase
+      .from("publications")
+      .select("id, user_id, status")
+      .eq("id", publicationId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (verifyError || !publication) {
+      return { error: "Publication not found or not owned by user" };
+    }
+
+    // Cannot edit completed publications
+    if (publication.status === "completed") {
+      return { error: "Cannot edit completed publications" };
+    }
+
+    // Prepare update data
+    const updateData: any = {
+      name: name.trim(),
+      expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+    };
+
+    // Handle password update
+    if (password !== null) {
+      const trimmedPassword = password.trim();
+      if (trimmedPassword) {
+        // Hash new password
+        updateData.password = await bcrypt.hash(trimmedPassword, 12);
+      } else {
+        // Remove password protection
+        updateData.password = null;
+      }
+    }
+    // If password is null, keep existing password (don't update)
+
+    // If publication was expired, reactivate it
+    if (publication.status === "expired") {
+      updateData.status = "active";
+    }
+
+    // Update publication
+    const { error: updateError } = await supabase
+      .from("publications")
+      .update(updateData)
+      .eq("id", publicationId);
+
+    if (updateError) {
+      console.error("Publication update error:", updateError);
+      return { error: "Failed to update publication" };
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/publish");
+    revalidatePath(`/publication/${publicationId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Update publication error:", error);
     return { error: "An unexpected error occurred" };
   }
 }
@@ -197,7 +287,6 @@ export async function getPublicationByShortUrl(
         documents(*, signatures(*))
       `)
       .eq("short_url", shortUrl)
-      .eq("status", "active")
       .single();
 
     console.log("📦 Publication query result:", { publication, error: pubError });
@@ -207,16 +296,31 @@ export async function getPublicationByShortUrl(
       return { error: "Publication not found or expired" };
     }
 
-    // Check expiration
+    // Check expiration and update status if needed
     if (publication.expires_at) {
       const expiresAt = new Date(publication.expires_at);
-      if (expiresAt < new Date()) {
+      if (expiresAt < new Date() && publication.status !== "expired") {
         // Update status to expired
         await supabase
           .from("publications")
           .update({ status: "expired" })
           .eq("id", publication.id);
-        return { error: "Publication has expired" };
+        // Update the publication object with new status
+        publication.status = "expired";
+      }
+    }
+
+    // Check if all documents are completed and update publication status
+    if (publication.status === "active" && publication.documents) {
+      const allCompleted = publication.documents.every((doc: any) => doc.status === "completed");
+      if (allCompleted && publication.documents.length > 0) {
+        await supabase
+          .from("publications")
+          .update({ status: "completed" })
+          .eq("id", publication.id);
+        // Update the publication object with new status
+        publication.status = "completed";
+        console.log("✅ Publication status updated to completed:", publication.id);
       }
     }
 
@@ -246,7 +350,6 @@ export async function verifyPublicationPassword(
       .from("publications")
       .select("password")
       .eq("short_url", shortUrl)
-      .eq("status", "active")
       .single();
 
     if (pubError || !publication) {
@@ -278,6 +381,18 @@ export async function checkAndCompletePublication(
   try {
     const supabase = await createServerSupabase();
 
+    // Get publication info with short_url
+    const { data: publication, error: pubError } = await supabase
+      .from("publications")
+      .select("id, short_url, status")
+      .eq("id", publicationId)
+      .single();
+
+    if (pubError || !publication) {
+      console.error("Error fetching publication:", pubError);
+      return { error: "Publication not found" };
+    }
+
     // Get all documents in this publication
     const { data: documents, error: docError } = await supabase
       .from("documents")
@@ -296,7 +411,7 @@ export async function checkAndCompletePublication(
     // Check if all documents are completed
     const allCompleted = documents.every(doc => doc.status === "completed");
 
-    if (allCompleted) {
+    if (allCompleted && publication.status !== "completed") {
       // Update publication status to completed
       const { error: updateError } = await supabase
         .from("publications")
@@ -309,6 +424,7 @@ export async function checkAndCompletePublication(
       }
 
       revalidatePath("/dashboard");
+      revalidatePath(`/publication/${publication.short_url}`);
       return { success: true, isCompleted: true };
     }
 
@@ -336,13 +452,18 @@ export async function deletePublication(
     // Verify publication belongs to user
     const { data: publication, error: verifyError } = await supabase
       .from("publications")
-      .select("id, user_id")
+      .select("id, user_id, status")
       .eq("id", publicationId)
       .eq("user_id", user.id)
       .single();
 
     if (verifyError || !publication) {
       return { error: "Publication not found or not owned by user" };
+    }
+
+    // Cannot delete completed publications
+    if (publication.status === "completed") {
+      return { error: "Cannot delete completed publications" };
     }
 
     // Unlink documents (set publication_id to null and status to draft)
@@ -358,6 +479,10 @@ export async function deletePublication(
       console.error("Document unlinking error:", unlinkError);
       return { error: "Failed to unlink documents" };
     }
+
+    // Note: monthly_usage.published_completed_count is automatically updated by
+    // the database trigger (trigger_document_status_change) when document status changes
+    // No need to manually decrement here
 
     // Delete publication
     const { error: deleteError } = await supabase

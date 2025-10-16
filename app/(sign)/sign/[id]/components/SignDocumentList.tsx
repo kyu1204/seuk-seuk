@@ -19,24 +19,25 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface SignDocumentListProps {
   publicationData: PublicationWithDocuments;
   requiresPassword: boolean;
+  isPasswordVerified: boolean;
+  onPasswordVerified: () => void;
+  onSelectDocument: (documentId: string) => void;
 }
 
 export default function SignDocumentList({
   publicationData,
   requiresPassword,
+  isPasswordVerified,
+  onPasswordVerified,
+  onSelectDocument,
 }: SignDocumentListProps) {
   const { t } = useLanguage();
-  const router = useRouter();
   const [password, setPassword] = useState<string>("");
-  const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
-    !requiresPassword
-  );
   const [isVerifyingPassword, setIsVerifyingPassword] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +68,7 @@ export default function SignDocumentList({
       }
 
       if (result.isValid) {
-        setIsPasswordVerified(true);
+        onPasswordVerified();
       } else {
         setError(t("sign.password.incorrect"));
       }
@@ -294,11 +295,7 @@ export default function SignDocumentList({
               <Card
                 key={document.id}
                 className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() =>
-                  router.push(
-                    `/sign/${publicationData.short_url}/document/${document.id}`
-                  )
-                }
+                onClick={() => onSelectDocument(document.id)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">

@@ -72,13 +72,13 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
         <div className="rounded-full bg-muted p-6 mb-6">
           <FileX className="h-12 w-12 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">발행된 문서가 없습니다</h3>
+        <h3 className="text-xl font-semibold mb-2">{t("dashboard.publications.empty.title")}</h3>
         <p className="text-muted-foreground mb-6 max-w-md">
-          초안 문서를 발행하여 다른 사람과 공유해보세요.
+          {t("dashboard.publications.empty.description")}
         </p>
         <Link href="/publish">
           <Button size="lg" className="gap-2">
-            문서 발행하기
+            {t("dashboard.publications.empty.action")}
           </Button>
         </Link>
       </div>

@@ -96,8 +96,8 @@ export function DashboardContent() {
       {/* Tab Switcher */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)} className="mb-6">
         <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="documents">문서</TabsTrigger>
-          <TabsTrigger value="publications">발행</TabsTrigger>
+          <TabsTrigger value="documents">{t("dashboard.tabs.documents")}</TabsTrigger>
+          <TabsTrigger value="publications">{t("dashboard.tabs.publications")}</TabsTrigger>
         </TabsList>
       </Tabs>
 

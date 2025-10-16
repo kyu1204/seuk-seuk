@@ -10,7 +10,7 @@ interface DocumentCardProps {
 }
 
 export function DocumentCard({ document }: DocumentCardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const getStatusBadge = (status: Document["status"]) => {
     const statusMap = {
@@ -33,7 +33,7 @@ export function DocumentCard({ document }: DocumentCardProps) {
 
   const statusBadge = getStatusBadge(document.status);
   const formattedDate = new Date(document.created_at).toLocaleDateString(
-    "ko-KR",
+    language === "ko" ? "ko-KR" : "en-US",
     {
       year: "numeric",
       month: "short",

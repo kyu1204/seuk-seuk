@@ -209,20 +209,7 @@ export async function getUserUsageLimits(): Promise<{
     const { subscription } = subscriptionResult;
     const { usage } = usageResult;
 
-    // Calculate current published + completed documents count
     const supabase = await createServerSupabase();
-
-    // Determine user id for querying documents
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const targetUserId = subscription?.user_id || user?.id || "";
-    const { count: activeDocumentsCount } = await supabase
-      .from("documents")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", targetUserId)
-      .in("status", ["published", "completed"]);
 
     // If no active subscription, fall back to the lowest (by order) active plan (Free)
     let monthlyLimit: number;
@@ -247,9 +234,9 @@ export async function getUserUsageLimits(): Promise<{
       canCreateNew:
         monthlyLimit === -1 || usage.documents_created < monthlyLimit,
       canPublishMore:
-        activeLimit === -1 || (activeDocumentsCount || 0) < activeLimit,
+        activeLimit === -1 || usage.published_completed_count < activeLimit,
       currentMonthlyCreated: usage.documents_created,
-      currentActiveDocuments: activeDocumentsCount || 0,
+      currentActiveDocuments: usage.published_completed_count,
     };
 
     return {
@@ -478,6 +465,173 @@ export async function decrementDocumentCreated(): Promise<{
     };
   } catch (error) {
     console.error("Decrement document created error:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Update monthly published/completed count when a document is published or completed
+ */
+export async function incrementPublishedCompleted(count: number = 1): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: "User not authenticated",
+      };
+    }
+
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+
+    // Get or create usage record
+    let { data: usage, error: getError } = await supabase
+      .from("monthly_usage")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("year_month", currentMonth)
+      .single();
+
+    if (getError && getError.code === "PGRST116") {
+      // Record doesn't exist, create it
+      const { data: newUsage, error: createError } = await supabase
+        .from("monthly_usage")
+        .insert({
+          user_id: user.id,
+          year_month: currentMonth,
+          documents_created: 0,
+          published_completed_count: count,
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Create usage record error:", createError);
+        return {
+          success: false,
+          error: "Failed to create usage record",
+        };
+      }
+      return { success: true };
+    } else if (getError) {
+      console.error("Get usage error:", getError);
+      return {
+        success: false,
+        error: "Failed to get usage",
+      };
+    }
+
+    // Update existing record
+    const { error: updateError } = await supabase
+      .from("monthly_usage")
+      .update({
+        published_completed_count: (usage?.published_completed_count || 0) + count,
+      })
+      .eq("user_id", user.id)
+      .eq("year_month", currentMonth);
+
+    if (updateError) {
+      console.error("Increment published completed error:", updateError);
+      return {
+        success: false,
+        error: "Failed to update usage",
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Increment published completed error:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Decrement monthly published/completed count when deleting a published/completed document
+ */
+export async function decrementPublishedCompleted(count: number = 1): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: "User not authenticated",
+      };
+    }
+
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+
+    // Get or create usage record first
+    let { data: usage, error: getError } = await supabase
+      .from("monthly_usage")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("year_month", currentMonth)
+      .single();
+
+    if (getError && getError.code === "PGRST116") {
+      // Record doesn't exist, create it with 0 count (nothing to decrement)
+      return { success: true };
+    } else if (getError) {
+      console.error("Get usage error:", getError);
+      return {
+        success: false,
+        error: "Failed to get usage",
+      };
+    }
+
+    // Only decrement if count is greater than 0
+    if (usage && usage.published_completed_count > 0) {
+      const newCount = Math.max(0, usage.published_completed_count - count);
+      const { error: updateError } = await supabase
+        .from("monthly_usage")
+        .update({
+          published_completed_count: newCount,
+        })
+        .eq("user_id", user.id)
+        .eq("year_month", currentMonth);
+
+      if (updateError) {
+        console.error("Decrement published completed error:", updateError);
+        return {
+          success: false,
+          error: "Failed to update usage",
+        };
+      }
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Decrement published completed error:", error);
     return {
       success: false,
       error: "An unexpected error occurred",
