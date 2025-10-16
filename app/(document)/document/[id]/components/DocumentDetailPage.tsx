@@ -175,8 +175,8 @@ export default function DocumentDetailComponent({
   };
 
   const handleDeleteDocument = async () => {
-
-    if (document.status !== "draft") {
+    // Allow deletion for both draft and completed documents
+    if (document.status !== "draft" && document.status !== "completed") {
       return;
     }
 
@@ -205,6 +205,7 @@ export default function DocumentDetailComponent({
   };
 
   const canEdit = document.status === "draft";
+  const canDelete = document.status === "draft" || document.status === "completed";
   const isCompleted = document.status === "completed";
 
   // Set mounted state on client side
@@ -388,7 +389,7 @@ export default function DocumentDetailComponent({
             <div className="sm:hidden">
               {!isEditMode ? (
                 <>
-                  {/* Draft State - Single Line Actions */}
+                  {/* Draft State - Edit and Delete Actions */}
                   {canEdit && (
                     <div className="flex justify-between items-center mb-8">
                       {/* Left Group - Edit & Delete */}
@@ -414,18 +415,29 @@ export default function DocumentDetailComponent({
                       </div>
                     </div>
                   )}
-                  {/* Completed State - Download Button */}
-                  {isCompleted && signedDocumentUrl && (
-                    <div className="flex justify-center mb-8">
+                  {/* Completed State - Download and Delete */}
+                  {isCompleted && (
+                    <div className="flex justify-between items-center mb-8">
                       <Button
                         variant="outline"
                         onClick={handleDownloadSignedDocument}
-                        disabled={isLoading}
+                        disabled={isLoading || !signedDocumentUrl}
                         className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
                       >
                         <Download className="mr-1 h-3 w-3" />
                         {t("documentDetail.download")}
                       </Button>
+                      {canDelete && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => setIsDeleteModalOpen(true)}
+                          disabled={isLoading}
+                          className="h-9 px-3 text-sm font-medium"
+                        >
+                          <Trash2 className="mr-1 h-3 w-3" />
+                          {t("documentDetail.delete")}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </>
@@ -470,7 +482,7 @@ export default function DocumentDetailComponent({
             <div className="hidden sm:block">
               {!isEditMode ? (
                 <>
-                  {/* Draft State - Single Line Actions */}
+                  {/* Draft State - Edit and Delete Actions */}
                   {canEdit && (
                     <div className="flex justify-between items-center mb-8">
                       {/* Left Group - Edit & Delete */}
@@ -496,18 +508,29 @@ export default function DocumentDetailComponent({
                       </div>
                     </div>
                   )}
-                  {/* Completed State - Download Button */}
-                  {isCompleted && signedDocumentUrl && (
-                    <div className="flex justify-center mb-8">
+                  {/* Completed State - Download and Delete */}
+                  {isCompleted && (
+                    <div className="flex justify-between items-center mb-8">
                       <Button
                         variant="outline"
                         onClick={handleDownloadSignedDocument}
-                        disabled={isLoading}
+                        disabled={isLoading || !signedDocumentUrl}
                         className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
                       >
                         <Download className="mr-2 h-4 w-4" />
                         {t("documentDetail.download")}
                       </Button>
+                      {canDelete && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => setIsDeleteModalOpen(true)}
+                          disabled={isLoading}
+                          className="h-10 px-4 text-sm font-medium"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {t("documentDetail.delete")}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </>

@@ -184,9 +184,7 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
               variant="outline"
               size="sm"
               onClick={handleOpenDeleteDialog}
-              disabled={publication.status === "completed"}
               className="h-8 px-2 hover:bg-destructive hover:text-destructive-foreground"
-              title={publication.status === "completed" ? t("dashboard.publications.card.cannotDelete") : undefined}
             >
               <Trash2 className="h-3 w-3" />
             </Button>

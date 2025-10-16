@@ -42,9 +42,11 @@ export type Database = {
         Row: {
           created_at: string
           created_month: string
+          deleted_at: string | null
           file_url: string
           filename: string
           id: string
+          is_deleted: boolean
           publication_id: string | null
           signed_file_url: string | null
           status: string | null
@@ -53,9 +55,11 @@ export type Database = {
         Insert: {
           created_at?: string
           created_month: string
+          deleted_at?: string | null
           file_url: string
           filename: string
           id?: string
+          is_deleted?: boolean
           publication_id?: string | null
           signed_file_url?: string | null
           status?: string | null
@@ -64,9 +68,11 @@ export type Database = {
         Update: {
           created_at?: string
           created_month?: string
+          deleted_at?: string | null
           file_url?: string
           filename?: string
           id?: string
+          is_deleted?: boolean
           publication_id?: string | null
           signed_file_url?: string | null
           status?: string | null
@@ -115,8 +121,10 @@ export type Database = {
       publications: {
         Row: {
           created_at: string | null
+          deleted_at: string | null
           expires_at: string | null
           id: string
+          is_deleted: boolean
           name: string
           password: string | null
           short_url: string
@@ -126,8 +134,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          deleted_at?: string | null
           expires_at?: string | null
           id?: string
+          is_deleted?: boolean
           name: string
           password?: string | null
           short_url: string
@@ -137,8 +147,10 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          deleted_at?: string | null
           expires_at?: string | null
           id?: string
+          is_deleted?: boolean
           name?: string
           password?: string | null
           short_url?: string
