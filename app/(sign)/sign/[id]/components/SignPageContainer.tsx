@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { PublicationWithDocuments } from "@/lib/supabase/database.types";
 import SignDocumentList from "./SignDocumentList";
 import SignSingleDocument from "./SignSingleDocument";
@@ -23,6 +24,7 @@ export default function SignPageContainer({
   requiresPassword,
 }: SignPageContainerProps) {
   const { t } = useLanguage();
+  const router = useRouter();
   const [currentView, setCurrentView] = useState<View>("list");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [completedDocumentName, setCompletedDocumentName] = useState<string>("");
@@ -34,6 +36,8 @@ export default function SignPageContainer({
   };
 
   const handleBackToList = () => {
+    // Refresh server data to get updated signature counts
+    router.refresh();
     setCurrentView("list");
     setSelectedDocumentId(null);
   };
