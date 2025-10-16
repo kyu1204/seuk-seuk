@@ -650,14 +650,17 @@ export default function SignSingleDocument({
         <LanguageSelector />
       </div>
       <div className="max-w-5xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="mb-4 -ml-2"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {t("sign.documentList.title")}
-        </Button>
+        {/* Hide back button if publication is already completed */}
+        {!isCompleted && (
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="mb-4 -ml-2"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("sign.documentList.title")}
+          </Button>
+        )}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">{documentData.filename}</h1>
           <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
