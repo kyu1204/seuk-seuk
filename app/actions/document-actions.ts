@@ -13,13 +13,8 @@ import type {
 import bcrypt from "bcryptjs";
 
 import { randomUUID } from "crypto";
-import { canCreateDocument, canPublishDocument, incrementDocumentCreated, decrementDocumentCreated } from "./subscription-actions";
+import { canCreateDocument, incrementDocumentCreated, decrementDocumentCreated } from "./subscription-actions";
 import { sendDocumentCompletionEmail } from "./notification-actions";
-
-// Generate a random short URL
-function generateShortUrl(): string {
-  return Math.random().toString(36).substring(2, 15);
-}
 
 /**
  * Upload a file to Supabase Storage and create a document record
@@ -70,14 +65,10 @@ export async function uploadDocument(formData: FormData) {
     // Store the file path (not public URL since bucket is now private)
     const fileUrl = filePath;
 
-    // Generate short URL
-    const shortUrl = generateShortUrl();
-
     // Create document record with user_id
     const documentData: DocumentInsert = {
       filename,
       file_url: fileUrl,
-      short_url: shortUrl,
       status: "draft",
       user_id: user.id,
     };
@@ -100,7 +91,7 @@ export async function uploadDocument(formData: FormData) {
       // Don't fail the entire operation, just log the error
     }
 
-    return { success: true, document, shortUrl };
+    return { success: true, document };
   } catch (error) {
     console.error("Upload document error:", error);
     return { error: "An unexpected error occurred" };
@@ -217,13 +208,6 @@ export async function saveSignature(
       return { error: "Failed to update signature" };
     }
 
-
-    // Get document to revalidate the specific signing page
-    const { document } = await getDocumentById(documentId);
-    if (document?.short_url) {
-      revalidatePath(`/sign/${document.short_url}`, "page");
-    }
-
     return { success: true };
   } catch (error) {
     console.error("Save signature error:", error);
@@ -241,7 +225,7 @@ export async function markDocumentCompleted(documentId: string) {
     // First check if document exists and is in the right state
     const { data: document, error: docError } = await supabase
       .from("documents")
-      .select("id, status, filename")
+      .select("id, status, filename, publication_id")
       .eq("id", documentId)
       .single();
 
@@ -271,6 +255,15 @@ export async function markDocumentCompleted(documentId: string) {
       .catch((err) => {
         console.error("❌ Email notification failed (non-blocking):", err);
       });
+
+    // Check if document is part of a publication and auto-complete publication if all documents are done
+    if (document.publication_id) {
+      const { checkAndCompletePublication } = await import("./publication-actions");
+      checkAndCompletePublication(document.publication_id)
+        .catch((err) => {
+          console.error("❌ Publication auto-complete check failed (non-blocking):", err);
+        });
+    }
 
     return { success: true };
   } catch (error) {
@@ -400,150 +393,6 @@ export async function uploadSignedDocument(
 }
 
 /**
- * Publish a document (change status from draft to published)
- */
-export async function publishDocument(
-  documentId: string,
-  password: string,
-  expiresAt: string | null
-) {
-  try {
-    const supabase = await createServerSupabase();
-
-    // Check if user can publish more documents
-    const { canPublish, reason, error: limitError } = await canPublishDocument();
-    if (limitError) {
-      return { error: limitError };
-    }
-    if (!canPublish) {
-      return { error: reason || "Document publish limit reached" };
-    }
-
-    // Handle empty/whitespace passwords by storing null instead of hash
-    const trimmedPassword = password.trim();
-    const passwordHash = trimmedPassword
-      ? await bcrypt.hash(trimmedPassword, 12)
-      : null;
-
-    // NOTE: If the documents.password column is NOT NULL, the schema must be relaxed to allow nulls
-
-    const expiresAtISO = expiresAt ? new Date(expiresAt).toISOString() : null;
-    const { error } = await supabase
-      .from("documents")
-      .update({
-        status: "published",
-        password: passwordHash,
-        expires_at: expiresAtISO,
-      })
-      .eq("id", documentId)
-      .eq("status", "draft"); // Only allow publishing from draft status
-
-    if (error) {
-      console.error("Publish document error:", error);
-      return { error: "Failed to publish document" };
-    }
-
-    // Get the updated document to return the short URL
-    const { data: document, error: docError } = await supabase
-      .from("documents")
-      .select("short_url")
-      .eq("id", documentId)
-      .single();
-
-    if (docError) {
-      console.error("Get document error:", docError);
-      return { error: "Failed to retrieve document after publishing" };
-    }
-
-    // Revalidate document detail page
-    revalidatePath(`/document/${documentId}`);
-
-    return { success: true, shortUrl: document.short_url };
-  } catch (error) {
-    console.error("Publish document error:", error);
-    return { error: "An unexpected error occurred" };
-  }
-}
-
-/**
- * Republish a document (generate new short URL, update password and expiration)
- */
-export async function republishDocument(
-  documentId: string,
-  password: string,
-  expiresAt: string | null
-) {
-  try {
-    const supabase = await createServerSupabase();
-
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return { error: "User not authenticated" };
-    }
-
-    // Verify document ownership and status, and get old short_url for revalidation
-    const { data: document, error: docError } = await supabase
-      .from("documents")
-      .select("id, user_id, status, short_url")
-      .eq("id", documentId)
-      .eq("user_id", user.id)
-      .single();
-
-    if (docError || !document) {
-      return { error: "Document not found" };
-    }
-
-    if (document.status !== "published") {
-      return { error: "Only published documents can be republished" };
-    }
-
-    // Store old short_url for revalidation
-    const oldShortUrl = document.short_url;
-
-    // Generate new short URL
-    const newShortUrl = generateShortUrl();
-
-    // Hash password or set to null
-    const trimmedPassword = password.trim();
-    const passwordHash = trimmedPassword
-      ? await bcrypt.hash(trimmedPassword, 12)
-      : null;
-
-    const expiresAtISO = expiresAt ? new Date(expiresAt).toISOString() : null;
-
-    // Update document with new credentials and URL
-    const { error: updateError } = await supabase
-      .from("documents")
-      .update({
-        password: passwordHash,
-        expires_at: expiresAtISO,
-        short_url: newShortUrl,
-      })
-      .eq("id", documentId)
-      .eq("user_id", user.id);
-
-    if (updateError) {
-      console.error("Republish document error:", updateError);
-      return { error: "Failed to republish document" };
-    }
-
-    // Revalidate paths (including old URL to clear cache)
-    revalidatePath(`/document/${documentId}`);
-    revalidatePath(`/sign/${oldShortUrl}`);
-    revalidatePath(`/sign/${newShortUrl}`);
-
-    return { success: true, shortUrl: newShortUrl };
-  } catch (error) {
-    console.error("Republish document error:", error);
-    return { error: "An unexpected error occurred" };
-  }
-}
-
-/**
  * Update signature areas for a document using PostgreSQL transaction
  */
 export async function updateSignatureAreas(
@@ -613,11 +462,11 @@ export async function verifyDocumentPassword(
 }
 
 /**
- * Get signed URL for document with password verification
+ * Get signed URL for document file (for publications system)
+ * Password verification should be done at publication level before calling this
  */
-export async function getDocumentSignedUrl(
-  shortUrl: string,
-  password?: string
+export async function getDocumentFileSignedUrl(
+  documentId: string
 ): Promise<{
   signedUrl: string | null;
   error?: string;
@@ -630,33 +479,17 @@ export async function getDocumentSignedUrl(
     // Get document
     const { data: document, error: docError } = await supabase
       .from("documents")
-      .select("id, file_url, password, status, expires_at")
-      .eq("short_url", shortUrl)
+      .select("id, file_url, status")
+      .eq("id", documentId)
       .single();
 
     if (docError || !document) {
       return { signedUrl: null, error: "Document not found" };
     }
 
-    // Check expiration
-    if (document.expires_at && new Date(document.expires_at) < new Date()) {
-      return { signedUrl: null, error: "Document expired" };
-    }
-
     // Check completion
     if (document.status === "completed") {
       return { signedUrl: null, error: "Document already completed" };
-    }
-
-    // Verify password if required
-    if (document.password) {
-      if (!password) {
-        return { signedUrl: null, error: "Password required" };
-      }
-      const isValid = await bcrypt.compare(password, document.password);
-      if (!isValid) {
-        return { signedUrl: null, error: "Invalid password" };
-      }
     }
 
     // Generate signed URL (1 hour validity) using service role to bypass RLS
@@ -671,7 +504,7 @@ export async function getDocumentSignedUrl(
 
     return { signedUrl: data.signedUrl };
   } catch (error) {
-    console.error("Get document signed URL error:", error);
+    console.error("Get document file signed URL error:", error);
     return { signedUrl: null, error: "An unexpected error occurred" };
   }
 }
@@ -828,7 +661,7 @@ export async function getUserDocumentsClient(
     // Build query with optimized field selection (exclude password field for client)
     let query = supabase
       .from("documents")
-      .select("id, filename, status, signed_file_url, short_url, created_at, expires_at", { count: "exact" })
+      .select("id, filename, status, signed_file_url, created_at, publication_id", { count: "exact" })
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -1153,7 +986,7 @@ export async function getDashboardData(
       (() => {
         let query = supabase
           .from("documents")
-          .select("id, filename, status, created_at, short_url, signed_file_url, expires_at", { count: "exact" })
+          .select("id, filename, status, created_at, signed_file_url, publication_id", { count: "exact" })
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1);

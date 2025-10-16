@@ -4,16 +4,12 @@ import {
   saveSignature,
   uploadSignedDocument,
   getDocumentFileSignedUrl,
+  markDocumentCompleted,
 } from "@/app/actions/document-actions";
-import {
-  verifyPublicationPassword,
-} from "@/app/actions/publication-actions";
 import LanguageSelector from "@/components/language-selector";
 import SignatureModal from "@/components/signature-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/language-context";
 import type { ClientDocument, Signature, PublicationWithDocuments } from "@/lib/supabase/database.types";
 import {
@@ -26,41 +22,36 @@ import {
   CheckCircle,
   Clock,
   FileSignature,
-  Lock,
   RefreshCw,
   ZoomIn,
   ZoomOut,
   RotateCcw,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
 
-interface SignPageComponentProps {
+interface SignSingleDocumentProps {
   publicationData: PublicationWithDocuments;
+  documentData: ClientDocument;
   requiresPassword: boolean;
+  isPasswordVerified: boolean;
+  onBack: () => void;
+  onComplete: (documentName: string) => void;
 }
 
-// TODO: In the future, this component should support displaying and signing multiple documents
-// For now, we'll use the first document from the publication as MVP
-
-export default function SignPageComponent({
+export default function SignSingleDocument({
   publicationData,
+  documentData,
   requiresPassword,
-}: SignPageComponentProps) {
+  isPasswordVerified,
+  onBack,
+  onComplete,
+}: SignSingleDocumentProps) {
   const { t } = useLanguage();
-  const router = useRouter();
-
-  // Extract first document from publication (MVP approach)
-  const documentData = publicationData.documents?.[0];
-  if (!documentData) {
-    throw new Error("Publication has no documents");
-  }
 
   // Get signatures for this document
-  const documentSignatures = publicationData.documents
-    .find(doc => doc.id === documentData.id)
-    ?.signatures || [];
+  const documentSignatures = documentData.signatures || [];
 
   const [localSignatures, setLocalSignatures] =
     useState<Signature[]>(documentSignatures);
@@ -75,14 +66,7 @@ export default function SignPageComponent({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatingProgress, setGeneratingProgress] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [password, setPassword] = useState<string>("");
-  const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
-    !requiresPassword
-  );
-  const [isVerifyingPassword, setIsVerifyingPassword] =
-    useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -346,16 +330,26 @@ export default function SignPageComponent({
 
       if (uploadResult.error) {
         setError(uploadResult.error);
+        setIsGenerating(false);
+        setGeneratingProgress("");
         return;
       }
 
-      // TODO: Check if all documents in publication are signed and mark publication as completed
-      // For MVP, we're only handling the first document, so we can mark it complete immediately
+      // Mark document as completed
       setGeneratingProgress("문서 완료 처리 중...");
+      const markResult = await markDocumentCompleted(documentData.id);
 
-      // Navigate to completion page using publication short_url
-      setIsNavigating(true);
-      router.push(`/sign/${publicationData.short_url}/completed`);
+      if (markResult.error) {
+        setError(markResult.error);
+        setIsGenerating(false);
+        setGeneratingProgress("");
+        return;
+      }
+
+      // Success - call onComplete callback to show completion view
+      setIsGenerating(false);
+      setGeneratingProgress("");
+      onComplete(documentData.filename);
     } catch (err) {
       console.error("Error generating signed document:", err);
       setError(
@@ -530,47 +524,13 @@ export default function SignPageComponent({
     }
   };
 
-  const handlePasswordSubmit = async () => {
-    if (!password.trim()) {
-      setError(t("sign.password.required"));
-      return;
-    }
 
-    setIsVerifyingPassword(true);
-    setError(null);
-
-    try {
-      const result = await verifyPublicationPassword(
-        publicationData.short_url,
-        password
-      );
-
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-
-      if (result.isValid) {
-        setIsPasswordVerified(true);
-        // Load signed URL after password verification
-        await loadDocumentSignedUrl();
-      } else {
-        setError(t("sign.password.incorrect"));
-      }
-    } catch (err) {
-      console.error("Password verification error:", err);
-      setError(t("sign.password.error"));
-    } finally {
-      setIsVerifyingPassword(false);
-    }
-  };
-
-  // Load signed URL on component mount for non-password publications
+  // Load signed URL on component mount when password is verified or not required
   useEffect(() => {
-    if (!requiresPassword && !documentSignedUrl) {
+    if (isPasswordVerified && !documentSignedUrl) {
       loadDocumentSignedUrl();
     }
-  }, [requiresPassword, documentSignedUrl]);
+  }, [isPasswordVerified, documentSignedUrl]);
 
   // Force re-render when image loads to ensure signature areas display correctly
   useEffect(() => {
@@ -679,75 +639,6 @@ export default function SignPageComponent({
     );
   }
 
-  // Show password verification screen if password is required and not verified
-  if (!isPasswordVerified) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-4">
-          <Link href="/" className="flex items-center gap-2">
-            <FileSignature className="h-8 w-8 text-primary" />
-            <span className="font-bold text-xl">{t("app.title")}</span>
-          </Link>
-          <LanguageSelector />
-        </div>
-        <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader className="text-center">
-              <Lock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <CardTitle className="text-xl">
-                {t("sign.password.title")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-center text-gray-600">
-                {t("sign.password.description")}
-                <br />
-                {t("sign.password.instruction")}
-              </p>
-              <div className="space-y-2">
-                <Label htmlFor="document-password">
-                  {t("register.password")}
-                </Label>
-                <Input
-                  id="document-password"
-                  name="document-password"
-                  errors={[]}
-                  type="password"
-                  placeholder={t("sign.password.placeholder")}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handlePasswordSubmit();
-                    }
-                  }}
-                />
-              </div>
-              <Button
-                className="w-full"
-                onClick={handlePasswordSubmit}
-                disabled={isVerifyingPassword || !password.trim()}
-              >
-                {isVerifyingPassword ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    {t("sign.password.verifying")}
-                  </>
-                ) : (
-                  t("sign.password.verify")
-                )}
-              </Button>
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm text-center">
-                  {error}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -759,6 +650,14 @@ export default function SignPageComponent({
         <LanguageSelector />
       </div>
       <div className="max-w-5xl mx-auto">
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="mb-4 -ml-2"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t("sign.documentList.title")}
+        </Button>
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">{documentData.filename}</h1>
           <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
@@ -911,12 +810,12 @@ export default function SignPageComponent({
         <div className="flex justify-end gap-2">
           <Button
             onClick={handleGenerateDocument}
-            disabled={!allAreasSigned || isGenerating || isNavigating}
+            disabled={!allAreasSigned || isGenerating}
           >
-            {isGenerating || isNavigating ? (
+            {isGenerating ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                {isNavigating ? "페이지 이동 중..." : (generatingProgress || t("sign.generating"))}
+                {generatingProgress || t("sign.generating")}
               </>
             ) : (
               t("sign.saveDocument")
