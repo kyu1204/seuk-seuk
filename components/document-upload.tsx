@@ -302,7 +302,7 @@ export default function DocumentUpload() {
                 signatureAreas.length === 0 || isLoading || !originalFile
               }
             >
-              {isLoading ? "저장 중..." : "저장하기"}
+              {isLoading ? t("upload.saving") : t("upload.save")}
             </Button>
           </div>
 
