@@ -298,6 +298,7 @@ export function PricingPage() {
                 const isPopular = plan.id === popularPlanId;
                 const isCurrent = isCurrentPlan(plan.id);
                 const isLower = isLowerPlan(plan);
+                const isPro = plan.name.toLowerCase() === "pro";
 
                 return (
                   <Card
@@ -319,8 +320,16 @@ export function PricingPage() {
                       </div>
                     )}
 
-                    {isCurrent && (
-                      <div className="absolute -top-3 right-4">
+                    {isPro && !isPopular && !isCurrent && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-green-500 text-white px-3 py-1">
+                          {t("pricing.pro.freeTrial")}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {isCurrent && !isPopular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                         <Badge
                           variant="outline"
                           className="bg-green-50 text-green-700 border-green-200"
