@@ -356,7 +356,9 @@ export default function HomePageComponent() {
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {pricingPlans.map((plan, index) => (
+              {pricingPlans.map((plan, index) => {
+                const isPro = plans[index]?.name.toLowerCase() === "pro";
+                return (
                 <Card
                   key={index}
                   className={cn(
@@ -373,6 +375,13 @@ export default function HomePageComponent() {
                     <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/3">
                       <div className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
                         {t("pricing.popular")}
+                      </div>
+                    </div>
+                  )}
+                  {isPro && !plan.popular && (
+                    <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/3">
+                      <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        {t("pricing.pro.freeTrial")}
                       </div>
                     </div>
                   )}
@@ -415,7 +424,8 @@ export default function HomePageComponent() {
                     </Link>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
