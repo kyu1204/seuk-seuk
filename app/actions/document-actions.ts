@@ -587,11 +587,12 @@ export async function getUserDocuments(
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query (exclude soft-deleted documents)
     let query = supabase
       .from("documents")
       .select("*", { count: "exact" })
       .eq("user_id", user.id)
+      .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -658,11 +659,12 @@ export async function getUserDocumentsClient(
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Build query with optimized field selection (exclude password field for client)
+    // Build query with optimized field selection (exclude soft-deleted documents)
     let query = supabase
       .from("documents")
       .select("id, filename, status, signed_file_url, created_at, publication_id", { count: "exact" })
       .eq("user_id", user.id)
+      .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -801,63 +803,83 @@ export async function deleteDocument(documentId: string): Promise<{
     }
 
 
-    // Only allow deletion of draft documents
-    if (document.status !== "draft") {
-      return { error: "Only draft documents can be deleted" };
+    // Check document status and handle accordingly
+    if (document.status === "published") {
+      return { error: "Published documents cannot be deleted" };
     }
 
+    // Handle completed documents with soft delete (no count decrement)
+    if (document.status === "completed") {
+      const { error: softDeleteError } = await supabase
+        .from("documents")
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString()
+        })
+        .eq("id", documentId)
+        .eq("user_id", user.id);
 
-    // Delete associated signatures first (cascade delete)
-    const { error: sigError } = await supabase
-      .from("signatures")
-      .delete()
-      .eq("document_id", documentId);
-
-    if (sigError) {
-      console.error("❌ SERVER: Delete signatures error:", sigError);
-      return { error: "Failed to delete signature areas" };
-    }
-
-
-    // Delete the document file from storage
-    if (document.file_url) {
-      try {
-        // file_url now contains the storage path: {user_id}/{filename}
-        const { error: storageError } = await supabase.storage
-          .from("documents")
-          .remove([document.file_url]);
-
-        if (storageError) {
-          console.error("⚠️ SERVER: Delete file error:", storageError);
-          // Continue with document deletion even if file deletion fails
-        } else {
-        }
-      } catch (storageError) {
-        console.error("⚠️ SERVER: Error parsing file URL:", storageError);
-        // Continue with document deletion
+      if (softDeleteError) {
+        console.error("❌ SERVER: Soft delete error:", softDeleteError);
+        return { error: "Failed to delete document" };
       }
+
+      // Revalidate pages
+      revalidatePath('/dashboard');
+      revalidatePath(`/document/${documentId}`);
+
+      return { success: true };
     }
 
-    // Delete the document record
-    const { error: deleteError } = await supabase
-      .from("documents")
-      .delete()
-      .eq("id", documentId)
-      .eq("user_id", user.id)
-      .eq("status", "draft"); // Double-check status
+    // Handle draft documents with hard delete + count decrement
+    if (document.status === "draft") {
+      // Delete associated signatures first (cascade delete)
+      const { error: sigError } = await supabase
+        .from("signatures")
+        .delete()
+        .eq("document_id", documentId);
 
-    if (deleteError) {
-      console.error("❌ SERVER: Delete document error:", deleteError);
-      return { error: "Failed to delete document" };
-    }
+      if (sigError) {
+        console.error("❌ SERVER: Delete signatures error:", sigError);
+        return { error: "Failed to delete signature areas" };
+      }
 
+      // Delete the document file from storage
+      if (document.file_url) {
+        try {
+          // file_url now contains the storage path: {user_id}/{filename}
+          const { error: storageError } = await supabase.storage
+            .from("documents")
+            .remove([document.file_url]);
 
-    // Decrement monthly usage count
-    const { success: usageUpdated, error: usageError } = await decrementDocumentCreated();
-    if (!usageUpdated || usageError) {
-      console.error("⚠️ SERVER: Failed to update usage:", usageError);
-      // Don't fail the entire operation, just log the error
-    } else {
+          if (storageError) {
+            console.error("⚠️ SERVER: Delete file error:", storageError);
+            // Continue with document deletion even if file deletion fails
+          }
+        } catch (storageError) {
+          console.error("⚠️ SERVER: Error parsing file URL:", storageError);
+          // Continue with document deletion
+        }
+      }
+
+      // Delete the document record
+      const { error: deleteError } = await supabase
+        .from("documents")
+        .delete()
+        .eq("id", documentId)
+        .eq("user_id", user.id);
+
+      if (deleteError) {
+        console.error("❌ SERVER: Delete document error:", deleteError);
+        return { error: "Failed to delete document" };
+      }
+
+      // Decrement monthly usage count for draft documents only
+      const { success: usageUpdated, error: usageError } = await decrementDocumentCreated();
+      if (!usageUpdated || usageError) {
+        console.error("⚠️ SERVER: Failed to update usage:", usageError);
+        // Don't fail the entire operation, just log the error
+      }
     }
 
     // Revalidate any relevant pages
@@ -899,26 +921,30 @@ export async function getUserDocumentCounts(): Promise<{
       };
     }
 
-    // Get counts for all statuses in parallel using count only queries
+    // Get counts for all statuses in parallel using count only queries (exclude soft-deleted)
     const [allResult, draftResult, publishedResult, completedResult] = await Promise.all([
       supabase
         .from("documents")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id),
+        .eq("user_id", user.id)
+        .eq("is_deleted", false),
       supabase
         .from("documents")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
+        .eq("is_deleted", false)
         .eq("status", "draft"),
       supabase
         .from("documents")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
+        .eq("is_deleted", false)
         .eq("status", "published"),
       supabase
         .from("documents")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
+        .eq("is_deleted", false)
         .eq("status", "completed"),
     ]);
 
@@ -982,12 +1008,13 @@ export async function getDashboardData(
 
     // Execute both queries in parallel for optimal performance
     const [documentsResult, countsResult] = await Promise.all([
-      // Get documents with optimized field selection
+      // Get documents with optimized field selection (exclude soft-deleted)
       (() => {
         let query = supabase
           .from("documents")
           .select("id, filename, status, created_at, signed_file_url, publication_id", { count: "exact" })
           .eq("user_id", user.id)
+          .eq("is_deleted", false)
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1);
 
@@ -998,11 +1025,12 @@ export async function getDashboardData(
         return query;
       })(),
 
-      // Get status counts using a single aggregation query
+      // Get status counts using a single aggregation query (exclude soft-deleted)
       supabase
         .from("documents")
         .select("status")
         .eq("user_id", user.id)
+        .eq("is_deleted", false)
     ]);
 
     if (documentsResult.error) {
