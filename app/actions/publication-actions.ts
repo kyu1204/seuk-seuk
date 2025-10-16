@@ -278,8 +278,6 @@ export async function getPublicationByShortUrl(
     // Use service role to bypass RLS for public access
     const supabase = createServiceSupabase();
 
-    console.log("🔍 Looking for publication with short_url:", shortUrl);
-
     const { data: publication, error: pubError } = await supabase
       .from("publications")
       .select(`
@@ -288,8 +286,6 @@ export async function getPublicationByShortUrl(
       `)
       .eq("short_url", shortUrl)
       .single();
-
-    console.log("📦 Publication query result:", { publication, error: pubError });
 
     if (pubError || !publication) {
       console.error("❌ Publication not found:", { shortUrl, error: pubError });
@@ -320,7 +316,6 @@ export async function getPublicationByShortUrl(
           .eq("id", publication.id);
         // Update the publication object with new status
         publication.status = "completed";
-        console.log("✅ Publication status updated to completed:", publication.id);
       }
     }
 
