@@ -619,7 +619,7 @@ export default function SignPageComponent({
                 </div>
                 <div className="bg-green-50 border border-green-200 rounded-md p-3">
                   <p className="text-sm text-green-700 text-center font-medium">
-                    {documentData.filename}
+                    {documentData.alias || documentData.filename}
                   </p>
                   <p className="text-xs text-green-600 text-center mt-1">
                     {t("sign.completed.status")}
@@ -661,7 +661,7 @@ export default function SignPageComponent({
               </div>
               <div className="bg-red-50 border border-red-200 rounded-md p-3">
                 <p className="text-sm text-red-700 text-center font-medium">
-                  {documentData.filename}
+                  {documentData.alias || documentData.filename}
                 </p>
                 {documentData.expires_at && (
                   <p className="text-xs text-red-600 text-center mt-1">
@@ -760,7 +760,7 @@ export default function SignPageComponent({
       </div>
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{documentData.filename}</h1>
+          <h1 className="text-3xl font-bold mb-2">{documentData.alias || documentData.filename}</h1>
           <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
         </div>
 

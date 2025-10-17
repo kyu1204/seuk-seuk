@@ -3,6 +3,10 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PublicationDetailContent } from "@/components/publication/publication-detail-content";
 
+// Disable caching for this page to always show fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface PublicationDetailPageProps {
   params: {
     shortUrl: string;
