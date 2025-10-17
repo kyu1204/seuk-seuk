@@ -1,22 +1,22 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { verifyPublicationPassword } from "@/app/actions/publication-actions";
+import LanguageSelector from "@/components/language-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import LanguageSelector from "@/components/language-selector";
 import { useLanguage } from "@/contexts/language-context";
 import type { PublicationWithDocuments } from "@/lib/supabase/database.types";
-import { verifyPublicationPassword } from "@/app/actions/publication-actions";
 import {
+  CheckCircle,
+  ChevronRight,
+  Clock,
   FileSignature,
+  FileText,
   Lock,
   RefreshCw,
-  Clock,
-  CheckCircle,
-  FileText,
-  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -329,8 +329,8 @@ export default function SignDocumentList({
                         {isDocumentComplete
                           ? t("sign.documentList.viewDocument")
                           : completed > 0
-                          ? t("sign.documentList.continueSign")
-                          : t("sign.documentList.startSigning")}
+                            ? t("sign.documentList.continueSign")
+                            : t("sign.documentList.startSigning")}
                         <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
