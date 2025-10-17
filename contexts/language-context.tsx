@@ -22,7 +22,7 @@ type LanguageContextType = {
 // Create the context with default values
 const LanguageContext = createContext<LanguageContextType>({
   language: "ko",
-  setLanguage: async () => {},
+  setLanguage: async () => { },
   t: (key) => key,
 });
 
@@ -46,6 +46,11 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.signature": "서명",
     "upload.save": "저장하기",
     "upload.saving": "저장 중...",
+    "upload.filename": "파일 이름",
+    "upload.alias": "문서 이름",
+    "upload.aliasOptional": "선택사항",
+    "upload.aliasPlaceholder": "문서 이름을 입력하세요 (예: 계약서, 회의록 등)",
+    "upload.aliasDescription": "문서를 구분하기 쉽도록 별칭을 지정할 수 있습니다. 입력하지 않으면 파일 이름이 표시됩니다.",
 
     // Sign Page
     "sign.loading": "문서 로딩 중...",
@@ -524,41 +529,47 @@ const translations: Record<Language, Record<string, string>> = {
     "term.backToHome": "홈으로 돌아가기",
     "term.title": "슥슥 이용약관",
     "term.intro":
-      '본 약관은 개인(이하 "운영자"라 합니다)이 슥슥(이하 "서비스"라 합니다)을 통해 제공하는 전자문서 서명 및 관리 서비스 이용과 관련하여, 운영자와 회원 간의 권리, 의무 및 책임 사항 등 기타 필요한 사항을 규정함을 목적으로 합니다.',
+      '본 약관은 운영자(이하 "운영자")가 제공하는 전자화문서 서명 및 관리 서비스(이하 "서비스") 이용과 관련하여 운영자와 회원 간의 권리, 의무 및 책임 사항을 규정하고, 전자문서법 등 관련 법령에 따라 요건을 갖춘 전자화문서가 종이 문서와 동일한 법적 효력을 가짐을 알리는 것을 목적으로 합니다.',
 
     // Chapter 1
     "term.chapter1.title": "제1장 총칙",
     "term.article1.title": "제1조 (목적)",
     "term.article1.content":
-      "본 약관은 서비스 이용과 관련하여 운영자와 회원(또는 비회원) 간의 권리, 의무 및 책임, 기타 필요한 사항을 규정함을 목적으로 합니다. 서비스는 온라인상에서 전자문서에 서명할 수 있도록 하는 도구를 제공합니다.",
+      "본 약관은 서비스 이용과 관련하여 운영자와 회원(또는 비회원) 간의 권리, 의무 및 책임, 기타 필요한 사항을 규정합니다. 서비스는 온라인에서 전자화문서를 생성·전달·서명·보관할 수 있는 도구를 제공하며, 관련 법령에 따른 요건을 갖춘 전자화문서가 서면과 동일한 법적 효력을 갖도록 지원합니다.",
 
     "term.article2.title": "제2조 (용어의 정의)",
     "term.article2.item1":
-      "서비스: 운영자가 제공하는 클라우드 기반 전자문서 서명 및 관리 서비스를 말합니다.",
+      "서비스: 회원이 종이 문서를 전자화하거나 전자화문서를 전송·서명·저장·열람할 수 있도록 운영자가 제공하는 플랫폼.",
     "term.article2.item2":
-      "회원: 본 약관에 따라 이용계약을 체결하고 서비스를 이용하는 자를 말합니다. 회원가입 시 제공되는 이름, 이메일, 비밀번호로 로그인합니다.",
+      "전자화문서: 종이 문서 또는 전자적으로 작성된 문서를 스캔·변환하여 전자적 형태로 저장하고, 내용을 열람·재현할 수 있는 문서.",
     "term.article2.item3":
-      "비회원: 회원가입을 하지 않고 서비스를 이용하는 자를 말합니다.",
+      "서명 데이터: 회원 또는 서명자가 터치, 마우스 입력, 이미지 업로드 등으로 생성한 서명 필체 또는 서명 이미지 데이터.",
     "term.article2.item4":
-      "서명 요청자: 전자문서에 대한 서명을 요청하는 회원을 말합니다.",
+      "회원: 본 약관과 개인정보처리방침에 동의하고 서비스 이용계약을 체결한 자.",
     "term.article2.item5":
-      "서명자: 서명 요청자로부터 전자문서에 서명을 요청받거나 서명을 하는 이용자를 말합니다.",
+      "비회원: 회원가입을 하지 않고 서비스를 이용하는 자.",
     "term.article2.item6":
-      "유료서비스: 운영자가 제공하는 서비스 중 회원이 요금을 결제한 후 이용할 수 있는 서비스를 말합니다.",
+      "서명 요청자: 전자화문서에 서명을 요청하는 회원.",
+    "term.article2.item7":
+      "서명자: 서명 요청자로부터 전자화문서 서명을 요청받거나 서명을 수행하는 이용자.",
+    "term.article2.item8":
+      "유료서비스: 저장 공간 추가, 서명 요청 한도 확대 등 요금을 결제한 후 이용할 수 있는 서비스 기능.",
+    "term.article2.item9":
+      "운영자: 본 서비스를 제공하는 자.",
 
     "term.article3.title": "제3조 (약관의 게시와 개정)",
     "term.article3.para1":
-      "운영자는 본 약관의 내용과 운영자의 연락처 등을 회원이 쉽게 알 수 있도록 서비스 초기화면 또는 별도의 연결화면에 게시합니다.",
+      "운영자는 본 약관의 내용과 사업자 정보를 회원이 쉽게 알 수 있도록 서비스 초기 화면 또는 별도의 연결화면에 게시합니다.",
     "term.article3.para2":
-      "운영자는 관련 법령(개인정보 보호법, 전자서명법 등)을 위반하지 않는 범위에서 본 약관을 개정할 수 있습니다.",
+      "운영자는 관련 법령(개인정보 보호법, 전자문서 및 전자거래 기본법, 전자서명법, 전자상거래법 등)을 위반하지 않는 범위에서 본 약관을 개정할 수 있습니다.",
     "term.article3.para3":
-      "운영자가 약관을 개정할 경우에는 적용일자와 개정사유를 명시하여 현행약관과 함께 적용일자 7일 전부터 서비스 내 공지사항을 통해 공지합니다.",
+      "운영자가 약관을 개정할 경우 적용일자와 개정 사유를 명시하여 현행 약관과 함께 적용일 7일 전부터 공지하며, 회원에게 불리하거나 중요한 변경사항은 적용일 30일 전부터 서비스 내 공지 또는 전자우편으로 알립니다.",
     "term.article3.para4":
-      "회원이 개정 약관에 동의하지 않는 경우 서비스 이용을 중단하고 탈퇴할 수 있습니다. 별도 거부의사를 표시하지 않고 서비스를 계속 사용할 경우 개정 약관에 동의한 것으로 간주합니다.",
+      "회원이 개정 약관에 동의하지 않는 경우 서비스 이용을 중단하고 탈퇴할 수 있으며, 별도 거부 의사 표시 없이 서비스를 계속 이용할 경우 개정 약관에 동의한 것으로 간주합니다.",
 
-    "term.article4.title": "제4조 (약관의 해석)",
+    "term.article4.title": "제4조 (사업자 정보 및 약관의 해석)",
     "term.article4.content":
-      "본 약관에 명시되지 않은 사항은 관련 법령 및 일반적인 상관례에 따릅니다. 서비스와 별도로 제공되는 개별 운영정책 또는 가이드에서 본 약관과 상충되는 내용이 있을 경우 개별 정책이 우선합니다.",
+      "운영자의 사업자 정보는 서비스 하단 또는 약관의 별도 페이지에 게시합니다. 본 약관에 명시되지 않은 사항과 약관의 해석은 전자문서 및 전자거래 기본법, 전자서명법, 개인정보 보호법 등 관계 법령과 개별 운영정책 및 일반적인 상관례를 따르며, 약관과 개별 정책이 상충하는 경우 개별 정책이 우선합니다.",
 
     // Chapter 2
     "term.chapter2.title": "제2장 서비스 이용 계약",
@@ -566,7 +577,7 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article5.para1":
       '서비스 이용계약은 서비스를 이용하고자 하는 자(이하 "가입신청자")가 본 약관과 개인정보 처리방침에 동의하고 회원가입을 신청한 후, 운영자가 이를 승낙함으로써 체결됩니다.',
     "term.article5.para2":
-      "가입신청자는 이름, 이메일, 비밀번호를 정확히 입력해야 하며, 타인의 정보를 도용해서는 안 됩니다.",
+      "가입신청자는 이름, 이메일, 비밀번호 등 운영자가 요구하는 필수 정보를 정확히 입력해야 하며, 타인의 정보를 도용하거나 허위 정보를 입력해서는 안 됩니다.",
     "term.article5.para3":
       "운영자는 다음 각 호에 해당하는 신청에 대하여 승낙을 거부하거나 사후에 취소할 수 있습니다.",
     "term.article5.para3.item1":
@@ -578,11 +589,11 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article5.para3.item4":
       "기타 운영자가 제시한 제한 사항을 위반하여 신청한 경우",
     "term.article5.para4":
-      "만 14세 미만은 서비스를 이용할 수 없습니다. 운영자는 나이 확인 기능을 별도로 제공하지 않지만, 만 14세 미만 이용 사실을 확인하면 즉시 서비스 이용을 중단시키고 법정대리인의 동의를 요청하거나 해당 계정을 삭제할 수 있습니다.",
+      "만 14세 미만의 아동은 서비스를 이용할 수 없으며 사실 확인 시 법정대리인의 확인 후 즉시 회원 탈퇴 처리합니다. 14세 이상 미성년자가 유료서비스를 이용하려면 법정대리인의 동의를 받아야 하며, 관련 절차는 운영자가 별도로 안내합니다.",
 
     "term.article6.title": "제6조 (이용자 정보의 제공)",
     "term.article6.para1":
-      "회원은 이름·이메일·비밀번호 등 회원가입 시 필요한 정보를 제공해야 하며, 회원 본인이 아닌 타인의 정보나 허위 정보를 사용할 경우 서비스 이용이 제한될 수 있습니다.",
+      "회원은 서비스 이용에 필요한 정보를 정확히 제공해야 하며, 다른 사람의 정보나 허위 정보를 사용할 경우 서비스 이용이 제한될 수 있습니다.",
     "term.article6.para2":
       "운영자는 본인 확인을 위해 이메일 인증 또는 소셜 로그인 등을 요구할 수 있습니다.",
     "term.article6.para3":
@@ -596,7 +607,7 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article7.para3":
       "운영자는 서명완료 후 회원이 전자문서를 내려받을 수 있도록 하며, 일정 기간이 지나면 원본 문서를 파기할 수 있습니다. 회원은 서명 완료 문서를 적절히 백업해야 합니다.",
     "term.article7.para4":
-      "운영자는 회원의 개인정보를 적법한 절차와 방법으로 수집·이용하며, 회원의 동의 없이 제3자에게 제공하지 않습니다.",
+      "운영자는 회원의 개인정보를 적법한 절차와 방법으로 수집·이용하며, 회원의 동의 없이 제3자에게 제공하지 않고 필요한 경우 법령이 정한 절차에 따라 동의를 받습니다.",
 
     "term.article8.title": "제8조 (회원의 계정 및 비밀번호 관리)",
     "term.article8.para1":
@@ -616,23 +627,25 @@ const translations: Record<Language, Record<string, string>> = {
     "term.chapter3.title": "제3장 서비스 제공 및 변경",
     "term.article10.title": "제10조 (서비스의 제공)",
     "term.article10.para1":
-      "운영자는 회원의 회원가입이 완료된 때부터 서비스를 개시합니다. 다만, 일부 서비스의 경우 별도의 신청 절차를 완료한 때부터 제공할 수 있습니다.",
+      "운영자는 회원 가입이 완료된 때부터 서비스를 제공합니다. 다만, 일부 기능은 별도의 신청 또는 결제 절차를 완료한 이후 제공될 수 있습니다.",
     "term.article10.para2":
-      "운영자는 서비스의 안정적 제공을 위해 설비를 수시로 점검·보수·교체할 수 있으며, 이에 따라 일시적으로 서비스가 중단될 수 있습니다.",
+      "서비스의 범위에는 전자화문서 생성·변환, 전송, 서명 데이터화, 서명 완료 문서의 안전한 보관 및 열람 기능이 포함됩니다.",
     "term.article10.para3":
-      "운영자가 서비스를 변경하거나 종료하는 경우 그 내용을 사전에 공지합니다. 다만, 예측하기 어려운 기술상·업무상 사유나 법령상의 사유가 있는 경우에는 사후에 통지할 수 있습니다.",
+      "서비스는 관계 법령과 본 약관이 정한 범위 내에서 무상으로 제공되며, 운영자는 안정적인 제공을 위해 설비를 점검·보수·교체할 수 있습니다. 운영자는 전자화문서와 서명 데이터의 기술적 중개자로서 서명 당사자 간 계약의 적법성·진정성·유효성을 보증하지 않습니다. 전자문서 및 전자거래 기본법에 따라 요건을 갖춘 전자화문서는 종이 문서와 동일한 효력을 가지며, 서비스는 문서를 안전한 포맷으로 저장해 동일한 형태로 열람할 수 있도록 지원합니다. 다만 공인전자서명, 공증 등 추가 요건이 필요한 경우 해당 요건을 충족할 책임은 이용자에게 있습니다.",
 
     "term.article11.title": "제11조 (서비스 내용의 변경)",
     "term.article11.para1":
       "운영자는 서비스의 내용(기능, UI 등)을 추가·변경·삭제할 수 있습니다. 무료로 제공되는 서비스의 전부 또는 일부를 운영상의 필요에 따라 변경하거나 중단할 수 있습니다.",
     "term.article11.para2":
-      "서비스 변경으로 회원에게 불리한 사항이 있는 경우 운영자는 사전에 공지하며, 회원은 변경된 서비스에 동의하지 않는 경우 이용계약을 해지할 수 있습니다.",
+      "서비스 변경으로 회원에게 불리한 사항이 있는 경우 운영자는 변경 내용과 사유를 사전에 공지하며, 회원은 변경된 서비스에 동의하지 않는 경우 이용계약을 해지할 수 있습니다.",
+    "term.article11.para3":
+      "유료서비스 변경 또는 중단으로 회원에게 손해가 발생하는 경우 운영자는 관련 법령이 정하는 범위 내에서 적절한 보상을 제공합니다.",
 
     "term.article12.title": "제12조 (정보의 제공 및 광고의 게재)",
     "term.article12.para1":
-      "운영자는 서비스 운영에 필요한 각종 정보를 서비스 화면이나 이메일을 통해 회원에게 제공할 수 있습니다. 회원은 관련 법령에 따른 거래 관련 정보 등을 제외하고 수신을 거절할 수 있습니다.",
+      "운영자는 서비스 운영에 필요한 각종 정보를 서비스 화면이나 이메일 등을 통해 회원에게 제공할 수 있으며, 법령상 고지 의무가 있는 정보를 제외하고 회원은 수신을 거절할 수 있습니다.",
     "term.article12.para2":
-      "운영자는 서비스 화면, 이메일 등에 광고를 게재할 수 있으며, 회원은 서비스 이용 시 광고 노출에 동의하는 것으로 봅니다.",
+      "운영자는 서비스 화면, 이메일, 푸시 알림 등에 광고를 게재할 수 있으며, 회원은 서비스 이용 시 광고 노출에 동의하는 것으로 봅니다.",
     "term.article12.para3":
       "운영자가 제공하는 광고나 제3자의 광고에 회원이 참여하여 발생한 손실 및 손해에 대해서는 운영자가 책임을 지지 않습니다.",
 
@@ -648,7 +661,9 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article14.para2":
       "회원이 탈퇴하면 운영자는 관련 법령 및 개인정보처리방침에 따라 필요한 범위 내에서 회원의 정보를 보유할 수 있으며, 이후에는 즉시 파기합니다.",
     "term.article14.para3":
-      "운영자는 회원이 본 약관을 위반하거나 서비스 운영을 방해하는 행위를 하는 경우 서비스 이용을 경고, 제한 또는 중지할 수 있습니다. 이로 인해 발생한 손해에 대해 운영자는 별도의 보상을 하지 않습니다.",
+      "회원이 본 약관을 위반하거나 서비스 운영을 방해하는 행위를 하는 경우 운영자는 사전 통지 후 서비스 이용을 경고, 제한 또는 중지할 수 있으며, 긴급한 사유가 있는 경우에는 사후 통지할 수 있습니다.",
+    "term.article14.para4":
+      "운영자가 이용계약을 해지하는 경우 운영자는 회원에게 해지 사유를 밝혀 통지하며, 회원은 통지일로부터 7일 이내에 이의를 제기할 수 있습니다.",
 
     "term.article15.title": "제15조 (이용제한)",
     "term.article15.para1":
@@ -681,19 +696,19 @@ const translations: Record<Language, Record<string, string>> = {
 
     "term.article17.title": "제17조 (청약 철회 및 환불)",
     "term.article17.para1":
-      "회원은 유료서비스 결제 후 14일 이내에 서비스를 전혀 이용하지 않은 경우 청약 철회 및 환불을 요청할 수 있습니다. 운영자는 회원이 제시한 자료에 따라 적정한 절차를 거쳐 환불을 진행합니다.",
+      "회원은 유료서비스 결제일 또는 제공 개시일로부터 7일 이내이며 서비스를 전혀 이용하지 않은 경우 청약 철회 및 환불을 요청할 수 있습니다.",
     "term.article17.para2":
-      "환불이 필요한 경우 결제/구독 페이지에서 구독 해지 후 cs.seuk.seuk@gmail.com으로 환불 요청을 해주시면 내용 확인 후 환불이 진행됩니다",
+      "구매 즉시 이용되거나 가치를 소비하는 디지털 콘텐츠 사용, 프로모션으로 무상 제공된 혜택의 사용, 전자상거래법 등 관련 법령에서 정한 제한 사유가 있는 경우에는 청약 철회가 제한될 수 있습니다.",
     "term.article17.para3":
-      "회원이 이미 서비스를 이용한 경우에는 환불이 제한될 수 있으며, 프로모션을 통해 무상으로 취득한 혜택은 환불 대상에서 제외됩니다.",
+      "환불이 필요한 경우 회원은 결제/구독 페이지에서 구독을 해지한 후 cs.seuk.seuk@gmail.com 등 운영자가 지정한 채널로 환불을 요청해야 하며, 운영자는 신청일로부터 영업일 기준 3일 이내에 환불 가능 여부를 안내합니다.",
     "term.article17.para4":
-      "환불 및 과오금 처리와 관련하여 회원이 제공해야 하는 정보, 환불 기한 등은 운영정책에서 별도로 정합니다.",
+      "회원이 서비스를 일부 사용한 경우 사용 일수 또는 이용량을 기준으로 차감한 후 잔여 금액을 환불할 수 있으며, 구체적인 산정 기준은 운영정책에서 정합니다.",
 
     "term.article18.title": "제18조 (유료서비스 내용 변경 및 서비스 중지)",
     "term.article18.para1":
-      "운영자는 운영상, 기술상 필요에 따라 유료서비스의 내용(가격, 제공 수량 등)을 변경할 수 있으며, 변경 사항은 사전에 유료회원에게 공지합니다.",
+      "운영자는 운영상·기술상 필요에 따라 유료서비스의 내용(가격, 제공 수량 등)을 변경할 수 있으며, 변경 사항은 적용일 7일 전(회원에게 불리한 경우 30일 전) 유료회원에게 공지합니다.",
     "term.article18.para2":
-      "유료서비스의 중지나 종료가 발생하는 경우 운영자는 사전에 통지하고, 회원은 공지된 내용에 따라 적절한 조치를 취할 수 있습니다.",
+      "유료서비스의 중지나 종료가 발생하는 경우 운영자는 중지 또는 종료 사유와 보상 방안을 사전에 통지하며, 회원은 공지된 내용에 따라 적절한 조치를 취할 수 있습니다.",
 
     // Chapter 5
     "term.chapter5.title": "제5장 손해배상 및 면책조항",
@@ -705,11 +720,11 @@ const translations: Record<Language, Record<string, string>> = {
 
     "term.article20.title": "제20조 (책임의 한계)",
     "term.article20.para1":
-      "운영자는 천재지변, 정전, 서버나 네트워크 장애, 기간통신사업자의 서비스 중지 등 불가항력으로 인해 서비스를 제공할 수 없는 경우 책임을 지지 않습니다.",
+      "운영자는 전자화문서 전달·서명 데이터화·저장 기능을 제공하는 기술적 중개자로서, 회원 간 체결된 계약의 내용, 적법성, 진정성, 유효성에 대하여 보증하거나 책임을 지지 않습니다.",
     "term.article20.para2":
-      "운영자는 회원의 귀책사유로 인해 발생한 서비스 이용 장애에 대해 책임을 지지 않으며, 회원이 서비스를 통해 전송하거나 게시한 정보의 신뢰도 및 정확성에 대해 보증하지 않습니다.",
+      "운영자는 천재지변, 정전, 서버나 네트워크 장애, 기간통신사업자의 서비스 중지 등 불가항력으로 인해 서비스를 제공할 수 없는 경우 책임을 지지 않습니다.",
     "term.article20.para3":
-      "운영자는 제3자 서비스와의 연동 과정에서 발생한 문제에 대해 책임지지 않습니다. 제3자 서비스를 함께 사용하는 경우 회원은 해당 서비스의 약관을 준수해야 합니다.",
+      "운영자는 회원의 귀책사유로 발생한 서비스 이용 장애나 회원이 서비스를 통해 전송·게시한 정보의 신뢰도 및 정확성, 제3자 서비스와의 연동 과정에서 발생한 문제에 대해 책임을 지지 않습니다. 다만, 운영자의 고의 또는 중대한 과실이 있는 경우에는 예외로 합니다.",
 
     // Chapter 6
     "term.chapter6.title": "제6장 기타",
@@ -719,15 +734,11 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article21.para2":
       "서비스 이용과 관련하여 운영자와 회원 사이에 분쟁이 발생한 경우, 양 당사자는 원만한 해결을 위해 성실히 협의합니다. 협의가 이루어지지 않을 경우 민사소송법상의 관할법원에 소를 제기할 수 있습니다.",
 
-    "term.article22.title": "제22조 (전자서명 이용약관의 적용)",
-    "term.article22.content":
-      "서비스에서 제공하는 전자서명 기능을 이용할 경우 별도로 게시된 전자서명 이용약관에 동의해야 하며, 본 약관과 전자서명 이용약관이 충돌하는 경우 전자서명 이용약관이 우선합니다.",
-
-    "term.article23.title": "제23조 (개인정보 처리방침)",
+    "term.article23.title": "제22조 (개인정보 처리방침)",
     "term.article23.content":
       "개인정보의 수집·이용·제공·파기 등 처리에 관한 사항은 별도로 게시하는 개인정보처리방침에 따르며, 본 약관과 개인정보처리방침이 상충할 경우 개인정보처리방침이 우선합니다.",
 
-    "term.article24.title": "제24조 (약관의 효력)",
+    "term.article24.title": "제23조 (약관의 효력)",
     "term.article24.content":
       "본 약관은 2025년 10월 1일부터 적용됩니다. 운영자는 필요한 경우 본 약관을 개정할 수 있으며, 개정된 약관은 제3조에서 정한 방식에 따라 공지한 때부터 효력이 발생합니다.",
 
@@ -1033,6 +1044,11 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.signature": "Signature",
     "upload.save": "Save",
     "upload.saving": "Saving...",
+    "upload.filename": "File Name",
+    "upload.alias": "Document Name",
+    "upload.aliasOptional": "Optional",
+    "upload.aliasPlaceholder": "Enter a document name (e.g., Contract, Meeting Notes)",
+    "upload.aliasDescription": "You can specify an alias to easily identify the document. If not provided, the file name will be displayed.",
 
     // Sign Page
     "sign.loading": "Loading document...",
@@ -1516,41 +1532,47 @@ const translations: Record<Language, Record<string, string>> = {
     "term.backToHome": "Back to Home",
     "term.title": "SeukSeuk Terms of Service",
     "term.intro":
-      'These Terms of Service establish the rights, obligations, responsibilities, and other necessary matters between the operator and members regarding the use of the electronic document signing and management services provided by an individual (hereinafter referred to as the "Operator") through SeukSeuk (hereinafter referred to as the "Service").',
+      'These Terms of Service govern the rights, obligations, responsibilities, and other necessary matters between the operator ("Operator") and members when using the electronic document signing and management services ("Service"), and clarify that properly formed electronic documents have the same legal effect as paper documents under applicable laws.',
 
     // Chapter 1
     "term.chapter1.title": "Chapter 1: General Provisions",
     "term.article1.title": "Article 1 (Purpose)",
     "term.article1.content":
-      "These Terms of Service aim to establish the rights, obligations, responsibilities, and other necessary matters between the Operator and members (or non-members) regarding the use of the Service. The Service provides tools for signing electronic documents online.",
+      "These Terms establish the rights, obligations, responsibilities, and other necessary matters between the Operator and members (or non-members) regarding use of the Service. The Service provides tools to create, deliver, sign, and store electronic documents online and helps ensure that electronic documents meeting legal requirements carry the same legal effect as paper documents.",
 
     "term.article2.title": "Article 2 (Definition of Terms)",
     "term.article2.item1":
-      "Service: Cloud-based electronic document signing and management service provided by the Operator.",
+      "Service: A platform provided by the Operator that allows members to digitize paper documents and transmit, request signatures on, store, and view electronic documents.",
     "term.article2.item2":
-      "Member: A person who concludes a service agreement according to these Terms and uses the Service. Login is performed using the name, email, and password provided during membership registration.",
+      "Electronic Document: A document that is scanned or converted from paper, or created electronically, stored in electronic form, and capable of being viewed or reproduced.",
     "term.article2.item3":
-      "Non-member: A person who uses the Service without membership registration.",
+      "Signature Data: Signature strokes or signature images generated by members or signers through touch, mouse input, or image uploads.",
     "term.article2.item4":
-      "Signature Requester: A member who requests a signature on an electronic document.",
+      "Member: A person who agrees to these Terms and the Privacy Policy and concludes a service agreement.",
     "term.article2.item5":
-      "Signer: A user who receives or provides a signature request on an electronic document from the signature requester.",
+      "Non-member: A person who uses the Service without registering as a member.",
     "term.article2.item6":
-      "Paid Service: Services provided by the Operator that members can use after paying a fee (may be introduced in the future).",
+      "Signature Requester: A member who requests signatures on an electronic document.",
+    "term.article2.item7":
+      "Signer: A user who receives a request to sign an electronic document from a signature requester or provides the signature.",
+    "term.article2.item8":
+      "Paid Service: Features that can be used after paying a fee, such as added storage or increased signature request limits.",
+    "term.article2.item9":
+      "Operator: The provider of the Service.",
 
     "term.article3.title": "Article 3 (Publication and Amendment of Terms)",
     "term.article3.para1":
-      "The Operator shall post the contents of these Terms and the Operator's contact information on the initial screen of the Service or a separate connection screen for easy access by members.",
+      "The Operator posts these Terms and business information where members can easily find them on the initial service screen or a linked page.",
     "term.article3.para2":
-      "The Operator may amend these Terms without violating relevant laws (Personal Information Protection Act, Electronic Signature Act, etc.).",
+      "The Operator may amend these Terms to the extent permitted by relevant laws, including the Personal Information Protection Act, the Framework Act on Electronic Documents and Transactions, the Electronic Signature Act, and the Electronic Commerce Act.",
     "term.article3.para3":
-      "When the Operator amends the Terms, the effective date and reasons for amendment shall be clearly stated and posted through service notifications at least 7 days before the effective date along with the current terms.",
+      "When the Operator amends the Terms, the effective date and reasons for amendment are announced together with the current Terms at least 7 days in advance, and at least 30 days in advance if the changes are disadvantageous or material to members.",
     "term.article3.para4":
-      "If a member does not agree with the amended terms, they may stop using the Service and withdraw. If they continue to use the Service without expressing separate refusal, they shall be deemed to have agreed to the amended terms.",
+      "If a member does not agree with the amended Terms, they may stop using the Service and withdraw. Continued use of the Service without expressing refusal constitutes consent to the amended Terms.",
 
-    "term.article4.title": "Article 4 (Interpretation of Terms)",
+    "term.article4.title": "Article 4 (Business Information and Interpretation of Terms)",
     "term.article4.content":
-      "Matters not specified in these Terms shall be governed by relevant laws and general commercial practices. If there is conflicting content between these Terms and separate operational policies or guides provided with the Service, the individual policy shall take precedence.",
+      "The Operator posts its business information at the bottom of the Service or on a dedicated terms page. Matters not specified in these Terms and their interpretation follow applicable laws, operational policies, and general commercial practices, and specific policies take precedence if they conflict with these Terms.",
 
     // Chapter 2
     "term.chapter2.title": "Chapter 2: Service Use Agreement",
@@ -1558,7 +1580,7 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article5.para1":
       'A service use agreement is formed when a person wishing to use the Service (hereinafter referred to as the "Applicant") agrees to these Terms and Privacy Policy, applies for membership, and the Operator accepts it.',
     "term.article5.para2":
-      "The Applicant must accurately enter their name, email, and password, and shall not misuse another person's information.",
+      "Applicants must accurately enter required information such as name, email, and password, and must not use another person's information or submit false details.",
     "term.article5.para3":
       "The Operator may refuse or subsequently cancel acceptance of applications that fall under any of the following:",
     "term.article5.para3.item1":
@@ -1570,15 +1592,15 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article5.para3.item4":
       "Applying in violation of restrictions set by the Operator",
     "term.article5.para4":
-      "Persons under 14 years of age cannot use the Service. Although the Operator does not separately provide age verification, if use by persons under 14 is confirmed, service use will be immediately suspended and legal representative's consent will be requested or the account may be deleted.",
+      "Children under 14 cannot use the Service, and if their use is confirmed the account is deleted after guardian confirmation. Minors aged 14 or older must obtain guardian consent to use paid services, and detailed procedures are guided separately by the Operator.",
 
     "term.article6.title": "Article 6 (Provision of User Information)",
     "term.article6.para1":
-      "Members must provide necessary information such as name, email, and password during membership registration, and service use may be restricted if they use information that is not their own or false information.",
+      "Members must provide accurate information required for service use, and use may be restricted if false or third-party information is supplied.",
     "term.article6.para2":
       "The Operator may require email verification or social login for identity verification.",
     "term.article6.para3":
-      "Members must properly manage their account information (email, password, etc.) and are responsible for information leakage or third-party abuse due to carelessness.",
+      "Members must properly manage their account information (email, password, etc.) and are responsible for any leaks or misuse resulting from negligence.",
 
     "term.article7.title":
       "Article 7 (Protection and Management of Personal Information)",
@@ -1589,7 +1611,7 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article7.para3":
       "The Operator allows members to download electronic documents after signature completion and may destroy original documents after a certain period. Members must properly back up completed signed documents.",
     "term.article7.para4":
-      "The Operator collects and uses members' personal information through lawful procedures and methods and does not provide it to third parties without members' consent.",
+      "The Operator collects and uses personal information lawfully and does not provide it to third parties without consent, unless consent is obtained in accordance with statutory procedures.",
 
     "term.article8.title": "Article 8 (Member Account and Password Management)",
     "term.article8.para1":
@@ -1609,26 +1631,28 @@ const translations: Record<Language, Record<string, string>> = {
     "term.chapter3.title": "Chapter 3: Service Provision and Changes",
     "term.article10.title": "Article 10 (Provision of Service)",
     "term.article10.para1":
-      "The Operator shall commence service from the time a member's membership registration is completed. However, some services may be provided from the time separate application procedures are completed.",
+      "The Operator provides the Service once membership registration is complete, while certain features may require additional application or payment procedures.",
     "term.article10.para2":
-      "The Operator may periodically inspect, repair, and replace facilities for stable service provision, which may temporarily interrupt the Service.",
+      "The Service encompasses electronic document creation and conversion, transmission to designated signers, signature data capture, and secure storage and viewing of signed documents.",
     "term.article10.para3":
-      "When the Operator changes or terminates the Service, it shall announce the content in advance. However, in cases of unpredictable technical or business reasons or legal reasons, notification may be made afterwards.",
+      "The Service is provided free of charge within the scope permitted by law and these Terms, and the Operator may temporarily suspend it for equipment inspection, maintenance, or replacement. The Operator acts as a technical intermediary for electronic documents and signature data and does not guarantee the legality, authenticity, or validity of agreements between members. Electronic documents that satisfy statutory requirements under the Framework Act on Electronic Documents and Transactions have the same legal effect as paper documents, and the Service stores them in secure formats so they can be viewed in the same form as when created. Members are responsible for satisfying any additional requirements such as accredited electronic signatures or notarization required by specific laws or contracts.",
 
     "term.article11.title": "Article 11 (Changes to Service Content)",
     "term.article11.para1":
-      "The Operator may add, change, or delete service content (features, UI, etc.). All or part of the free service may be changed or suspended according to operational needs.",
+      "The Operator may add, change, or delete service content (features, UI, etc.) and may change or discontinue all or part of free services as needed.",
     "term.article11.para2":
-      "If there are unfavorable matters to members due to service changes, the Operator shall announce them in advance, and members may terminate the use agreement if they do not agree with the changed service.",
+      "If changes are unfavorable to members, the Operator announces the details and reasons in advance, and members who do not agree with the changes may terminate the agreement.",
+    "term.article11.para3":
+      "If changes or discontinuation of paid services cause damages to members, the Operator provides appropriate remedies within the scope permitted by law.",
 
     "term.article12.title":
       "Article 12 (Provision of Information and Advertisement Placement)",
     "term.article12.para1":
-      "The Operator may provide various information necessary for service operation to members through the service screen or email. Members may refuse to receive information except transaction-related information according to relevant laws.",
+      "The Operator may provide various information necessary for service operation through service screens, email, or other channels. Members may refuse to receive information except where notification is required by law.",
     "term.article12.para2":
-      "The Operator may place advertisements on the service screen, email, etc., and members are deemed to consent to advertisement exposure when using the Service.",
+      "The Operator may display advertisements on service screens, email, or push notifications, and members are deemed to consent to advertisement exposure when using the Service.",
     "term.article12.para3":
-      "The Operator is not responsible for losses and damages incurred by members' participation in advertisements provided by the Operator or third parties.",
+      "The Operator is not responsible for any loss or damage arising from members' participation in advertisements provided by the Operator or third parties.",
 
     "term.article13.title": "Article 13 (Attribution of Rights)",
     "term.article13.para1":
@@ -1639,11 +1663,13 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article14.title":
       "Article 14 (Member's Contract Termination and Suspension of Use)",
     "term.article14.para1":
-      "Members may terminate the use agreement at any time through the withdrawal menu in the Service, and the Operator shall immediately process this in accordance with relevant laws.",
+      "Members may terminate the service agreement at any time through the withdrawal menu, and the Operator processes the request immediately in accordance with relevant laws.",
     "term.article14.para2":
-      "When a member withdraws, the Operator may retain member information within the necessary scope according to relevant laws and the Privacy Policy, and shall immediately destroy it thereafter.",
+      "When a member withdraws, the Operator may retain the member's information within the scope required by law and the Privacy Policy and destroys it thereafter.",
     "term.article14.para3":
-      "The Operator may warn, restrict, or suspend service use if members violate these Terms or engage in acts that interfere with service operation. The Operator shall not provide separate compensation for damages incurred thereby.",
+      "If a member violates these Terms or interferes with service operation, the Operator may warn, restrict, or suspend service use after prior notice, or notify afterwards in urgent cases.",
+    "term.article14.para4":
+      "If the Operator terminates the agreement, it notifies the member of the reason for termination, and the member may raise objections within seven days from the notification date.",
 
     "term.article15.title": "Article 15 (Use Restrictions)",
     "term.article15.para1":
@@ -1665,7 +1691,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Chapter 4
     "term.chapter4.title": "Chapter 4: Paid Services (Applied When Introduced)",
     "term.chapter4.intro":
-      "The Service is currently provided free of charge, and the following regulations will apply when paid services are introduced in the future.",
+      "The following provisions apply when using paid services.",
 
     "term.article16.title":
       "Article 16 (Paid Service Use Agreement and Fee System)",
@@ -1678,20 +1704,20 @@ const translations: Record<Language, Record<string, string>> = {
 
     "term.article17.title": "Article 17 (Withdrawal and Refund)",
     "term.article17.para1":
-      "Members may request withdrawal and refund if they have not used the service at all within 14 days after paid service payment. The Operator shall process refunds through appropriate procedures according to the materials provided by members.",
+      "Members may request withdrawal and a refund within seven days from the payment date or service commencement date, provided that the service has not been used at all.",
     "term.article17.para2":
-      "If a refund is needed, please request a refund from the subscription/payment page by unsubscribing from the subscription and then sending an email to cs.seuk.seuk@gmail.com. The refund will be processed after the content is checked.",
+      "Withdrawal may be limited when digital content is consumed immediately upon purchase, promotional benefits provided free of charge have been used, or other restrictions under the Electronic Commerce Act and related laws apply.",
     "term.article17.para3":
-      "Refunds may be restricted if members have already used the service, and benefits acquired free through promotions are excluded from refund targets.",
+      "To request a refund, members must cancel the subscription on the subscription/payment page and contact cs.seuk.seuk@gmail.com or another channel designated by the Operator. The Operator confirms eligibility and responds within three business days of the request.",
     "term.article17.para4":
-      "Information to be provided by members regarding refunds and overpayment processing, refund deadlines, etc. shall be separately determined in operational policies.",
+      "If a member has partially used the service, the Operator may deduct fees based on usage period or amount before refunding the remaining balance, in accordance with the operational policy.",
 
     "term.article18.title":
       "Article 18 (Changes to Paid Service Content and Service Suspension)",
     "term.article18.para1":
-      "The Operator may change paid service content (price, quantity provided, etc.) according to operational and technical needs, and shall announce changes to paid members in advance.",
+      "The Operator may change paid service content (price, quantity provided, etc.) for operational or technical reasons and notifies paid members at least seven days in advance, or thirty days in advance if the change is unfavorable.",
     "term.article18.para2":
-      "If paid service suspension or termination occurs, the Operator shall notify in advance, and members may take appropriate action according to the announced content.",
+      "If a paid service is suspended or terminated, the Operator informs members in advance of the reason and compensation plan so that members can take appropriate action.",
 
     // Chapter 5
     "term.chapter5.title": "Chapter 5: Damages and Disclaimer",
@@ -1703,11 +1729,11 @@ const translations: Record<Language, Record<string, string>> = {
 
     "term.article20.title": "Article 20 (Limitation of Liability)",
     "term.article20.para1":
-      "The Operator is not responsible if unable to provide services due to force majeure such as natural disasters, power outages, server or network failures, or service interruptions by telecommunications carriers.",
+      "The Operator provides technical intermediation for delivering electronic documents, capturing signatures, and storing them, and does not guarantee the legality, authenticity, or validity of agreements between members.",
     "term.article20.para2":
-      "The Operator is not responsible for service use failures caused by members' fault and does not guarantee the reliability and accuracy of information transmitted or posted by members through the Service.",
+      "The Operator is not responsible for service disruption due to force majeure such as natural disasters, power outages, server or network failures, or suspension by telecommunications carriers.",
     "term.article20.para3":
-      "The Operator is not responsible for problems occurring during integration with third-party services. When using third-party services together, members must comply with the terms of those services.",
+      "The Operator is not responsible for service failures caused by members' negligence, for the reliability or accuracy of information members transmit or post, or for issues arising from integration with third-party services, unless caused by the Operator's willful misconduct or gross negligence.",
 
     // Chapter 6
     "term.chapter6.title": "Chapter 6: Miscellaneous",
@@ -1717,16 +1743,11 @@ const translations: Record<Language, Record<string, string>> = {
     "term.article21.para2":
       "If a dispute arises between the Operator and members regarding service use, both parties shall sincerely consult for amicable resolution. If consultation is not reached, lawsuits may be filed with the competent court under the Civil Procedure Act.",
 
-    "term.article22.title":
-      "Article 22 (Application of Electronic Signature Terms)",
-    "term.article22.content":
-      "When using the electronic signature function provided by the Service, consent to separately posted electronic signature terms is required, and if these Terms conflict with electronic signature terms, the electronic signature terms shall take precedence.",
-
-    "term.article23.title": "Article 23 (Privacy Policy)",
+    "term.article23.title": "Article 22 (Privacy Policy)",
     "term.article23.content":
       "Matters concerning the collection, use, provision, and destruction of personal information shall follow the separately posted Privacy Policy, and if these Terms conflict with the Privacy Policy, the Privacy Policy shall take precedence.",
 
-    "term.article24.title": "Article 24 (Effectiveness of Terms)",
+    "term.article24.title": "Article 23 (Effectiveness of Terms)",
     "term.article24.content":
       "These Terms shall be effective from October 1, 2025. The Operator may amend these Terms if necessary, and amended terms shall be effective from the time announced according to the method determined in Article 3.",
 
