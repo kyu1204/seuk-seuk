@@ -10,9 +10,8 @@ import { FileSignature, KeyRound, Mail } from "lucide-react";
 import Link from "next/link";
 import { useFormState } from "react-dom";
 import { login } from "./actions";
-import KakaoLoginButton from "./components/kakao-login-button";
-import GithubLoginButton from "./components/github-login-button";
-import GoogleLoginButton from "./components/google-login-button";
+import GoogleLoginButton from "../components/google-login-button";
+import KakaoLoginButton from "../components/kakao-login-button";
 
 export default function LoginPage() {
   const { t } = useLanguage();
@@ -125,9 +124,8 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <GoogleLoginButton />
-              <GithubLoginButton />
               <KakaoLoginButton />
             </div>
 

@@ -1,11 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/language-context";
 import { createClientSupabase } from "@/lib/supabase/client";
 
 export default function GoogleLoginButton() {
-  const { t } = useLanguage();
 
   const signInWithGoogle = async () => {
     const supabase = createClientSupabase();
