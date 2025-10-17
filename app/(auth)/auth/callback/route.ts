@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 // The client you created from the Server-Side Auth instructions
-import { CURRENT_LEGAL_VERSION } from "@/lib/constants/legal";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -27,19 +26,11 @@ export async function GET(request: Request) {
         if (provider === "kakao") {
           const { data: profile } = await supabase
             .from("users")
-            .select(
-              "terms_accepted_at, privacy_accepted_at, terms_accepted_version, privacy_accepted_version"
-            )
+            .select("terms_accepted_at, privacy_accepted_at")
             .eq("id", user.id)
             .maybeSingle();
 
-          const hasConsent =
-            Boolean(profile?.terms_accepted_at) &&
-            Boolean(profile?.privacy_accepted_at) &&
-            profile?.terms_accepted_version === CURRENT_LEGAL_VERSION &&
-            profile?.privacy_accepted_version === CURRENT_LEGAL_VERSION;
-
-          needsConsent = !hasConsent;
+          needsConsent = !profile?.terms_accepted_at || !profile?.privacy_accepted_at;
         }
       }
 
