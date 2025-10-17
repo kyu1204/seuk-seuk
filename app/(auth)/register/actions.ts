@@ -1,8 +1,9 @@
 "use server";
 import { z } from "zod";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { CURRENT_LEGAL_VERSION } from "@/lib/constants/legal";
 
 const formSchema = z.object({
   name: z.string({
@@ -74,6 +75,28 @@ export async function register(_: any, formData: FormData) {
         confirmPassword: [registerError.message],
       },
     };
+  }
+
+  const userId = registerData.user?.id;
+  if (userId) {
+    const serviceClient = createServiceSupabase();
+    const timestamp = new Date().toISOString();
+    const { error: consentError } = await serviceClient
+      .from("users")
+      .upsert(
+        {
+          id: userId,
+          terms_accepted_at: timestamp,
+          terms_accepted_version: CURRENT_LEGAL_VERSION,
+          privacy_accepted_at: timestamp,
+          privacy_accepted_version: CURRENT_LEGAL_VERSION,
+        },
+        { onConflict: "id" }
+      );
+
+    if (consentError) {
+      console.error("Failed to persist legal consent for new user:", consentError);
+    }
   }
 
   revalidatePath("/", "layout");
