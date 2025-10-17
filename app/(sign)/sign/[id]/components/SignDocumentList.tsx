@@ -303,7 +303,7 @@ export default function SignDocumentList({
                       <FileText className="h-8 w-8 text-primary flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-lg mb-1 truncate">
-                          {document.filename}
+                          {document.alias || document.filename}
                         </h3>
                         <div className="flex items-center gap-2">
                           {isDocumentComplete ? (

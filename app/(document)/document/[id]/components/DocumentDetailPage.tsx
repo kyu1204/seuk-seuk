@@ -10,6 +10,8 @@ import DeleteDocumentModal from "@/components/delete-document-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/language-context";
 import { ProjectBreadcrumb } from "@/components/breadcrumb";
 import type {
@@ -52,6 +54,7 @@ export default function DocumentDetailComponent({
   const [isSelecting, setIsSelecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editedAlias, setEditedAlias] = useState<string>("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -79,16 +82,18 @@ export default function DocumentDetailComponent({
   const handleEditModeToggle = () => {
     if (document.status === "draft") {
       if (!isEditMode) {
-        // Entering edit mode - load existing signature areas
+        // Entering edit mode - load existing signature areas and alias
         setSignatureAreas(signatures.map((sig) => ({
           x: sig.x,
           y: sig.y,
           width: sig.width,
           height: sig.height,
         })));
+        setEditedAlias(document.alias || "");
       } else {
-        // Exiting edit mode - clear signature areas
+        // Exiting edit mode - clear signature areas and reset alias
         setSignatureAreas([]);
+        setEditedAlias("");
       }
       setIsEditMode(!isEditMode);
       setError(null);
@@ -141,7 +146,7 @@ export default function DocumentDetailComponent({
         height: area.height,
       }));
 
-
+      // Update signature areas
       const result = await updateSignatureAreas(document.id, relativeAreas);
 
       if (result.error) {
@@ -149,11 +154,32 @@ export default function DocumentDetailComponent({
         return;
       }
 
+      // Update alias if changed
+      const trimmedAlias = editedAlias.trim();
+      const currentAlias = document.alias || "";
+
+      if (trimmedAlias !== currentAlias) {
+        // Import updateDocumentAlias dynamically
+        const { updateDocumentAlias } = await import("@/app/actions/document-actions");
+        const aliasResult = await updateDocumentAlias(document.id, trimmedAlias || null);
+
+        if (aliasResult.error) {
+          setError(aliasResult.error);
+          return;
+        }
+
+        // Update local document state with new alias for immediate UI update
+        setDocument(prev => ({
+          ...prev,
+          alias: trimmedAlias || null
+        }));
+      }
+
       setIsEditMode(false);
       // Refresh the page data
       router.refresh();
     } catch (error) {
-      console.error("Error updating signature areas:", error);
+      console.error("Error updating document:", error);
       setError(t("documentDetail.errorUpdateArea"));
     } finally {
       setIsLoading(false);
@@ -207,6 +233,9 @@ export default function DocumentDetailComponent({
   const canEdit = document.status === "draft";
   const canDelete = document.status === "draft" || document.status === "completed";
   const isCompleted = document.status === "completed";
+
+  // Display alias if exists, otherwise show filename
+  const displayName = document.alias || document.filename;
 
   // Set mounted state on client side
   useEffect(() => {
@@ -376,7 +405,7 @@ export default function DocumentDetailComponent({
         <div className="mb-8 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight break-words">
-              {document.filename}
+              {displayName}
             </h1>
             <div className="self-start sm:self-center">
               {getStatusBadge(document.status)}
@@ -443,36 +472,57 @@ export default function DocumentDetailComponent({
                 </>
               ) : (
                 <>
-                  {/* Edit Mode - Single Line Actions */}
-                  <div className="flex justify-between items-center mb-8">
-                    {/* Left Group - Cancel & Add Area */}
-                    <div className="flex gap-2">
+                  {/* Edit Mode - Actions and Alias Input */}
+                  <div className="space-y-4 mb-8">
+                    {/* Action Buttons */}
+                    <div className="flex justify-between items-center">
+                      {/* Left Group - Cancel & Add Area */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={handleEditModeToggle}
+                          disabled={isLoading}
+                          className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                        >
+                          <Edit className="mr-1 h-3 w-3" />
+                          {t("documentDetail.cancel")}
+                        </Button>
+                        <Button
+                          onClick={handleAddSignatureArea}
+                          disabled={isLoading}
+                          className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                          variant="outline"
+                        >
+                          {t("documentDetail.addArea")}
+                        </Button>
+                      </div>
+                      {/* Right Group - Save */}
                       <Button
-                        variant="outline"
-                        onClick={handleEditModeToggle}
+                        onClick={handleSaveChanges}
                         disabled={isLoading}
-                        className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                        className="h-9 px-3 text-sm font-medium bg-green-600 hover:bg-green-700"
                       >
-                        <Edit className="mr-1 h-3 w-3" />
-                        {t("documentDetail.cancel")}
-                      </Button>
-                      <Button
-                        onClick={handleAddSignatureArea}
-                        disabled={isLoading}
-                        className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
-                        variant="outline"
-                      >
-                        {t("documentDetail.addArea")}
+                        {isLoading ? t("documentDetail.saving") : t("documentDetail.save")}
                       </Button>
                     </div>
-                    {/* Right Group - Save */}
-                    <Button
-                      onClick={handleSaveChanges}
-                      disabled={isLoading}
-                      className="h-9 px-3 text-sm font-medium bg-green-600 hover:bg-green-700"
-                    >
-                      {isLoading ? t("documentDetail.saving") : t("documentDetail.save")}
-                    </Button>
+                    
+                    {/* Alias Input Field */}
+                    <div className="space-y-2">
+                      <Label htmlFor="alias-mobile" className="text-sm font-medium">
+                        {t("upload.alias")}
+                        <span className="ml-1 text-xs text-gray-500">({t("upload.aliasOptional")})</span>
+                      </Label>
+                      <Input
+                        id="alias-mobile"
+                        type="text"
+                        value={editedAlias}
+                        onChange={(e) => setEditedAlias(e.target.value)}
+                        placeholder={t("upload.aliasPlaceholder")}
+                        disabled={isLoading}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-gray-500">{t("upload.aliasDescription")}</p>
+                    </div>
                   </div>
                 </>
               )}
@@ -536,36 +586,57 @@ export default function DocumentDetailComponent({
                 </>
               ) : (
                 <>
-                  {/* Edit Mode - Single Line Actions */}
-                  <div className="flex justify-between items-center mb-8">
-                    {/* Left Group - Cancel & Add Area */}
-                    <div className="flex gap-3">
+                  {/* Edit Mode - Actions and Alias Input */}
+                  <div className="space-y-4 mb-8">
+                    {/* Action Buttons */}
+                    <div className="flex justify-between items-center">
+                      {/* Left Group - Cancel & Add Area */}
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={handleEditModeToggle}
+                          disabled={isLoading}
+                          className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          {t("documentDetail.cancel")}
+                        </Button>
+                        <Button
+                          onClick={handleAddSignatureArea}
+                          disabled={isLoading}
+                          className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                          variant="outline"
+                        >
+                          {t("documentDetail.addArea")}
+                        </Button>
+                      </div>
+                      {/* Right Group - Save */}
                       <Button
-                        variant="outline"
-                        onClick={handleEditModeToggle}
+                        onClick={handleSaveChanges}
                         disabled={isLoading}
-                        className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                        className="h-10 px-4 text-sm font-medium bg-green-600 hover:bg-green-700"
                       >
-                        <Edit className="mr-2 h-4 w-4" />
-                        {t("documentDetail.cancel")}
-                      </Button>
-                      <Button
-                        onClick={handleAddSignatureArea}
-                        disabled={isLoading}
-                        className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
-                        variant="outline"
-                      >
-                        {t("documentDetail.addArea")}
+                        {isLoading ? t("documentDetail.saving") : t("documentDetail.save")}
                       </Button>
                     </div>
-                    {/* Right Group - Save */}
-                    <Button
-                      onClick={handleSaveChanges}
-                      disabled={isLoading}
-                      className="h-10 px-4 text-sm font-medium bg-green-600 hover:bg-green-700"
-                    >
-                      {isLoading ? t("documentDetail.saving") : t("documentDetail.save")}
-                    </Button>
+
+                    {/* Alias Input Field */}
+                    <div className="space-y-2">
+                      <Label htmlFor="alias-desktop" className="text-sm font-medium">
+                        {t("upload.alias")}
+                        <span className="ml-1 text-xs text-gray-500">({t("upload.aliasOptional")})</span>
+                      </Label>
+                      <Input
+                        id="alias-desktop"
+                        type="text"
+                        value={editedAlias}
+                        onChange={(e) => setEditedAlias(e.target.value)}
+                        placeholder={t("upload.aliasPlaceholder")}
+                        disabled={isLoading}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-gray-500">{t("upload.aliasDescription")}</p>
+                    </div>
                   </div>
                 </>
               )}
@@ -662,7 +733,7 @@ export default function DocumentDetailComponent({
                 ) : (
                   <img
                     src={displayImageUrl}
-                    alt={document.filename}
+                    alt={displayName}
                     className="w-full h-auto object-contain block"
                     draggable="false"
                     style={{ userSelect: "none", WebkitUserSelect: "none" }}
@@ -732,7 +803,7 @@ export default function DocumentDetailComponent({
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleDeleteDocument}
           isLoading={isLoading}
-          documentName={document.filename}
+          documentName={displayName}
         />
       </div>
     </div>

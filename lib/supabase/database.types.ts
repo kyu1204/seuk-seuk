@@ -40,6 +40,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          alias: string | null
           created_at: string
           created_month: string
           deleted_at: string | null
@@ -53,6 +54,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          alias?: string | null
           created_at?: string
           created_month: string
           deleted_at?: string | null
@@ -66,6 +68,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          alias?: string | null
           created_at?: string
           created_month?: string
           deleted_at?: string | null

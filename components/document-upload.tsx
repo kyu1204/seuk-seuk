@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import AreaSelector from "@/components/area-selector";
 import {
   uploadDocument,
@@ -26,6 +28,7 @@ export default function DocumentUpload() {
   const router = useRouter();
   const [document, setDocument] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
+  const [alias, setAlias] = useState<string>("");
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [signatureAreas, setSignatureAreas] = useState<RelativeSignatureArea[]>([]);
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
@@ -87,6 +90,7 @@ export default function DocumentUpload() {
   const handleClearDocument = () => {
     setDocument(null);
     setFileName("");
+    setAlias("");
     setOriginalFile(null);
     setSignatureAreas([]);
     setError(null);
@@ -197,6 +201,9 @@ export default function DocumentUpload() {
       const formData = new FormData();
       formData.append("file", originalFile);
       formData.append("filename", fileName);
+      if (alias.trim()) {
+        formData.append("alias", alias.trim());
+      }
 
       const uploadResult = await uploadDocument(formData);
 
@@ -306,7 +313,34 @@ export default function DocumentUpload() {
             </Button>
           </div>
 
-          <h2 className="text-2xl font-semibold">{fileName}</h2>
+          {/* File Information Section */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="document-filename" className="text-sm font-medium">
+                {t("upload.filename")}
+              </Label>
+              <p className="text-sm text-muted-foreground mt-1">{fileName}</p>
+            </div>
+
+            <div>
+              <Label htmlFor="document-alias" className="text-sm font-medium">
+                {t("upload.alias")}
+                <span className="text-muted-foreground ml-1">({t("upload.aliasOptional")})</span>
+              </Label>
+              <Input
+                id="document-alias"
+                type="text"
+                placeholder={t("upload.aliasPlaceholder")}
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                className="mt-2"
+                maxLength={100}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("upload.aliasDescription")}
+              </p>
+            </div>
+          </div>
 
           <div className="relative border rounded-lg overflow-hidden">
             {/* Zoom Controls */}

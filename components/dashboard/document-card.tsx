@@ -47,6 +47,9 @@ export function DocumentCard({ document }: DocumentCardProps) {
     return filename.slice(0, maxLength) + "...";
   };
 
+  // Display alias if exists, otherwise show filename
+  const displayName = document.alias || document.filename;
+
   return (
     <Link href={`/document/${document.id}`} className="block group">
       <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/20 group-hover:scale-[1.02] h-48 flex flex-col">
@@ -60,9 +63,9 @@ export function DocumentCard({ document }: DocumentCardProps) {
             <FileText className="h-8 w-8 text-primary flex-shrink-0" />
             <h3
               className="font-medium text-sm leading-relaxed text-center px-2 break-words"
-              title={document.filename}
+              title={displayName}
             >
-              {truncateFilename(document.filename)}
+              {truncateFilename(displayName)}
             </h3>
           </div>
         </CardHeader>

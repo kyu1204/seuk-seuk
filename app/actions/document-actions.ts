@@ -24,6 +24,7 @@ export async function uploadDocument(formData: FormData) {
     const supabase = await createServerSupabase();
     const file = formData.get("file") as File;
     const filename = formData.get("filename") as string;
+    const alias = formData.get("alias") as string | null;
 
     if (!file || !filename) {
       return { error: "File and filename are required" };
@@ -68,6 +69,7 @@ export async function uploadDocument(formData: FormData) {
     // Create document record with user_id
     const documentData: DocumentInsert = {
       filename,
+      alias: alias && alias.trim() ? alias.trim() : null,
       file_url: fileUrl,
       status: "draft",
       user_id: user.id,
@@ -192,6 +194,13 @@ export async function saveSignature(
   try {
     const supabase = await createServerSupabase();
 
+    // Get document to find publication_id for revalidation
+    const { data: document } = await supabase
+      .from("documents")
+      .select("publication_id")
+      .eq("id", documentId)
+      .single();
+
     // Update signature with data, status, and signed_at
     const { error: updateError } = await supabase
       .from("signatures")
@@ -206,6 +215,21 @@ export async function saveSignature(
     if (updateError) {
       console.error("Update signature error:", updateError);
       return { error: "Failed to update signature" };
+    }
+
+    // Revalidate relevant pages to show updated signature count
+    revalidatePath(`/document/${documentId}`);
+    if (document?.publication_id) {
+      // Get publication short_url for revalidation
+      const { data: publication } = await supabase
+        .from("publications")
+        .select("short_url")
+        .eq("id", document.publication_id)
+        .single();
+
+      if (publication?.short_url) {
+        revalidatePath(`/publication/${publication.short_url}`);
+      }
     }
 
     return { success: true };
@@ -256,8 +280,23 @@ export async function markDocumentCompleted(documentId: string) {
         console.error("❌ Email notification failed (non-blocking):", err);
       });
 
+    // Revalidate relevant pages
+    revalidatePath(`/document/${documentId}`);
+    revalidatePath('/dashboard');
+
     // Check if document is part of a publication and auto-complete publication if all documents are done
     if (document.publication_id) {
+      // Get publication short_url for revalidation
+      const { data: publication } = await supabase
+        .from("publications")
+        .select("short_url")
+        .eq("id", document.publication_id)
+        .single();
+
+      if (publication?.short_url) {
+        revalidatePath(`/publication/${publication.short_url}`);
+      }
+
       const { checkAndCompletePublication } = await import("./publication-actions");
       checkAndCompletePublication(document.publication_id)
         .catch((err) => {
@@ -662,7 +701,7 @@ export async function getUserDocumentsClient(
     // Build query with optimized field selection (exclude soft-deleted documents)
     let query = supabase
       .from("documents")
-      .select("id, filename, status, signed_file_url, created_at, publication_id", { count: "exact" })
+      .select("id, filename, alias, status, signed_file_url, created_at, publication_id", { count: "exact" })
       .eq("user_id", user.id)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
@@ -1012,7 +1051,7 @@ export async function getDashboardData(
       (() => {
         let query = supabase
           .from("documents")
-          .select("id, filename, status, created_at, signed_file_url, publication_id", { count: "exact" })
+          .select("id, filename, alias, status, created_at, signed_file_url, publication_id", { count: "exact" })
           .eq("user_id", user.id)
           .eq("is_deleted", false)
           .order("created_at", { ascending: false })
@@ -1085,5 +1124,63 @@ export async function getDashboardData(
       counts: { all: 0, draft: 0, published: 0, completed: 0 },
       error: "An unexpected error occurred",
     };
+  }
+}
+
+/**
+ * Update document alias
+ */
+export async function updateDocumentAlias(
+  documentId: string,
+  alias: string | null
+): Promise<{
+  success?: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
+    // Verify document ownership
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, user_id")
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (docError || !document) {
+      return { error: "Document not found" };
+    }
+
+    // Update document alias
+    const { error: updateError } = await supabase
+      .from("documents")
+      .update({ alias })
+      .eq("id", documentId)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("Update alias error:", updateError);
+      return { error: "Failed to update document alias" };
+    }
+
+    // Revalidate relevant pages
+    revalidatePath(`/document/${documentId}`);
+    revalidatePath("/dashboard");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Update document alias error:", error);
+    return { error: "An unexpected error occurred" };
   }
 }
