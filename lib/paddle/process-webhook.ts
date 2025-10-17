@@ -135,16 +135,61 @@ export class ProcessWebhook {
       if (customerData?.user_id) {
         console.log(`[subscription] User ${customerData.user_id} exists, checking for existing subscription...`);
 
-        // 이 user의 기존 subscription 찾기
+        // 이 user의 기존 subscription 찾기 (plan_id 포함)
         const { data: existingUserSub } = await supabase
           .from("subscriptions")
-          .select("id")
+          .select("id, plan_id")
           .eq("user_id", customerData.user_id)
           .single();
 
         if (existingUserSub) {
           // 기존 subscription 업데이트 (Free → Pro 등)
           console.log(`[subscription] Updating existing subscription ${existingUserSub.id} to ${planName}`);
+
+          // Check if this is a plan upgrade by comparing old and new plan_id
+          const isUpgrade = existingUserSub.plan_id !== planData.id;
+          
+          if (isUpgrade) {
+            // Fetch old plan details to verify it's an upgrade (not downgrade)
+            const { data: oldPlan } = await supabase
+              .from("subscription_plans")
+              .select("name, monthly_document_limit, active_document_limit")
+              .eq("id", existingUserSub.plan_id)
+              .single();
+
+            const { data: newPlan } = await supabase
+              .from("subscription_plans")
+              .select("name, monthly_document_limit, active_document_limit")
+              .eq("id", planData.id)
+              .single();
+
+            console.log(`[subscription] Plan change detected: ${oldPlan?.name} → ${newPlan?.name}`);
+
+            // Reset monthly usage if upgrading to a higher tier (higher limits)
+            if (oldPlan && newPlan && 
+                (newPlan.monthly_document_limit > oldPlan.monthly_document_limit ||
+                 newPlan.active_document_limit > oldPlan.active_document_limit)) {
+              
+              console.log(`[subscription] Plan upgrade detected! Resetting monthly usage for user ${customerData.user_id}`);
+
+              const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+              
+              const { error: resetError } = await supabase
+                .from("monthly_usage")
+                .update({
+                  documents_created: 0,
+                  published_completed_count: 0
+                })
+                .eq("user_id", customerData.user_id)
+                .eq("year_month", currentMonth);
+
+              if (resetError) {
+                console.error("[subscription] Failed to reset monthly usage:", resetError);
+              } else {
+                console.log(`[subscription] ✅ Successfully reset monthly usage for ${currentMonth}`);
+              }
+            }
+          }
 
           const { data: updatedSub, error: updateError } = await supabase
             .from("subscriptions")
