@@ -248,6 +248,20 @@ const translations: Record<Language, Record<string, string>> = {
       "메일이 보이지 않으면 스팸 폴더를 확인해주세요.",
     "register.success.goToLogin": "로그인 화면으로",
 
+    // Consent Page
+    "consent.title": "서비스 이용을 위해 약관에 동의해주세요",
+    "consent.subtitle":
+      "카카오 계정으로 로그인하셨다면 슥슥 이용약관과 개인정보 처리방침에 대한 동의가 추가로 필요합니다.",
+    "consent.linksDescription": "아래 문서를 확인한 뒤 동의 여부를 선택해주세요.",
+    "consent.viewTerms": "슥슥 이용약관 보기",
+    "consent.viewPrivacy": "개인정보 처리방침 보기",
+    "consent.checkbox": "슥슥 이용약관과 개인정보 처리방침을 모두 읽었으며 이에 동의합니다.",
+    "consent.agreeButton": "동의하고 계속하기",
+    "consent.declineNotice":
+      "동의하지 않을 경우 서비스를 이용할 수 없습니다. 동의하지 않는다면 로그아웃 후 이용을 중단해주세요.",
+    "consent.declineButton": "동의하지 않고 로그아웃",
+    "consent.error": "약관 동의 처리 중 문제가 발생했습니다. 다시 시도해주세요.",
+
     // Sign Page - Password Protection & Status
     "sign.password.title": "보안 문서",
     "sign.password.description": "이 문서는 비밀번호로 보호되어 있습니다.",
@@ -1246,6 +1260,20 @@ const translations: Record<Language, Record<string, string>> = {
     "register.success.checkSpam":
       "If you don't see the email, please check your spam folder.",
     "register.success.goToLogin": "Go to Login",
+
+    // Consent Page
+    "consent.title": "Please accept our terms to continue",
+    "consent.subtitle":
+      "Even after signing in with Kakao, you need to agree to the SeukSeuk Terms of Service and Privacy Policy before using the service.",
+    "consent.linksDescription": "Review the documents below and choose how you’d like to proceed.",
+    "consent.viewTerms": "View Terms of Service",
+    "consent.viewPrivacy": "View Privacy Policy",
+    "consent.checkbox": "I have read and agree to the SeukSeuk Terms of Service and Privacy Policy.",
+    "consent.agreeButton": "Agree and continue",
+    "consent.declineNotice":
+      "You won’t be able to use the service unless you agree. If you choose not to agree, you’ll be signed out.",
+    "consent.declineButton": "Sign out without agreeing",
+    "consent.error": "We couldn’t record your consent. Please try again.",
 
     // Sign Page - Password Protection & Status
     "sign.password.title": "Protected Document",

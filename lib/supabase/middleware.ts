@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { CURRENT_LEGAL_VERSION } from "@/lib/constants/legal";
 import { publicOnlyRoutes, isPublicRoute } from "@/lib/constants/routes";
 
 export async function updateSession(request: NextRequest) {
@@ -39,9 +40,45 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
+
+  if (
+    user &&
+    user.app_metadata?.provider === "kakao" &&
+    !pathname.startsWith("/auth/consent") &&
+    !pathname.startsWith("/api/")
+  ) {
+    const { data: consent, error: consentError } = await supabase
+      .from("users")
+      .select(
+        "terms_accepted_at, privacy_accepted_at, terms_accepted_version, privacy_accepted_version"
+      )
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (consentError) {
+      console.error("Failed to fetch consent information:", consentError);
+    }
+
+    const hasConsent =
+      Boolean(consent?.terms_accepted_at) &&
+      Boolean(consent?.privacy_accepted_at) &&
+      consent?.terms_accepted_version === CURRENT_LEGAL_VERSION &&
+      consent?.privacy_accepted_version === CURRENT_LEGAL_VERSION;
+
+    if (!hasConsent) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/auth/consent";
+      const destination = `${pathname}${request.nextUrl.search ?? ""}`;
+      if (destination && destination !== "/auth/consent") {
+        redirectUrl.searchParams.set("next", destination);
+      }
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
 
   // Check if user is trying to access a protected route without authentication
-  if (!user && !isPublicRoute(request.nextUrl.pathname)) {
+  if (!user && !isPublicRoute(pathname)) {
     // no user, redirect to login page
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -49,7 +86,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Check if authenticated user is trying to access public-only routes
-  if (user && publicOnlyRoutes[request.nextUrl.pathname]) {
+  if (user && publicOnlyRoutes[pathname]) {
     // logged in user trying to access public-only page, redirect to dashboard
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
