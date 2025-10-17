@@ -49,6 +49,9 @@ export default function TermPage() {
               <li>{t("term.article2.item4")}</li>
               <li>{t("term.article2.item5")}</li>
               <li>{t("term.article2.item6")}</li>
+              <li>{t("term.article2.item7")}</li>
+              <li>{t("term.article2.item8")}</li>
+              <li>{t("term.article2.item9")}</li>
             </ol>
 
             <h3 className="text-xl font-semibold mb-3">
@@ -147,6 +150,7 @@ export default function TermPage() {
             <ol className="list-decimal pl-6 space-y-2 mb-4">
               <li>{t("term.article11.para1")}</li>
               <li>{t("term.article11.para2")}</li>
+              <li>{t("term.article11.para3")}</li>
             </ol>
 
             <h3 className="text-xl font-semibold mb-3">
@@ -173,6 +177,7 @@ export default function TermPage() {
               <li>{t("term.article14.para1")}</li>
               <li>{t("term.article14.para2")}</li>
               <li>{t("term.article14.para3")}</li>
+              <li>{t("term.article14.para4")}</li>
             </ol>
 
             <h3 className="text-xl font-semibold mb-3">
@@ -263,11 +268,6 @@ export default function TermPage() {
               <li>{t("term.article21.para1")}</li>
               <li>{t("term.article21.para2")}</li>
             </ol>
-
-            <h3 className="text-xl font-semibold mb-3">
-              {t("term.article22.title")}
-            </h3>
-            <p className="mb-4">{t("term.article22.content")}</p>
 
             <h3 className="text-xl font-semibold mb-3">
               {t("term.article23.title")}
