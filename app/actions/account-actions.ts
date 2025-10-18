@@ -106,7 +106,7 @@ export async function deleteAccount(
     // 3. Query user's documents to get file paths
     const { data: documents, error: docQueryError } = await supabase
       .from("documents")
-      .select("id, file_url, signed_file_url")
+      .select("id, file_url, signed_file_url, signed_pdf_url")
       .eq("user_id", user.id);
 
     if (docQueryError) {
@@ -121,20 +121,42 @@ export async function deleteAccount(
 
       const documentIds: string[] = [];
 
+      const extractSignedPath = (value: string | null) => {
+        if (!value) return null;
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+          try {
+            const url = new URL(value);
+            const parts = url.pathname.split("/");
+            const index = parts.indexOf("signed-documents");
+            if (index === -1) return null;
+            return parts.slice(index + 1).join("/");
+          } catch {
+            return null;
+          }
+        }
+
+        const trimmed = value.startsWith("signed-documents/")
+          ? value.substring("signed-documents/".length)
+          : value;
+        return trimmed;
+      };
+
       documents.forEach((doc) => {
         if (doc.id) {
           documentIds.push(doc.id);
         }
         if (doc.file_url) {
-          // Extract path from URL
-          const urlParts = doc.file_url.split("/");
-          const fileName = urlParts[urlParts.length - 1];
-          filePaths.push(fileName);
+          filePaths.push(doc.file_url);
         }
-        if (doc.signed_file_url) {
-          const urlParts = doc.signed_file_url.split("/");
-          const fileName = urlParts[urlParts.length - 1];
-          signedFilePaths.push(fileName);
+
+        const signedImagePath = extractSignedPath(doc.signed_file_url);
+        if (signedImagePath) {
+          signedFilePaths.push(signedImagePath);
+        }
+
+        const signedPdfPath = extractSignedPath(doc.signed_pdf_url ?? null);
+        if (signedPdfPath) {
+          signedFilePaths.push(signedPdfPath);
         }
       });
 

@@ -50,6 +50,7 @@ export type Database = {
           is_deleted: boolean
           publication_id: string | null
           signed_file_url: string | null
+          signed_pdf_url: string | null
           status: string | null
           user_id: string | null
         }
@@ -64,6 +65,7 @@ export type Database = {
           is_deleted?: boolean
           publication_id?: string | null
           signed_file_url?: string | null
+          signed_pdf_url?: string | null
           status?: string | null
           user_id?: string | null
         }
@@ -78,6 +80,7 @@ export type Database = {
           is_deleted?: boolean
           publication_id?: string | null
           signed_file_url?: string | null
+          signed_pdf_url?: string | null
           status?: string | null
           user_id?: string | null
         }

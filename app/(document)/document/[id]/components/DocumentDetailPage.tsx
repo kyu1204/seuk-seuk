@@ -2,7 +2,7 @@
 
 import {
   updateSignatureAreas,
-  getSignedDocumentUrl,
+  getSignedDocumentUrls,
   deleteDocument,
 } from "@/app/actions/document-actions";
 import AreaSelector from "@/components/area-selector";
@@ -58,7 +58,8 @@ export default function DocumentDetailComponent({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
-  const [signedDocumentUrl, setSignedDocumentUrl] = useState<string | null>(null);
+  const [signedDocumentPreviewUrl, setSignedDocumentPreviewUrl] = useState<string | null>(null);
+  const [signedDocumentDownloadUrl, setSignedDocumentDownloadUrl] = useState<string | null>(null);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -188,12 +189,12 @@ export default function DocumentDetailComponent({
 
 
   const handleDownloadSignedDocument = () => {
-    if (!isCompleted || !signedDocumentUrl) return;
+    if (!isCompleted || !signedDocumentDownloadUrl) return;
     if (typeof window === 'undefined') return;
 
     try {
       // 새 탭에서 다운로드 URL 열기
-      window.open(signedDocumentUrl, '_blank');
+      window.open(signedDocumentDownloadUrl, '_blank');
     } catch (error) {
       console.error('Download failed:', error);
       setError(t("documentDetail.errorDownload"));
@@ -274,18 +275,37 @@ export default function DocumentDetailComponent({
     };
   }, [document.file_url]);
 
-  // 완료된 문서의 경우 signed URL 가져오기
+  // 완료된 문서의 경우 서명된 문서 리소스 가져오기
   useEffect(() => {
-    if (isCompleted && document.signed_file_url) {
-      getSignedDocumentUrl(document.id).then((result) => {
-        if (result.signedUrl) {
-          setSignedDocumentUrl(result.signedUrl);
-        } else {
-          console.error('Failed to get signed document URL:', result.error);
-        }
-      });
+    if (!isCompleted) {
+      setSignedDocumentPreviewUrl(null);
+      setSignedDocumentDownloadUrl(null);
+      return;
     }
-  }, [isCompleted, document.id, document.signed_file_url]);
+
+    getSignedDocumentUrls(document.id).then((result) => {
+      if (result.previewUrl) {
+        setSignedDocumentPreviewUrl(result.previewUrl);
+      } else {
+        setSignedDocumentPreviewUrl(null);
+      }
+
+      if (result.downloadUrl) {
+        setSignedDocumentDownloadUrl(result.downloadUrl);
+      } else {
+        setSignedDocumentDownloadUrl(null);
+      }
+
+      if (!result.previewUrl && !result.downloadUrl && result.error) {
+        console.error('Failed to get signed document resources:', result.error);
+      }
+    });
+  }, [
+    isCompleted,
+    document.id,
+    document.signed_file_url,
+    document.signed_pdf_url,
+  ]);
 
   // Force re-render when image loads to ensure signature areas display correctly
   useEffect(() => {
@@ -385,8 +405,8 @@ export default function DocumentDetailComponent({
   // 상태에 따라 표시할 이미지 결정
   const displayImageUrl = (() => {
     // 완료된 문서이고 서명된 문서 URL이 있으면 서명된 문서 표시
-    if (isCompleted && signedDocumentUrl) {
-      return signedDocumentUrl;
+    if (isCompleted && signedDocumentPreviewUrl) {
+      return signedDocumentPreviewUrl;
     }
     // 그 외의 경우 원본 문서 표시 (Blob URL만 사용, 로드 전까지는 빈 문자열)
     return documentUrl || "";
@@ -450,7 +470,7 @@ export default function DocumentDetailComponent({
                       <Button
                         variant="outline"
                         onClick={handleDownloadSignedDocument}
-                        disabled={isLoading || !signedDocumentUrl}
+                        disabled={isLoading || !signedDocumentDownloadUrl}
                         className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
                       >
                         <Download className="mr-1 h-3 w-3" />
@@ -564,7 +584,7 @@ export default function DocumentDetailComponent({
                       <Button
                         variant="outline"
                         onClick={handleDownloadSignedDocument}
-                        disabled={isLoading || !signedDocumentUrl}
+                        disabled={isLoading || !signedDocumentDownloadUrl}
                         className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
                       >
                         <Download className="mr-2 h-4 w-4" />

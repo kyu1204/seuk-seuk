@@ -357,6 +357,9 @@ export async function uploadSignedDocument(
   documentId: string,
   signedImageData: string
 ) {
+  const startTime = Date.now();
+  console.log(`[PDF] Starting signed document upload for ${documentId}`);
+
   try {
     // Use service role to bypass RLS for presigned URL generation
     const supabaseService = createServiceSupabase();
@@ -370,63 +373,152 @@ export async function uploadSignedDocument(
       .single();
 
     if (docError || !document) {
-      console.error('Document not found:', docError);
+      console.error('[PDF] Document not found:', docError);
       return { error: 'Document not found' };
     }
 
-    // Generate filename for signed document
-    const filename = `signed_${documentId}.png`;
-    const filePath = `${document.user_id}/${filename}`;
-
-    // Create presigned URL for upload using service role to bypass RLS
-    const { data: presignedData, error: presignedError } = await supabaseService.storage
-      .from('signed-documents')
-      .createSignedUploadUrl(filePath, {
-        upsert: true
-      });
-
-    if (presignedError) {
-      console.error('Error creating presigned URL:', presignedError);
-      return { error: 'Failed to create upload URL' };
-    }
+    console.log(`[PDF] Document verified (${Date.now() - startTime}ms)`);
 
     // Convert data URL to blob
     const response = await fetch(signedImageData);
     const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    const imageBytes = new Uint8Array(arrayBuffer);
+    console.log(
+      `[PDF] Image prepared: ${blob.type || 'unknown'}, ${Math.round(blob.size / 1024)}KB (${Date.now() - startTime}ms)`
+    );
+    if (blob.type && blob.type !== 'image/png') {
+      console.error(`[PDF] Unsupported image type for storage: ${blob.type}`);
+      return { error: 'Unsupported signed document format. Please try again.' };
+    }
 
-    // Upload file using presigned URL
-    const uploadResponse = await fetch(presignedData.signedUrl, {
-      method: 'PUT',
-      body: blob,
-      headers: {
-        'Content-Type': 'image/png',
-      },
-    });
+    const imageExtension = 'png';
+    const filename = `signed_${documentId}.${imageExtension}`;
+    const filePath = `${document.user_id}/${filename}`;
 
-    if (!uploadResponse.ok) {
-      console.error('Upload failed:', uploadResponse.statusText);
+    // Upload signed image directly using service role
+    const { error: imageUploadError } = await supabaseService.storage
+      .from('signed-documents')
+      .upload(filePath, blob, {
+        upsert: true,
+        contentType: 'image/png',
+      });
+
+    if (imageUploadError) {
+      console.error('[PDF] Image upload failed:', imageUploadError);
       return { error: 'Failed to upload signed document' };
     }
+
+    console.log(`[PDF] Image uploaded successfully (${Date.now() - startTime}ms)`);
 
     // Get public URL for the uploaded file
     const {
       data: { publicUrl },
-    } = supabaseService.storage.from('signed-documents').getPublicUrl(presignedData.path);
+    } = supabaseService.storage.from('signed-documents').getPublicUrl(filePath);
 
-    // Update document with signed file URL
+    // Generate PDF from signed image with A4 size optimization
+    const { PDFDocument } = await import('pdf-lib');
+    const pdfDoc = await PDFDocument.create();
+
+    // Embed image based on MIME type
+    let embeddedImage;
+    try {
+      if (blob.type === 'image/png') {
+        embeddedImage = await pdfDoc.embedPng(imageBytes);
+      } else if (blob.type === 'image/jpeg' || blob.type === 'image/jpg') {
+        embeddedImage = await pdfDoc.embedJpg(imageBytes);
+      } else {
+        // Fallback: try PNG first, then JPG
+        try {
+          embeddedImage = await pdfDoc.embedPng(imageBytes);
+        } catch {
+          embeddedImage = await pdfDoc.embedJpg(imageBytes);
+        }
+      }
+    } catch (embedError) {
+      console.error('Failed to embed image:', embedError);
+      await supabaseService.storage.from('signed-documents').remove([filePath]);
+      return { error: 'Failed to process image for PDF' };
+    }
+
+    // A4 size in points (595.28 x 841.89)
+    const A4_WIDTH = 595.28;
+    const A4_HEIGHT = 841.89;
+
+    // Calculate scale to fit image within A4 while maintaining aspect ratio
+    const imageWidth = embeddedImage.width;
+    const imageHeight = embeddedImage.height;
+    const scaleX = A4_WIDTH / imageWidth;
+    const scaleY = A4_HEIGHT / imageHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    const scaledWidth = imageWidth * scale;
+    const scaledHeight = imageHeight * scale;
+
+    // Center image on A4 page
+    const x = (A4_WIDTH - scaledWidth) / 2;
+    const y = (A4_HEIGHT - scaledHeight) / 2;
+
+    const page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+    page.drawImage(embeddedImage, {
+      x,
+      y,
+      width: scaledWidth,
+      height: scaledHeight,
+    });
+
+    const pdfBytes = await pdfDoc.save({
+      useObjectStreams: true, // Enable compression
+    });
+    console.log(`[PDF] PDF generated: ${Math.round(pdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
+
+    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const pdfFilename = `signed_${documentId}.pdf`;
+    const pdfPath = `${document.user_id}/${pdfFilename}`;
+
+    const { error: pdfUploadError } = await supabaseService.storage
+      .from('signed-documents')
+      .upload(pdfPath, pdfBlob, {
+        upsert: true,
+        contentType: 'application/pdf',
+      });
+
+    if (pdfUploadError) {
+      console.error('[PDF] PDF upload failed:', pdfUploadError);
+      await supabaseService.storage
+        .from('signed-documents')
+        .remove([filePath]);
+      return { error: 'Failed to upload signed document PDF' };
+    }
+
+    console.log(`[PDF] PDF uploaded successfully (${Date.now() - startTime}ms)`);
+
+    const {
+      data: { publicUrl: pdfPublicUrl },
+    } = supabaseService.storage.from('signed-documents').getPublicUrl(pdfPath);
+
+    // Update document with signed file URLs
     const { error: updateError } = await supabase
       .from('documents')
-      .update({ signed_file_url: publicUrl })
+      .update({ signed_file_url: publicUrl, signed_pdf_url: pdfPublicUrl })
       .eq('id', documentId);
 
     if (updateError) {
-      console.error('Update document error:', updateError);
+      console.error('[PDF] Update document error:', updateError);
+      await supabaseService.storage
+        .from('signed-documents')
+        .remove([filePath, pdfPath]);
       return { error: 'Failed to update document with signed file URL' };
     }
 
-    return { success: true, signedFileUrl: publicUrl };
+    console.log(`[PDF] Database updated (${Date.now() - startTime}ms)`);
+
+    const totalTime = Date.now() - startTime;
+    console.log(`[PDF] ✅ Complete! Total time: ${totalTime}ms`);
+
+    return { success: true, signedFileUrl: publicUrl, signedPdfUrl: pdfPublicUrl };
   } catch (error) {
-    console.error('Upload signed document error:', error);
+    console.error('[PDF] ❌ Unexpected error:', error);
     return { error: 'An unexpected error occurred' };
   }
 }
@@ -701,7 +793,7 @@ export async function getUserDocumentsClient(
     // Build query with optimized field selection (exclude soft-deleted documents)
     let query = supabase
       .from("documents")
-      .select("id, filename, alias, status, signed_file_url, created_at, publication_id", { count: "exact" })
+      .select("id, filename, alias, status, signed_file_url, signed_pdf_url, created_at, publication_id", { count: "exact" })
       .eq("user_id", user.id)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
@@ -741,10 +833,11 @@ export async function getUserDocumentsClient(
 }
 
 /**
- * Get signed URL for signed document
+ * Get signed URLs for preview and download of a completed document.
  */
-export async function getSignedDocumentUrl(documentId: string): Promise<{
-  signedUrl: string | null;
+export async function getSignedDocumentUrls(documentId: string): Promise<{
+  previewUrl: string | null;
+  downloadUrl: string | null;
   error?: string;
 }> {
   try {
@@ -756,46 +849,123 @@ export async function getSignedDocumentUrl(documentId: string): Promise<{
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return { signedUrl: null, error: "User not authenticated" };
+      return {
+        previewUrl: null,
+        downloadUrl: null,
+        error: "User not authenticated",
+      };
     }
 
     // Get document to verify ownership and get signed file path
     const { data: document, error: docError } = await supabase
       .from("documents")
-      .select("id, user_id, filename, signed_file_url")
+      .select("id, user_id, filename, signed_file_url, signed_pdf_url")
       .eq("id", documentId)
       .eq("user_id", user.id)
       .single();
 
     if (docError || !document) {
-      return { signedUrl: null, error: "Document not found" };
+      return {
+        previewUrl: null,
+        downloadUrl: null,
+        error: "Document not found",
+      };
     }
 
-    if (!document.signed_file_url) {
-      return { signedUrl: null, error: "Signed document not available" };
+    let previewUrl: string | null = null;
+    let downloadUrl: string | null = null;
+
+    const extractPath = (value: string) => {
+      if (!value) return null;
+      if (value.startsWith("http://") || value.startsWith("https://")) {
+        try {
+          const url = new URL(value);
+          const parts = url.pathname.split("/");
+          const index = parts.indexOf("signed-documents");
+          if (index === -1) return null;
+          return parts.slice(index + 1).join("/");
+        } catch {
+          return null;
+        }
+      }
+
+      const trimmed = value.startsWith("signed-documents/")
+        ? value.substring("signed-documents/".length)
+        : value;
+      return trimmed;
+    };
+
+    const storage = supabase.storage.from("signed-documents");
+
+    if (document.signed_file_url) {
+      const filePath = extractPath(document.signed_file_url);
+      if (filePath) {
+        const { data, error: previewError } = await storage.createSignedUrl(
+          filePath,
+          3600
+        );
+        if (previewError) {
+          console.error("Error creating preview URL:", previewError);
+        } else {
+          previewUrl = data?.signedUrl ?? null;
+        }
+      }
     }
 
-    // Extract file path from signed_file_url
-    const url = new URL(document.signed_file_url);
-    const pathParts = url.pathname.split('/');
-    const filePath = pathParts.slice(pathParts.indexOf('signed-documents') + 1).join('/');
-
-    // Generate signed URL for download (valid for 1 hour)
-    const { data, error: signError } = await supabase.storage
-      .from('signed-documents')
-      .createSignedUrl(filePath, 3600, {
-        download: `서명완료_${document.filename}.png`
-      });
-
-    if (signError) {
-      console.error('Error creating signed URL:', signError);
-      return { signedUrl: null, error: 'Failed to create signed URL' };
+    if (document.signed_pdf_url) {
+      const pdfPath = extractPath(document.signed_pdf_url);
+      if (pdfPath) {
+        const originalName =
+          document.filename.replace(/\.[^/.]+$/, "") || document.filename;
+        const downloadName = `서명완료_${originalName}.pdf`;
+        const { data, error: downloadError } = await storage.createSignedUrl(
+          pdfPath,
+          3600,
+          { download: downloadName }
+        );
+        if (downloadError) {
+          console.error("Error creating download URL:", downloadError);
+        } else {
+          downloadUrl = data?.signedUrl ?? null;
+        }
+      }
     }
 
-    return { signedUrl: data.signedUrl };
+    // Fallback: if no dedicated download URL, reuse preview (e.g., legacy data)
+    if (!downloadUrl && document.signed_file_url) {
+      const filePath = extractPath(document.signed_file_url);
+      if (filePath) {
+        const originalName = document.filename.replace(/\.[^/.]+$/, "");
+        const fallbackName = `서명완료_${originalName}.png`;
+        const { data, error: fallbackError } = await storage.createSignedUrl(
+          filePath,
+          3600,
+          { download: fallbackName }
+        );
+        if (fallbackError) {
+          console.error("Error creating fallback download URL:", fallbackError);
+        } else {
+          downloadUrl = data?.signedUrl ?? null;
+        }
+      }
+    }
+
+    if (!previewUrl && !downloadUrl) {
+      return {
+        previewUrl: null,
+        downloadUrl: null,
+        error: "Signed document not available",
+      };
+    }
+
+    return { previewUrl, downloadUrl };
   } catch (error) {
-    console.error('Get signed document URL error:', error);
-    return { signedUrl: null, error: 'An unexpected error occurred' };
+    console.error("Get signed document URLs error:", error);
+    return {
+      previewUrl: null,
+      downloadUrl: null,
+      error: "An unexpected error occurred",
+    };
   }
 }
 
@@ -1051,7 +1221,7 @@ export async function getDashboardData(
       (() => {
         let query = supabase
           .from("documents")
-          .select("id, filename, alias, status, created_at, signed_file_url, publication_id", { count: "exact" })
+          .select("id, filename, alias, status, created_at, signed_file_url, signed_pdf_url, publication_id", { count: "exact" })
           .eq("user_id", user.id)
           .eq("is_deleted", false)
           .order("created_at", { ascending: false })
