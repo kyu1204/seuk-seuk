@@ -324,11 +324,11 @@ export default function SignPageComponent({
           canvas.toBlob((result) => {
             if (result) resolve(result);
             else reject(new Error('Failed to create blob'));
-          }, 'image/jpeg', 0.85); // Use JPEG with 85% quality for smaller size
+          }, 'image/png'); // Generate PNG to match storage configuration
         });
       } else {
         // Fallback to toDataURL
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const dataUrl = canvas.toDataURL("image/png");
         const response = await fetch(dataUrl);
         blob = await response.blob();
       }
