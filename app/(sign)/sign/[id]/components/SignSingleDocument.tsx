@@ -328,8 +328,8 @@ export default function SignSingleDocument({
       setGeneratingProgress("서명된 문서 업로드 중...");
       const uploadResult = await uploadSignedDocument(documentData.id, dataUrl);
 
-      if (uploadResult.error) {
-        setError(uploadResult.error);
+      if (!uploadResult || uploadResult.error) {
+        setError(uploadResult?.error ?? "Failed to upload signed document");
         setIsGenerating(false);
         setGeneratingProgress("");
         return;
@@ -339,8 +339,8 @@ export default function SignSingleDocument({
       setGeneratingProgress("문서 완료 처리 중...");
       const markResult = await markDocumentCompleted(documentData.id);
 
-      if (markResult.error) {
-        setError(markResult.error);
+      if (!markResult || markResult.error) {
+        setError(markResult?.error ?? "Failed to mark document as completed");
         setIsGenerating(false);
         setGeneratingProgress("");
         return;

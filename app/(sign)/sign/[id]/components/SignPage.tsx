@@ -344,8 +344,8 @@ export default function SignPageComponent({
       setGeneratingProgress("서명된 문서 업로드 중...");
       const uploadResult = await uploadSignedDocument(documentData.id, dataUrl);
 
-      if (uploadResult.error) {
-        setError(uploadResult.error);
+      if (!uploadResult || uploadResult.error) {
+        setError(uploadResult?.error ?? "Failed to upload signed document");
         return;
       }
 
