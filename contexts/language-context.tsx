@@ -332,6 +332,28 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.publications.delete.cancel": "취소",
     "dashboard.publications.delete.confirm": "삭제",
     "dashboard.publications.delete.deleting": "삭제 중...",
+    "dashboard.bulkDelete.selected": "{{count}}개 선택됨",
+    "dashboard.bulkDelete.selectAll": "모두 선택",
+    "dashboard.bulkDelete.deselectAll": "선택 해제",
+    "dashboard.bulkDelete.deleteSelected": "선택 항목 삭제",
+    "dashboard.bulkDelete.deleting": "삭제 중...",
+    "dashboard.bulkDelete.select": "선택",
+    "dashboard.bulkDelete.deselect": "선택 해제",
+    "dashboard.bulkDelete.cannotDelete": "발행된 문서는 삭제할 수 없습니다",
+    "dashboard.bulkDelete.modalTitle": "문서 일괄 삭제",
+    "dashboard.bulkDelete.modalWarning": "다음 문서들을 삭제하시겠습니까?",
+    "dashboard.bulkDelete.andMore": "외 {{count}}개",
+    "dashboard.bulkDelete.draftWarning": "초안 {{count}}개는 영구적으로 삭제됩니다",
+    "dashboard.bulkDelete.completedWarning": "완료된 문서 {{count}}개는 보관됩니다",
+    "dashboard.bulkDelete.irreversible": "이 작업은 되돌릴 수 없습니다.",
+    "dashboard.bulkDelete.cancel": "취소",
+    "dashboard.bulkDelete.confirmDelete": "삭제",
+    "dashboard.bulkDelete.successMessage": "{{count}}개 문서가 삭제되었습니다",
+    "dashboard.bulkDelete.errorMessage": "{{count}}개 문서 삭제 실패: {{details}}",
+
+    // Selection Mode
+    "dashboard.selectionMode.enter": "선택",
+    "dashboard.selectionMode.exit": "선택 모드 종료",
 
     // Bills
     "bills.title": "결제 및 구독",
@@ -1353,6 +1375,28 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.publications.delete.cancel": "Cancel",
     "dashboard.publications.delete.confirm": "Delete",
     "dashboard.publications.delete.deleting": "Deleting...",
+    "dashboard.bulkDelete.selected": "{{count}} selected",
+    "dashboard.bulkDelete.selectAll": "Select All",
+    "dashboard.bulkDelete.deselectAll": "Deselect All",
+    "dashboard.bulkDelete.deleteSelected": "Delete Selected",
+    "dashboard.bulkDelete.deleting": "Deleting...",
+    "dashboard.bulkDelete.select": "Select",
+    "dashboard.bulkDelete.deselect": "Deselect",
+    "dashboard.bulkDelete.cannotDelete": "Published documents cannot be deleted",
+    "dashboard.bulkDelete.modalTitle": "Bulk Delete Documents",
+    "dashboard.bulkDelete.modalWarning": "Are you sure you want to delete the following documents?",
+    "dashboard.bulkDelete.andMore": "and {{count}} more",
+    "dashboard.bulkDelete.draftWarning": "{{count}} draft document(s) will be permanently deleted",
+    "dashboard.bulkDelete.completedWarning": "{{count}} completed document(s) will be archived",
+    "dashboard.bulkDelete.irreversible": "This action cannot be undone.",
+    "dashboard.bulkDelete.cancel": "Cancel",
+    "dashboard.bulkDelete.confirmDelete": "Delete",
+    "dashboard.bulkDelete.successMessage": "{{count}} document(s) deleted successfully",
+    "dashboard.bulkDelete.errorMessage": "Failed to delete {{count}} document(s): {{details}}",
+
+    // Selection Mode
+    "dashboard.selectionMode.enter": "Select",
+    "dashboard.selectionMode.exit": "Exit Selection Mode",
 
     // Bills
     "bills.title": "Billing & Subscriptions",
@@ -2126,11 +2170,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const t = (key: string, params?: Record<string, string | number>): string => {
     let translation = translations[language][key] || key;
 
-    // Replace parameters in the translation string
+    // Replace parameters in the translation string (supports {{param}} format)
     if (params) {
       Object.keys(params).forEach((param) => {
         translation = translation.replace(
-          new RegExp(`\\{${param}\\}`, "g"),
+          new RegExp(`\\{\\{${param}\\}\\}`, "g"),
           String(params[param])
         );
       });
