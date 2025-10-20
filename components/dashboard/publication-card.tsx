@@ -24,14 +24,26 @@ import Link from "next/link";
 interface PublicationCardProps {
   publication: ClientPublication;
   onDelete?: () => void;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (publicationId: string, canDelete: boolean) => void;
 }
 
-export function PublicationCard({ publication, onDelete }: PublicationCardProps) {
+export function PublicationCard({
+  publication,
+  onDelete,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelection,
+}: PublicationCardProps) {
   const { t, language } = useLanguage();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Check if publication can be deleted (only completed)
+  const canDelete = publication.status === "completed";
 
   const getStatusBadge = (status: ClientPublication["status"]) => {
     const statusMap = {
@@ -69,6 +81,22 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
   };
 
   const shareUrl = `${window.location.origin}/sign/${publication.short_url}`;
+
+  // Handle checkbox click
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleSelection?.(publication.id, canDelete);
+  };
+
+  // Handle card click in selection mode
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (isSelectionMode) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleCheckboxClick(e);
+    }
+  };
 
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -118,17 +146,70 @@ export function PublicationCard({ publication, onDelete }: PublicationCardProps)
 
   return (
     <>
-      <Link href={`/publication/${publication.short_url}`} className="block">
-        <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/20 h-64 flex flex-col cursor-pointer">
+      <Link
+        href={isSelectionMode ? "#" : `/publication/${publication.short_url}`}
+        className="block"
+        onClick={handleCardClick}
+      >
+        <Card
+          className={`transition-all duration-200 ${
+            !isSelectionMode && "hover:shadow-md hover:border-primary/20"
+          } h-64 flex flex-col ${
+            isSelected ? "border-primary shadow-md" : ""
+          } ${
+            isSelectionMode ? "cursor-pointer" : ""
+          }`}
+        >
           <CardHeader className="pb-3 flex-1 flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <Badge variant={statusBadge.variant} className="flex-shrink-0 text-xs">
-              {statusBadge.label}
-            </Badge>
-            {publication.requiresPassword && (
-              <Lock className="h-3 w-3 text-muted-foreground" />
-            )}
-          </div>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <Badge variant={statusBadge.variant} className="flex-shrink-0 text-xs">
+                  {statusBadge.label}
+                </Badge>
+                {publication.requiresPassword && (
+                  <Lock className="h-3 w-3 text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Selection Checkbox - only in selection mode, positioned at top-right */}
+              {isSelectionMode && (
+                <div
+                  className={`z-10 ${
+                    canDelete ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+                  }`}
+                  onClick={handleCheckboxClick}
+                  title={
+                    canDelete
+                      ? isSelected
+                        ? t("dashboard.bulkDelete.deselect")
+                        : t("dashboard.bulkDelete.select")
+                      : t("dashboard.publications.bulkDelete.cannotDelete")
+                  }
+                >
+                  <div
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      isSelected
+                        ? "bg-primary border-primary"
+                        : "bg-background border-gray-300 hover:border-primary"
+                    } ${!canDelete && "bg-gray-100 dark:bg-gray-800"}`}
+                  >
+                    {isSelected && (
+                      <svg
+                        className="w-3 h-3 text-primary-foreground"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
           <div className="flex flex-col items-center text-center space-y-3">
             <FileText className="h-8 w-8 text-primary flex-shrink-0" />

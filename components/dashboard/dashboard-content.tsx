@@ -311,9 +311,6 @@ export function DashboardContent() {
         onClose={() => setIsBulkDeleteModalOpen(false)}
         onConfirm={handleBulkDeleteConfirm}
         isLoading={isBulkDeleting}
-        documents={documents.filter((doc) =>
-          selectedDocumentIds.has(doc.id)
-        )}
       />
     </>
   );
