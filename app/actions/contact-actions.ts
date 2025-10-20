@@ -1,8 +1,6 @@
 "use server";
 
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export type ContactFormData = {
   name: string;
@@ -42,28 +40,45 @@ export async function sendContactEmail(
       };
     }
 
-    // Send email using Resend
-    const { data, error } = await resend.emails.send({
-      from: "SeukSeuk Contact <team@seuk-seuk.com>",
-      to: "cs.seuk.seuk@gmail.com",
-      subject: `[Contact Form] ${formData.subject}`,
-      html: `
-        <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> ${formData.name}</p>
-        <p><strong>Email:</strong> ${formData.email}</p>
-        <p><strong>Subject:</strong> ${formData.subject}</p>
-        <hr />
-        <p><strong>Message:</strong></p>
-        <p>${formData.message.replace(/\n/g, "<br>")}</p>
-      `,
-    });
+    // Save to Supabase database
+    const supabase = await createServerSupabase();
+    const { error: dbError } = await supabase
+      .from("contact_submissions")
+      .insert({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      });
 
-    if (error) {
-      console.error("Failed to send email:", error);
+    if (dbError) {
+      console.error("Failed to save contact submission:", dbError);
       return {
         success: false,
-        error: "Failed to send email. Please try again later.",
+        error: "Failed to save contact submission. Please try again later.",
       };
+    }
+
+    // Send notification via POST request
+    const notificationEndpoint = process.env.NOTIFICATION_ENDPOINT;
+    if (notificationEndpoint) {
+      try {
+        const notificationBody = `이름: ${formData.name}\n이메일: ${formData.email}\n제목: ${formData.subject}\n메시지:\n${formData.message}`;
+
+        await fetch(notificationEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: "슥슥 문의하기 내용이 전달되었습니다",
+            body: notificationBody,
+          }),
+        });
+      } catch (notificationError) {
+        // Log notification error but don't fail the whole request
+        console.error("Failed to send notification:", notificationError);
+      }
     }
 
     return {

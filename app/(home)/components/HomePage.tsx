@@ -442,7 +442,7 @@ export default function HomePageComponent() {
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
               {t("home.cta.description")}
             </p>
-            <Link href="/upload">
+            <Link href="/contact">
               <Button
                 size="lg"
                 className="bg-primary hover:bg-primary/90 gap-2 text-white"

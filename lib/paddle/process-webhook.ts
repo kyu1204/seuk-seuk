@@ -606,6 +606,9 @@ export class ProcessWebhook {
             console.log(
               `[transaction.completed] ✅ Successfully linked all subscriptions for customer ${customerId} to user ${user.id}`
             );
+
+            // Send payment notification
+            await this.sendPaymentNotification(subscriptions[0].id, supabase);
           } else {
             console.log(
               `[transaction.completed] No unlinked subscriptions found for customer ${customerId}`
@@ -653,6 +656,11 @@ export class ProcessWebhook {
               `[transaction.completed] Linked subscription ${sub.id} to existing user ${customerData.user_id}`
             );
           }
+
+          // Send payment notification for the first active subscription
+          if (subscriptions.length > 0) {
+            await this.sendPaymentNotification(subscriptions[0].id, supabase);
+          }
         }
       }
     } catch (error) {
@@ -694,6 +702,66 @@ export class ProcessWebhook {
         return "active"; // 트라이얼 기간도 active로 처리
       default:
         return "canceled";
+    }
+  }
+
+  /**
+   * Send payment notification to external endpoint
+   */
+  private async sendPaymentNotification(
+    subscriptionId: string,
+    supabase: ReturnType<typeof createServiceSupabase>
+  ) {
+    try {
+      // Get subscription details with plan information
+      const { data: subscription, error: subError } = await supabase
+        .from("subscriptions")
+        .select(`
+          id,
+          status,
+          plan_id,
+          subscription_plans (
+            name
+          )
+        `)
+        .eq("id", subscriptionId)
+        .single();
+
+      if (subError || !subscription) {
+        console.error("[notification] Failed to fetch subscription:", subError);
+        return;
+      }
+
+      const planName = (subscription.subscription_plans as any)?.name || "Unknown";
+      
+      const notificationEndpoint = process.env.NOTIFICATION_ENDPOINT;
+      if (!notificationEndpoint) {
+        console.log("[notification] NOTIFICATION_ENDPOINT not configured, skipping notification");
+        return;
+      }
+
+      const notificationBody = `플랜: ${planName}\n상태: ${subscription.status}`;
+
+      console.log(`[notification] Sending payment notification for plan: ${planName}`);
+
+      const response = await fetch(notificationEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "슥슥 플랜 결제되었습니다",
+          body: notificationBody,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error(`[notification] Failed to send notification: ${response.status} ${response.statusText}`);
+      } else {
+        console.log(`[notification] ✅ Successfully sent payment notification for ${planName}`);
+      }
+    } catch (notificationError) {
+      console.error("[notification] Error sending payment notification:", notificationError);
     }
   }
 }
