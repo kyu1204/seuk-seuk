@@ -188,10 +188,10 @@ const translations: Record<Language, Record<string, string>> = {
       "구독 세부 정보가 포함된 확인 이메일이 곧 발송됩니다.",
     "checkout.success.dashboard": "대시보드로 이동",
 
-    "home.cta.title": "지금 바로 시작하세요",
+    "home.cta.title": "궁금한 점이 있으신가요?",
     "home.cta.description":
-      "슥슥으로 문서 서명 프로세스를 간소화하고 시간과 비용을 절약하세요.",
-    "home.cta.button": "지금 시작하기",
+      "슥슥 팀이 도와드리겠습니다. 언제든지 문의해 주세요.",
+    "home.cta.button": "문의하기",
     "home.footer.rights": "모든 권리 보유.",
 
     // 테마 전환 버튼
@@ -1205,10 +1205,10 @@ const translations: Record<Language, Record<string, string>> = {
       "You will receive a confirmation email shortly with your subscription details.",
     "checkout.success.dashboard": "Go to Dashboard",
 
-    "home.cta.title": "Get Started Today",
+    "home.cta.title": "Have Questions?",
     "home.cta.description":
-      "Streamline your document signing process and save time and money with SeukSeuk.",
-    "home.cta.button": "Get Started",
+      "Our team is here to help. Feel free to reach out anytime.",
+    "home.cta.button": "Contact Us",
     "home.footer.rights": "All rights reserved.",
 
     // 테마 전환 버튼
