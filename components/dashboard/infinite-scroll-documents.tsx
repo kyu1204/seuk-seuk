@@ -14,12 +14,19 @@ interface InfiniteScrollDocumentsProps {
   initialDocuments: Document[];
   initialHasMore: boolean;
   status?: "draft" | "published" | "completed";
+  // Bulk delete props
+  isSelectionMode?: boolean;
+  selectedDocumentIds?: Set<string>;
+  onToggleSelection?: (documentId: string, canDelete: boolean) => void;
 }
 
 export function InfiniteScrollDocuments({
   initialDocuments,
   initialHasMore,
   status,
+  isSelectionMode = false,
+  selectedDocumentIds,
+  onToggleSelection,
 }: InfiniteScrollDocumentsProps) {
   const { t } = useLanguage();
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
@@ -84,7 +91,13 @@ export function InfiniteScrollDocuments({
       {/* Documents Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {documents.map((document) => (
-          <DocumentCard key={document.id} document={document} />
+          <DocumentCard
+            key={document.id}
+            document={document}
+            isSelectionMode={isSelectionMode}
+            isSelected={selectedDocumentIds?.has(document.id) ?? false}
+            onToggleSelection={onToggleSelection ?? (() => {})}
+          />
         ))}
       </div>
 
