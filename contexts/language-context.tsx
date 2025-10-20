@@ -1320,7 +1320,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.header.title": "My Documents",
     "dashboard.header.description":
       "Manage your documents and collect signatures",
-    "dashboard.publish": "Publish Document",
+    "dashboard.publish": "Publish",
     "dashboard.upload": "Upload",
     "dashboard.empty.title": "No documents uploaded yet",
     "dashboard.empty.description":

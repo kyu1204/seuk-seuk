@@ -10,31 +10,34 @@ export function DashboardHeader() {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6 mb-8">
-      {/* Title and Description */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-          {t("dashboard.header.title")}
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          {t("dashboard.header.description")}
-        </p>
-      </div>
+    <div className="space-y-8 mb-8">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Title and Description */}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+            {t("dashboard.header.title")}
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            {t("dashboard.header.description")}
+          </p>
+        </div>
 
-      {/* Action Buttons - Mobile & Desktop: 2 buttons in a row */}
-      <div className="flex flex-row gap-2">
-        <Link href="/publish" className="flex-1 sm:flex-initial">
-          <Button variant="outline" className="w-full gap-2">
-            <Share2 className="h-4 w-4" />
-            {t("dashboard.publish")}
-          </Button>
-        </Link>
-        <Link href="/upload" className="flex-1 sm:flex-initial">
-          <Button className="w-full gap-2">
-            <Plus className="h-4 w-4" />
-            {t("dashboard.upload")}
-          </Button>
-        </Link>
+        {/* Action Buttons - Mobile: Full width row, Desktop: Right aligned */}
+        <div className="flex flex-row gap-2">
+          <Link href="/publish" className="flex-1 sm:flex-initial">
+            <Button variant="outline" className="w-full gap-2">
+              <Share2 className="h-4 w-4" />
+              {t("dashboard.publish")}
+            </Button>
+          </Link>
+          <Link href="/upload" className="flex-1 sm:flex-initial">
+            <Button className="w-full gap-2">
+              <Plus className="h-4 w-4" />
+              {t("dashboard.upload")}
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Usage Widget */}
