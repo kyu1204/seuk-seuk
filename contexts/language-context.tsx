@@ -312,8 +312,8 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.error.loadMore": "추가 문서를 불러오는 중 오류가 발생했습니다.",
     "dashboard.filter.all": "전체",
     "dashboard.filter.draft": "초안",
-    "dashboard.filter.published": "게시됨",
-    "dashboard.filter.completed": "완료됨",
+    "dashboard.filter.published": "발행",
+    "dashboard.filter.completed": "완료",
     "dashboard.tabs.documents": "문서",
     "dashboard.tabs.publications": "발행",
     "dashboard.publications.empty.title": "발행된 문서가 없습니다",
@@ -385,8 +385,8 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Document Status
     "status.draft": "초안",
-    "status.published": "게시됨",
-    "status.completed": "완료됨",
+    "status.published": "발행",
+    "status.completed": "완료",
     "status.active": "활성",
     "status.paid": "결제 완료",
     "status.trialing": "체험 중",
@@ -406,7 +406,7 @@ const translations: Record<Language, Record<string, string>> = {
     "usage.monthly.title": "이번 달 문서 생성",
     "usage.monthly.unlimited": "무제한",
     "usage.monthly.limit.reached": "월별 문서 생성 제한에 도달했습니다",
-    "usage.active.title": "활성 문서 (게시됨 + 완료됨)",
+    "usage.active.title": "활성 문서 (발행 + 완료)",
     "usage.active.limit.reached": "활성 문서 제한에 도달했습니다",
     "usage.plan.free": "베이직",
     "usage.plan.suffix": "플랜",
@@ -502,6 +502,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Document Detail
     "documentDetail.edit": "수정",
+    "documentDetail.publish": "발행",
     "documentDetail.delete": "삭제",
     "documentDetail.download": "다운로드",
     "documentDetail.cancel": "취소",
@@ -534,6 +535,9 @@ const translations: Record<Language, Record<string, string>> = {
     "publish.cancel": "취소",
     "publish.submit": "발행하기",
     "publish.submitting": "발행 중...",
+    "publish.noDrafts": "발행할 수 있는 초안 문서가 없습니다.",
+    "publish.uploadDocument": "문서 업로드하기",
+    "publish.existingPublications": "기존 발행 목록",
 
     // Footer
     "footer.terms": "이용약관",
@@ -1316,7 +1320,7 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.header.title": "My Documents",
     "dashboard.header.description":
       "Manage your documents and collect signatures",
-    "dashboard.publish": "Publish Document",
+    "dashboard.publish": "Publish",
     "dashboard.upload": "Upload",
     "dashboard.empty.title": "No documents uploaded yet",
     "dashboard.empty.description":
@@ -1519,6 +1523,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Document Detail
     "documentDetail.edit": "Edit",
+    "documentDetail.publish": "Publish",
     "documentDetail.delete": "Delete",
     "documentDetail.download": "Download",
     "documentDetail.cancel": "Cancel",
@@ -1551,6 +1556,9 @@ const translations: Record<Language, Record<string, string>> = {
     "publish.cancel": "Cancel",
     "publish.submit": "Publish",
     "publish.submitting": "Publishing...",
+    "publish.noDrafts": "No draft documents available to publish.",
+    "publish.uploadDocument": "Upload Document",
+    "publish.existingPublications": "Existing Publications",
 
     // Footer
     "footer.terms": "Terms of Service",
