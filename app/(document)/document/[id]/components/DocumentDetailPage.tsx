@@ -26,7 +26,7 @@ import {
   convertSignatureAreaToPixels,
   type RelativeSignatureArea,
 } from "@/lib/utils";
-import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
@@ -438,7 +438,7 @@ export default function DocumentDetailComponent({
             <div className="sm:hidden">
               {!isEditMode ? (
                 <>
-                  {/* Draft State - Edit and Delete Actions */}
+                  {/* Draft State - Edit, Publish and Delete Actions */}
                   {canEdit && (
                     <div className="flex justify-between items-center mb-8">
                       {/* Left Group - Edit & Delete */}
@@ -462,6 +462,17 @@ export default function DocumentDetailComponent({
                           {t("documentDetail.delete")}
                         </Button>
                       </div>
+                      {/* Right Group - Publish */}
+                      <Link href="/publish">
+                        <Button
+                          variant="outline"
+                          disabled={isLoading}
+                          className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                        >
+                          <Share2 className="mr-1 h-3 w-3" />
+                          {t("documentDetail.publish")}
+                        </Button>
+                      </Link>
                     </div>
                   )}
                   {/* Completed State - Download and Delete */}
@@ -552,7 +563,7 @@ export default function DocumentDetailComponent({
             <div className="hidden sm:block">
               {!isEditMode ? (
                 <>
-                  {/* Draft State - Edit and Delete Actions */}
+                  {/* Draft State - Edit, Publish and Delete Actions */}
                   {canEdit && (
                     <div className="flex justify-between items-center mb-8">
                       {/* Left Group - Edit & Delete */}
@@ -576,6 +587,17 @@ export default function DocumentDetailComponent({
                           {t("documentDetail.delete")}
                         </Button>
                       </div>
+                      {/* Right Group - Publish */}
+                      <Link href="/publish">
+                        <Button
+                          variant="outline"
+                          disabled={isLoading}
+                          className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                        >
+                          <Share2 className="mr-2 h-4 w-4" />
+                          {t("documentDetail.publish")}
+                        </Button>
+                      </Link>
                     </div>
                   )}
                   {/* Completed State - Download and Delete */}

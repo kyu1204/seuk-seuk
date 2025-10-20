@@ -32,26 +32,5 @@ export default async function PublishPage() {
     );
   }
 
-  if (documents.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">문서 발행</h1>
-          <div className="bg-muted px-4 py-8 rounded-lg text-center">
-            <p className="text-muted-foreground mb-4">
-              발행할 수 있는 문서가 없습니다.
-            </p>
-            <a
-              href="/upload"
-              className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-            >
-              문서 업로드하기
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return <PublishPageContent documents={documents} />;
 }
