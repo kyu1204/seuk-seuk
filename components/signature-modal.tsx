@@ -34,7 +34,7 @@ export default function SignatureModal({
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const PEN_WIDTH = 5; // Increased from default
+  const PEN_WIDTH = 8; // Increased from default
 
   // Initialize canvas when component mounts or when isOpen changes
   useEffect(() => {
