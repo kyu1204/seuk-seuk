@@ -386,7 +386,7 @@ export function PublicationDetailContent({
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <p className="font-medium">{document.filename}</p>
+                          <p className="font-medium">{document.alias || document.filename}</p>
                           <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                             <span>
                               {t("publicationDetail.createdAt")}:{" "}
