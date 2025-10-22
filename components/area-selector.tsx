@@ -52,8 +52,6 @@ export default function AreaSelector({
   const [scrollPositionApplied, setScrollPositionApplied] = useState(false);
   // 부모로부터 전달받은 zoomLevel을 사용하거나, 없으면 기본값 1 사용
   const zoomLevel = propZoomLevel ?? 1;
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Add the useLanguage hook inside the component
   const { t } = useLanguage();
@@ -103,102 +101,42 @@ export default function AreaSelector({
   };
 
   const handleContainerMouseDown = (e: React.MouseEvent) => {
-    if (zoomLevel > 1 && !isSelecting) {
-      setIsDragging(true);
-      setDragStart({ x: e.clientX, y: e.clientY });
-      e.preventDefault();
-      return;
-    }
+    // AreaSelector is in selection mode - always allow area selection
+    // Users can scroll the container to view different parts of the zoomed document
     handleMouseDown(e);
   };
 
   const handleContainerMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && containerRef.current) {
-      e.preventDefault();
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
-
-      containerRef.current.scrollLeft -= deltaX;
-      containerRef.current.scrollTop -= deltaY;
-
-      setDragStart({ x: e.clientX, y: e.clientY });
-      return;
-    }
+    // AreaSelector is in selection mode - always allow area selection
     handleMouseMove(e);
   };
 
   const handleContainerMouseUp = (e: React.MouseEvent) => {
-    if (isDragging) {
-      setIsDragging(false);
-      return;
-    }
+    // AreaSelector is in selection mode - always allow area selection
     handleMouseUp(e);
   };
 
 
-  // Simplified touch event handlers
+  // Touch event handlers - single touch for area selection
   const handleEnhancedTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       // Single touch - start area selection
       handleTouchStart(e);
-    } else if (e.touches.length === 2) {
-      // Two finger touch - start document panning
-      e.preventDefault();
-      setIsDragging(true);
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const centerX = (touch1.clientX + touch2.clientX) / 2;
-      const centerY = (touch1.clientY + touch2.clientY) / 2;
-      setDragStart({ x: centerX, y: centerY });
-      
-      // Cancel any ongoing area selection
-      if (isSelecting) {
-        setIsSelecting(false);
-        setStartPos(null);
-        setCurrentPos(null);
-        if (containerRef.current) {
-          containerRef.current.style.overflow = originalOverflow;
-        }
-      }
     }
+    // Note: Two-finger gestures removed for AreaSelector
+    // Users should use single touch to select areas
   };
 
   const handleEnhancedTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && !isDragging) {
+    if (e.touches.length === 1) {
       // Single touch - area selection
       handleTouchMove(e);
-    } else if (e.touches.length === 2 && isDragging && containerRef.current) {
-      // Two finger touch - document panning
-      e.preventDefault();
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const centerX = (touch1.clientX + touch2.clientX) / 2;
-      const centerY = (touch1.clientY + touch2.clientY) / 2;
-      
-      const deltaX = centerX - dragStart.x;
-      const deltaY = centerY - dragStart.y;
-
-      containerRef.current.scrollLeft -= deltaX;
-      containerRef.current.scrollTop -= deltaY;
-
-      setDragStart({ x: centerX, y: centerY });
     }
   };
 
   const handleEnhancedTouchEnd = (e: React.TouchEvent) => {
-    if (e.touches.length === 0) {
-      // All touches ended
-      if (isDragging) {
-        // End document panning
-        setIsDragging(false);
-        return;
-      }
-      // End area selection
-      handleTouchEnd(e);
-    } else if (e.touches.length === 1 && isDragging) {
-      // From two fingers to one finger - stop panning
-      setIsDragging(false);
-    }
+    // End area selection
+    handleTouchEnd(e);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -359,9 +297,7 @@ export default function AreaSelector({
         onMouseDown={handleContainerMouseDown}
         onMouseMove={handleContainerMouseMove}
         onMouseUp={handleContainerMouseUp}
-        onMouseLeave={() => {
-          setIsDragging(false);
-        }}
+        onMouseLeave={handleContainerMouseUp}
         onTouchStart={handleEnhancedTouchStart}
         onTouchMove={handleEnhancedTouchMove}
         onTouchEnd={handleEnhancedTouchEnd}
