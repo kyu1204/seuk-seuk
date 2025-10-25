@@ -142,7 +142,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.billing.monthly": "월간",
     "pricing.billing.yearly": "연간",
     // Pricing limits (dynamic count)
-    "pricing.limitPerMonth": "월 최대 {{count}}개 문서 생성",
+    "pricing.limitPerMonth": "매 월 최대 {{count}}개 문서 충전",
     "pricing.limitUnlimitedPerMonth": "문서 무제한 생성",
 
     // Pricing Page Specific Keys
@@ -1184,7 +1184,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.billing.monthly": "monthly",
     "pricing.billing.yearly": "yearly",
     // Pricing limits (dynamic count)
-    "pricing.limitPerMonth": "Up to {{count}} documents per month",
+    "pricing.limitPerMonth": "Up to {{count}} documents charged per month",
     "pricing.limitUnlimitedPerMonth": "Unlimited documents per month",
 
     // Pricing Page Specific Keys
