@@ -142,14 +142,14 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.billing.monthly": "월간",
     "pricing.billing.yearly": "연간",
     // Pricing limits (dynamic count)
-    "pricing.limitPerMonth": "월 최대 {count}개 문서 생성",
+    "pricing.limitPerMonth": "월 최대 {{count}}개 문서 생성",
     "pricing.limitUnlimitedPerMonth": "문서 무제한 생성",
 
     // Pricing Page Specific Keys
     "pricingPage.title": "요금제 선택",
     "pricingPage.description":
       "필요에 맞는 플랜을 선택하고 더 많은 기능을 이용하세요",
-    "pricingPage.currentPlan": "현재 {planName} 플랜을 이용 중입니다",
+    "pricingPage.currentPlan": "현재 {{planName}} 플랜을 이용 중입니다",
     "pricingPage.popular": "인기",
     "pricingPage.currentBadge": "현재 플랜",
     "pricingPage.free": "무료",
@@ -284,7 +284,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.savingSignature": "서명 저장 중...",
     "sign.documentList.title": "서명할 문서 목록",
     "sign.documentList.description": "아래 문서를 선택하여 서명을 시작하세요",
-    "sign.documentList.signaturesCompleted": "{completed}/{total} 서명 완료",
+    "sign.documentList.signaturesCompleted": "{{completed}}/{{total}} 서명 완료",
     "sign.documentList.allSigned": "모든 서명 완료",
     "sign.documentList.startSigning": "서명 시작",
     "sign.documentList.continueSign": "서명 계속하기",
@@ -297,7 +297,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Dashboard
     "dashboard.title": "내 문서",
-    "dashboard.description": "총 {total}개의 문서를 관리하고 있습니다.",
+    "dashboard.description": "총 {{total}}개의 문서를 관리하고 있습니다.",
     "dashboard.header.title": "내 문서",
     "dashboard.header.description": "문서를 관리하고 서명을 수집하세요",
     "dashboard.publish": "문서 발행",
@@ -400,8 +400,8 @@ const translations: Record<Language, Record<string, string>> = {
     "table.status": "상태",
     "table.description": "설명",
     "table.actions": "작업",
-    "table.moreCount": "+{count}개 더",
-    "table.pageOf": "페이지 {current} / {total}",
+    "table.moreCount": "+{{count}}개 더",
+    "table.pageOf": "페이지 {{current}} / {{total}}",
     "bills.error.loadSubscriptions": "구독 정보를 불러오지 못했습니다",
     "bills.error.loadTransactions": "결제 내역을 불러오지 못했습니다",
     "bills.error.loadSubscriptionDetail":
@@ -1184,14 +1184,14 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.billing.monthly": "monthly",
     "pricing.billing.yearly": "yearly",
     // Pricing limits (dynamic count)
-    "pricing.limitPerMonth": "Up to {count} documents per month",
+    "pricing.limitPerMonth": "Up to {{count}} documents per month",
     "pricing.limitUnlimitedPerMonth": "Unlimited documents per month",
 
     // Pricing Page Specific Keys
     "pricingPage.title": "Choose Your Plan",
     "pricingPage.description":
       "Select a plan that fits your needs and unlock more features",
-    "pricingPage.currentPlan": "Currently using {planName} plan",
+    "pricingPage.currentPlan": "Currently using {{planName}} plan",
     "pricingPage.popular": "Popular",
     "pricingPage.currentBadge": "Current Plan",
     "pricingPage.free": "Free",
@@ -1328,7 +1328,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.savingSignature": "Saving signature...",
     "sign.documentList.title": "Documents to Sign",
     "sign.documentList.description": "Select a document below to start signing",
-    "sign.documentList.signaturesCompleted": "{completed}/{total} signatures completed",
+    "sign.documentList.signaturesCompleted": "{{completed}}/{{total}} signatures completed",
     "sign.documentList.allSigned": "All signatures completed",
     "sign.documentList.startSigning": "Start Signing",
     "sign.documentList.continueSign": "Continue Signing",
@@ -1341,7 +1341,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Dashboard
     "dashboard.title": "My Documents",
-    "dashboard.description": "You are managing a total of {total} documents.",
+    "dashboard.description": "You are managing a total of {{total}} documents.",
     "dashboard.header.title": "My Documents",
     "dashboard.header.description":
       "Manage your documents and collect signatures",
@@ -1446,8 +1446,8 @@ const translations: Record<Language, Record<string, string>> = {
     "table.status": "Status",
     "table.description": "Description",
     "table.actions": "Actions",
-    "table.moreCount": "+{count} more",
-    "table.pageOf": "Page {current} of {total}",
+    "table.moreCount": "+{{count}} more",
+    "table.pageOf": "Page {{current}} of {{total}}",
     "bills.error.loadSubscriptions": "Failed to load subscriptions",
     "bills.error.loadTransactions": "Failed to load transactions",
     "bills.error.loadSubscriptionDetail": "Failed to load subscription details",
