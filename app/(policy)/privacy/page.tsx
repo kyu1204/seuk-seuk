@@ -326,10 +326,6 @@ export default function PrivacyPage() {
             <p className="mb-4">{t("privacy.section10.intro")}</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                <strong>{t("privacy.section10.responsibility")}:</strong>{" "}
-                {t("privacy.section10.responsibilityName")}
-              </li>
-              <li>
                 <strong>{t("privacy.section10.contact")}:</strong>{" "}
                 <a
                   href="mailto:cs.seuk.seuk@gmail.com"

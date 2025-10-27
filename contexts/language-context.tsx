@@ -997,7 +997,6 @@ const translations: Record<Language, Record<string, string>> = {
     "privacy.section10.intro":
       "서비스는 개인정보 처리에 관한 업무를 총괄하여 책임지고, 개인정보 처리와 관련한 이용자 문의·불만처리 및 피해구제를 처리하기 위하여 아래와 같이 개인정보 보호책임자를 지정합니다.",
     "privacy.section10.responsibility": "개인정보 보호책임자",
-    "privacy.section10.responsibilityName": "김민규",
     "privacy.section10.contact": "연락처",
     "privacy.section10.duties": "담당 업무",
     "privacy.section10.dutiesContent":
@@ -2068,7 +2067,6 @@ const translations: Record<Language, Record<string, string>> = {
     "privacy.section10.intro":
       "The Service designates a privacy officer as follows to oversee personal information processing and handle user inquiries, complaints, and remedies related to personal information processing.",
     "privacy.section10.responsibility": "Privacy Officer",
-    "privacy.section10.responsibilityName": "MINKYU KIM",
     "privacy.section10.contact": "Contact",
     "privacy.section10.duties": "Duties",
     "privacy.section10.dutiesContent":
