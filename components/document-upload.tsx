@@ -67,16 +67,16 @@ export default function DocumentUpload() {
     setIsSelecting(true);
   };
 
-  const handleAreaSelected = (area: RelativeSignatureArea) => {
+  const handleAreaSelected = (area: RelativeSignatureArea, scrollPosition: { top: number; left: number }) => {
     // Store the area coordinates as relative percentages
     setSignatureAreas([...signatureAreas, area]);
     setIsSelecting(false);
 
-    // Restore scroll position after state updates
+    // Restore scroll position from AreaSelector (not the initial position)
     requestAnimationFrame(() => {
       if (documentContainerRef.current) {
-        documentContainerRef.current.scrollTop = scrollPositionRef.current.top;
-        documentContainerRef.current.scrollLeft = scrollPositionRef.current.left;
+        documentContainerRef.current.scrollTop = scrollPosition.top;
+        documentContainerRef.current.scrollLeft = scrollPosition.left;
       }
     });
   };
