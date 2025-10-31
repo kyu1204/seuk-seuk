@@ -220,7 +220,7 @@ export default function PublishForm({ documents }: PublishFormProps) {
                     onCheckedChange={() => handleDocumentToggle(document.id)}
                   />
                   <div className="flex-1">
-                    <p className="font-medium">{document.filename}</p>
+                    <p className="font-medium">{document.alias || document.filename}</p>
                     <p className="text-sm text-muted-foreground">
                       {new Date(document.created_at).toLocaleDateString(
                         language === "ko" ? "ko-KR" : "en-US"
