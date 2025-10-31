@@ -17,7 +17,7 @@ import {
 
 interface AreaSelectorProps {
   image: string;
-  onAreaSelected: (area: RelativeSignatureArea) => void;
+  onAreaSelected: (area: RelativeSignatureArea, scrollPosition: { top: number; left: number }) => void;
   onCancel: () => void;
   existingAreas?: Array<{
     x: number;
@@ -52,6 +52,9 @@ export default function AreaSelector({
   const [scrollPositionApplied, setScrollPositionApplied] = useState(false);
   // 부모로부터 전달받은 zoomLevel을 사용하거나, 없으면 기본값 1 사용
   const zoomLevel = propZoomLevel ?? 1;
+  // Two-finger panning state
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Add the useLanguage hook inside the component
   const { t } = useLanguage();
@@ -117,26 +120,67 @@ export default function AreaSelector({
   };
 
 
-  // Touch event handlers - single touch for area selection
+  // Touch event handlers - single touch for area selection, two fingers for panning
   const handleEnhancedTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      // Single touch - start area selection
+    if (e.touches.length === 2) {
+      // Two finger touch - start document panning
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      setPanStart({ x: centerX, y: centerY });
+      setIsPanning(true);
+
+      // Cancel any ongoing area selection
+      if (isSelecting) {
+        setIsSelecting(false);
+        setStartPos(null);
+        setCurrentPos(null);
+        // Restore overflow
+        if (containerRef.current) {
+          containerRef.current.style.overflow = originalOverflow;
+        }
+      }
+    } else if (e.touches.length === 1 && !isPanning) {
+      // Single touch - start area selection only if not panning
       handleTouchStart(e);
     }
-    // Note: Two-finger gestures removed for AreaSelector
-    // Users should use single touch to select areas
   };
 
   const handleEnhancedTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
+    if (e.touches.length === 2 && isPanning && containerRef.current) {
+      // Two finger panning
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+
+      const deltaX = centerX - panStart.x;
+      const deltaY = centerY - panStart.y;
+
+      containerRef.current.scrollLeft -= deltaX;
+      containerRef.current.scrollTop -= deltaY;
+
+      setPanStart({ x: centerX, y: centerY });
+    } else if (e.touches.length === 1 && !isPanning) {
       // Single touch - area selection
       handleTouchMove(e);
     }
   };
 
   const handleEnhancedTouchEnd = (e: React.TouchEvent) => {
-    // End area selection
-    handleTouchEnd(e);
+    if (e.touches.length === 0) {
+      // All touches ended
+      if (isPanning) {
+        setIsPanning(false);
+      } else {
+        handleTouchEnd(e);
+      }
+    } else if (e.touches.length === 1 && isPanning) {
+      // From two fingers to one finger - stop panning
+      setIsPanning(false);
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -179,7 +223,13 @@ export default function AreaSelector({
 
       // Use percentage-based minimum size (1% of container)
       if (width > 1 && height > 1) {
-        onAreaSelected({ x, y, width, height });
+        // Get current scroll position to pass back to parent
+        const scrollPosition = containerRef.current ? {
+          top: containerRef.current.scrollTop,
+          left: containerRef.current.scrollLeft
+        } : { top: 0, left: 0 };
+
+        onAreaSelected({ x, y, width, height }, scrollPosition);
       }
     }
 
@@ -231,7 +281,13 @@ export default function AreaSelector({
 
       // Use percentage-based minimum size (1% of container)
       if (width > 1 && height > 1) {
-        onAreaSelected({ x, y, width, height });
+        // Get current scroll position to pass back to parent
+        const scrollPosition = containerRef.current ? {
+          top: containerRef.current.scrollTop,
+          left: containerRef.current.scrollLeft
+        } : { top: 0, left: 0 };
+
+        onAreaSelected({ x, y, width, height }, scrollPosition);
       }
     }
 
