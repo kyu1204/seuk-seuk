@@ -351,17 +351,18 @@ export async function createSignatureAreas(
 }
 
 /**
- * Upload signed document image using presigned URL
+ * Generate PDF from signed image that was already uploaded by client
+ * This avoids the 4.5MB body size limit in Vercel serverless functions
  */
-export async function uploadSignedDocument(
+export async function generateSignedPdf(
   documentId: string,
-  signedImageData: string
+  signedImagePath: string
 ) {
   const startTime = Date.now();
-  console.log(`[PDF] Starting signed document upload for ${documentId}`);
+  console.log(`[PDF] Starting PDF generation for ${documentId}`);
 
   try {
-    // Use service role to bypass RLS for presigned URL generation
+    // Use service role to bypass RLS
     const supabaseService = createServiceSupabase();
     const supabase = await createServerSupabase();
 
@@ -379,42 +380,26 @@ export async function uploadSignedDocument(
 
     console.log(`[PDF] Document verified (${Date.now() - startTime}ms)`);
 
-    // Convert data URL to blob
-    const response = await fetch(signedImageData);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
+    // Download the signed image from storage
+    const { data: imageData, error: downloadError } = await supabaseService.storage
+      .from('signed-documents')
+      .download(signedImagePath);
+
+    if (downloadError || !imageData) {
+      console.error('[PDF] Failed to download signed image:', downloadError);
+      return { error: 'Failed to download signed image' };
+    }
+
+    const arrayBuffer = await imageData.arrayBuffer();
     const imageBytes = new Uint8Array(arrayBuffer);
     console.log(
-      `[PDF] Image prepared: ${blob.type || 'unknown'}, ${Math.round(blob.size / 1024)}KB (${Date.now() - startTime}ms)`
+      `[PDF] Image downloaded: ${imageData.type || 'unknown'}, ${Math.round(imageData.size / 1024)}KB (${Date.now() - startTime}ms)`
     );
-    if (blob.type && blob.type !== 'image/png') {
-      console.error(`[PDF] Unsupported image type for storage: ${blob.type}`);
-      return { error: 'Unsupported signed document format. Please try again.' };
-    }
-
-    const imageExtension = 'png';
-    const filename = `signed_${documentId}.${imageExtension}`;
-    const filePath = `${document.user_id}/${filename}`;
-
-    // Upload signed image directly using service role
-    const { error: imageUploadError } = await supabaseService.storage
-      .from('signed-documents')
-      .upload(filePath, blob, {
-        upsert: true,
-        contentType: 'image/png',
-      });
-
-    if (imageUploadError) {
-      console.error('[PDF] Image upload failed:', imageUploadError);
-      return { error: 'Failed to upload signed document' };
-    }
-
-    console.log(`[PDF] Image uploaded successfully (${Date.now() - startTime}ms)`);
 
     // Get public URL for the uploaded file
     const {
       data: { publicUrl },
-    } = supabaseService.storage.from('signed-documents').getPublicUrl(filePath);
+    } = supabaseService.storage.from('signed-documents').getPublicUrl(signedImagePath);
 
     // Generate PDF from signed image with A4 size optimization
     const { PDFDocument } = await import('pdf-lib');
@@ -423,9 +408,9 @@ export async function uploadSignedDocument(
     // Embed image based on MIME type
     let embeddedImage;
     try {
-      if (blob.type === 'image/png') {
+      if (imageData.type === 'image/png' || !imageData.type) {
         embeddedImage = await pdfDoc.embedPng(imageBytes);
-      } else if (blob.type === 'image/jpeg' || blob.type === 'image/jpg') {
+      } else if (imageData.type === 'image/jpeg' || imageData.type === 'image/jpg') {
         embeddedImage = await pdfDoc.embedJpg(imageBytes);
       } else {
         // Fallback: try PNG first, then JPG
@@ -437,7 +422,6 @@ export async function uploadSignedDocument(
       }
     } catch (embedError) {
       console.error('Failed to embed image:', embedError);
-      await supabaseService.storage.from('signed-documents').remove([filePath]);
       return { error: 'Failed to process image for PDF' };
     }
 
@@ -485,9 +469,6 @@ export async function uploadSignedDocument(
 
     if (pdfUploadError) {
       console.error('[PDF] PDF upload failed:', pdfUploadError);
-      await supabaseService.storage
-        .from('signed-documents')
-        .remove([filePath]);
       return { error: 'Failed to upload signed document PDF' };
     }
 
@@ -507,7 +488,7 @@ export async function uploadSignedDocument(
       console.error('[PDF] Update document error:', updateError);
       await supabaseService.storage
         .from('signed-documents')
-        .remove([filePath, pdfPath]);
+        .remove([pdfPath]);
       return { error: 'Failed to update document with signed file URL' };
     }
 

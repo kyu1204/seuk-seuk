@@ -2,10 +2,11 @@
 
 import {
   saveSignature,
-  uploadSignedDocument,
+  generateSignedPdf,
   getDocumentFileSignedUrl,
   markDocumentCompleted,
 } from "@/app/actions/document-actions";
+import { createClientSupabase } from "@/lib/supabase/client";
 import LanguageSelector from "@/components/language-selector";
 import SignatureModal from "@/components/signature-modal";
 import { Button } from "@/components/ui/button";
@@ -317,19 +318,46 @@ export default function SignSingleDocument({
         blob = await response.blob();
       }
 
-      // Convert blob to data URL for upload
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
-
-      // Upload signed document to Supabase Storage
+      // Upload signed document directly to Supabase Storage (client-side)
+      // This bypasses Vercel's 4.5MB body size limit for serverless functions
       setGeneratingProgress("서명된 문서 업로드 중...");
-      const uploadResult = await uploadSignedDocument(documentData.id, dataUrl);
 
-      if (!uploadResult || uploadResult.error) {
-        setError(uploadResult?.error ?? "Failed to upload signed document");
+      const supabase = createClientSupabase();
+
+      // Get current user to construct file path
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError("User not authenticated");
+        setIsGenerating(false);
+        setGeneratingProgress("");
+        return;
+      }
+
+      const filename = `signed_${documentData.id}.png`;
+      const filePath = `${user.id}/${filename}`;
+
+      // Upload blob directly to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('signed-documents')
+        .upload(filePath, blob, {
+          upsert: true,
+          contentType: 'image/png',
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        setError("Failed to upload signed document");
+        setIsGenerating(false);
+        setGeneratingProgress("");
+        return;
+      }
+
+      // Generate PDF from the uploaded image using server action
+      setGeneratingProgress("PDF 생성 중...");
+      const pdfResult = await generateSignedPdf(documentData.id, filePath);
+
+      if (!pdfResult || pdfResult.error) {
+        setError(pdfResult?.error ?? "Failed to generate PDF");
         setIsGenerating(false);
         setGeneratingProgress("");
         return;
