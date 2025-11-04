@@ -351,6 +351,67 @@ export async function createSignatureAreas(
 }
 
 /**
+ * Create a presigned upload URL for signed document
+ * This allows anonymous users to upload directly to storage bypassing RLS
+ */
+export async function createSignedDocumentUploadUrl(
+  documentId: string
+): Promise<{
+  uploadUrl?: string;
+  filePath?: string;
+  token?: string;
+  error?: string;
+}> {
+  try {
+    // Use service role to bypass RLS for presigned URL generation
+    const supabaseService = createServiceSupabase();
+    const supabase = await createServerSupabase();
+
+    // Get document to verify existence and get user_id
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('id, user_id, status')
+      .eq('id', documentId)
+      .single();
+
+    if (docError || !document) {
+      console.error('[Upload] Document not found:', docError);
+      return { error: 'Document not found' };
+    }
+
+    if (document.status === 'completed') {
+      return { error: 'Document already completed' };
+    }
+
+    if (!document.user_id) {
+      return { error: 'Document owner information missing' };
+    }
+
+    const filename = `signed_${documentId}.png`;
+    const filePath = `${document.user_id}/${filename}`;
+
+    // Create presigned upload URL (valid for 5 minutes)
+    const { data, error: urlError } = await supabaseService.storage
+      .from('signed-documents')
+      .createSignedUploadUrl(filePath);
+
+    if (urlError || !data) {
+      console.error('[Upload] Failed to create presigned URL:', urlError);
+      return { error: 'Failed to create upload URL' };
+    }
+
+    return {
+      uploadUrl: data.signedUrl,
+      filePath,
+      token: data.token,
+    };
+  } catch (error) {
+    console.error('[Upload] Unexpected error:', error);
+    return { error: 'An unexpected error occurred' };
+  }
+}
+
+/**
  * Generate PDF from signed image that was already uploaded by client
  * This avoids the 4.5MB body size limit in Vercel serverless functions
  */
