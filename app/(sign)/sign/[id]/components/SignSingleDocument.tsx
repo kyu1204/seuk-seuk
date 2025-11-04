@@ -324,17 +324,17 @@ export default function SignSingleDocument({
 
       const supabase = createClientSupabase();
 
-      // Get current user to construct file path
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        setError("User not authenticated");
+      // Use document's user_id for file path construction
+      // Anonymous users don't have Supabase auth, but document data includes owner's user_id
+      if (!documentData.user_id) {
+        setError("Document owner information missing");
         setIsGenerating(false);
         setGeneratingProgress("");
         return;
       }
 
       const filename = `signed_${documentData.id}.png`;
-      const filePath = `${user.id}/${filename}`;
+      const filePath = `${documentData.user_id}/${filename}`;
 
       // Upload blob directly to Supabase Storage
       const { error: uploadError } = await supabase.storage
