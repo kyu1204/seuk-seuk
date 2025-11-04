@@ -4,8 +4,8 @@ import {
   saveSignature,
   generateSignedPdf,
   getDocumentFileSignedUrl,
+  createSignedDocumentUploadUrl,
 } from "@/app/actions/document-actions";
-import { createClientSupabase } from "@/lib/supabase/client";
 import {
   verifyPublicationPassword,
 } from "@/app/actions/publication-actions";
@@ -334,35 +334,35 @@ export default function SignPageComponent({
         blob = await response.blob();
       }
 
-      // Upload signed document directly to Supabase Storage (client-side)
-      // This bypasses Vercel's 4.5MB body size limit for serverless functions
+      // Upload signed document using presigned URL to bypass RLS
+      // This allows anonymous users to upload without authentication
       setGeneratingProgress("서명된 문서 업로드 중...");
 
-      const supabase = createClientSupabase();
+      // Get presigned upload URL from server
+      const uploadUrlResult = await createSignedDocumentUploadUrl(documentData.id);
 
-      // Use document's user_id for file path construction
-      // Anonymous users don't have Supabase auth, but document data includes owner's user_id
-      if (!documentData.user_id) {
-        setError("Document owner information missing");
+      if (uploadUrlResult.error || !uploadUrlResult.uploadUrl) {
+        console.error('Failed to get upload URL:', uploadUrlResult.error);
+        setError(uploadUrlResult.error || "Failed to get upload URL");
         return;
       }
 
-      const filename = `signed_${documentData.id}.png`;
-      const filePath = `${documentData.user_id}/${filename}`;
+      // Upload directly to presigned URL
+      const uploadResponse = await fetch(uploadUrlResult.uploadUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: {
+          'Content-Type': 'image/png',
+        },
+      });
 
-      // Upload blob directly to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('signed-documents')
-        .upload(filePath, blob, {
-          upsert: true,
-          contentType: 'image/png',
-        });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
+      if (!uploadResponse.ok) {
+        console.error('Upload failed:', uploadResponse.status, uploadResponse.statusText);
         setError("Failed to upload signed document");
         return;
       }
+
+      const filePath = uploadUrlResult.filePath!;
 
       // Generate PDF from the uploaded image using server action
       setGeneratingProgress("PDF 생성 중...");
