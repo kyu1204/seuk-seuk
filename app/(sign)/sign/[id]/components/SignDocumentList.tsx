@@ -290,12 +290,22 @@ export default function SignDocumentList({
               document.id
             );
             const isDocumentComplete = total > 0 && completed === total;
+            // Check if document status is completed (submitted and finalized)
+            const isDocumentSubmitted = document.status === "completed";
 
             return (
               <Card
                 key={document.id}
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => onSelectDocument(document.id)}
+                className={`transition-shadow ${
+                  isDocumentSubmitted
+                    ? "opacity-75 cursor-not-allowed"
+                    : "hover:shadow-md cursor-pointer"
+                }`}
+                onClick={() => {
+                  if (!isDocumentSubmitted) {
+                    onSelectDocument(document.id);
+                  }
+                }}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -306,34 +316,44 @@ export default function SignDocumentList({
                           {document.alias || document.filename}
                         </h3>
                         <div className="flex items-center gap-2">
-                          {isDocumentComplete ? (
+                          {isDocumentSubmitted ? (
                             <Badge
                               variant="default"
                               className="bg-green-500 hover:bg-green-600"
                             >
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              {t("sign.documentList.allSigned")}
+                              제출 완료
+                            </Badge>
+                          ) : isDocumentComplete ? (
+                            <Badge
+                              variant="default"
+                              className="bg-amber-500 hover:bg-amber-600"
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              서명 완료 - 제출 대기
                             </Badge>
                           ) : (
                             <Badge variant="secondary">
                               {t("sign.documentList.signaturesCompleted")
-                                .replace("{completed}", completed.toString())
-                                .replace("{total}", total.toString())}
+                                .replace("{{completed}}", completed.toString())
+                                .replace("{{total}}", total.toString())}
                             </Badge>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        {isDocumentComplete
-                          ? t("sign.documentList.viewDocument")
-                          : completed > 0
-                            ? t("sign.documentList.continueSign")
-                            : t("sign.documentList.startSigning")}
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
+                    {!isDocumentSubmitted && (
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
+                          {isDocumentComplete
+                            ? "문서 제출하기"
+                            : completed > 0
+                              ? t("sign.documentList.continueSign")
+                              : t("sign.documentList.startSigning")}
+                          <ChevronRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

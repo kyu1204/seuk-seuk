@@ -390,6 +390,21 @@ export async function createSignedDocumentUploadUrl(
     const filename = `signed_${documentId}.png`;
     const filePath = `${document.user_id}/${filename}`;
 
+    // Check if file already exists and delete it (cleanup from failed previous attempts)
+    const { data: existingFiles } = await supabaseService.storage
+      .from('signed-documents')
+      .list(document.user_id, {
+        search: `signed_${documentId}`
+      });
+
+    if (existingFiles && existingFiles.length > 0) {
+      console.log(`[Upload] Cleaning up ${existingFiles.length} existing files for document ${documentId}`);
+      const filesToDelete = existingFiles.map(f => `${document.user_id}/${f.name}`);
+      await supabaseService.storage
+        .from('signed-documents')
+        .remove(filesToDelete);
+    }
+
     // Create presigned upload URL (valid for 5 minutes)
     const { data, error: urlError } = await supabaseService.storage
       .from('signed-documents')

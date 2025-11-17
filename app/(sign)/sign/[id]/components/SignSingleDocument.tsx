@@ -11,6 +11,7 @@ import LanguageSelector from "@/components/language-selector";
 import SignatureModal from "@/components/signature-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import { useLanguage } from "@/contexts/language-context";
 import type { ClientDocument, Signature, PublicationWithDocuments } from "@/lib/supabase/database.types";
 import {
@@ -61,11 +62,14 @@ export default function SignSingleDocument({
   const isExpired = publicationData.expires_at
     ? new Date(publicationData.expires_at) < new Date()
     : false;
-  const isCompleted = publicationData.status === "completed";
+  const isPublicationCompleted = publicationData.status === "completed";
+  // Check if THIS specific document is completed
+  const isDocumentCompleted = documentData.status === "completed";
   const [selectedArea, setSelectedArea] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatingProgress, setGeneratingProgress] = useState<string>("");
+  const [progressValue, setProgressValue] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
@@ -148,9 +152,11 @@ export default function SignSingleDocument({
 
     setIsGenerating(true);
     setError(null);
+    setProgressValue(0);
     setGeneratingProgress("문서 처리 준비 중...");
 
     try {
+      setProgressValue(10);
       // Get the current document container dimensions
       if (!documentContainerRef.current) {
         throw new Error("Document container not found");
@@ -193,6 +199,7 @@ export default function SignSingleDocument({
       }
 
       // Create a new image element with the original document
+      setProgressValue(30);
       setGeneratingProgress("원본 문서 로딩 중...");
       const originalImage = new Image();
       originalImage.crossOrigin = "anonymous";
@@ -205,6 +212,7 @@ export default function SignSingleDocument({
       });
 
       // 🚀 Performance optimization: Preload all signature images in parallel
+      setProgressValue(50);
       setGeneratingProgress("서명 이미지 처리 중...");
 
       const signatureImages = await Promise.all(
@@ -245,6 +253,7 @@ export default function SignSingleDocument({
       ctx.imageSmoothingQuality = 'high';
 
       // Draw the original document with downscaling
+      setProgressValue(60);
       setGeneratingProgress("문서 합성 중...");
       ctx.drawImage(originalImage, 0, 0, canvasWidth, canvasHeight);
 
@@ -301,6 +310,7 @@ export default function SignSingleDocument({
       }
 
       // 🚀 Performance optimization: Use optimized compression
+      setProgressValue(70);
       setGeneratingProgress("이미지 압축 중...");
       let blob: Blob;
       if ('toBlob' in canvas) {
@@ -320,6 +330,7 @@ export default function SignSingleDocument({
 
       // Upload signed document using presigned URL to bypass RLS
       // This allows anonymous users to upload without authentication
+      setProgressValue(80);
       setGeneratingProgress("서명된 문서 업로드 중...");
 
       // Get presigned upload URL from server
@@ -353,6 +364,7 @@ export default function SignSingleDocument({
       const filePath = uploadUrlResult.filePath!;
 
       // Generate PDF from the uploaded image using server action
+      setProgressValue(90);
       setGeneratingProgress("PDF 생성 중...");
       const pdfResult = await generateSignedPdf(documentData.id, filePath);
 
@@ -364,6 +376,7 @@ export default function SignSingleDocument({
       }
 
       // Mark document as completed
+      setProgressValue(95);
       setGeneratingProgress("문서 완료 처리 중...");
       const markResult = await markDocumentCompleted(documentData.id);
 
@@ -375,8 +388,10 @@ export default function SignSingleDocument({
       }
 
       // Success - call onComplete callback to show completion view
+      setProgressValue(100);
       setIsGenerating(false);
       setGeneratingProgress("");
+      setProgressValue(0);
       onComplete(documentData.alias || documentData.filename);
     } catch (err) {
       console.error("Error generating signed document:", err);
@@ -387,6 +402,7 @@ export default function SignSingleDocument({
       );
       setIsGenerating(false);
       setGeneratingProgress("");
+      setProgressValue(0);
     }
   };
 
@@ -571,8 +587,8 @@ export default function SignSingleDocument({
     }
   }, [imageLoaded]);
 
-  // Show completed document screen if document is completed
-  if (isCompleted) {
+  // Show completed document screen if publication is completed OR this specific document is completed
+  if (isPublicationCompleted || isDocumentCompleted) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
         {/* Header with logo */}
@@ -678,8 +694,8 @@ export default function SignSingleDocument({
         <LanguageSelector />
       </div>
       <div className="max-w-5xl mx-auto">
-        {/* Hide back button if publication is already completed */}
-        {!isCompleted && (
+        {/* Hide back button if publication or document is already completed */}
+        {!isPublicationCompleted && !isDocumentCompleted && (
           <Button
             variant="ghost"
             onClick={onBack}
@@ -843,14 +859,7 @@ export default function SignSingleDocument({
             onClick={handleGenerateDocument}
             disabled={!allAreasSigned || isGenerating}
           >
-            {isGenerating ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                {generatingProgress || t("sign.generating")}
-              </>
-            ) : (
-              t("sign.saveDocument")
-            )}
+            {t("sign.saveDocument")}
           </Button>
         </div>
 
@@ -880,6 +889,38 @@ export default function SignSingleDocument({
             <div className="flex items-center gap-3">
               <RefreshCw className="h-5 w-5 animate-spin" />
               <span>{t("sign.savingSignature")}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen loading modal for document generation */}
+      {isGenerating && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4">
+            <div className="flex flex-col items-center gap-6">
+              {/* Circular Progress Bar */}
+              <AnimatedCircularProgressBar
+                max={100}
+                min={0}
+                value={progressValue}
+                gaugePrimaryColor="rgb(59 130 246)"
+                gaugeSecondaryColor="rgba(0, 0, 0, 0.1)"
+                className="w-40 h-40"
+              />
+
+              {/* Progress Text */}
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  문서 처리 중
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {generatingProgress}
+                </p>
+                <p className="text-xs text-gray-500 mt-4">
+                  잠시만 기다려주세요. 페이지를 벗어나지 마세요.
+                </p>
+              </div>
             </div>
           </div>
         </div>
