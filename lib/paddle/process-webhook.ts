@@ -607,6 +607,15 @@ export class ProcessWebhook {
               `[transaction.completed] ✅ Successfully linked all subscriptions for customer ${customerId} to user ${user.id}`
             );
 
+            // Check if this transaction includes a free trial and record usage
+            const priceId = eventData.data.items[0]?.price?.id;
+            if (priceId && this.isPriceWithTrial(priceId)) {
+              console.log(
+                `[transaction.completed] Free trial detected for priceId: ${priceId}`
+              );
+              await this.recordTrialUsage(customerId);
+            }
+
             // Send payment notification
             await this.sendPaymentNotification(subscriptions[0].id, supabase);
           } else {
@@ -657,6 +666,15 @@ export class ProcessWebhook {
             );
           }
 
+          // Check if this transaction includes a free trial and record usage
+          const priceId = eventData.data.items[0]?.price?.id;
+          if (priceId && this.isPriceWithTrial(priceId)) {
+            console.log(
+              `[transaction.completed] Free trial detected for priceId: ${priceId}`
+            );
+            await this.recordTrialUsage(customerId);
+          }
+
           // Send payment notification for the first active subscription
           if (subscriptions.length > 0) {
             await this.sendPaymentNotification(subscriptions[0].id, supabase);
@@ -677,13 +695,71 @@ export class ProcessWebhook {
 
     // PADDLE_PRICE_TIERS를 순회하며 매칭
     for (const tier of PADDLE_PRICE_TIERS) {
-      if (tier.priceId.month === priceId || tier.priceId.year === priceId) {
+      if (
+        tier.priceId.month === priceId ||
+        tier.priceId.year === priceId ||
+        tier.priceId.monthNoTrial === priceId ||
+        tier.priceId.yearNoTrial === priceId
+      ) {
         return tier.name;
       }
     }
 
     // 매칭 실패 시 기본값
     return "Basic";
+  }
+
+  /**
+   * 주어진 priceId가 무료체험이 포함된 가격인지 확인
+   * (무료체험 없는 버전이 존재하는 경우 = 무료체험 제공 플랜)
+   */
+  private isPriceWithTrial(priceId: string | undefined): boolean {
+    if (!priceId) return false;
+
+    for (const tier of PADDLE_PRICE_TIERS) {
+      // trial 버전 priceId인지 확인 (noTrial이 아닌 원본)
+      if (tier.priceId.month === priceId || tier.priceId.year === priceId) {
+        // 이 tier가 noTrial 버전을 가지고 있다면 = trial 제공 플랜
+        return !!(tier.priceId.monthNoTrial || tier.priceId.yearNoTrial);
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * customers 테이블에 무료체험 사용 이력 기록
+   * 최초 1회만 기록 (first_trial_date가 이미 있으면 무시)
+   */
+  private async recordTrialUsage(customerId: string) {
+    const supabase = createServiceSupabase();
+
+    try {
+      const { error } = await supabase
+        .from("customers")
+        .update({
+          has_used_free_trial: true,
+          first_trial_date: new Date().toISOString(),
+        })
+        .eq("customer_id", customerId)
+        .is("first_trial_date", null); // 최초 1회만 기록
+
+      if (error) {
+        console.error(
+          `[trial-tracking] Failed to record trial usage for customer ${customerId}:`,
+          error
+        );
+      } else {
+        console.log(
+          `[trial-tracking] ✅ Recorded trial usage for customer: ${customerId}`
+        );
+      }
+    } catch (error) {
+      console.error(
+        `[trial-tracking] Error recording trial usage:`,
+        error
+      );
+    }
   }
 
   /**
