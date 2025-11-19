@@ -8,20 +8,15 @@ import {
 } from "@paddle/paddle-js";
 import type { CheckoutEventsData } from "@paddle/paddle-js/types/checkout/events";
 import throttle from "lodash.throttle";
-import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-
-interface PathParams {
-  priceId: string;
-  [key: string]: string | string[];
-}
 
 interface Props {
   userEmail?: string;
+  validatedPriceId: string;
 }
 
-export function CheckoutContents({ userEmail }: Props) {
-  const { priceId } = useParams<PathParams>();
+export function CheckoutContents({ userEmail, validatedPriceId }: Props) {
+  const priceId = validatedPriceId;
 
   const [quantity, setQuantity] = useState<number>(1);
   const [paddle, setPaddle] = useState<Paddle | null>(null);
