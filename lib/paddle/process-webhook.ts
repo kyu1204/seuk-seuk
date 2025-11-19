@@ -666,19 +666,24 @@ export class ProcessWebhook {
             );
           }
 
-          // Check if this transaction includes a free trial and record usage
-          const priceId = eventData.data.items[0]?.price?.id;
-          if (priceId && this.isPriceWithTrial(priceId)) {
-            console.log(
-              `[transaction.completed] Free trial detected for priceId: ${priceId}`
-            );
-            await this.recordTrialUsage(customerId);
-          }
-
           // Send payment notification for the first active subscription
           if (subscriptions.length > 0) {
             await this.sendPaymentNotification(subscriptions[0].id, supabase);
           }
+        } else {
+          console.log(
+            `[transaction.completed] No unlinked subscriptions found - subscription already linked by subscription.created event`
+          );
+        }
+
+        // IMPORTANT: Check for free trial REGARDLESS of whether subscription was just linked or already linked
+        // This handles the case where subscription.created came before transaction.completed
+        const priceId = eventData.data.items[0]?.price?.id;
+        if (priceId && this.isPriceWithTrial(priceId)) {
+          console.log(
+            `[transaction.completed] Free trial detected for priceId: ${priceId}`
+          );
+          await this.recordTrialUsage(customerId);
         }
       }
     } catch (error) {
