@@ -1067,6 +1067,29 @@ const translations: Record<Language, Record<string, string>> = {
     "mypage.error.loadProfile": "프로필 정보를 불러올 수 없습니다.",
     "mypage.error.loadSubscription": "구독 정보를 불러올 수 없습니다.",
     "mypage.error.loadUsage": "사용량 정보를 불러올 수 없습니다.",
+
+    // Credit System
+    "pricing.credit.title": "추가 크레딧",
+    "pricing.credit.description": "월 한도 초과 시 필요한 만큼만 구매하세요",
+    "pricing.credit.name": "문서 크레딧",
+    "pricing.credit.unit": "1 크레딧 = 생성 1개 + 발행 1개",
+    "pricing.credit.per": "개",
+    "pricing.credit.quantity": "수량",
+    "pricing.credit.total": "총 금액",
+    "pricing.credit.receive": "받는 크레딧",
+    "pricing.credit.breakdown": "생성 {{count}}개 + 발행 {{count}}개",
+    "pricing.credit.purchase": "크레딧 충전하기",
+
+    // Dashboard Credit
+    "dashboard.creditBalance": "+{{count}}개 보유",
+    "dashboard.monthlyLimitReached": "월 문서 생성 한도 도달",
+    "dashboard.rechargePrompt": "크레딧 충전하기 →",
+
+    // My Page Credit
+    "mypage.creditTitle": "보유 크레딧",
+    "mypage.createAvailable": "생성 가능",
+    "mypage.publishAvailable": "발행 가능",
+    "mypage.rechargeButton": "크레딧 충전",
   },
   en: {
     // Header
@@ -2141,6 +2164,29 @@ const translations: Record<Language, Record<string, string>> = {
     "mypage.error.loadProfile": "Failed to load profile information.",
     "mypage.error.loadSubscription": "Failed to load subscription information.",
     "mypage.error.loadUsage": "Failed to load usage information.",
+
+    // Credit System
+    "pricing.credit.title": "Additional Credits",
+    "pricing.credit.description": "Buy only what you need when you exceed monthly limits",
+    "pricing.credit.name": "Document Credits",
+    "pricing.credit.unit": "1 credit = 1 create + 1 publish",
+    "pricing.credit.per": "each",
+    "pricing.credit.quantity": "Quantity",
+    "pricing.credit.total": "Total",
+    "pricing.credit.receive": "Credits to receive",
+    "pricing.credit.breakdown": "Create {{count}} + Publish {{count}}",
+    "pricing.credit.purchase": "Purchase Credits",
+
+    // Dashboard Credit
+    "dashboard.creditBalance": "+{{count}} available",
+    "dashboard.monthlyLimitReached": "Monthly document creation limit reached",
+    "dashboard.rechargePrompt": "Recharge credits →",
+
+    // My Page Credit
+    "mypage.creditTitle": "Available Credits",
+    "mypage.createAvailable": "Create Available",
+    "mypage.publishAvailable": "Publish Available",
+    "mypage.rechargeButton": "Recharge Credits",
   },
 };
 
