@@ -20,8 +20,8 @@ export default async function CheckoutPage({
   );
 
   return (
-    <div className="w-full min-h-screen relative overflow-hidden bg-white">
-      <div className="mx-auto max-w-6xl relative px-[16px] md:px-[32px] py-[24px] flex flex-col gap-6 justify-between">
+    <div className="w-full min-h-screen relative overflow-hidden bg-white dark:bg-background">
+      <div className="mx-auto max-w-6xl relative px-4 md:px-8 py-6 flex flex-col gap-6">
         <CheckoutHeader />
         <CheckoutContents
           userEmail={data.user?.email}

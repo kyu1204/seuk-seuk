@@ -1,9 +1,12 @@
+'use client';
+
 import { CheckoutLineItems } from '@/components/checkout/checkout-line-items';
 import { CheckoutPriceContainer } from '@/components/checkout/checkout-price-container';
 import { CheckoutPriceAmount } from '@/components/checkout/checkout-price-amount';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Separator } from '@/components/ui/separator';
 import { CheckoutEventsData } from '@paddle/paddle-js/types/checkout/events';
+import { useLanguage } from '@/contexts/language-context';
 
 interface Props {
   checkoutData: CheckoutEventsData | null;
@@ -12,6 +15,8 @@ interface Props {
 }
 
 export function PriceSection({ checkoutData, handleQuantityChange, quantity }: Props) {
+  const { t } = useLanguage();
+
   return (
     <>
       <div className={'hidden md:block'}>
@@ -27,7 +32,7 @@ export function PriceSection({ checkoutData, handleQuantityChange, quantity }: P
         <Separator className={'relative bg-border/50 mt-6'} />
         <Accordion type="single" collapsible>
           <AccordionItem className={'border-none'} value="item-1">
-            <AccordionTrigger className={'text-muted-foreground no-underline!'}>Order summary</AccordionTrigger>
+            <AccordionTrigger className={'text-muted-foreground no-underline!'}>{t("checkout.orderSummary")}</AccordionTrigger>
             <AccordionContent className={'pb-0'}>
               <CheckoutLineItems
                 handleQuantityChange={handleQuantityChange}

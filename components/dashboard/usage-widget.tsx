@@ -22,10 +22,8 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
-  AlertCircle,
-  Coins,
+  BookPlus,
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   getUserUsageLimits,
   getCurrentSubscription,
@@ -147,15 +145,24 @@ export function UsageWidget() {
     );
   }
 
+  // Calculate effective limits including credits
+  const effectiveMonthlyLimit = limits.monthlyCreationLimit === -1
+    ? -1
+    : limits.monthlyCreationLimit + credits.create_credits;
+
+  const effectiveActiveLimit = limits.activeDocumentLimit === -1
+    ? -1
+    : limits.activeDocumentLimit + credits.publish_credits;
+
   const monthlyProgress =
-    limits.monthlyCreationLimit === -1
+    effectiveMonthlyLimit === -1
       ? 0
-      : (limits.currentMonthlyCreated / limits.monthlyCreationLimit) * 100;
+      : (limits.currentMonthlyCreated / effectiveMonthlyLimit) * 100;
 
   const activeProgress =
-    limits.activeDocumentLimit === -1
+    effectiveActiveLimit === -1
       ? 0
-      : (limits.currentActiveDocuments / limits.activeDocumentLimit) * 100;
+      : (limits.currentActiveDocuments / effectiveActiveLimit) * 100;
 
   const isMonthlyNearLimit = monthlyProgress >= 80;
   const isActiveNearLimit = activeProgress >= 80;
@@ -195,17 +202,17 @@ export function UsageWidget() {
                   }
                 >
                   {limits.currentMonthlyCreated}{" "}
-                  {limits.monthlyCreationLimit === -1
+                  {effectiveMonthlyLimit === -1
                     ? `/ ${t("usage.monthly.unlimited")}`
-                    : `/ ${limits.monthlyCreationLimit}`}
+                    : `/ ${effectiveMonthlyLimit}`}
                   {credits.create_credits > 0 && (
                     <span className="text-primary ml-1">
-                      (+{credits.create_credits}{t("usage.credit.unit", "개 보유")})
+                      (+{credits.create_credits}{t("usage.credit.unit", " docs")})
                     </span>
                   )}
                 </span>
               </div>
-              {limits.monthlyCreationLimit !== -1 && (
+              {effectiveMonthlyLimit !== -1 && (
                 <Progress
                   value={monthlyProgress}
                   className={`h-2 ${
@@ -214,51 +221,38 @@ export function UsageWidget() {
                 />
               )}
               {!limits.canCreateNew && credits.create_credits === 0 && (
-                <Alert className="mt-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="flex items-center justify-between">
-                    <span>{t("usage.monthly.limit.reached")}</span>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="ml-2 p-0 h-auto"
-                      onClick={() => router.push("/pricing")}
-                    >
-                      <Coins className="mr-1 h-3 w-3" />
-                      {t("usage.credit.recharge", "크레딧 충전하기")} &rarr;
-                    </Button>
-                  </AlertDescription>
-                </Alert>
+                <p className="mt-1 text-xs text-destructive">
+                  {t("usage.monthly.limit.reached")}
+                </p>
               )}
               {!limits.canCreateNew && credits.create_credits > 0 && (
-                <div className="flex items-center gap-2 text-sm text-primary">
-                  <Coins className="h-4 w-4" />
-                  {t("usage.credit.available", "크레딧으로 추가 생성 가능")}
-                </div>
+                <p className="mt-1 text-xs text-primary">
+                  {t("usage.credit.available")}
+                </p>
               )}
             </div>
 
             {/* Active Documents Usage */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{t("usage.active.title")}</span>
+                <span className="font-medium whitespace-pre-line">{t("usage.active.title")}</span>
                 <span
                   className={
                     isActiveNearLimit ? "text-destructive font-medium" : ""
                   }
                 >
                   {limits.currentActiveDocuments}{" "}
-                  {limits.activeDocumentLimit === -1
+                  {effectiveActiveLimit === -1
                     ? `/ ${t("usage.monthly.unlimited")}`
-                    : `/ ${limits.activeDocumentLimit}`}
+                    : `/ ${effectiveActiveLimit}`}
                   {credits.publish_credits > 0 && (
                     <span className="text-primary ml-1">
-                      (+{credits.publish_credits}{t("usage.credit.unit", "개 보유")})
+                      (+{credits.publish_credits}{t("usage.credit.unit", " docs")})
                     </span>
                   )}
                 </span>
               </div>
-              {limits.activeDocumentLimit !== -1 && (
+              {effectiveActiveLimit !== -1 && (
                 <Progress
                   value={activeProgress}
                   className={`h-2 ${
@@ -267,29 +261,42 @@ export function UsageWidget() {
                 />
               )}
               {!limits.canPublishMore && credits.publish_credits === 0 && (
-                <Alert className="mt-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="flex items-center justify-between">
-                    <span>{t("usage.active.limit.reached")}</span>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="ml-2 p-0 h-auto"
-                      onClick={() => router.push("/pricing")}
-                    >
-                      <Coins className="mr-1 h-3 w-3" />
-                      {t("usage.credit.recharge", "크레딧 충전하기")} &rarr;
-                    </Button>
-                  </AlertDescription>
-                </Alert>
+                <p className="mt-1 text-xs text-destructive">
+                  {t("usage.active.limit.reached")}
+                </p>
               )}
               {!limits.canPublishMore && credits.publish_credits > 0 && (
-                <div className="flex items-center gap-2 text-sm text-primary">
-                  <Coins className="h-4 w-4" />
-                  {t("usage.credit.publishAvailable", "크레딧으로 추가 발행 가능")}
-                </div>
+                <p className="mt-1 text-xs text-primary">
+                  {t("usage.credit.publishAvailable")}
+                </p>
               )}
             </div>
+
+            {/* Credit Purchase CTA - Show when any limit is reached */}
+            {((!limits.canCreateNew && credits.create_credits === 0) ||
+              (!limits.canPublishMore && credits.publish_credits === 0)) && (
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {t("usage.credit.needMore", "추가 문서가 필요하신가요?")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("usage.credit.purchaseDesc", "추가문서를 구매하여 더 많이 이용하세요")}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => router.push("/pricing")}
+                  >
+                    <BookPlus className="h-4 w-4" />
+                    {t("usage.credit.recharge")}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Upgrade CTA - Show only when not Enterprise or when no subscription (treat as Free) */}
             {planName !== "Enterprise" && (

@@ -16,7 +16,6 @@ import { getPaddleInstance } from "./get-paddle-instance";
 interface CreditPurchaseCustomData {
   type: "credit";
   quantity: string;
-  user_id: string;
 }
 
 export class ProcessWebhook {
@@ -865,6 +864,7 @@ export class ProcessWebhook {
   /**
    * Handle credit purchase from transaction.completed event
    * Adds credits to user's balance based on custom_data
+   * Uses the same customer lookup logic as subscription purchases
    */
   private async handleCreditPurchase(
     eventData: TransactionCompletedEvent,
@@ -873,12 +873,12 @@ export class ProcessWebhook {
     const supabase = createServiceSupabase();
 
     try {
-      const userId = customData.user_id;
       const quantity = parseInt(customData.quantity, 10);
       const transactionId = eventData.data.id;
+      const customerId = eventData.data.customerId;
 
-      if (!userId) {
-        console.error("[credit-purchase] Missing user_id in custom_data");
+      if (!customerId) {
+        console.error("[credit-purchase] No customer_id in event");
         return;
       }
 
@@ -888,7 +888,7 @@ export class ProcessWebhook {
       }
 
       console.log(
-        `[credit-purchase] Processing credit purchase: ${quantity} credits for user ${userId}`
+        `[credit-purchase] Processing credit purchase: ${quantity} credits for customer ${customerId}`
       );
 
       // Check for duplicate transaction
@@ -905,7 +905,81 @@ export class ProcessWebhook {
         return;
       }
 
-      // 1. Record transaction
+      // 1. Find user_id from customer (same logic as subscription)
+      let userId: string | null = null;
+
+      // 1a. Try to get user_id from existing customer record
+      const { data: customerData } = await supabase
+        .from("customers")
+        .select("user_id")
+        .eq("customer_id", customerId)
+        .single();
+
+      if (customerData?.user_id) {
+        userId = customerData.user_id;
+        console.log(`[credit-purchase] Found user ${userId} from existing customer record`);
+      } else {
+        // 1b. Customer doesn't exist or not linked - fetch from Paddle API and find user by email
+        console.log(`[credit-purchase] Customer not found in DB, fetching from Paddle API...`);
+
+        const paddle = getPaddleInstance();
+        let customerEmail: string | null = null;
+
+        try {
+          const paddleCustomer = await paddle.customers.get(customerId);
+          customerEmail = paddleCustomer.email;
+          console.log(`[credit-purchase] Fetched customer email from Paddle: ${customerEmail}`);
+        } catch (apiError) {
+          console.error(`[credit-purchase] Failed to fetch customer from Paddle API:`, apiError);
+          return;
+        }
+
+        if (!customerEmail) {
+          console.error(`[credit-purchase] No email available for customer ${customerId}`);
+          return;
+        }
+
+        // Find user by email
+        const {
+          data: { users },
+          error: listError,
+        } = await supabase.auth.admin.listUsers();
+
+        if (listError) {
+          console.error(`[credit-purchase] Failed to list users:`, listError);
+          return;
+        }
+
+        const user = users?.find((u) => u.email === customerEmail);
+
+        if (!user) {
+          console.error(
+            `[credit-purchase] No user found with email ${customerEmail}`
+          );
+          return;
+        }
+
+        userId = user.id;
+        console.log(`[credit-purchase] Found user ${userId} by email ${customerEmail}`);
+
+        // Create or update customer record
+        await supabase
+          .from("customers")
+          .upsert({
+            customer_id: customerId,
+            email: customerEmail,
+            user_id: userId,
+          });
+
+        console.log(`[credit-purchase] Created/updated customer record for ${customerId}`);
+      }
+
+      if (!userId) {
+        console.error("[credit-purchase] Could not determine user_id");
+        return;
+      }
+
+      // 2. Record transaction
       const { error: transactionError } = await supabase
         .from("credit_transactions")
         .insert({
@@ -921,7 +995,7 @@ export class ProcessWebhook {
         throw transactionError;
       }
 
-      // 2. Update balance (upsert)
+      // 3. Update balance (upsert)
       const { data: existing } = await supabase
         .from("credit_balance")
         .select("create_credits, publish_credits")
@@ -953,7 +1027,7 @@ export class ProcessWebhook {
         `New balance: create=${newCreateCredits}, publish=${newPublishCredits}`
       );
 
-      // 3. Send notification (optional)
+      // 4. Send notification (optional)
       await this.sendCreditPurchaseNotification(quantity, userId);
     } catch (error) {
       console.error("[credit-purchase] Error processing credit purchase:", error);

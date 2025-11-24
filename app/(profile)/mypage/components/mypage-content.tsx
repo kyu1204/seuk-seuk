@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AlertTriangle, Coins } from "lucide-react";
+import { AlertTriangle, BookPlus } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -196,27 +196,42 @@ export function MyPageContent({ user, profile, subscription, usage, basicPlan, c
       {/* Credit Balance Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">{t("mypage.creditTitle", "보유 크레딧")}</CardTitle>
+          <CardTitle>{t("mypage.creditTitle")}</CardTitle>
+          <CardDescription>{t("mypage.creditDescription", "구매한 추가문서 현황")}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">{t("mypage.createAvailable", "생성 가능")}</span>
-              <span className="text-2xl font-bold">{credits?.create_credits || 0}개</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">{t("mypage.publishAvailable", "발행 가능")}</span>
-              <span className="text-2xl font-bold">{credits?.publish_credits || 0}개</span>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">{t("mypage.createAvailable")}</span>
+              <span className="text-muted-foreground">
+                {credits?.create_credits || 0}{t("mypage.countUnit")}
+              </span>
             </div>
           </div>
-          <Button
-            variant="outline"
-            className="w-full mt-4"
-            onClick={() => router.push("/pricing")}
-          >
-            <Coins className="mr-2 h-4 w-4" />
-            {t("mypage.rechargeButton", "크레딧 충전")}
-          </Button>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">{t("mypage.publishAvailable")}</span>
+              <span className="text-muted-foreground">
+                {credits?.publish_credits || 0}{t("mypage.countUnit")}
+              </span>
+            </div>
+          </div>
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {t("mypage.creditPurchaseHint", "추가문서 구매")}
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => router.push("/pricing")}
+              >
+                <BookPlus className="h-4 w-4" />
+                {t("mypage.rechargeButton")}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

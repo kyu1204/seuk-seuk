@@ -477,21 +477,25 @@ export function PricingPage() {
                       {t("pricing.credit.unit", "1 크레딧 = 생성 1개 + 발행 1개")}
                     </p>
                   </div>
-                  <Badge>$0.50 / {t("pricing.credit.per", "개")}</Badge>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground line-through">$1.00</span>
+                    <span className="text-sm">$0.50</span>
+                    <Badge className="bg-red-500 hover:bg-red-600">50% OFF</Badge>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="creditQuantity">
-                      {t("pricing.credit.quantity", "수량")} (1~100)
+                      {t("pricing.credit.quantity", "수량")} {t("pricing.credit.quantityRange", "(최소 5개 ~ 최대 20개)")}
                     </Label>
                     <Input
                       id="creditQuantity"
                       type="number"
-                      min="1"
-                      max="100"
+                      min="5"
+                      max="20"
                       value={creditQuantity}
-                      onChange={(e) => setCreditQuantity(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+                      onChange={(e) => setCreditQuantity(Math.min(20, Math.max(5, parseInt(e.target.value) || 5)))}
                       className="mt-2"
                     />
                   </div>
@@ -499,7 +503,7 @@ export function PricingPage() {
                   <div className="bg-muted p-3 rounded space-y-1">
                     <div className="flex justify-between text-sm">
                       <span>{t("pricing.credit.total", "총 금액")}</span>
-                      <span className="font-bold">${(creditQuantity * 0.5).toFixed(2)}</span>
+                      <span className="font-bold text-red-600">${(creditQuantity * 0.5).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">

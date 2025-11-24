@@ -40,4 +40,7 @@ export const PADDLE_PRICE_TIERS: PaddlePriceTier[] = [
 ];
 
 // Credit Price ID - Paddle에서 생성 후 실제 Price ID로 교체
-export const PADDLE_CREDIT_PRICE_ID = "pri_01xxxxxxxxxxxxxxxxxxxxx";
+export const PADDLE_CREDIT_PRICE_ID = "pri_01katezsfck02wsh91xrjp7qkw";
+
+// Credit Discount ID - 50% 할인 (Code: Z9BEGB9BLY)
+export const PADDLE_CREDIT_DISCOUNT_ID = "dsc_01katepggj65q9f1sjjdpe7whq";
