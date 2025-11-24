@@ -3,6 +3,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { getUserProfile } from "@/app/actions/account-actions";
 import { getCurrentSubscription, getCurrentMonthUsage, getBasicPlan } from "@/app/actions/subscription-actions";
+import { getCreditBalance } from "@/app/actions/credit-actions";
 import { MyPageContent } from "./components/mypage-content";
 
 // Force dynamic rendering since this page requires authentication
@@ -15,11 +16,13 @@ export default async function MyPage() {
     { subscription },
     { usage },
     { plan: basicPlan },
+    { credits },
   ] = await Promise.all([
     getUserProfile(),
     getCurrentSubscription(),
     getCurrentMonthUsage(),
     getBasicPlan(),
+    getCreditBalance(),
   ]);
 
   // Redirect if not authenticated
@@ -46,6 +49,7 @@ export default async function MyPage() {
       subscription={subscription}
       usage={usage}
       basicPlan={basicPlan}
+      credits={credits}
     />
   );
 }

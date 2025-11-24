@@ -11,10 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Coins } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import DeleteAccountForm from "./delete-account-form";
 import type { User } from "@supabase/supabase-js";
+import type { CreditBalance } from "@/app/actions/credit-actions";
 
 interface MyPageContentProps {
   user: User;
@@ -42,10 +45,12 @@ interface MyPageContentProps {
     monthly_document_limit: number;
     active_document_limit: number;
   } | null;
+  credits?: CreditBalance;
 }
 
-export function MyPageContent({ user, profile, subscription, usage, basicPlan }: MyPageContentProps) {
+export function MyPageContent({ user, profile, subscription, usage, basicPlan, credits }: MyPageContentProps) {
   const { t, language } = useLanguage();
+  const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Display name and avatar
@@ -185,6 +190,33 @@ export function MyPageContent({ user, profile, subscription, usage, basicPlan }:
               <Progress value={activeProgress} className="h-2" />
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Credit Balance Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("mypage.creditTitle", "보유 크레딧")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">{t("mypage.createAvailable", "생성 가능")}</span>
+              <span className="text-2xl font-bold">{credits?.create_credits || 0}개</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">{t("mypage.publishAvailable", "발행 가능")}</span>
+              <span className="text-2xl font-bold">{credits?.publish_credits || 0}개</span>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full mt-4"
+            onClick={() => router.push("/pricing")}
+          >
+            <Coins className="mr-2 h-4 w-4" />
+            {t("mypage.rechargeButton", "크레딧 충전")}
+          </Button>
         </CardContent>
       </Card>
 
