@@ -22,7 +22,10 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
+  Coins,
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   getUserUsageLimits,
   getCurrentSubscription,
@@ -31,13 +34,18 @@ import type {
   UsageLimits,
   Subscription,
 } from "@/app/actions/subscription-actions";
+import { getCreditBalance } from "@/app/actions/credit-actions";
+import type { CreditBalance } from "@/app/actions/credit-actions";
 import { useLanguage } from "@/contexts/language-context";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function UsageWidget() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [limits, setLimits] = useState<UsageLimits | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [credits, setCredits] = useState<CreditBalance>({ create_credits: 0, publish_credits: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -45,9 +53,10 @@ export function UsageWidget() {
   useEffect(() => {
     async function fetchUsageData() {
       try {
-        const [limitsResult, subscriptionResult] = await Promise.all([
+        const [limitsResult, subscriptionResult, creditsResult] = await Promise.all([
           getUserUsageLimits(),
           getCurrentSubscription(),
+          getCreditBalance(),
         ]);
 
         if (limitsResult.error) {
@@ -62,6 +71,11 @@ export function UsageWidget() {
 
         setLimits(limitsResult.limits);
         setSubscription(subscriptionResult.subscription);
+
+        // 크레딧 조회 (에러는 무시하고 0으로 유지)
+        if (creditsResult.credits) {
+          setCredits(creditsResult.credits);
+        }
       } catch (err) {
         setError("Failed to load usage data");
         console.error("Usage widget error:", err);
@@ -184,6 +198,11 @@ export function UsageWidget() {
                   {limits.monthlyCreationLimit === -1
                     ? `/ ${t("usage.monthly.unlimited")}`
                     : `/ ${limits.monthlyCreationLimit}`}
+                  {credits.create_credits > 0 && (
+                    <span className="text-primary ml-1">
+                      (+{credits.create_credits}{t("usage.credit.unit", "개 보유")})
+                    </span>
+                  )}
                 </span>
               </div>
               {limits.monthlyCreationLimit !== -1 && (
@@ -194,10 +213,27 @@ export function UsageWidget() {
                   }`}
                 />
               )}
-              {!limits.canCreateNew && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  {t("usage.monthly.limit.reached")}
+              {!limits.canCreateNew && credits.create_credits === 0 && (
+                <Alert className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>{t("usage.monthly.limit.reached")}</span>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="ml-2 p-0 h-auto"
+                      onClick={() => router.push("/pricing")}
+                    >
+                      <Coins className="mr-1 h-3 w-3" />
+                      {t("usage.credit.recharge", "크레딧 충전하기")} &rarr;
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {!limits.canCreateNew && credits.create_credits > 0 && (
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <Coins className="h-4 w-4" />
+                  {t("usage.credit.available", "크레딧으로 추가 생성 가능")}
                 </div>
               )}
             </div>
@@ -215,6 +251,11 @@ export function UsageWidget() {
                   {limits.activeDocumentLimit === -1
                     ? `/ ${t("usage.monthly.unlimited")}`
                     : `/ ${limits.activeDocumentLimit}`}
+                  {credits.publish_credits > 0 && (
+                    <span className="text-primary ml-1">
+                      (+{credits.publish_credits}{t("usage.credit.unit", "개 보유")})
+                    </span>
+                  )}
                 </span>
               </div>
               {limits.activeDocumentLimit !== -1 && (
@@ -225,10 +266,27 @@ export function UsageWidget() {
                   }`}
                 />
               )}
-              {!limits.canPublishMore && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  {t("usage.active.limit.reached")}
+              {!limits.canPublishMore && credits.publish_credits === 0 && (
+                <Alert className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>{t("usage.active.limit.reached")}</span>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="ml-2 p-0 h-auto"
+                      onClick={() => router.push("/pricing")}
+                    >
+                      <Coins className="mr-1 h-3 w-3" />
+                      {t("usage.credit.recharge", "크레딧 충전하기")} &rarr;
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {!limits.canPublishMore && credits.publish_credits > 0 && (
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <Coins className="h-4 w-4" />
+                  {t("usage.credit.publishAvailable", "크레딧으로 추가 발행 가능")}
                 </div>
               )}
             </div>
