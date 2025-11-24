@@ -15,6 +15,7 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { canCreateDocument, incrementDocumentCreated, decrementDocumentCreated } from "./subscription-actions";
 import { sendDocumentCompletionEmail } from "./notification-actions";
+import { deductCredit } from "./credit-actions";
 
 /**
  * Upload a file to Supabase Storage and create a document record
@@ -40,7 +41,7 @@ export async function uploadDocument(formData: FormData) {
     }
 
     // Check if user can create a new document
-    const { canCreate, reason, error: limitError } = await canCreateDocument();
+    const { canCreate, usingCredit, reason, error: limitError } = await canCreateDocument();
     if (limitError) {
       return { error: limitError };
     }
@@ -86,11 +87,24 @@ export async function uploadDocument(formData: FormData) {
       return { error: "Failed to create document record" };
     }
 
-    // Increment monthly usage count
-    const { success: usageUpdated, error: usageError } = await incrementDocumentCreated();
-    if (!usageUpdated || usageError) {
-      console.error("Failed to update usage:", usageError);
-      // Don't fail the entire operation, just log the error
+    // Handle credit deduction or monthly usage increment
+    if (usingCredit) {
+      // Deduct credit
+      const { success, error: creditError } = await deductCredit("create", document.id);
+      if (!success || creditError) {
+        console.error("Failed to deduct credit:", creditError);
+        // Rollback: delete document and storage file
+        await supabase.from("documents").delete().eq("id", document.id);
+        await supabase.storage.from("documents").remove([filePath]);
+        return { error: "크레딧 차감 실패" };
+      }
+    } else {
+      // Increment monthly usage count
+      const { success: usageUpdated, error: usageError } = await incrementDocumentCreated();
+      if (!usageUpdated || usageError) {
+        console.error("Failed to update usage:", usageError);
+        // Don't fail the entire operation, just log the error
+      }
     }
 
     return { success: true, document };
