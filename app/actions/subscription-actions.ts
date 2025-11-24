@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getCreditBalance } from "./credit-actions";
 
 // Types
 export interface SubscriptionPlan {
@@ -256,6 +257,7 @@ export async function getUserUsageLimits(): Promise<{
  */
 export async function canCreateDocument(): Promise<{
   canCreate: boolean;
+  usingCredit?: boolean;
   reason?: string;
   error?: string;
 }> {
@@ -269,15 +271,24 @@ export async function canCreateDocument(): Promise<{
       };
     }
 
-    if (!limits.canCreateNew) {
-      return {
-        canCreate: false,
-        reason: `월별 문서 생성 제한에 도달했습니다. (${limits.currentMonthlyCreated}/${limits.monthlyCreationLimit})`,
-      };
+    // Check monthly limit first
+    if (limits.canCreateNew) {
+      return { canCreate: true, usingCredit: false };
+    }
+
+    // If monthly limit reached, check credits
+    const { credits, error: creditsError } = await getCreditBalance();
+    if (creditsError) {
+      return { canCreate: false, error: creditsError };
+    }
+
+    if (credits && credits.create_credits > 0) {
+      return { canCreate: true, usingCredit: true };
     }
 
     return {
-      canCreate: true,
+      canCreate: false,
+      reason: "월 문서 생성 한도 및 크레딧 모두 소진",
     };
   } catch (error) {
     console.error("Can create document error:", error);
@@ -345,21 +356,29 @@ export async function canCreatePublication(documentCount: number = 1): Promise<{
       };
     }
 
-    // Check if adding these documents would exceed the active document limit
-    const wouldExceedLimit =
-      limits.activeDocumentLimit !== -1 &&
-      limits.currentActiveDocuments + documentCount > limits.activeDocumentLimit;
+    // Calculate total available (monthly + credits)
+    const { credits, error: creditsError } = await getCreditBalance();
+    if (creditsError) {
+      return { canCreate: false, error: creditsError };
+    }
 
-    if (wouldExceedLimit) {
-      const availableSlots = limits.activeDocumentLimit - limits.currentActiveDocuments;
-      return {
-        canCreate: false,
-        reason: `활성 문서 제한을 초과합니다. 현재 ${limits.currentActiveDocuments}/${limits.activeDocumentLimit}개 사용 중이며, ${availableSlots}개의 슬롯만 남아있습니다. 일부 문서를 삭제하거나 플랜을 업그레이드하세요.`,
-      };
+    const monthlyRemaining =
+      limits.activeDocumentLimit === -1
+        ? Infinity
+        : limits.activeDocumentLimit - limits.currentActiveDocuments;
+
+    const totalAvailable =
+      monthlyRemaining === Infinity
+        ? Infinity
+        : monthlyRemaining + (credits?.publish_credits || 0);
+
+    if (totalAvailable >= documentCount) {
+      return { canCreate: true };
     }
 
     return {
-      canCreate: true,
+      canCreate: false,
+      reason: `${documentCount}개 발행 불가 (사용 가능: ${totalAvailable}개)`,
     };
   } catch (error) {
     console.error("Can create publication error:", error);
