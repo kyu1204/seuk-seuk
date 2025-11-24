@@ -14,11 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          subject?: string
+        }
+        Relationships: []
+      }
+      credit_balance: {
+        Row: {
+          create_credits: number
+          id: string
+          publish_credits: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          create_credits?: number
+          id?: string
+          publish_credits?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          create_credits?: number
+          id?: string
+          publish_credits?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          create_credits: number
+          created_at: string | null
+          id: string
+          paddle_transaction_id: string | null
+          publish_credits: number
+          related_document_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          create_credits?: number
+          created_at?: string | null
+          id?: string
+          paddle_transaction_id?: string | null
+          publish_credits?: number
+          related_document_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          create_credits?: number
+          created_at?: string | null
+          id?: string
+          paddle_transaction_id?: string | null
+          publish_credits?: number
+          related_document_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_related_document_id_fkey"
+            columns: ["related_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
           customer_id: string
           email: string
+          first_trial_date: string | null
+          has_used_free_trial: boolean | null
           updated_at: string
           user_id: string | null
         }
@@ -26,6 +120,8 @@ export type Database = {
           created_at?: string
           customer_id: string
           email: string
+          first_trial_date?: string | null
+          has_used_free_trial?: boolean | null
           updated_at?: string
           user_id?: string | null
         }
@@ -33,6 +129,8 @@ export type Database = {
           created_at?: string
           customer_id?: string
           email?: string
+          first_trial_date?: string | null
+          has_used_free_trial?: boolean | null
           updated_at?: string
           user_id?: string | null
         }
@@ -379,14 +477,15 @@ export type Database = {
         Args: { target_user_id: string; target_year_month: string }
         Returns: undefined
       }
+      deduct_credit_atomic: {
+        Args: { p_document_id: string; p_type: string; p_user_id: string }
+        Returns: boolean
+      }
       increment_documents_created: {
         Args: { target_user_id: string; target_year_month: string }
         Returns: undefined
       }
-      notify_signup: {
-        Args: { event: Json }
-        Returns: Json
-      }
+      notify_signup: { Args: { event: Json }; Returns: Json }
       update_published_completed_count: {
         Args: { target_user_id: string; target_year_month: string }
         Returns: undefined
