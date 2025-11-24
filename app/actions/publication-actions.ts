@@ -8,6 +8,8 @@ import type {
   PublicationWithDocuments
 } from "@/lib/supabase/database.types";
 import bcrypt from "bcryptjs";
+import { deductCredit } from "./credit-actions";
+import { getUserUsageLimits } from "./subscription-actions";
 
 // Generate random short URL
 function generateShortUrl(): string {
@@ -118,6 +120,30 @@ export async function createPublication(
     // Note: monthly_usage.published_completed_count is automatically updated by
     // the database trigger (trigger_document_status_change) when document status changes
     // No need to manually increment here
+
+    // Credit deduction logic for publish credits
+    const { limits } = await getUserUsageLimits();
+    const monthlyRemaining = limits?.activeDocumentLimit === -1
+      ? Infinity
+      : (limits?.activeDocumentLimit || 0) - (limits?.currentActiveDocuments || 0);
+
+    let creditsToDeduct = 0;
+    if (monthlyRemaining < documentIds.length) {
+      if (monthlyRemaining === Infinity) {
+        creditsToDeduct = 0;
+      } else {
+        creditsToDeduct = documentIds.length - Math.max(0, monthlyRemaining);
+      }
+    }
+
+    // Deduct credits if needed
+    for (let i = 0; i < creditsToDeduct; i++) {
+      const { success, error: creditError } = await deductCredit("publish", documentIds[i]);
+      if (!success || creditError) {
+        console.error("Failed to deduct publish credit:", creditError);
+        // Don't rollback entire publication, just log error
+      }
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/publish");
