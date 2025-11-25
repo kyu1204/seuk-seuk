@@ -56,6 +56,106 @@ export async function getCreditBalance(): Promise<{
 }
 
 /**
+ * Check if a document was created using credit
+ */
+export async function wasDocumentCreatedWithCredit(
+  documentId: string,
+  type: "create" | "publish"
+): Promise<{ usedCredit: boolean; error?: string }> {
+  try {
+    const supabase = await createServerSupabase();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { usedCredit: false, error: "User not authenticated" };
+    }
+
+    const serviceSupabase = createServiceRoleClient();
+
+    // Check if there's a deduction transaction for this document
+    const transactionType = type === "create" ? "use_create" : "use_publish";
+    const { data, error } = await serviceSupabase
+      .from("credit_transactions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("related_document_id", documentId)
+      .eq("transaction_type", transactionType)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Check credit usage error:", error);
+      return { usedCredit: false, error: "Failed to check credit usage" };
+    }
+
+    return { usedCredit: !!data };
+  } catch (error) {
+    console.error("Check credit usage error:", error);
+    return { usedCredit: false, error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Refund credit when a document is deleted
+ */
+export async function refundCredit(
+  type: "create" | "publish",
+  documentId: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabase = await createServerSupabase();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
+    const serviceSupabase = createServiceRoleClient();
+
+    // 1. Record refund transaction
+    const { error: transactionError } = await serviceSupabase
+      .from("credit_transactions")
+      .insert({
+        user_id: user.id,
+        transaction_type: `refund_${type}`,
+        create_credits: type === "create" ? 1 : 0,
+        publish_credits: type === "publish" ? 1 : 0,
+        related_document_id: documentId,
+      });
+
+    if (transactionError) {
+      console.error("Refund transaction error:", transactionError);
+      return { error: "Failed to record refund transaction" };
+    }
+
+    // 2. Increment credit balance
+    const { data: balance } = await serviceSupabase
+      .from("credit_balance")
+      .select("create_credits, publish_credits")
+      .eq("user_id", user.id)
+      .single();
+
+    const { error: balanceError } = await serviceSupabase
+      .from("credit_balance")
+      .upsert({
+        user_id: user.id,
+        create_credits: (balance?.create_credits || 0) + (type === "create" ? 1 : 0),
+        publish_credits: (balance?.publish_credits || 0) + (type === "publish" ? 1 : 0),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+
+    if (balanceError) {
+      console.error("Refund balance error:", balanceError);
+      return { error: "Failed to refund credit balance" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Refund credit error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * Deduct credit atomically using DB function
  */
 export async function deductCredit(

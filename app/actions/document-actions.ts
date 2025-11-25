@@ -15,7 +15,7 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { canCreateDocument, incrementDocumentCreated, decrementDocumentCreated } from "./subscription-actions";
 import { sendDocumentCompletionEmail } from "./notification-actions";
-import { deductCredit } from "./credit-actions";
+import { deductCredit, wasDocumentCreatedWithCredit, refundCredit } from "./credit-actions";
 
 /**
  * Upload a file to Supabase Storage and create a document record
@@ -1118,6 +1118,18 @@ export async function deleteDocument(documentId: string): Promise<{
 
     // Handle draft documents with hard delete + count decrement
     if (document.status === "draft") {
+      // Check if document was created with credit BEFORE deleting (need documentId to query)
+      const { usedCredit } = await wasDocumentCreatedWithCredit(documentId, "create");
+
+      // Refund credit if document was created with credit (BEFORE deleting document!)
+      if (usedCredit) {
+        const { success: refundSuccess, error: refundError } = await refundCredit("create", documentId);
+        if (!refundSuccess || refundError) {
+          console.error("⚠️ SERVER: Failed to refund credit:", refundError);
+          // Don't fail the entire operation, just log the error
+        }
+      }
+
       // Delete associated signatures first (cascade delete)
       const { error: sigError } = await supabase
         .from("signatures")
