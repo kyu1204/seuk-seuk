@@ -15,6 +15,7 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { canCreateDocument, incrementDocumentCreated, decrementDocumentCreated } from "./subscription-actions";
 import { sendDocumentCompletionEmail } from "./notification-actions";
+import { deductCredit, wasDocumentCreatedWithCredit, refundCredit } from "./credit-actions";
 
 /**
  * Upload a file to Supabase Storage and create a document record
@@ -40,7 +41,7 @@ export async function uploadDocument(formData: FormData) {
     }
 
     // Check if user can create a new document
-    const { canCreate, reason, error: limitError } = await canCreateDocument();
+    const { canCreate, usingCredit, reason, error: limitError } = await canCreateDocument();
     if (limitError) {
       return { error: limitError };
     }
@@ -86,11 +87,29 @@ export async function uploadDocument(formData: FormData) {
       return { error: "Failed to create document record" };
     }
 
-    // Increment monthly usage count
+    // Increment monthly usage count (regardless of credit usage)
+    // This tracks total documents created this month for analytics
     const { success: usageUpdated, error: usageError } = await incrementDocumentCreated();
     if (!usageUpdated || usageError) {
       console.error("Failed to update usage:", usageError);
       // Don't fail the entire operation, just log the error
+    }
+
+    // Handle credit deduction if using credit
+    if (usingCredit) {
+      const { success, error: creditError } = await deductCredit("create", document.id);
+      if (!success || creditError) {
+        console.error("Failed to deduct credit:", creditError);
+
+        // Rollback monthly count increment
+        await decrementDocumentCreated();
+
+        // Rollback: delete document and storage file
+        await supabase.from("documents").delete().eq("id", document.id);
+        await supabase.storage.from("documents").remove([filePath]);
+
+        return { error: "크레딧 차감 실패" };
+      }
     }
 
     return { success: true, document };
@@ -1099,6 +1118,18 @@ export async function deleteDocument(documentId: string): Promise<{
 
     // Handle draft documents with hard delete + count decrement
     if (document.status === "draft") {
+      // Check if document was created with credit BEFORE deleting (need documentId to query)
+      const { usedCredit } = await wasDocumentCreatedWithCredit(documentId, "create");
+
+      // Refund credit if document was created with credit (BEFORE deleting document!)
+      if (usedCredit) {
+        const { success: refundSuccess, error: refundError } = await refundCredit("create", documentId);
+        if (!refundSuccess || refundError) {
+          console.error("⚠️ SERVER: Failed to refund credit:", refundError);
+          // Don't fail the entire operation, just log the error
+        }
+      }
+
       // Delete associated signatures first (cascade delete)
       const { error: sigError } = await supabase
         .from("signatures")

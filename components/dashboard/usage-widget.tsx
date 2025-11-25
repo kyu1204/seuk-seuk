@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  BookPlus,
 } from "lucide-react";
 import {
   getUserUsageLimits,
@@ -31,13 +32,18 @@ import type {
   UsageLimits,
   Subscription,
 } from "@/app/actions/subscription-actions";
+import { getCreditBalance } from "@/app/actions/credit-actions";
+import type { CreditBalance } from "@/app/actions/credit-actions";
 import { useLanguage } from "@/contexts/language-context";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function UsageWidget() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [limits, setLimits] = useState<UsageLimits | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [credits, setCredits] = useState<CreditBalance>({ create_credits: 0, publish_credits: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -45,9 +51,10 @@ export function UsageWidget() {
   useEffect(() => {
     async function fetchUsageData() {
       try {
-        const [limitsResult, subscriptionResult] = await Promise.all([
+        const [limitsResult, subscriptionResult, creditsResult] = await Promise.all([
           getUserUsageLimits(),
           getCurrentSubscription(),
+          getCreditBalance(),
         ]);
 
         if (limitsResult.error) {
@@ -62,6 +69,11 @@ export function UsageWidget() {
 
         setLimits(limitsResult.limits);
         setSubscription(subscriptionResult.subscription);
+
+        // 크레딧 조회 (에러는 무시하고 0으로 유지)
+        if (creditsResult.credits) {
+          setCredits(creditsResult.credits);
+        }
       } catch (err) {
         setError("Failed to load usage data");
         console.error("Usage widget error:", err);
@@ -133,15 +145,21 @@ export function UsageWidget() {
     );
   }
 
+  // Use base limits without credits for display
+  // Credits are shown separately as (+N)
+  const displayMonthlyLimit = limits.monthlyCreationLimit;
+  const displayActiveLimit = limits.activeDocumentLimit;
+
+  // Calculate progress based on base limit only (excluding credits)
   const monthlyProgress =
-    limits.monthlyCreationLimit === -1
+    displayMonthlyLimit === -1 || displayMonthlyLimit === 0
       ? 0
-      : (limits.currentMonthlyCreated / limits.monthlyCreationLimit) * 100;
+      : (limits.currentMonthlyCreated / displayMonthlyLimit) * 100;
 
   const activeProgress =
-    limits.activeDocumentLimit === -1
+    displayActiveLimit === -1 || displayActiveLimit === 0
       ? 0
-      : (limits.currentActiveDocuments / limits.activeDocumentLimit) * 100;
+      : (limits.currentActiveDocuments / displayActiveLimit) * 100;
 
   const isMonthlyNearLimit = monthlyProgress >= 80;
   const isActiveNearLimit = activeProgress >= 80;
@@ -181,12 +199,17 @@ export function UsageWidget() {
                   }
                 >
                   {limits.currentMonthlyCreated}{" "}
-                  {limits.monthlyCreationLimit === -1
+                  {displayMonthlyLimit === -1
                     ? `/ ${t("usage.monthly.unlimited")}`
-                    : `/ ${limits.monthlyCreationLimit}`}
+                    : `/ ${displayMonthlyLimit}`}
+                  {credits.create_credits > 0 && (
+                    <span className="text-primary ml-1">
+                      (+{credits.create_credits})
+                    </span>
+                  )}
                 </span>
               </div>
-              {limits.monthlyCreationLimit !== -1 && (
+              {displayMonthlyLimit !== -1 && (
                 <Progress
                   value={monthlyProgress}
                   className={`h-2 ${
@@ -194,30 +217,39 @@ export function UsageWidget() {
                   }`}
                 />
               )}
-              {!limits.canCreateNew && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4" />
+              {!limits.canCreateNew && credits.create_credits === 0 && (
+                <p className="mt-1 text-xs text-destructive">
                   {t("usage.monthly.limit.reached")}
-                </div>
+                </p>
+              )}
+              {!limits.canCreateNew && credits.create_credits > 0 && (
+                <p className="mt-1 text-xs text-primary">
+                  {t("usage.credit.available")}
+                </p>
               )}
             </div>
 
             {/* Active Documents Usage */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{t("usage.active.title")}</span>
+                <span className="font-medium whitespace-pre-line">{t("usage.active.title")}</span>
                 <span
                   className={
                     isActiveNearLimit ? "text-destructive font-medium" : ""
                   }
                 >
                   {limits.currentActiveDocuments}{" "}
-                  {limits.activeDocumentLimit === -1
+                  {displayActiveLimit === -1
                     ? `/ ${t("usage.monthly.unlimited")}`
-                    : `/ ${limits.activeDocumentLimit}`}
+                    : `/ ${displayActiveLimit}`}
+                  {credits.publish_credits > 0 && (
+                    <span className="text-primary ml-1">
+                      (+{credits.publish_credits})
+                    </span>
+                  )}
                 </span>
               </div>
-              {limits.activeDocumentLimit !== -1 && (
+              {displayActiveLimit !== -1 && (
                 <Progress
                   value={activeProgress}
                   className={`h-2 ${
@@ -225,13 +257,43 @@ export function UsageWidget() {
                   }`}
                 />
               )}
-              {!limits.canPublishMore && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4" />
+              {!limits.canPublishMore && credits.publish_credits === 0 && (
+                <p className="mt-1 text-xs text-destructive">
                   {t("usage.active.limit.reached")}
-                </div>
+                </p>
+              )}
+              {!limits.canPublishMore && credits.publish_credits > 0 && (
+                <p className="mt-1 text-xs text-primary">
+                  {t("usage.credit.publishAvailable")}
+                </p>
               )}
             </div>
+
+            {/* Credit Purchase CTA - Show when any limit is reached */}
+            {((!limits.canCreateNew && credits.create_credits === 0) ||
+              (!limits.canPublishMore && credits.publish_credits === 0)) && (
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {t("usage.credit.needMore", "추가 문서가 필요하신가요?")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("usage.credit.purchaseDesc", "추가문서를 구매하여 더 많이 이용하세요")}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => router.push("/pricing")}
+                  >
+                    <BookPlus className="h-4 w-4" />
+                    {t("usage.credit.recharge")}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Upgrade CTA - Show only when not Enterprise or when no subscription (treat as Free) */}
             {planName !== "Enterprise" && (

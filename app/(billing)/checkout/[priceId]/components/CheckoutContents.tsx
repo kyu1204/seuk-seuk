@@ -9,6 +9,7 @@ import {
 import type { CheckoutEventsData } from "@paddle/paddle-js/types/checkout/events";
 import throttle from "lodash.throttle";
 import { useCallback, useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/language-context";
 
 interface Props {
   userEmail?: string;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function CheckoutContents({ userEmail, validatedPriceId }: Props) {
+  const { t } = useLanguage();
   const priceId = validatedPriceId;
 
   const [quantity, setQuantity] = useState<number>(1);
@@ -83,25 +85,27 @@ export function CheckoutContents({ userEmail, validatedPriceId }: Props) {
   }, [paddle, priceId, quantity, updateItems]);
 
   return (
-    <div
-      className={
-        "rounded-lg bg-white border-2 shadow-lg md:p-10 md:pl-16 md:pt-16 md:min-h-[400px] flex flex-col justify-between relative"
-      }
-    >
-      <div className={"flex flex-col md:flex-row gap-8 md:gap-16"}>
-        <div className={"w-full md:w-[400px] p-10 md:p-0"}>
-          <PriceSection
-            checkoutData={checkoutData}
-            quantity={quantity}
-            handleQuantityChange={setQuantity}
-          />
+    <div className="rounded-lg bg-white dark:bg-card border-2 shadow-lg p-6 md:p-10 md:min-h-[400px] flex flex-col md:flex-row gap-8">
+      {/* Left: Order Summary */}
+      <div className="w-full md:w-[350px]">
+        <PriceSection
+          checkoutData={checkoutData}
+          quantity={quantity}
+          handleQuantityChange={setQuantity}
+        />
+      </div>
+
+      {/* Right: Paddle Checkout */}
+      <div className="flex-1 min-w-0 md:min-w-[375px] lg:min-w-[500px]">
+        <div className="text-base leading-5 font-semibold mb-6">
+          {t("checkout.paymentDetails")}
         </div>
-        <div className={"min-w-[375px] lg:min-w-[535px] p-8 md:p-0"}>
-          <div className={"text-base leading-[20px] font-semibold mb-8"}>
-            Payment details
+        {loading && (
+          <div className="flex items-center justify-center h-[300px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-          <div className={"paddle-checkout-frame"} />
-        </div>
+        )}
+        <div className="paddle-checkout-frame" />
       </div>
     </div>
   );

@@ -16,14 +16,18 @@ export type Language = "ko" | "en";
 type LanguageContextType = {
   language: Language;
   setLanguage: (language: Language) => Promise<void>;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  t: (
+    key: string,
+    fallbackOrParams?: string | Record<string, string | number>,
+    params?: Record<string, string | number>
+  ) => string;
 };
 
 // Create the context with default values
 const LanguageContext = createContext<LanguageContextType>({
   language: "ko",
   setLanguage: async () => { },
-  t: (key) => key,
+  t: (key, fallbackOrParams) => typeof fallbackOrParams === "string" ? fallbackOrParams : key,
 });
 
 // Translation data
@@ -179,6 +183,22 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Checkout Page
     "checkout.backButton": "요금제 페이지로 돌아가기",
+    "checkout.paymentDetails": "결제하기",
+    "checkout.orderSummary": "주문 요약",
+    "checkout.subtotal": "소계",
+    "checkout.tax": "세금",
+    "checkout.dueToday": "오늘 결제",
+    "checkout.then": "이후",
+    "checkout.incTax": "세금 포함",
+    "checkout.billing.daily": "매일",
+    "checkout.billing.weekly": "매주",
+    "checkout.billing.monthly": "매월",
+    "checkout.billing.yearly": "매년",
+    "checkout.billing.days": "일마다",
+    "checkout.billing.weeks": "주마다",
+    "checkout.billing.months": "개월마다",
+    "checkout.billing.years": "년마다",
+    "checkout.billing.every": "매",
 
     // Checkout Success
     "checkout.success.title": "결제가 완료되었습니다!",
@@ -1067,6 +1087,53 @@ const translations: Record<Language, Record<string, string>> = {
     "mypage.error.loadProfile": "프로필 정보를 불러올 수 없습니다.",
     "mypage.error.loadSubscription": "구독 정보를 불러올 수 없습니다.",
     "mypage.error.loadUsage": "사용량 정보를 불러올 수 없습니다.",
+
+    // Credit System
+    "pricing.credit.title": "추가문서 구매",
+    "pricing.credit.description": "월 한도 초과 시 필요한 만큼만 구매하세요",
+    "pricing.credit.name": "추가문서",
+    "pricing.credit.unit": "1개 = 생성 1개 + 발행 1개",
+    "pricing.credit.per": "개",
+    "pricing.credit.quantity": "수량",
+    "pricing.credit.quantityRange": "(최소 5개 ~ 최대 20개)",
+    "pricing.credit.total": "총 금액",
+    "pricing.credit.receive": "받는 추가문서",
+    "pricing.credit.breakdown": "생성 {{count}}개 + 발행 {{count}}개",
+    "pricing.credit.purchase": "추가문서 구매하기",
+
+    // Dashboard Credit
+    "dashboard.creditBalance": "+{{count}}개 보유",
+    "dashboard.monthlyLimitReached": "월 문서 생성 한도 도달",
+    "dashboard.rechargePrompt": "추가문서 구매하기 →",
+
+    // Usage Widget Credit
+    "usage.credit.unit": "개",
+    "usage.credit.recharge": "추가문서 구매",
+    "usage.credit.available": "추가문서로 생성 가능",
+    "usage.credit.publishAvailable": "추가문서로 발행 가능",
+    "usage.credit.needMore": "추가 문서가 필요하신가요?",
+    "usage.credit.purchaseDesc": "추가문서를 구매하여 더 많이 이용하세요",
+
+    // Checkout Credit
+    "checkout.credit.title": "추가문서 구매",
+    "checkout.credit.back": "요금제 페이지로 돌아가기",
+    "checkout.credit.quantity": "수량",
+    "checkout.credit.unitPrice": "단가",
+    "checkout.credit.discount": "할인",
+    "checkout.credit.total": "총 금액",
+    "checkout.credit.receive": "받게 될 추가문서",
+    "checkout.credit.breakdown": "문서 생성 {{count}}개 + 문서 발행 {{count}}개",
+    "checkout.credit.pay": "결제하기",
+    "checkout.credit.loading": "로딩 중...",
+
+    // My Page Credit
+    "mypage.creditTitle": "보유 추가문서",
+    "mypage.creditDescription": "구매한 추가문서 현황",
+    "mypage.createAvailable": "생성 가능",
+    "mypage.publishAvailable": "발행 가능",
+    "mypage.rechargeButton": "추가문서 구매",
+    "mypage.creditPurchaseHint": "추가문서 구매",
+    "mypage.countUnit": "개",
   },
   en: {
     // Header
@@ -1220,6 +1287,22 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Checkout Page
     "checkout.backButton": "Go Back",
+    "checkout.paymentDetails": "Payment details",
+    "checkout.orderSummary": "Order summary",
+    "checkout.subtotal": "Subtotal",
+    "checkout.tax": "Tax",
+    "checkout.dueToday": "Due today",
+    "checkout.then": "then",
+    "checkout.incTax": "inc. tax",
+    "checkout.billing.daily": "daily",
+    "checkout.billing.weekly": "weekly",
+    "checkout.billing.monthly": "monthly",
+    "checkout.billing.yearly": "yearly",
+    "checkout.billing.days": "days",
+    "checkout.billing.weeks": "weeks",
+    "checkout.billing.months": "months",
+    "checkout.billing.years": "years",
+    "checkout.billing.every": "every",
 
     // Checkout Success
     "checkout.success.title": "Payment Successful!",
@@ -1476,7 +1559,7 @@ const translations: Record<Language, Record<string, string>> = {
     "usage.monthly.title": "Monthly Document Creation",
     "usage.monthly.unlimited": "Unlimited",
     "usage.monthly.limit.reached": "Monthly document creation limit reached",
-    "usage.active.title": "Active Documents (Published + Completed)",
+    "usage.active.title": "Active Documents\n(Published + Completed)",
     "usage.active.limit.reached": "Active document limit reached",
     "usage.plan.free": "Basic",
     "usage.plan.suffix": "Plan",
@@ -2141,6 +2224,53 @@ const translations: Record<Language, Record<string, string>> = {
     "mypage.error.loadProfile": "Failed to load profile information.",
     "mypage.error.loadSubscription": "Failed to load subscription information.",
     "mypage.error.loadUsage": "Failed to load usage information.",
+
+    // Credit System
+    "pricing.credit.title": "Additional Documents",
+    "pricing.credit.description": "Buy only what you need when you exceed monthly limits",
+    "pricing.credit.name": "Additional Documents",
+    "pricing.credit.unit": "1 doc = 1 create + 1 publish",
+    "pricing.credit.per": "",
+    "pricing.credit.quantity": "Quantity",
+    "pricing.credit.quantityRange": "(min 5 ~ max 20)",
+    "pricing.credit.total": "Total",
+    "pricing.credit.receive": "Documents to receive",
+    "pricing.credit.breakdown": "Create {{count}} + Publish {{count}}",
+    "pricing.credit.purchase": "Purchase",
+
+    // Dashboard Credit
+    "dashboard.creditBalance": "+{{count}} available",
+    "dashboard.monthlyLimitReached": "Monthly document creation limit reached",
+    "dashboard.rechargePrompt": "Recharge credits →",
+
+    // Usage Widget Credit
+    "usage.credit.unit": " docs",
+    "usage.credit.recharge": "Buy More",
+    "usage.credit.available": "Additional creation available",
+    "usage.credit.publishAvailable": "Additional publish available",
+    "usage.credit.needMore": "Need more documents?",
+    "usage.credit.purchaseDesc": "Purchase additional documents to use more",
+
+    // Checkout Credit
+    "checkout.credit.title": "Purchase Additional Documents",
+    "checkout.credit.back": "Go back",
+    "checkout.credit.quantity": "Quantity",
+    "checkout.credit.unitPrice": "Unit Price",
+    "checkout.credit.discount": "Discount",
+    "checkout.credit.total": "Total",
+    "checkout.credit.receive": "Documents to receive",
+    "checkout.credit.breakdown": "Create {{count}} + Publish {{count}}",
+    "checkout.credit.pay": "Pay Now",
+    "checkout.credit.loading": "Loading...",
+
+    // My Page Credit
+    "mypage.creditTitle": "Additional Docs",
+    "mypage.creditDescription": "Purchased additional docs",
+    "mypage.createAvailable": "Create Available",
+    "mypage.publishAvailable": "Publish Available",
+    "mypage.rechargeButton": "Buy More",
+    "mypage.creditPurchaseHint": "Buy additional docs",
+    "mypage.countUnit": " docs",
   },
 };
 
@@ -2171,15 +2301,41 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   // Translation function with parameter support
-  const t = (key: string, params?: Record<string, string | number>): string => {
-    let translation = translations[language][key] || key;
+  // Supports: t(key), t(key, params), t(key, fallback), t(key, fallback, params)
+  const t = (
+    key: string,
+    fallbackOrParams?: string | Record<string, string | number>,
+    params?: Record<string, string | number>
+  ): string => {
+    let translation: string | undefined = translations[language][key];
+    let actualParams: Record<string, string | number> | undefined;
+
+    // Determine fallback and params based on argument types
+    if (typeof fallbackOrParams === "string") {
+      // t(key, fallback) or t(key, fallback, params)
+      if (translation === undefined) {
+        translation = fallbackOrParams;
+      }
+      actualParams = params;
+    } else if (typeof fallbackOrParams === "object" && fallbackOrParams !== null) {
+      // t(key, params)
+      if (translation === undefined) {
+        translation = key;
+      }
+      actualParams = fallbackOrParams;
+    } else {
+      // t(key)
+      if (translation === undefined) {
+        translation = key;
+      }
+    }
 
     // Replace parameters in the translation string (supports {{param}} format)
-    if (params) {
-      Object.keys(params).forEach((param) => {
+    if (actualParams) {
+      Object.keys(actualParams).forEach((param) => {
         translation = translation.replace(
           new RegExp(`\\{\\{${param}\\}\\}`, "g"),
-          String(params[param])
+          String(actualParams![param])
         );
       });
     }

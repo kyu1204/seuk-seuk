@@ -18,24 +18,15 @@ export function getPaymentReason(origin: string) {
   }
 }
 
-const BillingCycleMap = {
-  day: 'daily',
-  week: 'weekly',
-  month: 'monthly',
-  year: 'yearly',
-};
+type TranslationFunction = (key: string, fallback?: string) => string;
 
-const CustomBillingCycleMap = {
-  day: 'days',
-  week: 'weeks',
-  month: 'months',
-  year: 'years',
-};
-
-export function formatBillingCycle({ frequency, interval }: CheckoutEventsTimePeriod) {
+export function formatBillingCycle(
+  { frequency, interval }: CheckoutEventsTimePeriod,
+  t: TranslationFunction
+) {
   if (frequency === 1) {
-    return BillingCycleMap[interval];
+    return t(`checkout.billing.${interval}ly`);
   } else {
-    return `every ${frequency} ${CustomBillingCycleMap[interval]}`;
+    return `${t("checkout.billing.every")} ${frequency} ${t(`checkout.billing.${interval}s`)}`;
   }
 }

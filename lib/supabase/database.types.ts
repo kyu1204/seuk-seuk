@@ -14,11 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          subject?: string
+        }
+        Relationships: []
+      }
+      credit_balance: {
+        Row: {
+          create_credits: number
+          id: string
+          publish_credits: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          create_credits?: number
+          id?: string
+          publish_credits?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          create_credits?: number
+          id?: string
+          publish_credits?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          create_credits: number
+          created_at: string | null
+          id: string
+          paddle_transaction_id: string | null
+          publish_credits: number
+          related_document_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          create_credits?: number
+          created_at?: string | null
+          id?: string
+          paddle_transaction_id?: string | null
+          publish_credits?: number
+          related_document_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          create_credits?: number
+          created_at?: string | null
+          id?: string
+          paddle_transaction_id?: string | null
+          publish_credits?: number
+          related_document_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_related_document_id_fkey"
+            columns: ["related_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
           customer_id: string
           email: string
+          first_trial_date: string | null
+          has_used_free_trial: boolean | null
           updated_at: string
           user_id: string | null
         }
@@ -26,6 +120,8 @@ export type Database = {
           created_at?: string
           customer_id: string
           email: string
+          first_trial_date?: string | null
+          has_used_free_trial?: boolean | null
           updated_at?: string
           user_id?: string | null
         }
@@ -33,6 +129,8 @@ export type Database = {
           created_at?: string
           customer_id?: string
           email?: string
+          first_trial_date?: string | null
+          has_used_free_trial?: boolean | null
           updated_at?: string
           user_id?: string | null
         }
@@ -375,18 +473,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_credits_atomic: {
+        Args: {
+          p_paddle_transaction_id: string
+          p_quantity: number
+          p_user_id: string
+        }
+        Returns: {
+          error_message: string
+          success: boolean
+        }[]
+      }
       decrement_documents_created: {
         Args: { target_user_id: string; target_year_month: string }
         Returns: undefined
+      }
+      deduct_credit_atomic: {
+        Args: { p_document_id: string; p_type: string; p_user_id: string }
+        Returns: boolean
       }
       increment_documents_created: {
         Args: { target_user_id: string; target_year_month: string }
         Returns: undefined
       }
-      notify_signup: {
-        Args: { event: Json }
-        Returns: Json
-      }
+      notify_signup: { Args: { event: Json }; Returns: Json }
       update_published_completed_count: {
         Args: { target_user_id: string; target_year_month: string }
         Returns: undefined
@@ -405,41 +515,125 @@ export type Database = {
   }
 }
 
-// Helper types for documents
-export type Document = Database["public"]["Tables"]["documents"]["Row"];
-export type DocumentInsert = Database["public"]["Tables"]["documents"]["Insert"];
-export type DocumentUpdate = Database["public"]["Tables"]["documents"]["Update"];
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-// Client-side Document type (excludes password hash)
-export type ClientDocument = Omit<Document, "password"> & {
-  requiresPassword?: boolean;
-};
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
-// Helper types for publications
-export type Publication = Database["public"]["Tables"]["publications"]["Row"];
-export type PublicationInsert = Database["public"]["Tables"]["publications"]["Insert"];
-export type PublicationUpdate = Database["public"]["Tables"]["publications"]["Update"];
-
-// Extended type with documents
-export interface PublicationWithDocuments extends Publication {
-  documents?: Document[];
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
-// Client-side Publication type (excludes password hash)
-export type ClientPublication = Omit<Publication, "password"> & {
-  requiresPassword?: boolean;
-  documentCount?: number;
-};
-
-// Helper types for signatures
-export type Signature = Database["public"]["Tables"]["signatures"]["Row"];
-export type SignatureInsert = Database["public"]["Tables"]["signatures"]["Insert"];
-export type SignatureUpdate = Database["public"]["Tables"]["signatures"]["Update"];
-
-// Type for signature areas
-export interface SignatureArea {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

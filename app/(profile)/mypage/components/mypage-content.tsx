@@ -11,10 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, BookPlus } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import DeleteAccountForm from "./delete-account-form";
 import type { User } from "@supabase/supabase-js";
+import type { CreditBalance } from "@/app/actions/credit-actions";
 
 interface MyPageContentProps {
   user: User;
@@ -42,10 +45,12 @@ interface MyPageContentProps {
     monthly_document_limit: number;
     active_document_limit: number;
   } | null;
+  credits?: CreditBalance;
 }
 
-export function MyPageContent({ user, profile, subscription, usage, basicPlan }: MyPageContentProps) {
+export function MyPageContent({ user, profile, subscription, usage, basicPlan, credits }: MyPageContentProps) {
   const { t, language } = useLanguage();
+  const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Display name and avatar
@@ -184,6 +189,48 @@ export function MyPageContent({ user, profile, subscription, usage, basicPlan }:
             {activeLimit !== -1 && (
               <Progress value={activeProgress} className="h-2" />
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Credit Balance Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("mypage.creditTitle")}</CardTitle>
+          <CardDescription>{t("mypage.creditDescription", "구매한 추가문서 현황")}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">{t("mypage.createAvailable")}</span>
+              <span className="text-muted-foreground">
+                {credits?.create_credits || 0}{t("mypage.countUnit")}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">{t("mypage.publishAvailable")}</span>
+              <span className="text-muted-foreground">
+                {credits?.publish_credits || 0}{t("mypage.countUnit")}
+              </span>
+            </div>
+          </div>
+          <div className="pt-4 border-t">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {t("mypage.creditPurchaseHint", "추가문서 구매")}
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 w-full sm:w-auto"
+                onClick={() => router.push("/pricing")}
+              >
+                <BookPlus className="h-4 w-4" />
+                {t("mypage.rechargeButton")}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -12,6 +12,12 @@ import { createServiceSupabase } from "@/lib/supabase/server";
 import { PADDLE_PRICE_TIERS } from "./pricing-config";
 import { getPaddleInstance } from "./get-paddle-instance";
 
+// Custom data type for credit purchases
+interface CreditPurchaseCustomData {
+  type: "credit";
+  quantity: string;
+}
+
 export class ProcessWebhook {
   async processEvent(eventData: EventEntity) {
     console.log(`Processing Paddle webhook event: ${eventData.eventType}`);
@@ -408,6 +414,15 @@ export class ProcessWebhook {
     const supabase = createServiceSupabase();
 
     try {
+      // Check if this is a credit purchase transaction
+      const customData = eventData.data.customData as CreditPurchaseCustomData | undefined;
+
+      if (customData?.type === "credit") {
+        console.log("[transaction.completed] Credit purchase detected");
+        await this.handleCreditPurchase(eventData, customData);
+        return;
+      }
+
       const customerId = eventData.data.customerId;
 
       if (!customerId) {
@@ -843,6 +858,216 @@ export class ProcessWebhook {
       }
     } catch (notificationError) {
       console.error("[notification] Error sending payment notification:", notificationError);
+    }
+  }
+
+  /**
+   * Handle credit purchase from transaction.completed event
+   * Adds credits to user's balance based on custom_data
+   * Uses the same customer lookup logic as subscription purchases
+   */
+  private async handleCreditPurchase(
+    eventData: TransactionCompletedEvent,
+    customData: CreditPurchaseCustomData
+  ) {
+    const supabase = createServiceSupabase();
+
+    try {
+      const quantity = parseInt(customData.quantity, 10);
+      const transactionId = eventData.data.id;
+      const customerId = eventData.data.customerId;
+
+      if (!customerId) {
+        console.error("[credit-purchase] No customer_id in event");
+        return;
+      }
+
+      if (isNaN(quantity) || quantity <= 0) {
+        console.error("[credit-purchase] Invalid quantity:", customData.quantity);
+        return;
+      }
+
+      console.log(
+        `[credit-purchase] Processing credit purchase: ${quantity} credits for customer ${customerId}`
+      );
+
+      // Check for duplicate transaction
+      const { data: existingTransaction } = await supabase
+        .from("credit_transactions")
+        .select("id")
+        .eq("paddle_transaction_id", transactionId)
+        .single();
+
+      if (existingTransaction) {
+        console.log(
+          `[credit-purchase] Transaction ${transactionId} already processed, skipping`
+        );
+        return;
+      }
+
+      // 1. Find user_id from customer (same logic as subscription)
+      let userId: string | null = null;
+
+      // 1a. Try to get user_id from existing customer record
+      const { data: customerData } = await supabase
+        .from("customers")
+        .select("user_id")
+        .eq("customer_id", customerId)
+        .single();
+
+      if (customerData?.user_id) {
+        userId = customerData.user_id;
+        console.log(`[credit-purchase] Found user ${userId} from existing customer record`);
+      } else {
+        // 1b. Customer doesn't exist or not linked - fetch from Paddle API and find user by email
+        console.log(`[credit-purchase] Customer not found in DB, fetching from Paddle API...`);
+
+        const paddle = getPaddleInstance();
+        let customerEmail: string | null = null;
+
+        try {
+          const paddleCustomer = await paddle.customers.get(customerId);
+          customerEmail = paddleCustomer.email;
+          console.log(`[credit-purchase] Fetched customer email from Paddle: ${customerEmail}`);
+        } catch (apiError) {
+          console.error(`[credit-purchase] Failed to fetch customer from Paddle API:`, apiError);
+          return;
+        }
+
+        if (!customerEmail) {
+          console.error(`[credit-purchase] No email available for customer ${customerId}`);
+          return;
+        }
+
+        // Find user by email
+        const {
+          data: { users },
+          error: listError,
+        } = await supabase.auth.admin.listUsers();
+
+        if (listError) {
+          console.error(`[credit-purchase] Failed to list users:`, listError);
+          return;
+        }
+
+        const user = users?.find((u) => u.email === customerEmail);
+
+        if (!user) {
+          console.error(
+            `[credit-purchase] No user found with email ${customerEmail}`
+          );
+          return;
+        }
+
+        userId = user.id;
+        console.log(`[credit-purchase] Found user ${userId} by email ${customerEmail}`);
+
+        // Create or update customer record
+        await supabase
+          .from("customers")
+          .upsert({
+            customer_id: customerId,
+            email: customerEmail,
+            user_id: userId,
+          });
+
+        console.log(`[credit-purchase] Created/updated customer record for ${customerId}`);
+      }
+
+      if (!userId) {
+        console.error("[credit-purchase] Could not determine user_id");
+        return;
+      }
+
+      // 2. Record transaction
+      const { error: transactionError } = await supabase
+        .from("credit_transactions")
+        .insert({
+          user_id: userId,
+          transaction_type: "purchase",
+          create_credits: quantity,
+          publish_credits: quantity,
+          paddle_transaction_id: transactionId,
+        });
+
+      if (transactionError) {
+        console.error("[credit-purchase] Failed to record transaction:", transactionError);
+        throw transactionError;
+      }
+
+      // 3. Update balance (upsert)
+      const { data: existing } = await supabase
+        .from("credit_balance")
+        .select("create_credits, publish_credits")
+        .eq("user_id", userId)
+        .single();
+
+      const newCreateCredits = (existing?.create_credits || 0) + quantity;
+      const newPublishCredits = (existing?.publish_credits || 0) + quantity;
+
+      const { error: balanceError } = await supabase
+        .from("credit_balance")
+        .upsert(
+          {
+            user_id: userId,
+            create_credits: newCreateCredits,
+            publish_credits: newPublishCredits,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (balanceError) {
+        console.error("[credit-purchase] Failed to update balance:", balanceError);
+        throw balanceError;
+      }
+
+      console.log(
+        `[credit-purchase] ✅ Successfully added ${quantity} credits for user ${userId}. ` +
+        `New balance: create=${newCreateCredits}, publish=${newPublishCredits}`
+      );
+
+      // 4. Send notification (optional)
+      await this.sendCreditPurchaseNotification(quantity, userId);
+    } catch (error) {
+      console.error("[credit-purchase] Error processing credit purchase:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send notification for credit purchase
+   */
+  private async sendCreditPurchaseNotification(quantity: number, userId: string) {
+    try {
+      const notificationEndpoint = process.env.NOTIFICATION_ENDPOINT;
+      if (!notificationEndpoint) {
+        console.log("[notification] NOTIFICATION_ENDPOINT not configured, skipping notification");
+        return;
+      }
+
+      const notificationBody = `수량: ${quantity}개\n사용자 ID: ${userId.substring(0, 8)}...`;
+
+      console.log(`[notification] Sending credit purchase notification: ${quantity} credits`);
+
+      const response = await fetch(notificationEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "슥슥 크레딧 충전되었습니다",
+          body: notificationBody,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error(`[notification] Failed to send notification: ${response.status} ${response.statusText}`);
+      } else {
+        console.log(`[notification] ✅ Successfully sent credit purchase notification`);
+      }
+    } catch (notificationError) {
+      console.error("[notification] Error sending credit notification:", notificationError);
     }
   }
 }

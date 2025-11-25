@@ -21,6 +21,8 @@ import { useLanguage } from "@/contexts/language-context";
 import { usePaddlePrices } from "@/hooks/usePaddlePrices";
 import { PADDLE_PRICE_TIERS } from "@/lib/paddle/pricing-config";
 import { Environments, initializePaddle, Paddle } from "@paddle/paddle-js";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ArrowLeft, Check, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -34,6 +36,7 @@ export function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly"
   );
+  const [creditQuantity, setCreditQuantity] = useState(5);
 
   // Static plan mapping based on plan names
   const getPlanDescription = (planName: string) => {
@@ -451,6 +454,78 @@ export function PricingPage() {
               })}
             </div>
           )}
+
+          {/* Credit Section */}
+          <div className="mt-16 border-t pt-16">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2">
+                {t("pricing.credit.title", "추가 크레딧")}
+              </h2>
+              <p className="text-muted-foreground">
+                {t("pricing.credit.description", "월 한도 초과 시 필요한 만큼만 구매하세요")}
+              </p>
+            </div>
+
+            <Card className="max-w-md mx-auto">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div className="flex-shrink-0">
+                    <h3 className="font-semibold text-base sm:text-lg">
+                      {t("pricing.credit.name", "문서 크레딧")}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t("pricing.credit.unit", "1 크레딧 = 생성 1개 + 발행 1개")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap ml-auto sm:ml-0">
+                    <span className="text-sm text-muted-foreground line-through">$1.00</span>
+                    <span className="text-base font-semibold">$0.50</span>
+                    <Badge className="bg-red-500 hover:bg-red-600 text-xs">50% OFF</Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="creditQuantity" className="text-sm">
+                      <span className="block sm:inline">{t("pricing.credit.quantity", "수량")}</span>{" "}
+                      <span className="block sm:inline text-xs text-muted-foreground">{t("pricing.credit.quantityRange", "(최소 5개 ~ 최대 20개)")}</span>
+                    </Label>
+                    <Input
+                      id="creditQuantity"
+                      type="number"
+                      min="5"
+                      max="20"
+                      value={creditQuantity}
+                      onChange={(e) => setCreditQuantity(Math.min(20, Math.max(5, parseInt(e.target.value) || 5)))}
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div className="bg-muted p-3 rounded space-y-2">
+                    <div className="flex justify-between items-center text-sm gap-2">
+                      <span className="flex-shrink-0">{t("pricing.credit.total", "총 금액")}</span>
+                      <span className="font-bold text-red-600 text-base">${(creditQuantity * 0.5).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-start text-sm gap-2">
+                      <span className="text-muted-foreground flex-shrink-0">
+                        {t("pricing.credit.receive", "받는 크레딧")}
+                      </span>
+                      <span className="text-right">
+                        {t("pricing.credit.breakdown", "생성 {{count}}개 + 발행 {{count}}개", { count: creditQuantity })}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="w-full"
+                    onClick={() => router.push(`/checkout/credit?quantity=${creditQuantity}`)}
+                  >
+                    {t("pricing.credit.purchase", "크레딧 충전하기")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Additional Info */}
           <div className="mt-12 text-center text-sm text-muted-foreground">
