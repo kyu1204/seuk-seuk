@@ -468,26 +468,27 @@ export function PricingPage() {
 
             <Card className="max-w-md mx-auto">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div className="flex-shrink-0">
+                    <h3 className="font-semibold text-base sm:text-lg">
                       {t("pricing.credit.name", "문서 크레딧")}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {t("pricing.credit.unit", "1 크레딧 = 생성 1개 + 발행 1개")}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap ml-auto sm:ml-0">
                     <span className="text-sm text-muted-foreground line-through">$1.00</span>
-                    <span className="text-sm">$0.50</span>
-                    <Badge className="bg-red-500 hover:bg-red-600">50% OFF</Badge>
+                    <span className="text-base font-semibold">$0.50</span>
+                    <Badge className="bg-red-500 hover:bg-red-600 text-xs">50% OFF</Badge>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="creditQuantity">
-                      {t("pricing.credit.quantity", "수량")} {t("pricing.credit.quantityRange", "(최소 5개 ~ 최대 20개)")}
+                    <Label htmlFor="creditQuantity" className="text-sm">
+                      <span className="block sm:inline">{t("pricing.credit.quantity", "수량")}</span>{" "}
+                      <span className="block sm:inline text-xs text-muted-foreground">{t("pricing.credit.quantityRange", "(최소 5개 ~ 최대 20개)")}</span>
                     </Label>
                     <Input
                       id="creditQuantity"
@@ -500,16 +501,16 @@ export function PricingPage() {
                     />
                   </div>
 
-                  <div className="bg-muted p-3 rounded space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>{t("pricing.credit.total", "총 금액")}</span>
-                      <span className="font-bold text-red-600">${(creditQuantity * 0.5).toFixed(2)}</span>
+                  <div className="bg-muted p-3 rounded space-y-2">
+                    <div className="flex justify-between items-center text-sm gap-2">
+                      <span className="flex-shrink-0">{t("pricing.credit.total", "총 금액")}</span>
+                      <span className="font-bold text-red-600 text-base">${(creditQuantity * 0.5).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
+                    <div className="flex justify-between items-start text-sm gap-2">
+                      <span className="text-muted-foreground flex-shrink-0">
                         {t("pricing.credit.receive", "받는 크레딧")}
                       </span>
-                      <span>
+                      <span className="text-right">
                         {t("pricing.credit.breakdown", "생성 {{count}}개 + 발행 {{count}}개", { count: creditQuantity })}
                       </span>
                     </div>

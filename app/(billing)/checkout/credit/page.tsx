@@ -91,28 +91,28 @@ export default function CreditCheckoutPage() {
           {/* Left: Order Summary */}
           <div className="w-full md:w-[350px] space-y-6">
             <div className="flex items-center gap-3">
-              <BookPlus className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold">{t("checkout.credit.title")}</h1>
+              <BookPlus className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+              <h1 className="text-xl sm:text-2xl font-bold">{t("checkout.credit.title")}</h1>
             </div>
 
             <div className="space-y-4 border rounded-lg p-4">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("checkout.credit.quantity")}</span>
-                <span className="font-medium">{quantity} {t("pricing.credit.per")}</span>
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-muted-foreground flex-shrink-0">{t("checkout.credit.quantity")}</span>
+                <span className="font-medium text-right">{quantity} {t("pricing.credit.per")}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("checkout.credit.unitPrice")}</span>
-                <div className="flex items-center gap-2">
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-muted-foreground flex-shrink-0">{t("checkout.credit.unitPrice")}</span>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
                   <span className="text-sm text-muted-foreground line-through">$1.00</span>
                   <span className="font-medium">$0.50</span>
                 </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">{t("checkout.credit.discount", "할인")}</span>
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-muted-foreground flex-shrink-0">{t("checkout.credit.discount", "할인")}</span>
                 <span className="text-sm font-medium">50% OFF</span>
               </div>
-              <div className="border-t pt-4 flex justify-between">
-                <span className="font-bold">{t("checkout.credit.total")}</span>
+              <div className="border-t pt-4 flex justify-between items-center gap-2">
+                <span className="font-bold flex-shrink-0">{t("checkout.credit.total")}</span>
                 <span className="font-bold text-xl text-primary">${(quantity * 0.5).toFixed(2)}</span>
               </div>
             </div>
@@ -126,7 +126,7 @@ export default function CreditCheckoutPage() {
           </div>
 
           {/* Right: Paddle Checkout */}
-          <div className="flex-1 min-w-[375px] lg:min-w-[500px]">
+          <div className="flex-1 min-w-0 md:min-w-[375px] lg:min-w-[500px]">
             <div className="text-base leading-5 font-semibold mb-6">
               {t("checkout.credit.pay")}
             </div>

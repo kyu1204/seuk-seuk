@@ -145,25 +145,21 @@ export function UsageWidget() {
     );
   }
 
-  // Calculate effective limits including credits
-  const effectiveMonthlyLimit = limits.monthlyCreationLimit === -1
-    ? -1
-    : limits.monthlyCreationLimit + credits.create_credits;
+  // Use base limits without credits for display
+  // Credits are shown separately as (+N)
+  const displayMonthlyLimit = limits.monthlyCreationLimit;
+  const displayActiveLimit = limits.activeDocumentLimit;
 
-  const effectiveActiveLimit = limits.activeDocumentLimit === -1
-    ? -1
-    : limits.activeDocumentLimit + credits.publish_credits;
-
-  // Calculate progress with division-by-zero protection
+  // Calculate progress based on base limit only (excluding credits)
   const monthlyProgress =
-    effectiveMonthlyLimit === -1 || effectiveMonthlyLimit === 0
+    displayMonthlyLimit === -1 || displayMonthlyLimit === 0
       ? 0
-      : (limits.currentMonthlyCreated / effectiveMonthlyLimit) * 100;
+      : (limits.currentMonthlyCreated / displayMonthlyLimit) * 100;
 
   const activeProgress =
-    effectiveActiveLimit === -1 || effectiveActiveLimit === 0
+    displayActiveLimit === -1 || displayActiveLimit === 0
       ? 0
-      : (limits.currentActiveDocuments / effectiveActiveLimit) * 100;
+      : (limits.currentActiveDocuments / displayActiveLimit) * 100;
 
   const isMonthlyNearLimit = monthlyProgress >= 80;
   const isActiveNearLimit = activeProgress >= 80;
@@ -203,17 +199,17 @@ export function UsageWidget() {
                   }
                 >
                   {limits.currentMonthlyCreated}{" "}
-                  {effectiveMonthlyLimit === -1
+                  {displayMonthlyLimit === -1
                     ? `/ ${t("usage.monthly.unlimited")}`
-                    : `/ ${effectiveMonthlyLimit}`}
+                    : `/ ${displayMonthlyLimit}`}
                   {credits.create_credits > 0 && (
                     <span className="text-primary ml-1">
-                      (+{credits.create_credits}{t("usage.credit.unit", " docs")})
+                      (+{credits.create_credits})
                     </span>
                   )}
                 </span>
               </div>
-              {effectiveMonthlyLimit !== -1 && (
+              {displayMonthlyLimit !== -1 && (
                 <Progress
                   value={monthlyProgress}
                   className={`h-2 ${
@@ -243,17 +239,17 @@ export function UsageWidget() {
                   }
                 >
                   {limits.currentActiveDocuments}{" "}
-                  {effectiveActiveLimit === -1
+                  {displayActiveLimit === -1
                     ? `/ ${t("usage.monthly.unlimited")}`
-                    : `/ ${effectiveActiveLimit}`}
+                    : `/ ${displayActiveLimit}`}
                   {credits.publish_credits > 0 && (
                     <span className="text-primary ml-1">
-                      (+{credits.publish_credits}{t("usage.credit.unit", " docs")})
+                      (+{credits.publish_credits})
                     </span>
                   )}
                 </span>
               </div>
-              {effectiveActiveLimit !== -1 && (
+              {displayActiveLimit !== -1 && (
                 <Progress
                   value={activeProgress}
                   className={`h-2 ${

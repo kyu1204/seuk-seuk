@@ -96,7 +96,7 @@ export function CheckoutContents({ userEmail, validatedPriceId }: Props) {
       </div>
 
       {/* Right: Paddle Checkout */}
-      <div className="flex-1 min-w-[375px] lg:min-w-[500px]">
+      <div className="flex-1 min-w-0 md:min-w-[375px] lg:min-w-[500px]">
         <div className="text-base leading-5 font-semibold mb-6">
           {t("checkout.paymentDetails")}
         </div>
