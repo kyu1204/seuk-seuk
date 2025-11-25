@@ -13,7 +13,13 @@ export default function CreditCheckoutPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const quantity = parseInt(searchParams.get("quantity") || "5");
+
+  // Validate and sanitize quantity parameter
+  const rawQuantity = parseInt(searchParams.get("quantity") || "5", 10);
+  const quantity = Number.isNaN(rawQuantity)
+    ? 5 // Default to 5 if invalid
+    : Math.min(20, Math.max(5, rawQuantity)); // Clamp to [5, 20]
+
   const [paddle, setPaddle] = useState<Paddle | null>(null);
   const [loading, setLoading] = useState(true);
 

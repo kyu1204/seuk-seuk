@@ -95,6 +95,10 @@ export async function deductCredit(
 
 /**
  * Add credits to user balance (called from webhook)
+ * Uses atomic DB function to ensure:
+ * - Idempotency (duplicate webhook protection via paddle_transaction_id UNIQUE constraint)
+ * - Thread-safety (atomic transaction + balance update)
+ * - Data consistency (transaction record + balance always in sync)
  */
 export async function addCredits(
   userId: string,
@@ -104,47 +108,30 @@ export async function addCredits(
   try {
     const serviceSupabase = createServiceRoleClient();
 
-    // 1. 트랜잭션 기록
-    const { error: transactionError } = await serviceSupabase
-      .from("credit_transactions")
-      .insert({
-        user_id: userId,
-        transaction_type: "purchase",
-        create_credits: quantity,
-        publish_credits: quantity,
-        paddle_transaction_id: paddleTransactionId,
-      });
+    // Call atomic DB function
+    const { data, error } = await serviceSupabase.rpc("add_credits_atomic", {
+      p_user_id: userId,
+      p_quantity: quantity,
+      p_paddle_transaction_id: paddleTransactionId,
+    });
 
-    if (transactionError) {
-      console.error("Credit transaction error:", transactionError);
-      return { error: "Failed to record transaction" };
+    if (error) {
+      console.error("Add credits error:", error);
+      return { error: "Failed to add credits" };
     }
 
-    // 2. 잔액 업데이트 (upsert)
-    const { data: existing } = await serviceSupabase
-      .from("credit_balance")
-      .select("create_credits, publish_credits")
-      .eq("user_id", userId)
-      .single();
+    // data is array of {success: boolean, error_message: text | null}
+    const result = data?.[0];
 
-    const newCreateCredits = (existing?.create_credits || 0) + quantity;
-    const newPublishCredits = (existing?.publish_credits || 0) + quantity;
+    if (!result?.success) {
+      const errorMsg = result?.error_message || "Failed to add credits";
+      console.error("Add credits failed:", errorMsg);
+      return { error: errorMsg };
+    }
 
-    const { error: balanceError } = await serviceSupabase
-      .from("credit_balance")
-      .upsert(
-        {
-          user_id: userId,
-          create_credits: newCreateCredits,
-          publish_credits: newPublishCredits,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
-
-    if (balanceError) {
-      console.error("Credit balance error:", balanceError);
-      return { error: "Failed to update balance" };
+    // Log if this was a duplicate (idempotent retry)
+    if (result.error_message === "Already processed") {
+      console.log(`Idempotent webhook: ${paddleTransactionId} already processed`);
     }
 
     return { success: true };

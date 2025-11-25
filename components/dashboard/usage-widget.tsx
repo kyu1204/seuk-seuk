@@ -154,13 +154,14 @@ export function UsageWidget() {
     ? -1
     : limits.activeDocumentLimit + credits.publish_credits;
 
+  // Calculate progress with division-by-zero protection
   const monthlyProgress =
-    effectiveMonthlyLimit === -1
+    effectiveMonthlyLimit === -1 || effectiveMonthlyLimit === 0
       ? 0
       : (limits.currentMonthlyCreated / effectiveMonthlyLimit) * 100;
 
   const activeProgress =
-    effectiveActiveLimit === -1
+    effectiveActiveLimit === -1 || effectiveActiveLimit === 0
       ? 0
       : (limits.currentActiveDocuments / effectiveActiveLimit) * 100;
 
