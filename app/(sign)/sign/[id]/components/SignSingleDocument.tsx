@@ -705,9 +705,19 @@ export default function SignSingleDocument({
             {t("sign.documentList.title")}
           </Button>
         )}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{documentData.alias || documentData.filename}</h1>
-          <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{documentData.alias || documentData.filename}</h1>
+            <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
+          </div>
+          <Button
+            onClick={handleGenerateDocument}
+            disabled={!allAreasSigned || isGenerating}
+            size="lg"
+            className="shrink-0 self-end sm:self-auto"
+          >
+            {t("sign.saveDocument")}
+          </Button>
         </div>
 
         <div className="relative border rounded-lg mb-6">
@@ -852,15 +862,6 @@ export default function SignSingleDocument({
             })}
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button
-            onClick={handleGenerateDocument}
-            disabled={!allAreasSigned || isGenerating}
-          >
-            {t("sign.saveDocument")}
-          </Button>
         </div>
 
         {error && (

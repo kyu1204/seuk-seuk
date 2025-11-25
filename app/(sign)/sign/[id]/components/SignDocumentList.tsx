@@ -308,8 +308,8 @@ export default function SignDocumentList({
                 }}
               >
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
                       <FileText className="h-8 w-8 text-primary flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-lg mb-1 truncate">
@@ -322,7 +322,7 @@ export default function SignDocumentList({
                               className="bg-green-500 hover:bg-green-600"
                             >
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              제출 완료
+                              {t("sign.documentList.submitted")}
                             </Badge>
                           ) : isDocumentComplete ? (
                             <Badge
@@ -330,7 +330,7 @@ export default function SignDocumentList({
                               className="bg-amber-500 hover:bg-amber-600"
                             >
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              서명 완료 - 제출 대기
+                              {t("sign.documentList.readyToSubmit")}
                             </Badge>
                           ) : (
                             <Badge variant="secondary">
@@ -343,10 +343,10 @@ export default function SignDocumentList({
                       </div>
                     </div>
                     {!isDocumentSubmitted && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-end sm:justify-start">
                         <Button variant="outline" size="sm">
                           {isDocumentComplete
-                            ? "문서 제출하기"
+                            ? t("sign.documentList.submitDocument")
                             : completed > 0
                               ? t("sign.documentList.continueSign")
                               : t("sign.documentList.startSigning")}

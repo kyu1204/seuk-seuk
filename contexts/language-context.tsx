@@ -310,6 +310,9 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.documentList.continueSign": "서명 계속하기",
     "sign.documentList.viewDocument": "문서 보기",
     "sign.documentList.backToList": "문서 목록으로 돌아가기",
+    "sign.documentList.submitted": "제출 완료",
+    "sign.documentList.readyToSubmit": "서명 완료 - 제출 대기",
+    "sign.documentList.submitDocument": "문서 제출하기",
 
     // Authentication
     "auth.signOut": "로그아웃",
@@ -1416,6 +1419,9 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.documentList.continueSign": "Continue Signing",
     "sign.documentList.viewDocument": "View Document",
     "sign.documentList.backToList": "Back to Document List",
+    "sign.documentList.submitted": "Submitted",
+    "sign.documentList.readyToSubmit": "Ready to Submit",
+    "sign.documentList.submitDocument": "Submit Document",
 
     // Authentication
     "auth.signOut": "Sign Out",
