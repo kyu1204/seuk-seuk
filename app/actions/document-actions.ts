@@ -87,23 +87,28 @@ export async function uploadDocument(formData: FormData) {
       return { error: "Failed to create document record" };
     }
 
-    // Handle credit deduction or monthly usage increment
+    // Increment monthly usage count (regardless of credit usage)
+    // This tracks total documents created this month for analytics
+    const { success: usageUpdated, error: usageError } = await incrementDocumentCreated();
+    if (!usageUpdated || usageError) {
+      console.error("Failed to update usage:", usageError);
+      // Don't fail the entire operation, just log the error
+    }
+
+    // Handle credit deduction if using credit
     if (usingCredit) {
-      // Deduct credit
       const { success, error: creditError } = await deductCredit("create", document.id);
       if (!success || creditError) {
         console.error("Failed to deduct credit:", creditError);
+
+        // Rollback monthly count increment
+        await decrementDocumentCreated();
+
         // Rollback: delete document and storage file
         await supabase.from("documents").delete().eq("id", document.id);
         await supabase.storage.from("documents").remove([filePath]);
+
         return { error: "크레딧 차감 실패" };
-      }
-    } else {
-      // Increment monthly usage count
-      const { success: usageUpdated, error: usageError } = await incrementDocumentCreated();
-      if (!usageUpdated || usageError) {
-        console.error("Failed to update usage:", usageError);
-        // Don't fail the entire operation, just log the error
       }
     }
 

@@ -217,14 +217,14 @@ export function MyPageContent({ user, profile, subscription, usage, basicPlan, c
             </div>
           </div>
           <div className="pt-4 border-t">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
                 {t("mypage.creditPurchaseHint", "추가문서 구매")}
               </p>
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto"
                 onClick={() => router.push("/pricing")}
               >
                 <BookPlus className="h-4 w-4" />
