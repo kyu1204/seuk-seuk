@@ -78,14 +78,32 @@ export async function deductCredit(
       p_document_id: documentId,
     });
 
+    // Check for RPC error first
     if (error) {
-      console.error("Deduct credit error:", error);
+      console.error("Deduct credit RPC error:", error);
       if (error.message?.includes("Insufficient credits")) {
         return { error: "크레딧이 부족합니다" };
       }
       return { error: "Failed to deduct credit" };
     }
 
+    // Check the boolean return value from deduct_credit_atomic
+    if (!data) {
+      console.error("Deduct credit failed: insufficient balance", {
+        userId: user.id,
+        type,
+        documentId,
+        returnValue: data,
+      });
+      return { error: "크레딧이 부족합니다" };
+    }
+
+    // Only return success when data === true
+    console.log("Credit deduction successful", {
+      userId: user.id,
+      type,
+      documentId,
+    });
     return { success: true };
   } catch (error) {
     console.error("Deduct credit error:", error);
