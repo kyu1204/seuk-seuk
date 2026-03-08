@@ -48,19 +48,25 @@ export default function TextInputModal({
     const ctx = canvas.getContext("2d");
     if (!ctx) return "";
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const fontSize = 16;
-    const lineHeight = fontSize * 1.5;
-    const padding = 12;
-    const maxWidth = width - padding * 2;
+    // High-DPI scaling for sharp text
+    const scale = 3;
+    const logicalWidth = 800;
+    const logicalHeight = 400;
+    canvas.width = logicalWidth * scale;
+    canvas.height = logicalHeight * scale;
+    ctx.scale(scale, scale);
 
-    ctx.clearRect(0, 0, width, height);
-    ctx.font = `${fontSize}px sans-serif`;
+    const fontSize = 32;
+    const lineHeight = fontSize * 1.5;
+    const padding = 24;
+    const maxWidth = logicalWidth - padding * 2;
+
+    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+    ctx.font = `bold ${fontSize}px -apple-system, "Noto Sans KR", sans-serif`;
     ctx.fillStyle = "#000000";
     ctx.textBaseline = "top";
 
-    // Word wrap
+    // Word wrap (supports Korean characters without spaces)
     const paragraphs = inputText.split("\n");
     const lines: string[] = [];
 
@@ -69,15 +75,14 @@ export default function TextInputModal({
         lines.push("");
         continue;
       }
-      const words = paragraph.split(" ");
       let currentLine = "";
 
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
+      for (const char of paragraph) {
+        const testLine = currentLine + char;
         const metrics = ctx.measureText(testLine);
         if (metrics.width > maxWidth && currentLine) {
           lines.push(currentLine);
-          currentLine = word;
+          currentLine = char;
         } else {
           currentLine = testLine;
         }
@@ -91,7 +96,7 @@ export default function TextInputModal({
     for (const line of lines) {
       ctx.fillText(line, padding, y);
       y += lineHeight;
-      if (y + lineHeight > height - padding) break;
+      if (y + lineHeight > logicalHeight - padding) break;
     }
 
     return canvas.toDataURL("image/png");
@@ -128,8 +133,8 @@ export default function TextInputModal({
         {/* Hidden canvas used for text-to-image conversion */}
         <canvas
           ref={canvasRef}
-          width={400}
-          height={200}
+          width={2400}
+          height={1200}
           className="hidden"
         />
 
