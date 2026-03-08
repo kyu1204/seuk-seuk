@@ -116,6 +116,7 @@ export default function DocumentUpload() {
   useEffect(() => {
     const checkPdfPermission = async () => {
       const result = await canUploadPdf();
+      console.log("[PDF Permission Check]", result);
       setCanUsePdf(result.canUpload);
       setPdfCheckDone(true);
     };
@@ -180,6 +181,21 @@ export default function DocumentUpload() {
                 pdfTotalPages: 1,
               });
             }
+            loaded++;
+            if (loaded === totalFiles) {
+              newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
+              setImages((prev) => [...prev, ...newImages]);
+            }
+          }).catch((err) => {
+            console.error("Failed to import pdfjs-dist:", err);
+            // Fallback: add PDF without page count
+            newImages.push({
+              file,
+              dataUrl,
+              fileName: file.name,
+              isPdf: true,
+              pdfTotalPages: 1,
+            });
             loaded++;
             if (loaded === totalFiles) {
               newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
@@ -474,6 +490,11 @@ export default function DocumentUpload() {
 
   return (
     <div className="space-y-8">
+      {error && images.length === 0 && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+          {error}
+        </div>
+      )}
       {images.length === 0 ? (
         <Card className="border-dashed border-2">
           <CardContent className="p-6">
