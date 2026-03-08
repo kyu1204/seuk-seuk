@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCcw, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ export default function DocumentUpload() {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [currentAreaType, setCurrentAreaType] = useState<'signature' | 'text'>('signature');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -224,6 +225,7 @@ export default function DocumentUpload() {
         y: area.y,
         width: area.width,
         height: area.height,
+        type: area.type || 'signature',
       }));
 
       const areasResult = await createSignatureAreas(
@@ -290,10 +292,18 @@ export default function DocumentUpload() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={handleAddSignatureArea}
+                onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
                 disabled={isSelecting}
               >
                 {t("upload.addSignatureArea")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
+                disabled={isSelecting}
+              >
+                <Type className="mr-2 h-4 w-4" />
+                {t("upload.addTextArea")}
               </Button>
               <Button
                 variant="destructive"
@@ -385,6 +395,7 @@ export default function DocumentUpload() {
                 initialScrollPosition={scrollPositionRef.current}
                 zoomLevel={zoomLevel}
                 onZoomChange={setZoomLevel}
+                areaType={currentAreaType}
               />
             ) : (
               <div
@@ -426,7 +437,7 @@ export default function DocumentUpload() {
                   {signatureAreas.map((area, index) => (
                     <div
                       key={index}
-                      className="absolute border-2 border-red-500 bg-red-500/10 flex items-center justify-center"
+                      className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
                       style={{
                         position: "absolute",
                         left: `${area.x}%`,
@@ -438,8 +449,8 @@ export default function DocumentUpload() {
                       }}
                       onClick={() => handleRemoveArea(index)}
                     >
-                      <span className="text-xs font-medium text-red-600">
-                        {t("upload.signature")} {index + 1}
+                      <span className={`text-xs font-medium ${area.type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
+                        {area.type === 'text' ? `${t("upload.textArea")} ${index + 1}` : `${t("upload.signature")} ${index + 1}`}
                       </span>
                     </div>
                   ))}

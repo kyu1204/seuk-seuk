@@ -11,6 +11,7 @@ import {
 } from "@/app/actions/publication-actions";
 import LanguageSelector from "@/components/language-selector";
 import SignatureModal from "@/components/signature-modal";
+import TextInputModal from "@/components/text-input-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,7 @@ export default function SignPageComponent({
     : false;
   const isCompleted = publicationData.status === "completed";
   const [selectedArea, setSelectedArea] = useState<number | null>(null);
+  const [selectedAreaType, setSelectedAreaType] = useState<'signature' | 'text'>('signature');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatingProgress, setGeneratingProgress] = useState<string>("");
@@ -96,6 +98,8 @@ export default function SignPageComponent({
   const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
 
   const handleAreaClick = (index: number) => {
+    const clickedSignature = localSignatures.find(s => s.area_index === index);
+    setSelectedAreaType((clickedSignature as any)?.area_type === 'text' ? 'text' : 'signature');
     setSelectedArea(index);
     setIsModalOpen(true);
   };
@@ -863,7 +867,9 @@ export default function SignPageComponent({
                   className={`absolute cursor-pointer ${
                     isSigned
                       ? "border-green-500 bg-green-500/10"
-                      : "border-2 border-red-500 bg-red-500/10 animate-pulse"
+                      : (signature as any)?.area_type === 'text'
+                        ? "border-2 border-blue-500 bg-blue-500/10 animate-pulse"
+                        : "border-2 border-red-500 bg-red-500/10 animate-pulse"
                   }`}
                   style={(() => {
                     // Convert to relative coordinates for display
@@ -920,8 +926,8 @@ export default function SignPageComponent({
                     </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-red-600">
-                        {t("sign.clickToSign")}
+                      <span className={`text-xs font-medium ${(signature as any)?.area_type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
+                        {(signature as any)?.area_type === 'text' ? t("sign.clickToType") : t("sign.clickToSign")}
                       </span>
                     </div>
                   )}
@@ -956,15 +962,24 @@ export default function SignPageComponent({
       </div>
 
       {isModalOpen && selectedArea !== null && (
-        <SignatureModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onComplete={handleSignatureComplete}
-          existingSignature={
-            localSignatures.find((s) => s.area_index === selectedArea)
-              ?.signature_data!
-          }
-        />
+        selectedAreaType === 'text' ? (
+          <TextInputModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onComplete={handleSignatureComplete}
+            existingText={undefined}
+          />
+        ) : (
+          <SignatureModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onComplete={handleSignatureComplete}
+            existingSignature={
+              localSignatures.find((s) => s.area_index === selectedArea)
+                ?.signature_data!
+            }
+          />
+        )
       )}
 
       {/* Loading indicator for signature saving */}

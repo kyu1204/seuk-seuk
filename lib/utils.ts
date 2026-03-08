@@ -71,6 +71,7 @@ export interface RelativeSignatureArea {
   y: number;      // 0-100% (원본 이미지 기준)
   width: number;  // 0-100% (원본 이미지 기준)
   height: number; // 0-100% (원본 이미지 기준)
+  type?: 'signature' | 'text';
 }
 
 /**

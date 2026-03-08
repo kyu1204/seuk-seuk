@@ -9,6 +9,7 @@ import {
 } from "@/app/actions/document-actions";
 import LanguageSelector from "@/components/language-selector";
 import SignatureModal from "@/components/signature-modal";
+import TextInputModal from "@/components/text-input-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
@@ -66,6 +67,7 @@ export default function SignSingleDocument({
   // Check if THIS specific document is completed
   const isDocumentCompleted = documentData.status === "completed";
   const [selectedArea, setSelectedArea] = useState<number | null>(null);
+  const [selectedAreaType, setSelectedAreaType] = useState<'signature' | 'text'>('signature');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatingProgress, setGeneratingProgress] = useState<string>("");
@@ -83,8 +85,10 @@ export default function SignSingleDocument({
   const [documentSignedUrl, setDocumentSignedUrl] = useState<string | null>(null);
   const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
 
-  const handleAreaClick = (index: number) => {
-    setSelectedArea(index);
+  const handleAreaClick = (areaIndex: number) => {
+    setSelectedArea(areaIndex);
+    const clickedSignature = localSignatures.find(s => s.area_index === areaIndex);
+    setSelectedAreaType((clickedSignature as any)?.area_type === 'text' ? 'text' : 'signature');
     setIsModalOpen(true);
   };
 
@@ -795,7 +799,9 @@ export default function SignSingleDocument({
                   className={`absolute cursor-pointer ${
                     isSigned
                       ? "border-green-500 bg-green-500/10"
-                      : "border-2 border-red-500 bg-red-500/10 animate-pulse"
+                      : (signature as any).area_type === 'text'
+                        ? "border-2 border-blue-500 bg-blue-500/10 animate-pulse"
+                        : "border-2 border-red-500 bg-red-500/10 animate-pulse"
                   }`}
                   style={(() => {
                     // Convert to relative coordinates for display
@@ -852,9 +858,15 @@ export default function SignSingleDocument({
                     </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-red-600">
-                        {t("sign.clickToSign")}
-                      </span>
+                      {(signature as any).area_type === 'text' ? (
+                        <span className="text-xs font-medium text-blue-600">
+                          {t("sign.clickToType")}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium text-red-600">
+                          {t("sign.clickToSign")}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -872,15 +884,22 @@ export default function SignSingleDocument({
       </div>
 
       {isModalOpen && selectedArea !== null && (
-        <SignatureModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onComplete={handleSignatureComplete}
-          existingSignature={
-            localSignatures.find((s) => s.area_index === selectedArea)
-              ?.signature_data!
-          }
-        />
+        selectedAreaType === 'text' ? (
+          <TextInputModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onComplete={handleSignatureComplete}
+          />
+        ) : (
+          <SignatureModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onComplete={handleSignatureComplete}
+            existingSignature={
+              localSignatures.find((s) => s.area_index === selectedArea)?.signature_data!
+            }
+          />
+        )
       )}
 
       {/* Loading indicator for signature saving */}
