@@ -405,113 +405,27 @@ export default function DocumentUpload() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {/* Button Group */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleClearDocument}
-              >
-                <Trash2 className="mr-1 h-4 w-4" />
-                {t("upload.clear")}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveDocument}
-                disabled={
-                  totalAreasCount === 0 || isLoading || images.length === 0
-                }
-              >
-                {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
-                disabled={isSelecting}
-              >
-                {t("upload.addSignatureArea")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
-                disabled={isSelecting}
-              >
-                <Type className="mr-1 h-4 w-4" />
-                {t("upload.addTextArea")}
-              </Button>
-            </div>
-          </div>
-
-          {/* File Information Section - per image */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="document-filename" className="text-sm font-medium">
-                {t("upload.filename")}
-                {images.length > 1 && (
-                  <span className="text-muted-foreground ml-1">
-                    ({t("upload.imageIndex")
-                      .replace("{current}", String(currentIndex + 1))
-                      .replace("{total}", String(images.length))})
-                  </span>
-                )}
-              </Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                {images[currentIndex]?.fileName}
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="document-alias" className="text-sm font-medium">
-                {t("upload.alias")}
-                <span className="text-muted-foreground ml-1">({t("upload.aliasOptional")})</span>
-              </Label>
-              <Input
-                id="document-alias"
-                name="document-alias"
-                type="text"
-                placeholder={t("upload.aliasPlaceholder")}
-                value={aliasMap.get(currentIndex) || ""}
-                onChange={(e) => {
-                  setAliasMap((prev) => {
-                    const newMap = new Map(prev);
-                    newMap.set(currentIndex, e.target.value);
-                    return newMap;
-                  });
-                }}
-                className="mt-2"
-                maxLength={100}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {t("upload.aliasDescription")}
-              </p>
-            </div>
-          </div>
-
+        <div className="space-y-4">
           {/* Carousel Navigation */}
           {images.length > 1 && (
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center justify-center gap-3 py-1">
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
+                className="h-8 w-8 shrink-0"
                 onClick={() => goToImage(Math.max(0, currentIndex - 1))}
                 disabled={currentIndex === 0 || isSelecting}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {images.map((_, idx) => {
                   const hasAreas = (signatureAreasMap.get(idx) || []).length > 0;
                   return (
                     <button
                       key={idx}
                       onClick={() => !isSelecting && goToImage(idx)}
-                      className={`w-3 h-3 rounded-full transition-colors ${
+                      className={`w-2.5 h-2.5 rounded-full transition-all ${
                         idx === currentIndex
                           ? "bg-primary scale-125"
                           : hasAreas
@@ -523,14 +437,15 @@ export default function DocumentUpload() {
                   );
                 })}
               </div>
-              <span className="text-sm font-medium text-muted-foreground min-w-[60px] text-center">
+              <span className="text-xs font-medium text-muted-foreground tabular-nums">
                 {t("upload.imageIndex")
                   .replace("{current}", String(currentIndex + 1))
                   .replace("{total}", String(images.length))}
               </span>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
+                className="h-8 w-8 shrink-0"
                 onClick={() => goToImage(Math.min(images.length - 1, currentIndex + 1))}
                 disabled={currentIndex === images.length - 1 || isSelecting}
               >
@@ -722,8 +637,89 @@ export default function DocumentUpload() {
             )}
           </div>
 
+          {/* Area Action Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
+              disabled={isSelecting}
+              className="flex-1 sm:flex-none"
+            >
+              {t("upload.addSignatureArea")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
+              disabled={isSelecting}
+              className="flex-1 sm:flex-none"
+            >
+              <Type className="mr-1 h-4 w-4" />
+              {t("upload.addTextArea")}
+            </Button>
+          </div>
+
+          {/* File Information - per image */}
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("upload.filename")}
+                </Label>
+                <p className="text-sm mt-0.5 truncate">
+                  {images[currentIndex]?.fileName}
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="document-alias" className="text-xs font-medium text-muted-foreground">
+                  {t("upload.alias")}
+                  <span className="ml-1">({t("upload.aliasOptional")})</span>
+                </Label>
+                <Input
+                  id="document-alias"
+                  name="document-alias"
+                  type="text"
+                  placeholder={t("upload.aliasPlaceholder")}
+                  value={aliasMap.get(currentIndex) || ""}
+                  onChange={(e) => {
+                    setAliasMap((prev) => {
+                      const newMap = new Map(prev);
+                      newMap.set(currentIndex, e.target.value);
+                      return newMap;
+                    });
+                  }}
+                  className="mt-1 h-9"
+                  maxLength={100}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Save / Clear */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearDocument}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="mr-1 h-4 w-4" />
+              {t("upload.clear")}
+            </Button>
+            <Button
+              onClick={handleSaveDocument}
+              disabled={
+                totalAreasCount === 0 || isLoading || images.length === 0
+              }
+              className="flex-1"
+            >
+              {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
+            </Button>
+          </div>
+
           {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
               {error}
             </div>
           )}
