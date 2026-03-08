@@ -41,6 +41,26 @@ export default function TextInputModal({
     setText("");
   };
 
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
+    const paragraphs = text.split("\n");
+    const lines: string[] = [];
+    for (const paragraph of paragraphs) {
+      if (paragraph === "") { lines.push(""); continue; }
+      let currentLine = "";
+      for (const char of paragraph) {
+        const testLine = currentLine + char;
+        if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+          lines.push(currentLine);
+          currentLine = char;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+    }
+    return lines;
+  };
+
   const renderTextToCanvas = (inputText: string): string => {
     const canvas = canvasRef.current;
     if (!canvas) return "";
@@ -56,47 +76,47 @@ export default function TextInputModal({
     canvas.height = logicalHeight * scale;
     ctx.scale(scale, scale);
 
-    const fontSize = 32;
-    const lineHeight = fontSize * 1.5;
-    const padding = 24;
+    const padding = 16;
     const maxWidth = logicalWidth - padding * 2;
+    const maxHeight = logicalHeight - padding * 2;
+    const fontFamily = '-apple-system, "Noto Sans KR", sans-serif';
 
-    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-    ctx.font = `bold ${fontSize}px -apple-system, "Noto Sans KR", sans-serif`;
-    ctx.fillStyle = "#000000";
-    ctx.textBaseline = "top";
+    // Dynamic font sizing: find the largest font that fits the canvas
+    let fontSize = 200; // start large
+    let lines: string[] = [];
+    while (fontSize > 20) {
+      ctx.font = `bold ${fontSize}px ${fontFamily}`;
+      lines = wrapText(ctx, inputText, maxWidth);
+      const totalHeight = lines.length * fontSize * 1.3;
+      if (totalHeight <= maxHeight) break;
+      fontSize -= 4;
+    }
 
-    // Word wrap (supports Korean characters without spaces)
-    const paragraphs = inputText.split("\n");
-    const lines: string[] = [];
-
-    for (const paragraph of paragraphs) {
-      if (paragraph === "") {
-        lines.push("");
-        continue;
-      }
-      let currentLine = "";
-
-      for (const char of paragraph) {
-        const testLine = currentLine + char;
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = char;
-        } else {
-          currentLine = testLine;
-        }
-      }
-      if (currentLine) {
-        lines.push(currentLine);
+    // If single line, also check width and shrink if needed
+    if (lines.length === 1) {
+      while (fontSize > 20 && ctx.measureText(lines[0]).width > maxWidth) {
+        fontSize -= 4;
+        ctx.font = `bold ${fontSize}px ${fontFamily}`;
       }
     }
 
-    let y = padding;
+    const lineHeight = fontSize * 1.3;
+    const totalTextHeight = lines.length * lineHeight;
+
+    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = "#000000";
+    ctx.textBaseline = "top";
+
+    // Center text vertically
+    let y = Math.max(padding, (logicalHeight - totalTextHeight) / 2);
     for (const line of lines) {
-      ctx.fillText(line, padding, y);
+      // Center text horizontally
+      const lineWidth = ctx.measureText(line).width;
+      const x = (logicalWidth - lineWidth) / 2;
+      ctx.fillText(line, x, y);
       y += lineHeight;
-      if (y + lineHeight > logicalHeight - padding) break;
+      if (y + lineHeight > logicalHeight) break;
     }
 
     return canvas.toDataURL("image/png");
