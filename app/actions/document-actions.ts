@@ -681,9 +681,14 @@ export async function generateSignedPdfFromPdf(documentId: string) {
 
     console.log(`[PDF-Sign] PDF loaded with ${pages.length} pages (${Date.now() - startTime}ms)`);
 
+    console.log(`[PDF-Sign] Found ${signatures.length} signed signatures`);
+
     // Embed each signature into the correct page
     for (const sig of signatures) {
+      console.log(`[PDF-Sign] Processing sig ${sig.id}: x=${sig.x}, y=${sig.y}, w=${sig.width}, h=${sig.height}, page=${sig.page_number}, data_len=${sig.signature_data?.length ?? 0}`);
+
       if (!sig.signature_data || sig.x == null || sig.y == null || sig.width == null || sig.height == null) {
+        console.warn(`[PDF-Sign] Skipping sig ${sig.id}: missing data or coordinates`);
         continue;
       }
 
@@ -696,18 +701,31 @@ export async function generateSignedPdfFromPdf(documentId: string) {
       const page = pages[pageIndex];
       const { width: pageWidth, height: pageHeight } = page.getSize();
 
+      // Ensure numeric values (Supabase may return strings for numeric columns)
+      const sx = parseFloat(String(sig.x));
+      const sy = parseFloat(String(sig.y));
+      const sw = parseFloat(String(sig.width));
+      const sh = parseFloat(String(sig.height));
+
       // Convert relative coordinates (0-100%) to PDF points
       // Note: PDF coordinate system has origin at bottom-left, web has top-left
-      const sigX = (sig.x / 100) * pageWidth;
-      const sigWidth = (sig.width / 100) * pageWidth;
-      const sigHeight = (sig.height / 100) * pageHeight;
+      const sigX = (sx / 100) * pageWidth;
+      const sigWidth = (sw / 100) * pageWidth;
+      const sigHeight = (sh / 100) * pageHeight;
       // Flip Y axis: PDF y=0 is bottom, web y=0 is top
-      const sigY = pageHeight - ((sig.y / 100) * pageHeight) - sigHeight;
+      const sigY = pageHeight - ((sy / 100) * pageHeight) - sigHeight;
+
+      console.log(`[PDF-Sign] Page ${pageIndex} size: ${pageWidth}x${pageHeight}, sig coords: (${sigX.toFixed(1)}, ${sigY.toFixed(1)}) ${sigWidth.toFixed(1)}x${sigHeight.toFixed(1)}`);
 
       try {
         // Extract base64 data from data URL
         const base64Data = sig.signature_data.split(',')[1];
-        if (!base64Data) continue;
+        if (!base64Data) {
+          console.warn(`[PDF-Sign] No base64 data found in signature_data for ${sig.id}`);
+          continue;
+        }
+
+        console.log(`[PDF-Sign] Signature base64 length: ${base64Data.length}, starts with: ${sig.signature_data.substring(0, 30)}`);
 
         const sigBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
 
@@ -715,9 +733,12 @@ export async function generateSignedPdfFromPdf(documentId: string) {
         let embeddedSig;
         try {
           embeddedSig = await pdfDoc.embedPng(sigBytes);
-        } catch {
+          console.log(`[PDF-Sign] Embedded as PNG: ${embeddedSig.width}x${embeddedSig.height}`);
+        } catch (pngErr) {
+          console.warn(`[PDF-Sign] PNG embed failed, trying JPG:`, pngErr);
           // Fallback to JPG if PNG fails
           embeddedSig = await pdfDoc.embedJpg(sigBytes);
+          console.log(`[PDF-Sign] Embedded as JPG: ${embeddedSig.width}x${embeddedSig.height}`);
         }
 
         // Calculate aspect-ratio-preserving dimensions within the area
