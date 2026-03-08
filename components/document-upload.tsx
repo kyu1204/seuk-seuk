@@ -50,7 +50,9 @@ export default function DocumentUpload() {
   // Multi-image state
   const [images, setImages] = useState<ImageData[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [alias, setAlias] = useState<string>("");
+
+  // Per-image aliases: index -> alias
+  const [aliasMap, setAliasMap] = useState<Map<number, string>>(new Map());
 
   // Per-image signature areas: index -> areas
   const [signatureAreasMap, setSignatureAreasMap] = useState<Map<number, RelativeSignatureArea[]>>(new Map());
@@ -164,7 +166,7 @@ export default function DocumentUpload() {
 
   const handleClearDocument = () => {
     setImages([]);
-    setAlias("");
+    setAliasMap(new Map());
     setSignatureAreasMap(new Map());
     setError(null);
     setZoomLevel(1);
@@ -296,12 +298,9 @@ export default function DocumentUpload() {
         const formData = new FormData();
         formData.append("file", img.file);
         formData.append("filename", img.fileName);
-        if (alias.trim()) {
-          // For multiple images, append index to alias
-          const docAlias = images.length > 1
-            ? `${alias.trim()} (${i + 1})`
-            : alias.trim();
-          formData.append("alias", docAlias);
+        const imgAlias = aliasMap.get(i);
+        if (imgAlias && imgAlias.trim()) {
+          formData.append("alias", imgAlias.trim());
         }
 
         const uploadResult = await uploadDocument(formData);
@@ -436,16 +435,21 @@ export default function DocumentUpload() {
             </Button>
           </div>
 
-          {/* File Information Section */}
+          {/* File Information Section - per image */}
           <div className="space-y-4">
             <div>
               <Label htmlFor="document-filename" className="text-sm font-medium">
                 {t("upload.filename")}
+                {images.length > 1 && (
+                  <span className="text-muted-foreground ml-1">
+                    ({t("upload.imageIndex")
+                      .replace("{current}", String(currentIndex + 1))
+                      .replace("{total}", String(images.length))})
+                  </span>
+                )}
               </Label>
               <p className="text-sm text-muted-foreground mt-1">
-                {images.length === 1
-                  ? images[0].fileName
-                  : `${images.length} files`}
+                {images[currentIndex]?.fileName}
               </p>
             </div>
 
@@ -459,8 +463,14 @@ export default function DocumentUpload() {
                 name="document-alias"
                 type="text"
                 placeholder={t("upload.aliasPlaceholder")}
-                value={alias}
-                onChange={(e) => setAlias(e.target.value)}
+                value={aliasMap.get(currentIndex) || ""}
+                onChange={(e) => {
+                  setAliasMap((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.set(currentIndex, e.target.value);
+                    return newMap;
+                  });
+                }}
                 className="mt-2"
                 maxLength={100}
               />
