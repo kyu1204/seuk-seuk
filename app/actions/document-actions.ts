@@ -36,8 +36,14 @@ export async function uploadDocument(formData: FormData) {
     const fileType = isPdf ? 'pdf' : 'image';
     let pageCount = 1;
 
-    // For PDF files, count pages using pdf-lib
+    // For PDF files, check plan permission and count pages
     if (isPdf) {
+      const { canUploadPdf } = await import('@/app/actions/subscription-actions');
+      const pdfPermission = await canUploadPdf();
+      if (!pdfPermission.canUpload) {
+        return { error: pdfPermission.error || 'PDF upload not allowed for your plan' };
+      }
+
       try {
         const { PDFDocument } = await import('pdf-lib');
         const arrayBuffer = await file.arrayBuffer();
@@ -685,7 +691,7 @@ export async function generateSignedPdfFromPdf(documentId: string) {
 
     // Embed each signature into the correct page
     for (const sig of signatures) {
-      console.log(`[PDF-Sign] Processing sig ${sig.id}: x=${sig.x}, y=${sig.y}, w=${sig.width}, h=${sig.height}, page=${sig.page_number}, data_len=${sig.signature_data?.length ?? 0}`);
+      console.log(`[PDF-Sign] Processing sig ${sig.id}: page=${sig.page_number}, coords=(${sig.x},${sig.y},${sig.width},${sig.height})`);
 
       if (!sig.signature_data || sig.x == null || sig.y == null || sig.width == null || sig.height == null) {
         console.warn(`[PDF-Sign] Skipping sig ${sig.id}: missing data or coordinates`);
@@ -721,11 +727,11 @@ export async function generateSignedPdfFromPdf(documentId: string) {
         // Extract base64 data from data URL
         const base64Data = sig.signature_data.split(',')[1];
         if (!base64Data) {
-          console.warn(`[PDF-Sign] No base64 data found in signature_data for ${sig.id}`);
-          continue;
+          console.warn(`[PDF-Sign] No base64 data found for sig ${sig.id}`);
+          return { error: `Failed to process signature data for sig ${sig.id}` };
         }
 
-        console.log(`[PDF-Sign] Signature base64 length: ${base64Data.length}, starts with: ${sig.signature_data.substring(0, 30)}`);
+        console.log(`[PDF-Sign] Sig ${sig.id}: data length ${base64Data.length}`);
 
         const sigBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
 
@@ -733,12 +739,9 @@ export async function generateSignedPdfFromPdf(documentId: string) {
         let embeddedSig;
         try {
           embeddedSig = await pdfDoc.embedPng(sigBytes);
-          console.log(`[PDF-Sign] Embedded as PNG: ${embeddedSig.width}x${embeddedSig.height}`);
         } catch (pngErr) {
-          console.warn(`[PDF-Sign] PNG embed failed, trying JPG:`, pngErr);
-          // Fallback to JPG if PNG fails
+          console.warn(`[PDF-Sign] PNG embed failed for sig ${sig.id}, trying JPG`);
           embeddedSig = await pdfDoc.embedJpg(sigBytes);
-          console.log(`[PDF-Sign] Embedded as JPG: ${embeddedSig.width}x${embeddedSig.height}`);
         }
 
         // Calculate aspect-ratio-preserving dimensions within the area
@@ -763,10 +766,10 @@ export async function generateSignedPdfFromPdf(documentId: string) {
           height: drawHeight,
         });
 
-        console.log(`[PDF-Sign] Embedded signature on page ${pageIndex} at (${sigX.toFixed(1)}, ${sigY.toFixed(1)}) size ${drawWidth.toFixed(1)}x${drawHeight.toFixed(1)}`);
+        console.log(`[PDF-Sign] Embedded sig ${sig.id} on page ${pageIndex} at (${sigX.toFixed(1)}, ${sigY.toFixed(1)}) size ${drawWidth.toFixed(1)}x${drawHeight.toFixed(1)}`);
       } catch (embedErr) {
         console.error(`[PDF-Sign] Failed to embed signature ${sig.id}:`, embedErr);
-        // Continue with other signatures
+        return { error: `Failed to embed signature on page ${pageIndex}` };
       }
     }
 

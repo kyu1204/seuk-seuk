@@ -97,6 +97,8 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
         } catch (err) {
           if (cancelled) return;
           console.error("PDF load error:", err);
+          setIsLoading(false);
+          setPdfDoc(null);
           onLoadError?.("PDF 파일을 불러올 수 없습니다.");
         }
       };
@@ -167,6 +169,7 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
         } catch (err: any) {
           if (cancelled || err?.name === "RenderingCancelledException") return;
           console.error("PDF render error:", err);
+          setIsLoading(false);
           onLoadError?.("PDF 페이지를 렌더링할 수 없습니다.");
         }
       };
