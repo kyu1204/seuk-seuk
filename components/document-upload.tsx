@@ -117,13 +117,23 @@ export default function DocumentUpload() {
 
   // Check PDF permission on mount
   useEffect(() => {
+    let active = true;
     const checkPdfPermission = async () => {
-      const result = await canUploadPdf();
-      console.log("[PDF Permission Check]", result);
-      setCanUsePdf(result.canUpload);
-      setPdfCheckDone(true);
+      try {
+        const result = await canUploadPdf();
+        if (!active) return;
+        console.log("[PDF Permission Check]", result);
+        setCanUsePdf(result.canUpload);
+      } catch (err) {
+        if (!active) return;
+        console.error("[PDF Permission Check] Failed:", err);
+        setCanUsePdf(false);
+      } finally {
+        if (active) setPdfCheckDone(true);
+      }
     };
     checkPdfPermission();
+    return () => { active = false; };
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -236,9 +246,11 @@ export default function DocumentUpload() {
     const currentFile = images[currentIndex];
     if (currentFile?.isPdf) {
       const pageImage = await getPdfPageAsImage();
-      if (pageImage) {
-        setPdfPageImageForSelector(pageImage);
+      if (!pageImage) {
+        setError("PDF 페이지를 캡처할 수 없습니다.");
+        return;
       }
+      setPdfPageImageForSelector(pageImage);
     }
 
     setIsSelecting(true);

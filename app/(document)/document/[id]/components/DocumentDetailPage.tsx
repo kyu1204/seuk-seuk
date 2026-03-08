@@ -133,12 +133,12 @@ export default function DocumentDetailComponent({
 
     if (isPdf) {
       const container = documentContainerRef.current;
-      if (container) {
-        const canvas = container.querySelector('canvas');
-        if (canvas) {
-          setPdfPageImageForSelector(canvas.toDataURL('image/png'));
-        }
+      const canvas = container?.querySelector('canvas');
+      if (!canvas) {
+        setError("PDF 페이지가 아직 준비되지 않았습니다.");
+        return;
       }
+      setPdfPageImageForSelector(canvas.toDataURL('image/png'));
     }
 
     setIsSelecting(true);
