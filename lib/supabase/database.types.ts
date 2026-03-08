@@ -267,6 +267,7 @@ export type Database = {
       signatures: {
         Row: {
           area_index: number
+          area_type: string
           created_at: string
           document_id: string | null
           height: number | null
@@ -281,6 +282,7 @@ export type Database = {
         }
         Insert: {
           area_index: number
+          area_type?: string
           created_at?: string
           document_id?: string | null
           height?: number | null
@@ -295,6 +297,7 @@ export type Database = {
         }
         Update: {
           area_index?: number
+          area_type?: string
           created_at?: string
           document_id?: string | null
           height?: number | null
@@ -637,3 +640,11 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+export interface SignatureArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  type: 'signature' | 'text';
+}

@@ -348,6 +348,7 @@ export async function createSignatureAreas(
         y: area.y,
         width: area.width,
         height: area.height,
+        area_type: area.type || 'signature',
         status: "pending",
         signature_data: null,
       })
@@ -610,9 +611,13 @@ export async function updateSignatureAreas(
     const supabase = await createServerSupabase();
     
     // Use PostgreSQL function with transaction for atomic operation
+    const mappedAreas = signatureAreas.map((area) => ({
+      ...area,
+      area_type: area.type || 'signature',
+    }));
     const { data, error } = await supabase.rpc('update_signature_areas_transaction', {
       p_document_id: documentId,
-      p_signature_areas: signatureAreas
+      p_signature_areas: mappedAreas
     });
 
     if (error) {

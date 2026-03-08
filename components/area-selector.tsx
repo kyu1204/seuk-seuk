@@ -24,11 +24,13 @@ interface AreaSelectorProps {
     y: number;
     width: number;
     height: number;
+    type?: 'signature' | 'text';
   }>;
   initialScrollPosition?: { top: number; left: number };
   // Zoom 상태를 부모로부터 받아옵니다
   zoomLevel?: number;
   onZoomChange?: (zoom: number) => void;
+  areaType?: 'signature' | 'text';
 }
 
 export default function AreaSelector({
@@ -39,6 +41,7 @@ export default function AreaSelector({
   initialScrollPosition = { top: 0, left: 0 },
   zoomLevel: propZoomLevel,
   onZoomChange,
+  areaType,
 }: AreaSelectorProps) {
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(
     null
@@ -229,7 +232,7 @@ export default function AreaSelector({
           left: containerRef.current.scrollLeft
         } : { top: 0, left: 0 };
 
-        onAreaSelected({ x, y, width, height }, scrollPosition);
+        onAreaSelected({ x, y, width, height, type: areaType || 'signature' }, scrollPosition);
       }
     }
 
@@ -287,7 +290,7 @@ export default function AreaSelector({
           left: containerRef.current.scrollLeft
         } : { top: 0, left: 0 };
 
-        onAreaSelected({ x, y, width, height }, scrollPosition);
+        onAreaSelected({ x, y, width, height, type: areaType || 'signature' }, scrollPosition);
       }
     }
 
@@ -388,10 +391,11 @@ export default function AreaSelector({
             return null;
           }
 
+            const isText = area.type === 'text';
             return (
               <div
                 key={index}
-                className="absolute border-2 border-green-500 bg-green-500/10 flex items-center justify-center pointer-events-none"
+                className={`absolute border-2 flex items-center justify-center pointer-events-none ${isText ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
                 style={{
                   left: `${relativeArea.x}%`,
                   top: `${relativeArea.y}%`,
@@ -399,7 +403,7 @@ export default function AreaSelector({
                   height: `${relativeArea.height}%`,
                 }}
               >
-                <span className="text-xs font-medium text-green-600">
+                <span className={`text-xs font-medium ${isText ? 'text-blue-600' : 'text-red-600'}`}>
                   <span className="hidden sm:inline">{t("upload.signature")} {index + 1}</span>
                   <span className="sm:hidden">{index + 1}</span>
                 </span>
@@ -410,7 +414,7 @@ export default function AreaSelector({
           {/* Show current selection */}
           {isSelecting && startPos && currentPos && (
             <div
-              className="absolute border-2 border-red-500 bg-red-500/10"
+              className={`absolute border-2 ${areaType === 'text' ? 'border-blue-500 bg-blue-500/20' : 'border-red-500 bg-red-500/10'}`}
               style={{
                 left: `${Math.min(startPos.x, currentPos.x)}%`,
                 top: `${Math.min(startPos.y, currentPos.y)}%`,

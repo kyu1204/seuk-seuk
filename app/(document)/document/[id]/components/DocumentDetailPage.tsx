@@ -26,7 +26,7 @@ import {
   convertSignatureAreaToPixels,
   type RelativeSignatureArea,
 } from "@/lib/utils";
-import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw, Share2 } from "lucide-react";
+import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw, Share2, Type } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
@@ -66,6 +66,7 @@ export default function DocumentDetailComponent({
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [currentAreaType, setCurrentAreaType] = useState<'signature' | 'text'>('signature');
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -89,6 +90,7 @@ export default function DocumentDetailComponent({
           y: sig.y,
           width: sig.width,
           height: sig.height,
+          type: (sig as any).area_type === 'text' ? 'text' : 'signature',
         })));
         setEditedAlias(document.alias || "");
       } else {
@@ -145,6 +147,7 @@ export default function DocumentDetailComponent({
         y: area.y,
         width: area.width,
         height: area.height,
+        type: area.type || 'signature',
       }));
 
       // Update signature areas
@@ -519,12 +522,21 @@ export default function DocumentDetailComponent({
                           {t("documentDetail.cancel")}
                         </Button>
                         <Button
-                          onClick={handleAddSignatureArea}
+                          onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
                           disabled={isLoading}
                           className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
                           variant="outline"
                         >
                           {t("documentDetail.addArea")}
+                        </Button>
+                        <Button
+                          onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
+                          disabled={isLoading}
+                          className="h-9 px-3 text-sm font-medium border-2 hover:bg-gray-50"
+                          variant="outline"
+                        >
+                          <Type className="mr-1 h-3 w-3" />
+                          {t("documentDetail.textArea")}
                         </Button>
                       </div>
                       {/* Right Group - Save */}
@@ -536,7 +548,7 @@ export default function DocumentDetailComponent({
                         {isLoading ? t("documentDetail.saving") : t("documentDetail.save")}
                       </Button>
                     </div>
-                    
+
                     {/* Alias Input Field */}
                     <div className="space-y-2">
                       <Label htmlFor="alias-mobile" className="text-sm font-medium">
@@ -644,12 +656,21 @@ export default function DocumentDetailComponent({
                           {t("documentDetail.cancel")}
                         </Button>
                         <Button
-                          onClick={handleAddSignatureArea}
+                          onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
                           disabled={isLoading}
                           className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
                           variant="outline"
                         >
                           {t("documentDetail.addArea")}
+                        </Button>
+                        <Button
+                          onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
+                          disabled={isLoading}
+                          className="h-10 px-4 text-sm font-medium border-2 hover:bg-gray-50"
+                          variant="outline"
+                        >
+                          <Type className="mr-2 h-4 w-4" />
+                          {t("documentDetail.textArea")}
                         </Button>
                       </div>
                       {/* Right Group - Save */}
@@ -737,6 +758,7 @@ export default function DocumentDetailComponent({
               initialScrollPosition={scrollPositionRef.current}
               zoomLevel={zoomLevel}
               onZoomChange={setZoomLevel}
+              areaType={currentAreaType}
             />
           ) : (
             <div
@@ -788,6 +810,9 @@ export default function DocumentDetailComponent({
                 // Find matching signature data
                 const signatureInfo = signatureData.find(sig => sig.area_index === index);
                 const hasSignature = signatureInfo && signatureInfo.signature_data;
+                const areaType = (area as RelativeSignatureArea).type ||
+                  ((area as any).area_type === 'text' ? 'text' : 'signature');
+                const isText = areaType === 'text';
 
                 return (
                   <div
@@ -796,7 +821,11 @@ export default function DocumentDetailComponent({
                       hasSignature
                         ? "border-green-500 bg-green-500/10"
                         : isEditMode
-                        ? "border-red-500 bg-red-500/10 cursor-pointer"
+                        ? isText
+                          ? "border-indigo-500 bg-indigo-500/10 cursor-pointer"
+                          : "border-red-500 bg-red-500/10 cursor-pointer"
+                        : isText
+                        ? "border-indigo-500 bg-indigo-500/10"
                         : "border-blue-500 bg-blue-500/10"
                     }`}
                     style={{
@@ -823,10 +852,18 @@ export default function DocumentDetailComponent({
                     ) : (
                       <span
                         className={`text-xs font-medium ${
-                          isEditMode ? "text-red-600" : "text-blue-600"
+                          hasSignature
+                            ? "text-green-600"
+                            : isEditMode
+                            ? isText ? "text-indigo-600" : "text-red-600"
+                            : isText ? "text-indigo-600" : "text-blue-600"
                         }`}
                       >
-                        <span className="hidden sm:inline">{t("documentDetail.signatureArea")} {index + 1}</span>
+                        <span className="hidden sm:inline">
+                          {isText
+                            ? `${t("documentDetail.textArea")} ${index + 1}`
+                            : `${t("documentDetail.signatureArea")} ${index + 1}`}
+                        </span>
                         <span className="sm:hidden">{index + 1}</span>
                       </span>
                     )}

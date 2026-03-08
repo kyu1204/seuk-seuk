@@ -45,6 +45,8 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.button": "문서 선택",
     "upload.clear": "지우기",
     "upload.addSignatureArea": "서명 영역 추가",
+    "upload.addTextArea": "텍스트 영역 추가",
+    "upload.textArea": "텍스트",
     "upload.getSignature": "서명 받기",
     "upload.generating": "생성 중...",
     "upload.signature": "서명",
@@ -63,6 +65,8 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.returnHome": "홈으로 돌아가기",
     "sign.clickAreas": "강조된 영역을 클릭하여 서명을 추가하세요",
     "sign.clickToSign": "클릭하여 서명",
+    "sign.clickToType": "클릭하여 입력",
+    "sign.enterText": "텍스트를 입력하세요",
     "sign.generating": "생성 중...",
     "sign.saveDocument": "문서 제출",
     "sign.signedDocument": "서명된 문서",
@@ -78,6 +82,12 @@ const translations: Record<Language, Record<string, string>> = {
     "signature.clear": "지우기",
     "signature.sign": "문서 서명",
     "signature.signing": "서명 중...",
+
+    // Text Modal
+    "textModal.title": "텍스트 입력",
+    "textModal.placeholder": "여기에 텍스트를 입력하세요...",
+    "textModal.complete": "완료",
+    "textModal.clear": "지우기",
 
     // Language Selector
     "language.ko": "한국어",
@@ -559,6 +569,7 @@ const translations: Record<Language, Record<string, string>> = {
     "documentDetail.saving": "저장중",
     "documentDetail.loading": "문서 로딩 중...",
     "documentDetail.signatureArea": "서명 영역",
+    "documentDetail.textArea": "텍스트 영역",
     "documentDetail.errorUpdateArea": "서명 영역 업데이트 중 오류가 발생했습니다",
     "documentDetail.errorDownload": "다운로드 중 오류가 발생했습니다.",
     "documentDetail.errorDelete": "문서 삭제 중 오류가 발생했습니다",
@@ -1151,6 +1162,8 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.button": "Select Document",
     "upload.clear": "Clear",
     "upload.addSignatureArea": "Add Signature Area",
+    "upload.addTextArea": "Add Text Area",
+    "upload.textArea": "Text",
     "upload.getSignature": "Get Signature",
     "upload.generating": "Generating...",
     "upload.signature": "Signature",
@@ -1170,6 +1183,8 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.returnHome": "Return to Home",
     "sign.clickAreas": "Click on the highlighted areas to add your signature",
     "sign.clickToSign": "Click to sign",
+    "sign.clickToType": "Click to type",
+    "sign.enterText": "Enter text",
     "sign.generating": "Generating...",
     "sign.saveDocument": "Submit Document",
     "sign.signedDocument": "Your Signed Document",
@@ -1186,6 +1201,12 @@ const translations: Record<Language, Record<string, string>> = {
     "signature.clear": "Clear",
     "signature.sign": "Sign Document",
     "signature.signing": "Signing...",
+
+    // Text Modal
+    "textModal.title": "Enter Text",
+    "textModal.placeholder": "Type your text here...",
+    "textModal.complete": "Complete",
+    "textModal.clear": "Clear",
 
     // Language Selector
     "language.ko": "한국어",
@@ -1670,6 +1691,7 @@ const translations: Record<Language, Record<string, string>> = {
     "documentDetail.saving": "Saving",
     "documentDetail.loading": "Loading document...",
     "documentDetail.signatureArea": "Signature area",
+    "documentDetail.textArea": "Text Area",
     "documentDetail.errorUpdateArea": "Failed to update signature area",
     "documentDetail.errorDownload": "Failed to download document.",
     "documentDetail.errorDelete": "Failed to delete document",
