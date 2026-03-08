@@ -862,7 +862,7 @@ export default function DocumentDetailComponent({
                   </div>
                 ) : isPdf ? (
                   <PdfPageRenderer
-                    pdfUrl={documentUrl || ""}
+                    pdfUrl={isCompleted && signedDocumentPreviewUrl ? signedDocumentPreviewUrl : (documentUrl || "")}
                     currentPage={currentPdfPage}
                     zoomLevel={1}
                     onPageDimensionsChange={setPdfPageDimensions}
