@@ -45,6 +45,7 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
     const [isLoading, setIsLoading] = useState(true);
     const [pageDimensions, setPageDimensions] = useState<PdfPageDimensions | null>(null);
     const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
+    const loadingTaskRef = useRef<pdfjsLib.PDFDocumentLoadingTask | null>(null);
 
     useImperativeHandle(ref, () => ({
       getPageDimensions: () => pageDimensions,
@@ -64,6 +65,12 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
           if (renderTaskRef.current) {
             renderTaskRef.current.cancel();
             renderTaskRef.current = null;
+          }
+
+          // Destroy previous PDF document and loading task
+          if (loadingTaskRef.current) {
+            await loadingTaskRef.current.destroy().catch(() => {});
+            loadingTaskRef.current = null;
           }
 
           // Handle data URLs by converting to binary data
@@ -88,6 +95,7 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
             });
           }
 
+          loadingTaskRef.current = loadingTask;
           const pdf = await loadingTask.promise;
 
           if (cancelled) return;
@@ -107,6 +115,11 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
 
       return () => {
         cancelled = true;
+        // Destroy loading task and PDF resources on cleanup
+        if (loadingTaskRef.current) {
+          loadingTaskRef.current.destroy().catch(() => {});
+          loadingTaskRef.current = null;
+        }
       };
     }, [pdfUrl]);
 
