@@ -3,6 +3,7 @@
 import {
   saveSignature,
   generateSignedPdf,
+  generateSignedPdfFromPdf,
   getDocumentFileSignedUrl,
   markDocumentCompleted,
   createSignedDocumentUploadUrl,
@@ -23,6 +24,8 @@ import {
 } from "@/lib/utils";
 import {
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   FileSignature,
   RefreshCw,
@@ -33,6 +36,17 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import type { PdfPageDimensions } from "@/components/pdf-page-renderer";
+
+const PdfPageRenderer = dynamic(() => import("@/components/pdf-page-renderer"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-96 flex items-center justify-center bg-muted/50">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  ),
+});
 
 interface SignSingleDocumentProps {
   publicationData: PublicationWithDocuments;
@@ -84,6 +98,11 @@ export default function SignSingleDocument({
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [documentSignedUrl, setDocumentSignedUrl] = useState<string | null>(null);
   const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
+
+  const isPdf = (documentData as any).file_type === 'pdf';
+  const totalPages = (documentData as any).page_count || 1;
+  const [currentPdfPage, setCurrentPdfPage] = useState<number>(1);
+  const [pdfPageDimensions, setPdfPageDimensions] = useState<PdfPageDimensions | null>(null);
 
   const handleAreaClick = (areaIndex: number) => {
     setSelectedArea(areaIndex);
@@ -160,250 +179,229 @@ export default function SignSingleDocument({
     setGeneratingProgress("문서 처리 준비 중...");
 
     try {
-      setProgressValue(10);
-      // Get the current document container dimensions
-      if (!documentContainerRef.current) {
-        throw new Error("Document container not found");
-      }
+      if (isPdf) {
+        // === PDF Document: Server-side PDF signing ===
+        setProgressValue(30);
+        setGeneratingProgress("서명을 PDF에 합성 중...");
 
-      const docImage = documentContainerRef.current.querySelector("img");
-      if (!docImage) {
-        throw new Error("Document image not found");
-      }
+        const pdfResult = await generateSignedPdfFromPdf(documentData.id);
 
-      // Get the natural dimensions of the document image
-      const naturalWidth = (docImage as HTMLImageElement).naturalWidth;
-      const naturalHeight = (docImage as HTMLImageElement).naturalHeight;
-
-      // Get the displayed dimensions
-      const displayedWidth = docImage.clientWidth;
-      const displayedHeight = docImage.clientHeight;
-
-      // Calculate the scale ratio between natural and displayed size
-      const scaleX = naturalWidth / displayedWidth;
-      const scaleY = naturalHeight / displayedHeight;
-
-      // 🚀 Performance optimization: Set maximum canvas dimensions
-      const MAX_DIMENSION = 2000; // Maximum width/height for performance
-      let canvasWidth = naturalWidth;
-      let canvasHeight = naturalHeight;
-      let downscaleRatio = 1;
-
-      // Downscale if image is too large
-      if (canvasWidth > MAX_DIMENSION || canvasHeight > MAX_DIMENSION) {
-        const aspectRatio = canvasWidth / canvasHeight;
-        if (canvasWidth > canvasHeight) {
-          canvasWidth = MAX_DIMENSION;
-          canvasHeight = MAX_DIMENSION / aspectRatio;
-        } else {
-          canvasHeight = MAX_DIMENSION;
-          canvasWidth = MAX_DIMENSION * aspectRatio;
-        }
-        downscaleRatio = canvasWidth / naturalWidth;
-      }
-
-      // Create a new image element with the original document
-      setProgressValue(30);
-      setGeneratingProgress("원본 문서 로딩 중...");
-      const originalImage = new Image();
-      originalImage.crossOrigin = "anonymous";
-
-      // Wait for the original image to load
-      await new Promise((resolve, reject) => {
-        originalImage.onload = resolve;
-        originalImage.onerror = reject;
-        originalImage.src = documentSignedUrl || documentData.file_url;
-      });
-
-      // 🚀 Performance optimization: Preload all signature images in parallel
-      setProgressValue(50);
-      setGeneratingProgress("서명 이미지 처리 중...");
-
-      const signatureImages = await Promise.all(
-        localSignatures
-          .filter(sig => sig.signature_data)
-          .map((signature, index) => {
-            return new Promise<{ signature: typeof signature; image: HTMLImageElement }>((resolve, reject) => {
-              const signatureImage = new Image();
-              signatureImage.crossOrigin = "anonymous";
-              signatureImage.onload = () => {
-                resolve({ signature, image: signatureImage });
-              };
-              signatureImage.onerror = (err) => {
-                console.error(`❌ Failed to load signature image ${index}:`, err);
-                reject(err);
-              };
-              signatureImage.src = signature.signature_data!;
-            });
-          })
-      );
-
-
-      // Create a canvas with optimized dimensions
-      const canvas = document.createElement("canvas");
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-      const ctx = canvas.getContext("2d", {
-        alpha: false, // Disable alpha for better performance
-        willReadFrequently: false
-      });
-
-      if (!ctx) {
-        throw new Error("Could not get canvas context");
-      }
-
-      // 🚀 Performance optimization: Set image smoothing for better quality when downscaling
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      // Draw the original document with downscaling
-      setProgressValue(60);
-      setGeneratingProgress("문서 합성 중...");
-      ctx.drawImage(originalImage, 0, 0, canvasWidth, canvasHeight);
-
-      // Draw each signature at the correct position
-      for (const { signature, image: signatureImage } of signatureImages) {
-        // Convert signature coordinates to absolute pixels based on original image size
-        let pixelCoords;
-        try {
-          const relativeArea = ensureRelativeCoordinate(signature, naturalWidth, naturalHeight);
-          pixelCoords = convertSignatureAreaToPixels(relativeArea, naturalWidth, naturalHeight);
-        } catch (error) {
-          console.warn('Failed to convert signature coordinates, using as-is:', error);
-          pixelCoords = {
-            x: Number(signature.x),
-            y: Number(signature.y),
-            width: Number(signature.width),
-            height: Number(signature.height),
-          };
+        if (!pdfResult || pdfResult.error) {
+          setError(pdfResult?.error ?? "Failed to generate signed PDF");
+          setIsGenerating(false);
+          setGeneratingProgress("");
+          setProgressValue(0);
+          return;
         }
 
-        // Calculate the actual position and size with downscaling
-        // pixelCoords are already in original image coordinates, only apply downscale ratio
-        const actualX = pixelCoords.x * downscaleRatio;
-        const actualY = pixelCoords.y * downscaleRatio;
-        const actualWidth = pixelCoords.width * downscaleRatio;
-        const actualHeight = pixelCoords.height * downscaleRatio;
+        setProgressValue(90);
+        setGeneratingProgress("문서 완료 처리 중...");
 
+        const markResult = await markDocumentCompleted(documentData.id);
 
-        // Calculate the signature's aspect ratio
-        const signatureAspectRatio = signatureImage.width / signatureImage.height;
-
-        // Calculate dimensions that maintain the signature's aspect ratio
-        let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
-        const areaAspectRatio = actualWidth / actualHeight;
-
-        if (signatureAspectRatio > areaAspectRatio) {
-          drawWidth = actualWidth;
-          drawHeight = drawWidth / signatureAspectRatio;
-          offsetY = (actualHeight - drawHeight) / 2;
-        } else {
-          drawHeight = actualHeight;
-          drawWidth = drawHeight * signatureAspectRatio;
-          offsetX = (actualWidth - drawWidth) / 2;
+        if (!markResult || markResult.error) {
+          setError(markResult?.error ?? "Failed to mark document as completed");
+          setIsGenerating(false);
+          setGeneratingProgress("");
+          setProgressValue(0);
+          return;
         }
 
-        // Draw the signature
-        ctx.drawImage(
-          signatureImage,
-          actualX + offsetX,
-          actualY + offsetY,
-          drawWidth,
-          drawHeight
-        );
-      }
-
-      // 🚀 Performance optimization: Use optimized compression
-      setProgressValue(70);
-      setGeneratingProgress("이미지 압축 중...");
-      let blob: Blob;
-      if ('toBlob' in canvas) {
-        // Use toBlob for better performance and memory management
-        blob = await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob((result) => {
-            if (result) resolve(result);
-            else reject(new Error('Failed to create blob'));
-          }, 'image/png'); // Generate PNG to match storage configuration
-        });
+        setProgressValue(100);
+        setIsGenerating(false);
+        setGeneratingProgress("");
+        setProgressValue(0);
+        onComplete(documentData.alias || documentData.filename);
       } else {
-        // Fallback to toDataURL
-        const dataUrl = canvas.toDataURL("image/png");
-        const response = await fetch(dataUrl);
-        blob = await response.blob();
-      }
+        // === Image Document: Existing client-side canvas compositing ===
+        setProgressValue(10);
+        if (!documentContainerRef.current) {
+          throw new Error("Document container not found");
+        }
 
-      // Upload signed document using presigned URL to bypass RLS
-      // This allows anonymous users to upload without authentication
-      setProgressValue(80);
-      setGeneratingProgress("서명된 문서 업로드 중...");
+        const docImage = documentContainerRef.current.querySelector("img");
+        if (!docImage) {
+          throw new Error("Document image not found");
+        }
 
-      // Get presigned upload URL from server
-      const uploadUrlResult = await createSignedDocumentUploadUrl(documentData.id);
+        const naturalWidth = (docImage as HTMLImageElement).naturalWidth;
+        const naturalHeight = (docImage as HTMLImageElement).naturalHeight;
 
-      if (uploadUrlResult.error || !uploadUrlResult.uploadUrl) {
-        console.error('Failed to get upload URL:', uploadUrlResult.error);
-        setError(uploadUrlResult.error || "Failed to get upload URL");
+        const displayedWidth = docImage.clientWidth;
+        const displayedHeight = docImage.clientHeight;
+
+        const scaleX = naturalWidth / displayedWidth;
+        const scaleY = naturalHeight / displayedHeight;
+
+        const MAX_DIMENSION = 2000;
+        let canvasWidth = naturalWidth;
+        let canvasHeight = naturalHeight;
+        let downscaleRatio = 1;
+
+        if (canvasWidth > MAX_DIMENSION || canvasHeight > MAX_DIMENSION) {
+          const aspectRatio = canvasWidth / canvasHeight;
+          if (canvasWidth > canvasHeight) {
+            canvasWidth = MAX_DIMENSION;
+            canvasHeight = MAX_DIMENSION / aspectRatio;
+          } else {
+            canvasHeight = MAX_DIMENSION;
+            canvasWidth = MAX_DIMENSION * aspectRatio;
+          }
+          downscaleRatio = canvasWidth / naturalWidth;
+        }
+
+        setProgressValue(30);
+        setGeneratingProgress("원본 문서 로딩 중...");
+        const originalImage = new Image();
+        originalImage.crossOrigin = "anonymous";
+
+        await new Promise((resolve, reject) => {
+          originalImage.onload = resolve;
+          originalImage.onerror = reject;
+          originalImage.src = documentSignedUrl || documentData.file_url;
+        });
+
+        setProgressValue(50);
+        setGeneratingProgress("서명 이미지 처리 중...");
+
+        const signatureImages = await Promise.all(
+          localSignatures
+            .filter(sig => sig.signature_data)
+            .map((signature, index) => {
+              return new Promise<{ signature: typeof signature; image: HTMLImageElement }>((resolve, reject) => {
+                const signatureImage = new Image();
+                signatureImage.crossOrigin = "anonymous";
+                signatureImage.onload = () => resolve({ signature, image: signatureImage });
+                signatureImage.onerror = (err) => reject(err);
+                signatureImage.src = signature.signature_data!;
+              });
+            })
+        );
+
+        const canvas = document.createElement("canvas");
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext("2d", { alpha: false, willReadFrequently: false });
+
+        if (!ctx) throw new Error("Could not get canvas context");
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        setProgressValue(60);
+        setGeneratingProgress("문서 합성 중...");
+        ctx.drawImage(originalImage, 0, 0, canvasWidth, canvasHeight);
+
+        for (const { signature, image: signatureImage } of signatureImages) {
+          let pixelCoords;
+          try {
+            const relativeArea = ensureRelativeCoordinate(signature, naturalWidth, naturalHeight);
+            pixelCoords = convertSignatureAreaToPixels(relativeArea, naturalWidth, naturalHeight);
+          } catch (error) {
+            pixelCoords = {
+              x: Number(signature.x),
+              y: Number(signature.y),
+              width: Number(signature.width),
+              height: Number(signature.height),
+            };
+          }
+
+          const actualX = pixelCoords.x * downscaleRatio;
+          const actualY = pixelCoords.y * downscaleRatio;
+          const actualWidth = pixelCoords.width * downscaleRatio;
+          const actualHeight = pixelCoords.height * downscaleRatio;
+
+          const signatureAspectRatio = signatureImage.width / signatureImage.height;
+          let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+          const areaAspectRatio = actualWidth / actualHeight;
+
+          if (signatureAspectRatio > areaAspectRatio) {
+            drawWidth = actualWidth;
+            drawHeight = drawWidth / signatureAspectRatio;
+            offsetY = (actualHeight - drawHeight) / 2;
+          } else {
+            drawHeight = actualHeight;
+            drawWidth = drawHeight * signatureAspectRatio;
+            offsetX = (actualWidth - drawWidth) / 2;
+          }
+
+          ctx.drawImage(signatureImage, actualX + offsetX, actualY + offsetY, drawWidth, drawHeight);
+        }
+
+        setProgressValue(70);
+        setGeneratingProgress("이미지 압축 중...");
+        let blob: Blob;
+        if ('toBlob' in canvas) {
+          blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((result) => {
+              if (result) resolve(result);
+              else reject(new Error('Failed to create blob'));
+            }, 'image/png');
+          });
+        } else {
+          const dataUrl = canvas.toDataURL("image/png");
+          const response = await fetch(dataUrl);
+          blob = await response.blob();
+        }
+
+        setProgressValue(80);
+        setGeneratingProgress("서명된 문서 업로드 중...");
+
+        const uploadUrlResult = await createSignedDocumentUploadUrl(documentData.id);
+
+        if (uploadUrlResult.error || !uploadUrlResult.uploadUrl) {
+          setError(uploadUrlResult.error || "Failed to get upload URL");
+          setIsGenerating(false);
+          setGeneratingProgress("");
+          return;
+        }
+
+        const uploadResponse = await fetch(uploadUrlResult.uploadUrl, {
+          method: 'PUT',
+          body: blob,
+          headers: { 'Content-Type': 'image/png' },
+        });
+
+        if (!uploadResponse.ok) {
+          setError("Failed to upload signed document");
+          setIsGenerating(false);
+          setGeneratingProgress("");
+          return;
+        }
+
+        const filePath = uploadUrlResult.filePath!;
+
+        setProgressValue(90);
+        setGeneratingProgress("PDF 생성 중...");
+        const pdfResult = await generateSignedPdf(documentData.id, filePath);
+
+        if (!pdfResult || pdfResult.error) {
+          setError(pdfResult?.error ?? "Failed to generate PDF");
+          setIsGenerating(false);
+          setGeneratingProgress("");
+          return;
+        }
+
+        setProgressValue(95);
+        setGeneratingProgress("문서 완료 처리 중...");
+        const markResult = await markDocumentCompleted(documentData.id);
+
+        if (!markResult || markResult.error) {
+          setError(markResult?.error ?? "Failed to mark document as completed");
+          setIsGenerating(false);
+          setGeneratingProgress("");
+          return;
+        }
+
+        setProgressValue(100);
         setIsGenerating(false);
         setGeneratingProgress("");
-        return;
+        setProgressValue(0);
+        onComplete(documentData.alias || documentData.filename);
       }
-
-      // Upload directly to presigned URL
-      const uploadResponse = await fetch(uploadUrlResult.uploadUrl, {
-        method: 'PUT',
-        body: blob,
-        headers: {
-          'Content-Type': 'image/png',
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        console.error('Upload failed:', uploadResponse.status, uploadResponse.statusText);
-        setError("Failed to upload signed document");
-        setIsGenerating(false);
-        setGeneratingProgress("");
-        return;
-      }
-
-      const filePath = uploadUrlResult.filePath!;
-
-      // Generate PDF from the uploaded image using server action
-      setProgressValue(90);
-      setGeneratingProgress("PDF 생성 중...");
-      const pdfResult = await generateSignedPdf(documentData.id, filePath);
-
-      if (!pdfResult || pdfResult.error) {
-        setError(pdfResult?.error ?? "Failed to generate PDF");
-        setIsGenerating(false);
-        setGeneratingProgress("");
-        return;
-      }
-
-      // Mark document as completed
-      setProgressValue(95);
-      setGeneratingProgress("문서 완료 처리 중...");
-      const markResult = await markDocumentCompleted(documentData.id);
-
-      if (!markResult || markResult.error) {
-        setError(markResult?.error ?? "Failed to mark document as completed");
-        setIsGenerating(false);
-        setGeneratingProgress("");
-        return;
-      }
-
-      // Success - call onComplete callback to show completion view
-      setProgressValue(100);
-      setIsGenerating(false);
-      setGeneratingProgress("");
-      setProgressValue(0);
-      onComplete(documentData.alias || documentData.filename);
     } catch (err) {
       console.error("Error generating signed document:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to generate signed document"
-      );
+      setError(err instanceof Error ? err.message : "Failed to generate signed document");
       setIsGenerating(false);
       setGeneratingProgress("");
       setProgressValue(0);
@@ -724,6 +722,35 @@ export default function SignSingleDocument({
           </Button>
         </div>
 
+        {/* PDF Page Navigation */}
+        {isPdf && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 py-2 mb-4 bg-muted/30 rounded-lg">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPdfPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPdfPage <= 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              {t("pdf_prev_page")}
+            </Button>
+            <span className="text-sm font-medium tabular-nums">
+              {t("pdf_current_page")
+                .replace("{current}", String(currentPdfPage))
+                .replace("{total}", String(totalPages))}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPdfPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPdfPage >= totalPages}
+            >
+              {t("pdf_next_page")}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        )}
+
         <div className="relative border rounded-lg mb-6">
           {/* Zoom Controls */}
           <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
@@ -780,33 +807,83 @@ export default function SignSingleDocument({
                 height: 'auto'
               }}
             >
-              <img
-                src={documentSignedUrl || documentData.file_url}
-                alt="Document"
-                className="w-full h-auto object-contain block"
-                draggable="false"
-                style={{ userSelect: "none", WebkitUserSelect: "none" }}
-                onLoad={() => setImageLoaded(true)}
-                onError={() => setImageLoaded(false)}
-              />
+              {isPdf ? (
+                <PdfPageRenderer
+                  pdfUrl={documentSignedUrl || documentData.file_url}
+                  currentPage={currentPdfPage}
+                  zoomLevel={1}
+                  onPageDimensionsChange={setPdfPageDimensions}
+                  onLoadError={(error) => setError(error)}
+                />
+              ) : (
+                <img
+                  src={documentSignedUrl || documentData.file_url}
+                  alt="Document"
+                  className="w-full h-auto object-contain block"
+                  draggable="false"
+                  style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageLoaded(false)}
+                />
+              )}
 
-            {localSignatures.map((signature, index) => {
-              const isSigned = signature.signature_data !== null;
+            {(() => {
+              const filteredSignatures = isPdf
+                ? localSignatures.filter(sig => ((sig as any).page_number ?? 0) === currentPdfPage - 1)
+                : localSignatures;
 
-              return (
-                <div
-                  key={index}
-                  className={`absolute cursor-pointer ${
-                    isSigned
-                      ? "border-green-500 bg-green-500/10"
-                      : (signature as any).area_type === 'text'
-                        ? "border-2 border-blue-500 bg-blue-500/10 animate-pulse"
-                        : "border-2 border-red-500 bg-red-500/10 animate-pulse"
-                  }`}
-                  style={(() => {
-                    // Convert to relative coordinates for display
-                    try {
-                      if (!documentContainerRef.current) {
+              return filteredSignatures.map((signature, index) => {
+                const isSigned = signature.signature_data !== null;
+
+                return (
+                  <div
+                    key={signature.area_index}
+                    className={`absolute cursor-pointer ${
+                      isSigned
+                        ? "border-green-500 bg-green-500/10"
+                        : (signature as any).area_type === 'text'
+                          ? "border-2 border-blue-500 bg-blue-500/10 animate-pulse"
+                          : "border-2 border-red-500 bg-red-500/10 animate-pulse"
+                    }`}
+                    style={(() => {
+                      try {
+                        if (isPdf && pdfPageDimensions) {
+                          return {
+                            left: `${signature.x}%`,
+                            top: `${signature.y}%`,
+                            width: `${signature.width}%`,
+                            height: `${signature.height}%`,
+                          };
+                        }
+
+                        if (!documentContainerRef.current) {
+                          return {
+                            left: `${signature.x}px`,
+                            top: `${signature.y}px`,
+                            width: `${signature.width}px`,
+                            height: `${signature.height}px`,
+                          };
+                        }
+
+                        const imgElement = documentContainerRef.current.querySelector('img') as HTMLImageElement;
+                        if (!imgElement || imgElement.naturalWidth === 0 || imgElement.naturalHeight === 0) {
+                          return {
+                            left: `${signature.x}px`,
+                            top: `${signature.y}px`,
+                            width: `${signature.width}px`,
+                            height: `${signature.height}px`,
+                          };
+                        }
+
+                        const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
+                        const relativeArea = ensureRelativeCoordinate(signature, originalWidth, originalHeight);
+                        return {
+                          left: `${relativeArea.x}%`,
+                          top: `${relativeArea.y}%`,
+                          width: `${relativeArea.width}%`,
+                          height: `${relativeArea.height}%`,
+                        };
+                      } catch (error) {
                         return {
                           left: `${signature.x}px`,
                           top: `${signature.y}px`,
@@ -814,64 +891,34 @@ export default function SignSingleDocument({
                           height: `${signature.height}px`,
                         };
                       }
-
-                      // Get the image element and check if it's loaded
-                      const imgElement = documentContainerRef.current.querySelector('img') as HTMLImageElement;
-                      if (!imgElement || imgElement.naturalWidth === 0 || imgElement.naturalHeight === 0) {
-                        // Image not loaded yet, return pixel coordinates as fallback
-                        return {
-                          left: `${signature.x}px`,
-                          top: `${signature.y}px`,
-                          width: `${signature.width}px`,
-                          height: `${signature.height}px`,
-                        };
-                      }
-
-                      const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
-                      const relativeArea = ensureRelativeCoordinate(signature, originalWidth, originalHeight);
-                      return {
-                        left: `${relativeArea.x}%`,
-                        top: `${relativeArea.y}%`,
-                        width: `${relativeArea.width}%`,
-                        height: `${relativeArea.height}%`,
-                      };
-                    } catch (error) {
-                      console.warn('Failed to convert signature coordinates:', error);
-                      // Fallback to pixel coordinates
-                      return {
-                        left: `${signature.x}px`,
-                        top: `${signature.y}px`,
-                        width: `${signature.width}px`,
-                        height: `${signature.height}px`,
-                      };
-                    }
-                  })()}
-                  onClick={() => handleAreaClick(signature.area_index)}
-                >
-                  {isSigned ? (
-                    <div className="w-full h-full relative">
-                      <img
-                        src={signature.signature_data!}
-                        alt="Signature"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      {(signature as any).area_type === 'text' ? (
-                        <span className="text-xs font-medium text-blue-600">
-                          {t("sign.clickToType")}
-                        </span>
-                      ) : (
-                        <span className="text-xs font-medium text-red-600">
-                          {t("sign.clickToSign")}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    })()}
+                    onClick={() => handleAreaClick(signature.area_index)}
+                  >
+                    {isSigned ? (
+                      <div className="w-full h-full relative">
+                        <img
+                          src={signature.signature_data!}
+                          alt="Signature"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        {(signature as any).area_type === 'text' ? (
+                          <span className="text-xs font-medium text-blue-600">
+                            {t("sign.clickToType")}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium text-red-600">
+                            {t("sign.clickToSign")}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })()}
             </div>
           </div>
         </div>

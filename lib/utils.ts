@@ -67,11 +67,12 @@ export function getImageNaturalDimensions(containerElement: HTMLElement): {
  * SignatureArea 타입 정의 (상대 좌표용)
  */
 export interface RelativeSignatureArea {
-  x: number;      // 0-100% (원본 이미지 기준)
-  y: number;      // 0-100% (원본 이미지 기준)
-  width: number;  // 0-100% (원본 이미지 기준)
-  height: number; // 0-100% (원본 이미지 기준)
+  x: number;      // 0-100% (원본 이미지/PDF 페이지 기준)
+  y: number;      // 0-100% (원본 이미지/PDF 페이지 기준)
+  width: number;  // 0-100% (원본 이미지/PDF 페이지 기준)
+  height: number; // 0-100% (원본 이미지/PDF 페이지 기준)
   type?: 'signature' | 'text';
+  pageNumber?: number; // PDF 문서의 페이지 번호 (0부터 시작, 이미지는 항상 0)
 }
 
 /**

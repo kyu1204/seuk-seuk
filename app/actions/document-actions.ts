@@ -31,6 +31,24 @@ export async function uploadDocument(formData: FormData) {
       return { error: "File and filename are required" };
     }
 
+    // Detect file type
+    const isPdf = file.type === 'application/pdf';
+    const fileType = isPdf ? 'pdf' : 'image';
+    let pageCount = 1;
+
+    // For PDF files, count pages using pdf-lib
+    if (isPdf) {
+      try {
+        const { PDFDocument } = await import('pdf-lib');
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        pageCount = pdfDoc.getPageCount();
+      } catch (err) {
+        console.error('Failed to read PDF page count:', err);
+        return { error: 'Failed to process PDF file' };
+      }
+    }
+
     // Get current user
     const {
       data: { user },
@@ -74,6 +92,8 @@ export async function uploadDocument(formData: FormData) {
       file_url: fileUrl,
       status: "draft",
       user_id: user.id,
+      file_type: fileType,
+      page_count: pageCount,
     };
 
     const { data: document, error: dbError } = await supabase
@@ -349,6 +369,7 @@ export async function createSignatureAreas(
         width: area.width,
         height: area.height,
         area_type: area.type || 'signature',
+        page_number: (area as any).pageNumber ?? 0,
         status: "pending",
         signature_data: null,
       })
@@ -596,6 +617,180 @@ export async function generateSignedPdf(
     return { success: true, signedFileUrl: publicUrl, signedPdfUrl: pdfPublicUrl };
   } catch (error) {
     console.error('[PDF] ❌ Unexpected error:', error);
+    return { error: 'An unexpected error occurred' };
+  }
+}
+
+/**
+ * Generate signed PDF from original PDF document by embedding signatures directly
+ * This is used for PDF-type documents (not image-type)
+ */
+export async function generateSignedPdfFromPdf(documentId: string) {
+  const startTime = Date.now();
+  console.log(`[PDF-Sign] Starting PDF signing for ${documentId}`);
+
+  try {
+    const supabaseService = createServiceSupabase();
+    const supabase = await createServerSupabase();
+
+    // Get document info
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('id, user_id, file_url, file_type, page_count')
+      .eq('id', documentId)
+      .single();
+
+    if (docError || !document) {
+      console.error('[PDF-Sign] Document not found:', docError);
+      return { error: 'Document not found' };
+    }
+
+    if (document.file_type !== 'pdf') {
+      return { error: 'Document is not a PDF type' };
+    }
+
+    // Download original PDF
+    const { data: pdfData, error: downloadError } = await supabaseService.storage
+      .from('documents')
+      .download(document.file_url);
+
+    if (downloadError || !pdfData) {
+      console.error('[PDF-Sign] Failed to download PDF:', downloadError);
+      return { error: 'Failed to download original PDF' };
+    }
+
+    console.log(`[PDF-Sign] Original PDF downloaded (${Date.now() - startTime}ms)`);
+
+    // Get all signed signatures for this document
+    const { data: signatures, error: sigError } = await supabaseService
+      .from('signatures')
+      .select('*')
+      .eq('document_id', documentId)
+      .not('signature_data', 'is', null);
+
+    if (sigError) {
+      console.error('[PDF-Sign] Failed to get signatures:', sigError);
+      return { error: 'Failed to get signatures' };
+    }
+
+    // Load original PDF with pdf-lib
+    const { PDFDocument } = await import('pdf-lib');
+    const pdfArrayBuffer = await pdfData.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+    const pages = pdfDoc.getPages();
+
+    console.log(`[PDF-Sign] PDF loaded with ${pages.length} pages (${Date.now() - startTime}ms)`);
+
+    // Embed each signature into the correct page
+    for (const sig of signatures) {
+      if (!sig.signature_data || sig.x == null || sig.y == null || sig.width == null || sig.height == null) {
+        continue;
+      }
+
+      const pageIndex = sig.page_number ?? 0;
+      if (pageIndex < 0 || pageIndex >= pages.length) {
+        console.warn(`[PDF-Sign] Invalid page index ${pageIndex} for signature ${sig.id}`);
+        continue;
+      }
+
+      const page = pages[pageIndex];
+      const { width: pageWidth, height: pageHeight } = page.getSize();
+
+      // Convert relative coordinates (0-100%) to PDF points
+      // Note: PDF coordinate system has origin at bottom-left, web has top-left
+      const sigX = (sig.x / 100) * pageWidth;
+      const sigWidth = (sig.width / 100) * pageWidth;
+      const sigHeight = (sig.height / 100) * pageHeight;
+      // Flip Y axis: PDF y=0 is bottom, web y=0 is top
+      const sigY = pageHeight - ((sig.y / 100) * pageHeight) - sigHeight;
+
+      try {
+        // Extract base64 data from data URL
+        const base64Data = sig.signature_data.split(',')[1];
+        if (!base64Data) continue;
+
+        const sigBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+
+        // Embed signature image (PNG format from canvas)
+        let embeddedSig;
+        try {
+          embeddedSig = await pdfDoc.embedPng(sigBytes);
+        } catch {
+          // Fallback to JPG if PNG fails
+          embeddedSig = await pdfDoc.embedJpg(sigBytes);
+        }
+
+        // Calculate aspect-ratio-preserving dimensions within the area
+        const sigAspect = embeddedSig.width / embeddedSig.height;
+        const areaAspect = sigWidth / sigHeight;
+        let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+
+        if (sigAspect > areaAspect) {
+          drawWidth = sigWidth;
+          drawHeight = drawWidth / sigAspect;
+          offsetY = (sigHeight - drawHeight) / 2;
+        } else {
+          drawHeight = sigHeight;
+          drawWidth = drawHeight * sigAspect;
+          offsetX = (sigWidth - drawWidth) / 2;
+        }
+
+        page.drawImage(embeddedSig, {
+          x: sigX + offsetX,
+          y: sigY + offsetY,
+          width: drawWidth,
+          height: drawHeight,
+        });
+
+        console.log(`[PDF-Sign] Embedded signature on page ${pageIndex} at (${sigX.toFixed(1)}, ${sigY.toFixed(1)}) size ${drawWidth.toFixed(1)}x${drawHeight.toFixed(1)}`);
+      } catch (embedErr) {
+        console.error(`[PDF-Sign] Failed to embed signature ${sig.id}:`, embedErr);
+        // Continue with other signatures
+      }
+    }
+
+    // Save the signed PDF
+    const signedPdfBytes = await pdfDoc.save({ useObjectStreams: true });
+    console.log(`[PDF-Sign] Signed PDF generated: ${Math.round(signedPdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
+
+    const pdfBlob = new Blob([signedPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+    const pdfFilename = `signed_${documentId}.pdf`;
+    const pdfPath = `${document.user_id}/${pdfFilename}`;
+
+    // Upload signed PDF
+    const { error: uploadError } = await supabaseService.storage
+      .from('signed-documents')
+      .upload(pdfPath, pdfBlob, {
+        upsert: true,
+        contentType: 'application/pdf',
+      });
+
+    if (uploadError) {
+      console.error('[PDF-Sign] Upload failed:', uploadError);
+      return { error: 'Failed to upload signed PDF' };
+    }
+
+    const { data: { publicUrl: pdfPublicUrl } } = supabaseService.storage
+      .from('signed-documents')
+      .getPublicUrl(pdfPath);
+
+    // Update document with signed file URLs
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({ signed_file_url: pdfPublicUrl, signed_pdf_url: pdfPublicUrl })
+      .eq('id', documentId);
+
+    if (updateError) {
+      console.error('[PDF-Sign] Update error:', updateError);
+      return { error: 'Failed to update document' };
+    }
+
+    const totalTime = Date.now() - startTime;
+    console.log(`[PDF-Sign] ✅ Complete! Total time: ${totalTime}ms`);
+
+    return { success: true, signedPdfUrl: pdfPublicUrl };
+  } catch (error) {
+    console.error('[PDF-Sign] ❌ Unexpected error:', error);
     return { error: 'An unexpected error occurred' };
   }
 }
