@@ -92,11 +92,18 @@ export default function DocumentUpload() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // Capture file array before resetting input (FileList is a live reference)
+    const fileArray = Array.from(files);
+    const totalFiles = fileArray.length;
+
+    // Reset file input immediately so the same files can be selected again
+    e.target.value = "";
+
     setError(null);
     const newImages: ImageData[] = [];
     let loaded = 0;
 
-    Array.from(files).forEach((file) => {
+    fileArray.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         newImages.push({
@@ -105,18 +112,14 @@ export default function DocumentUpload() {
           fileName: file.name,
         });
         loaded++;
-        if (loaded === files.length) {
+        if (loaded === totalFiles) {
           // Sort by original file order (since FileReader is async)
-          const fileArray = Array.from(files);
           newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
           setImages((prev) => [...prev, ...newImages]);
         }
       };
       reader.readAsDataURL(file);
     });
-
-    // Reset file input so the same files can be selected again
-    e.target.value = "";
   };
 
   const currentAreas = signatureAreasMap.get(currentIndex) || [];
