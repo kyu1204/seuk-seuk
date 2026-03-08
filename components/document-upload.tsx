@@ -342,7 +342,7 @@ export default function DocumentUpload() {
       if (images.length === 1 && lastDocumentId) {
         router.push(`/document/${lastDocumentId}`);
       } else {
-        router.push("/upload");
+        router.push("/dashboard");
         router.refresh();
       }
     } catch (error) {
@@ -407,36 +407,39 @@ export default function DocumentUpload() {
       ) : (
         <div className="space-y-6">
           {/* Button Group */}
-          <div className="flex items-center justify-between">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
-                disabled={isSelecting}
-              >
-                {t("upload.addSignatureArea")}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
-                disabled={isSelecting}
-              >
-                <Type className="mr-2 h-4 w-4" />
-                {t("upload.addTextArea")}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleClearDocument}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t("upload.clear")}
-              </Button>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
+              disabled={isSelecting}
+            >
+              {t("upload.addSignatureArea")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
+              disabled={isSelecting}
+            >
+              <Type className="mr-1 h-4 w-4" />
+              {t("upload.addTextArea")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleClearDocument}
+            >
+              <Trash2 className="mr-1 h-4 w-4" />
+              {t("upload.clear")}
+            </Button>
+            <Button
+              size="sm"
               onClick={handleSaveDocument}
               disabled={
                 totalAreasCount === 0 || isLoading || images.length === 0
               }
+              className="ml-auto"
             >
               {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
             </Button>
