@@ -65,6 +65,21 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.goToImage": "해당 이미지로 이동",
     "upload.savingProgress": "저장 중... ({current}/{total})",
 
+    // PDF
+    pdf_document: "PDF 문서",
+    pdf_upload_pro_only: "PDF 문서 업로드는 Pro 플랜 이상에서만 사용할 수 있습니다.",
+    pdf_upgrade_cta: "Pro 플랜으로 업그레이드",
+    pdf_page: "페이지",
+    pdf_page_of: "/ {total} 페이지",
+    pdf_current_page: "{current} / {total} 페이지",
+    pdf_prev_page: "이전 페이지",
+    pdf_next_page: "다음 페이지",
+    pdf_load_error: "PDF 파일을 불러올 수 없습니다.",
+    pdf_render_error: "PDF 페이지를 렌더링할 수 없습니다.",
+    pdf_file_supported: "이미지 및 PDF 파일 지원",
+    pdf_pro_badge: "Pro",
+    pdf_signing_page: "{current} / {total} 페이지 서명 중",
+
     // Sign Page
     "sign.loading": "문서 로딩 중...",
     "sign.notFound": "문서를 찾을 수 없음",
@@ -1188,6 +1203,21 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.noSignatureAreaWarningItem": "Image {index} has no signature area.",
     "upload.goToImage": "Go to Image",
     "upload.savingProgress": "Saving... ({current}/{total})",
+
+    // PDF
+    pdf_document: "PDF Document",
+    pdf_upload_pro_only: "PDF document upload is available on Pro plan and above.",
+    pdf_upgrade_cta: "Upgrade to Pro",
+    pdf_page: "Page",
+    pdf_page_of: "/ {total} pages",
+    pdf_current_page: "{current} / {total} pages",
+    pdf_prev_page: "Previous page",
+    pdf_next_page: "Next page",
+    pdf_load_error: "Unable to load PDF file.",
+    pdf_render_error: "Unable to render PDF page.",
+    pdf_file_supported: "Image and PDF files supported",
+    pdf_pro_badge: "Pro",
+    pdf_signing_page: "Signing page {current} / {total}",
 
     // Sign Page
     "sign.loading": "Loading document...",

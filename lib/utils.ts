@@ -67,11 +67,12 @@ export function getImageNaturalDimensions(containerElement: HTMLElement): {
  * SignatureArea 타입 정의 (상대 좌표용)
  */
 export interface RelativeSignatureArea {
-  x: number;      // 0-100% (원본 이미지 기준)
-  y: number;      // 0-100% (원본 이미지 기준)
-  width: number;  // 0-100% (원본 이미지 기준)
-  height: number; // 0-100% (원본 이미지 기준)
+  x: number;      // 0-100% (원본 이미지/PDF 페이지 기준)
+  y: number;      // 0-100% (원본 이미지/PDF 페이지 기준)
+  width: number;  // 0-100% (원본 이미지/PDF 페이지 기준)
+  height: number; // 0-100% (원본 이미지/PDF 페이지 기준)
   type?: 'signature' | 'text';
+  pageNumber?: number; // PDF 문서의 페이지 번호 (0부터 시작, 이미지는 항상 0)
 }
 
 /**
@@ -82,6 +83,8 @@ export interface AbsoluteSignatureArea {
   y: number;      // 절대 픽셀
   width: number;  // 절대 픽셀
   height: number; // 절대 픽셀
+  type?: 'signature' | 'text';
+  pageNumber?: number;
 }
 
 /**
@@ -97,6 +100,8 @@ export function convertSignatureAreaToPercent(
     y: pixelsToPercent(area.y, originalImageHeight),
     width: pixelsToPercent(area.width, originalImageWidth),
     height: pixelsToPercent(area.height, originalImageHeight),
+    type: area.type,
+    pageNumber: area.pageNumber,
   };
 }
 
@@ -113,6 +118,8 @@ export function convertSignatureAreaToPixels(
     y: percentToPixels(area.y, originalImageHeight),
     width: percentToPixels(area.width, originalImageWidth),
     height: percentToPixels(area.height, originalImageHeight),
+    type: area.type,
+    pageNumber: area.pageNumber,
   };
 }
 
@@ -128,7 +135,7 @@ export function isRelativeCoordinate(area: { x: number; y: number; width: number
  * 기존 데이터를 자동으로 상대 좌표로 변환 (필요시) - 원본 이미지 크기 기준
  */
 export function ensureRelativeCoordinate(
-  area: { x: number; y: number; width: number; height: number },
+  area: { x: number; y: number; width: number; height: number; type?: 'signature' | 'text'; pageNumber?: number },
   originalImageWidth: number,
   originalImageHeight: number
 ): RelativeSignatureArea {

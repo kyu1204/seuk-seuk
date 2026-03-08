@@ -142,10 +142,12 @@ export type Database = {
           created_at: string
           created_month: string
           deleted_at: string | null
+          file_type: string
           file_url: string
           filename: string
           id: string
           is_deleted: boolean
+          page_count: number
           publication_id: string | null
           signed_file_url: string | null
           signed_pdf_url: string | null
@@ -157,10 +159,12 @@ export type Database = {
           created_at?: string
           created_month: string
           deleted_at?: string | null
+          file_type?: string
           file_url: string
           filename: string
           id?: string
           is_deleted?: boolean
+          page_count?: number
           publication_id?: string | null
           signed_file_url?: string | null
           signed_pdf_url?: string | null
@@ -172,10 +176,12 @@ export type Database = {
           created_at?: string
           created_month?: string
           deleted_at?: string | null
+          file_type?: string
           file_url?: string
           filename?: string
           id?: string
           is_deleted?: boolean
+          page_count?: number
           publication_id?: string | null
           signed_file_url?: string | null
           signed_pdf_url?: string | null
@@ -272,6 +278,7 @@ export type Database = {
           document_id: string | null
           height: number | null
           id: string
+          page_number: number
           signature_data: string | null
           signed_at: string | null
           signer_name: string | null
@@ -287,6 +294,7 @@ export type Database = {
           document_id?: string | null
           height?: number | null
           id?: string
+          page_number?: number
           signature_data?: string | null
           signed_at?: string | null
           signer_name?: string | null
@@ -302,6 +310,7 @@ export type Database = {
           document_id?: string | null
           height?: number | null
           id?: string
+          page_number?: number
           signature_data?: string | null
           signed_at?: string | null
           signer_name?: string | null
@@ -647,4 +656,5 @@ export interface SignatureArea {
   width: number;
   height: number;
   type: 'signature' | 'text';
+  pageNumber?: number;
 }

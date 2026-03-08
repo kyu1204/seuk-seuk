@@ -740,3 +740,37 @@ export async function getBasicPlan(): Promise<{
     };
   }
 }
+
+/**
+ * Check if user can upload PDF documents (Pro and Enterprise plans only)
+ */
+export async function canUploadPdf(): Promise<{
+  canUpload: boolean;
+  error?: string;
+}> {
+  try {
+    const { subscription, error } = await getCurrentSubscription();
+
+    if (error) {
+      return { canUpload: false, error };
+    }
+
+    const planName = subscription?.plan?.name?.toLowerCase() ?? '';
+    const allowedPlans = ['pro', 'enterprise'];
+
+    if (allowedPlans.includes(planName)) {
+      return { canUpload: true };
+    }
+
+    return {
+      canUpload: false,
+      error: 'PDF 문서 업로드는 Pro 또는 Enterprise 플랜에서만 사용할 수 있습니다.',
+    };
+  } catch (error) {
+    console.error("Can upload PDF error:", error);
+    return {
+      canUpload: false,
+      error: "An unexpected error occurred",
+    };
+  }
+}

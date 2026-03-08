@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Upload, FileImage, FileText, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, ChevronLeft, ChevronRight, AlertTriangle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ import {
   uploadDocument,
   createSignatureAreas,
 } from "@/app/actions/document-actions";
+import { canUploadPdf } from "@/app/actions/subscription-actions";
 import { useLanguage } from "@/contexts/language-context";
 import type { SignatureArea } from "@/lib/supabase/database.types";
 import {
@@ -36,11 +37,25 @@ import {
   ensureRelativeCoordinate,
   type RelativeSignatureArea,
 } from "@/lib/utils";
+import dynamic from "next/dynamic";
+import type { PdfPageDimensions } from "@/components/pdf-page-renderer";
 
-interface ImageData {
+// Lazy load PDF renderer to avoid bundle bloat
+const PdfPageRenderer = dynamic(() => import("@/components/pdf-page-renderer"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-96 flex items-center justify-center bg-muted/50">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  ),
+});
+
+interface UploadFileData {
   file: File;
   dataUrl: string;
   fileName: string;
+  isPdf: boolean;
+  pdfTotalPages?: number;
 }
 
 export default function DocumentUpload() {
@@ -48,7 +63,7 @@ export default function DocumentUpload() {
   const router = useRouter();
 
   // Multi-image state
-  const [images, setImages] = useState<ImageData[]>([]);
+  const [images, setImages] = useState<UploadFileData[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
   // Per-image aliases: index -> alias
@@ -68,6 +83,16 @@ export default function DocumentUpload() {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [currentAreaType, setCurrentAreaType] = useState<'signature' | 'text'>('signature');
+
+  // Upload mode: 'image' or 'pdf'
+  const [uploadMode, setUploadMode] = useState<'image' | 'pdf'>('image');
+
+  // PDF-related state
+  const [canUsePdf, setCanUsePdf] = useState<boolean>(false);
+  const [pdfCheckDone, setPdfCheckDone] = useState<boolean>(false);
+  const [currentPdfPage, setCurrentPdfPage] = useState<number>(1); // 1-indexed for pdfjs
+  const [pdfPageDimensions, setPdfPageDimensions] = useState<PdfPageDimensions | null>(null);
+  const [pdfPageImageForSelector, setPdfPageImageForSelector] = useState<string | null>(null);
 
   // Carousel API
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
@@ -90,6 +115,27 @@ export default function DocumentUpload() {
     };
   }, [carouselApi]);
 
+  // Check PDF permission on mount
+  useEffect(() => {
+    let active = true;
+    const checkPdfPermission = async () => {
+      try {
+        const result = await canUploadPdf();
+        if (!active) return;
+        console.log("[PDF Permission Check]", result);
+        setCanUsePdf(result.canUpload);
+      } catch (err) {
+        if (!active) return;
+        console.error("[PDF Permission Check] Failed:", err);
+        setCanUsePdf(false);
+      } finally {
+        if (active) setPdfCheckDone(true);
+      }
+    };
+    checkPdfPermission();
+    return () => { active = false; };
+  }, []);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -102,48 +148,129 @@ export default function DocumentUpload() {
     e.target.value = "";
 
     setError(null);
-    const newImages: ImageData[] = [];
+    const newImages: UploadFileData[] = [];
     let loaded = 0;
 
     fileArray.forEach((file) => {
+      const isPdf = file.type === "application/pdf";
+
       const reader = new FileReader();
       reader.onload = (event) => {
-        newImages.push({
-          file,
-          dataUrl: event.target?.result as string,
-          fileName: file.name,
-        });
-        loaded++;
-        if (loaded === totalFiles) {
-          // Sort by original file order (since FileReader is async)
-          newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
-          setImages((prev) => [...prev, ...newImages]);
+        const dataUrl = event.target?.result as string;
+
+        if (isPdf) {
+          // For PDF, dynamically import pdfjs to count pages
+          import("pdfjs-dist").then(async (pdfjsLib) => {
+            try {
+              if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+              }
+              const arrayBuffer = await file.arrayBuffer();
+              const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+              newImages.push({
+                file,
+                dataUrl,
+                fileName: file.name,
+                isPdf: true,
+                pdfTotalPages: pdf.numPages,
+              });
+            } catch (err) {
+              console.error("Failed to read PDF:", err);
+              newImages.push({
+                file,
+                dataUrl,
+                fileName: file.name,
+                isPdf: true,
+                pdfTotalPages: 1,
+              });
+            }
+            loaded++;
+            if (loaded === totalFiles) {
+              newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
+              setImages((prev) => [...prev, ...newImages]);
+            }
+          }).catch((err) => {
+            console.error("Failed to import pdfjs-dist:", err);
+            // Fallback: add PDF without page count
+            newImages.push({
+              file,
+              dataUrl,
+              fileName: file.name,
+              isPdf: true,
+              pdfTotalPages: 1,
+            });
+            loaded++;
+            if (loaded === totalFiles) {
+              newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
+              setImages((prev) => [...prev, ...newImages]);
+            }
+          });
+        } else {
+          newImages.push({
+            file,
+            dataUrl,
+            fileName: file.name,
+            isPdf: false,
+          });
+          loaded++;
+          if (loaded === totalFiles) {
+            newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
+            setImages((prev) => [...prev, ...newImages]);
+          }
         }
       };
+
       reader.readAsDataURL(file);
     });
   };
 
   const currentAreas = signatureAreasMap.get(currentIndex) || [];
 
-  const handleAddSignatureArea = () => {
+  const getPdfPageAsImage = async (): Promise<string | null> => {
+    const container = documentContainerRef.current;
+    if (!container) return null;
+    const canvas = container.querySelector("canvas");
+    if (!canvas) return null;
+    return canvas.toDataURL("image/png");
+  };
+
+  const handleAddSignatureArea = async () => {
     if (documentContainerRef.current) {
       scrollPositionRef.current = {
         top: documentContainerRef.current.scrollTop,
         left: documentContainerRef.current.scrollLeft,
       };
     }
+
+    // For PDF, capture current page as image for AreaSelector
+    const currentFile = images[currentIndex];
+    if (currentFile?.isPdf) {
+      const pageImage = await getPdfPageAsImage();
+      if (!pageImage) {
+        setError("PDF 페이지를 캡처할 수 없습니다.");
+        return;
+      }
+      setPdfPageImageForSelector(pageImage);
+    }
+
     setIsSelecting(true);
   };
 
   const handleAreaSelected = (area: RelativeSignatureArea, scrollPosition: { top: number; left: number }) => {
+    const currentFile = images[currentIndex];
+    const areaWithPage: RelativeSignatureArea = {
+      ...area,
+      pageNumber: currentFile?.isPdf ? currentPdfPage - 1 : 0, // 0-indexed page number
+    };
+
     setSignatureAreasMap((prev) => {
       const newMap = new Map(prev);
       const existing = newMap.get(currentIndex) || [];
-      newMap.set(currentIndex, [...existing, area]);
+      newMap.set(currentIndex, [...existing, areaWithPage]);
       return newMap;
     });
     setIsSelecting(false);
+    setPdfPageImageForSelector(null);
 
     requestAnimationFrame(() => {
       if (documentContainerRef.current) {
@@ -171,6 +298,8 @@ export default function DocumentUpload() {
     setError(null);
     setZoomLevel(1);
     setCurrentIndex(0);
+    setCurrentPdfPage(1);
+    setUploadMode('image');
   };
 
   const handleZoomIn = () => {
@@ -256,6 +385,7 @@ export default function DocumentUpload() {
 
   const goToImage = useCallback((index: number) => {
     setCurrentIndex(index);
+    setCurrentPdfPage(1); // Reset PDF page when switching documents
     carouselApi?.scrollTo(index);
   }, [carouselApi]);
 
@@ -325,6 +455,7 @@ export default function DocumentUpload() {
           width: area.width,
           height: area.height,
           type: area.type || 'signature',
+          pageNumber: area.pageNumber ?? 0,
         }));
 
         const areasResult = await createSignatureAreas(
@@ -365,45 +496,100 @@ export default function DocumentUpload() {
 
   return (
     <div className="space-y-8">
+      {error && images.length === 0 && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+          {error}
+        </div>
+      )}
       {images.length === 0 ? (
-        <Card className="border-dashed border-2">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center justify-center space-y-4 py-12">
-              <div className="rounded-full bg-primary/10 p-4">
-                <FileImage className="h-10 w-10 text-primary" />
+        <div className="space-y-4">
+          {/* Upload Mode Selector */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setUploadMode('image')}
+              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                uploadMode === 'image'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-muted hover:border-muted-foreground/30'
+              }`}
+            >
+              <FileImage className={`h-6 w-6 ${uploadMode === 'image' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <span className={`text-sm font-medium ${uploadMode === 'image' ? 'text-primary' : 'text-muted-foreground'}`}>
+                {t("upload.title")}
+              </span>
+            </button>
+            <button
+              onClick={() => canUsePdf && setUploadMode('pdf')}
+              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all relative ${
+                !canUsePdf
+                  ? 'border-muted opacity-60 cursor-not-allowed'
+                  : uploadMode === 'pdf'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-muted hover:border-muted-foreground/30 cursor-pointer'
+              }`}
+            >
+              <FileText className={`h-6 w-6 ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <div className="flex items-center justify-center">
+                <span className={`text-sm font-medium ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {t("pdf_document")}
+                </span>
+                {!canUsePdf ? (
+                  <span className="ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                    <Lock className="h-3 w-3" />
+                    {t("pdf_pro_badge")}
+                  </span>
+                ) : (
+                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                    {t("pdf_pro_badge")}
+                  </span>
+                )}
               </div>
-              <div className="text-center space-y-2">
-                <h3 className="font-medium text-lg">{t("upload.title")}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {t("upload.description")}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {t("upload.multipleFiles")}
-                </p>
-              </div>
-              <label htmlFor="document-upload">
-                <div className="cursor-pointer">
-                  <Button
-                    onClick={() => fileInputRef.current?.click()}
-                    type="button"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {t("upload.button")}
-                  </Button>
+            </button>
+          </div>
+
+          {/* Upload Card */}
+          <Card className="border-dashed border-2">
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center justify-center space-y-4 py-12">
+                <div className="rounded-full bg-primary/10 p-4">
+                  {uploadMode === 'pdf' ? (
+                    <FileText className="h-10 w-10 text-primary" />
+                  ) : (
+                    <FileImage className="h-10 w-10 text-primary" />
+                  )}
                 </div>
+                <div className="text-center space-y-2">
+                  <h3 className="font-medium text-lg">
+                    {uploadMode === 'pdf' ? t("pdf_document") : t("upload.title")}
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    {t("upload.description")}
+                  </p>
+                  {uploadMode === 'image' && (
+                    <p className="text-muted-foreground text-xs">
+                      {t("upload.multipleFiles")}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {t("upload.button")}
+                </Button>
                 <input
-                  id="document-upload"
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
-                  multiple
+                  accept={uploadMode === 'pdf' ? ".pdf,application/pdf" : "image/*"}
+                  multiple={uploadMode === 'image'}
                   className="hidden"
                   onChange={handleFileChange}
                 />
-              </label>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <div className="space-y-4">
           {/* 1. Clear / Save buttons */}
@@ -492,7 +678,34 @@ export default function DocumentUpload() {
             </Button>
           </div>
 
-          {/* 4. Carousel Navigation */}
+          {/* 4. PDF Page Navigation */}
+          {images[currentIndex]?.isPdf && images[currentIndex]?.pdfTotalPages && (
+            <div className="flex items-center justify-center gap-3 py-2 bg-muted/30 rounded-lg">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPdfPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPdfPage <= 1 || isSelecting}
+              >
+                {t("pdf_prev_page")}
+              </Button>
+              <span className="text-sm font-medium tabular-nums">
+                {t("pdf_current_page")
+                  .replace("{current}", String(currentPdfPage))
+                  .replace("{total}", String(images[currentIndex].pdfTotalPages))}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPdfPage(prev => Math.min(images[currentIndex].pdfTotalPages || 1, prev + 1))}
+                disabled={currentPdfPage >= (images[currentIndex].pdfTotalPages || 1) || isSelecting}
+              >
+                {t("pdf_next_page")}
+              </Button>
+            </div>
+          )}
+
+          {/* 5. Carousel Navigation */}
           {images.length > 1 && (
             <div className="flex items-center justify-center gap-3 py-1">
               <Button
@@ -540,7 +753,7 @@ export default function DocumentUpload() {
             </div>
           )}
 
-          {/* 5. Document Viewer with Carousel */}
+          {/* 6. Document Viewer with Carousel */}
           <div className="relative border rounded-lg overflow-hidden">
             {/* Zoom Controls */}
             <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
@@ -578,17 +791,19 @@ export default function DocumentUpload() {
 
             {isSelecting ? (
               <AreaSelector
-                image={images[currentIndex].dataUrl}
+                image={images[currentIndex]?.isPdf ? (pdfPageImageForSelector || "") : images[currentIndex].dataUrl}
                 onAreaSelected={handleAreaSelected}
-                onCancel={() => setIsSelecting(false)}
-                existingAreas={currentAreas}
+                onCancel={() => { setIsSelecting(false); setPdfPageImageForSelector(null); }}
+                existingAreas={images[currentIndex]?.isPdf
+                  ? currentAreas.filter(a => (a.pageNumber ?? 0) === currentPdfPage - 1)
+                  : currentAreas}
                 initialScrollPosition={scrollPositionRef.current}
                 zoomLevel={zoomLevel}
                 onZoomChange={setZoomLevel}
                 areaType={currentAreaType}
               />
             ) : images.length === 1 ? (
-              // Single image: no carousel needed
+              // Single file: no carousel needed
               <div
                 ref={documentContainerRef}
                 className="relative overflow-auto max-h-[70vh]"
@@ -618,37 +833,84 @@ export default function DocumentUpload() {
                     height: 'auto'
                   }}
                 >
-                  <img
-                    src={images[0].dataUrl}
-                    alt="Document"
-                    className="w-full h-auto object-contain block"
-                    draggable="false"
-                    style={{ userSelect: "none", WebkitUserSelect: "none" }}
-                  />
-                  {currentAreas.map((area, index) => (
-                    <div
-                      key={index}
-                      className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
-                      style={{
-                        position: "absolute",
-                        left: `${area.x}%`,
-                        top: `${area.y}%`,
-                        width: `${area.width}%`,
-                        height: `${area.height}%`,
-                        pointerEvents: "auto",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleRemoveArea(index)}
-                    >
-                      <span className={`text-xs font-medium ${area.type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
-                        {area.type === 'text' ? `${t("upload.textArea")} ${index + 1}` : `${t("upload.signature")} ${index + 1}`}
-                      </span>
-                    </div>
-                  ))}
+                  {images[currentIndex]?.isPdf ? (
+                    <>
+                      <PdfPageRenderer
+                        pdfUrl={images[currentIndex].dataUrl}
+                        currentPage={currentPdfPage}
+                        zoomLevel={1}
+                        onTotalPagesChange={(total) => {
+                          setImages(prev => {
+                            const updated = [...prev];
+                            if (updated[currentIndex]) {
+                              updated[currentIndex] = { ...updated[currentIndex], pdfTotalPages: total };
+                            }
+                            return updated;
+                          });
+                        }}
+                        onPageDimensionsChange={setPdfPageDimensions}
+                      />
+                      {currentAreas
+                        .filter(area => (area.pageNumber ?? 0) === currentPdfPage - 1)
+                        .map((area) => {
+                          const actualIndex = currentAreas.findIndex(a => a === area);
+                          return (
+                            <div
+                              key={actualIndex}
+                              className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
+                              style={{
+                                position: "absolute",
+                                left: `${area.x}%`,
+                                top: `${area.y}%`,
+                                width: `${area.width}%`,
+                                height: `${area.height}%`,
+                                pointerEvents: "auto",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => handleRemoveArea(actualIndex)}
+                            >
+                              <span className={`text-xs font-medium ${area.type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
+                                {area.type === 'text' ? `${t("upload.textArea")} ${actualIndex + 1}` : `${t("upload.signature")} ${actualIndex + 1}`}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </>
+                  ) : (
+                    <>
+                      <img
+                        src={images[currentIndex]?.dataUrl || images[0]?.dataUrl}
+                        alt="Document"
+                        className="w-full h-auto object-contain block"
+                        draggable="false"
+                        style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                      />
+                      {currentAreas.map((area, index) => (
+                        <div
+                          key={index}
+                          className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
+                          style={{
+                            position: "absolute",
+                            left: `${area.x}%`,
+                            top: `${area.y}%`,
+                            width: `${area.width}%`,
+                            height: `${area.height}%`,
+                            pointerEvents: "auto",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleRemoveArea(index)}
+                        >
+                          <span className={`text-xs font-medium ${area.type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
+                            {area.type === 'text' ? `${t("upload.textArea")} ${index + 1}` : `${t("upload.signature")} ${index + 1}`}
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
             ) : (
-              // Multiple images: use Carousel
+              // Multiple files: use Carousel
               <Carousel
                 setApi={setCarouselApi}
                 opts={{ watchDrag: false, startIndex: currentIndex }}
@@ -687,33 +949,83 @@ export default function DocumentUpload() {
                             height: 'auto'
                           }}
                         >
-                          <img
-                            src={img.dataUrl}
-                            alt={`Document ${imgIdx + 1}`}
-                            className="w-full h-auto object-contain block"
-                            draggable="false"
-                            style={{ userSelect: "none", WebkitUserSelect: "none" }}
-                          />
-                          {(signatureAreasMap.get(imgIdx) || []).map((area, areaIdx) => (
-                            <div
-                              key={areaIdx}
-                              className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
-                              style={{
-                                position: "absolute",
-                                left: `${area.x}%`,
-                                top: `${area.y}%`,
-                                width: `${area.width}%`,
-                                height: `${area.height}%`,
-                                pointerEvents: "auto",
-                                cursor: imgIdx === currentIndex ? "pointer" : "default",
-                              }}
-                              onClick={() => imgIdx === currentIndex && handleRemoveArea(areaIdx)}
-                            >
-                              <span className={`text-xs font-medium ${area.type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
-                                {area.type === 'text' ? `${t("upload.textArea")} ${areaIdx + 1}` : `${t("upload.signature")} ${areaIdx + 1}`}
-                              </span>
-                            </div>
-                          ))}
+                          {img.isPdf ? (
+                            <>
+                              <PdfPageRenderer
+                                pdfUrl={img.dataUrl}
+                                currentPage={imgIdx === currentIndex ? currentPdfPage : 1}
+                                zoomLevel={1}
+                                onTotalPagesChange={imgIdx === currentIndex ? (total) => {
+                                  setImages(prev => {
+                                    const updated = [...prev];
+                                    if (updated[imgIdx]) {
+                                      updated[imgIdx] = { ...updated[imgIdx], pdfTotalPages: total };
+                                    }
+                                    return updated;
+                                  });
+                                } : undefined}
+                                onPageDimensionsChange={imgIdx === currentIndex ? setPdfPageDimensions : undefined}
+                              />
+                              {(signatureAreasMap.get(imgIdx) || [])
+                                .filter(area => imgIdx === currentIndex
+                                  ? (area.pageNumber ?? 0) === currentPdfPage - 1
+                                  : true)
+                                .map((area) => {
+                                  const allAreas = signatureAreasMap.get(imgIdx) || [];
+                                  const areaIdx = allAreas.findIndex(a => a === area);
+                                  return (
+                                    <div
+                                      key={areaIdx}
+                                      className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
+                                      style={{
+                                        position: "absolute",
+                                        left: `${area.x}%`,
+                                        top: `${area.y}%`,
+                                        width: `${area.width}%`,
+                                        height: `${area.height}%`,
+                                        pointerEvents: "auto",
+                                        cursor: imgIdx === currentIndex ? "pointer" : "default",
+                                      }}
+                                      onClick={() => imgIdx === currentIndex && handleRemoveArea(areaIdx)}
+                                    >
+                                      <span className={`text-xs font-medium ${area.type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
+                                        {area.type === 'text' ? `${t("upload.textArea")} ${areaIdx + 1}` : `${t("upload.signature")} ${areaIdx + 1}`}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                            </>
+                          ) : (
+                            <>
+                              <img
+                                src={img.dataUrl}
+                                alt={`Document ${imgIdx + 1}`}
+                                className="w-full h-auto object-contain block"
+                                draggable="false"
+                                style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                              />
+                              {(signatureAreasMap.get(imgIdx) || []).map((area, areaIdx) => (
+                                <div
+                                  key={areaIdx}
+                                  className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
+                                  style={{
+                                    position: "absolute",
+                                    left: `${area.x}%`,
+                                    top: `${area.y}%`,
+                                    width: `${area.width}%`,
+                                    height: `${area.height}%`,
+                                    pointerEvents: "auto",
+                                    cursor: imgIdx === currentIndex ? "pointer" : "default",
+                                  }}
+                                  onClick={() => imgIdx === currentIndex && handleRemoveArea(areaIdx)}
+                                >
+                                  <span className={`text-xs font-medium ${area.type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
+                                    {area.type === 'text' ? `${t("upload.textArea")} ${areaIdx + 1}` : `${t("upload.signature")} ${areaIdx + 1}`}
+                                  </span>
+                                </div>
+                              ))}
+                            </>
+                          )}
                         </div>
                       </div>
                     </CarouselItem>

@@ -26,7 +26,19 @@ import {
   convertSignatureAreaToPixels,
   type RelativeSignatureArea,
 } from "@/lib/utils";
-import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw, Share2, Type } from "lucide-react";
+import dynamic from "next/dynamic";
+import type { PdfPageDimensions } from "@/components/pdf-page-renderer";
+
+const PdfPageRenderer = dynamic(() => import("@/components/pdf-page-renderer"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-96 flex items-center justify-center bg-muted/50">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  ),
+});
+
+import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw, Share2, Type, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
@@ -68,6 +80,12 @@ export default function DocumentDetailComponent({
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [currentAreaType, setCurrentAreaType] = useState<'signature' | 'text'>('signature');
 
+  const isPdf = (documentData as any).file_type === 'pdf';
+  const totalPages = (documentData as any).page_count || 1;
+  const [currentPdfPage, setCurrentPdfPage] = useState<number>(1);
+  const [pdfPageDimensions, setPdfPageDimensions] = useState<PdfPageDimensions | null>(null);
+  const [pdfPageImageForSelector, setPdfPageImageForSelector] = useState<string | null>(null);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "draft":
@@ -91,6 +109,7 @@ export default function DocumentDetailComponent({
           width: sig.width,
           height: sig.height,
           type: (sig as any).area_type === 'text' ? 'text' : 'signature',
+          pageNumber: (sig as any).page_number ?? 0,
         })));
         setEditedAlias(document.alias || "");
       } else {
@@ -103,7 +122,7 @@ export default function DocumentDetailComponent({
     }
   };
 
-  const handleAddSignatureArea = () => {
+  const handleAddSignatureArea = async () => {
     // Save current scroll position before switching to selection mode
     if (documentContainerRef.current) {
       scrollPositionRef.current = {
@@ -111,13 +130,28 @@ export default function DocumentDetailComponent({
         left: documentContainerRef.current.scrollLeft,
       };
     }
+
+    if (isPdf) {
+      const container = documentContainerRef.current;
+      const canvas = container?.querySelector('canvas');
+      if (!canvas) {
+        setError("PDF 페이지가 아직 준비되지 않았습니다.");
+        return;
+      }
+      setPdfPageImageForSelector(canvas.toDataURL('image/png'));
+    }
+
     setIsSelecting(true);
   };
 
   const handleAreaSelected = (area: RelativeSignatureArea) => {
-    // Store the area coordinates as relative percentages (same as DocumentUpload)
-    setSignatureAreas([...signatureAreas, area]);
+    const areaWithPage: RelativeSignatureArea = {
+      ...area,
+      pageNumber: isPdf ? currentPdfPage - 1 : 0,
+    };
+    setSignatureAreas([...signatureAreas, areaWithPage]);
     setIsSelecting(false);
+    setPdfPageImageForSelector(null);
 
     // Restore scroll position after state updates
     requestAnimationFrame(() => {
@@ -148,6 +182,7 @@ export default function DocumentDetailComponent({
         width: area.width,
         height: area.height,
         type: area.type || 'signature',
+        pageNumber: area.pageNumber ?? 0,
       }));
 
       // Update signature areas
@@ -173,7 +208,7 @@ export default function DocumentDetailComponent({
         }
 
         // Update local document state with new alias for immediate UI update
-        setDocument(prev => ({
+        setDocument((prev: any) => ({
           ...prev,
           alias: trimmedAlias || null
         }));
@@ -714,6 +749,35 @@ export default function DocumentDetailComponent({
           )}
         </div>
 
+        {/* PDF Page Navigation */}
+        {isPdf && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 py-2 mb-4 mx-1 sm:mx-0 bg-muted/30 rounded-lg">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPdfPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPdfPage <= 1 || (isEditMode && isSelecting)}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              {t("pdf_prev_page")}
+            </Button>
+            <span className="text-sm font-medium tabular-nums">
+              {t("pdf_current_page")
+                .replace("{current}", String(currentPdfPage))
+                .replace("{total}", String(totalPages))}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPdfPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPdfPage >= totalPages || (isEditMode && isSelecting)}
+            >
+              {t("pdf_next_page")}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        )}
+
         {/* Document Viewer */}
         <div className="relative border rounded-lg overflow-hidden mx-1 sm:mx-0 mb-6">
           {/* Zoom Controls */}
@@ -751,10 +815,12 @@ export default function DocumentDetailComponent({
           </div>
           {isEditMode && isSelecting ? (
             <AreaSelector
-              image={documentUrl || ""}
+              image={isPdf ? (pdfPageImageForSelector || "") : (documentUrl || "")}
               onAreaSelected={handleAreaSelected}
-              onCancel={() => setIsSelecting(false)}
-              existingAreas={signatureAreas}
+              onCancel={() => { setIsSelecting(false); setPdfPageImageForSelector(null); }}
+              existingAreas={isPdf
+                ? signatureAreas.filter(a => (a.pageNumber ?? 0) === currentPdfPage - 1)
+                : signatureAreas}
               initialScrollPosition={scrollPositionRef.current}
               zoomLevel={zoomLevel}
               onZoomChange={setZoomLevel}
@@ -790,10 +856,17 @@ export default function DocumentDetailComponent({
                   height: 'auto'
                 }}
               >
-                {!displayImageUrl ? (
+                {!displayImageUrl && !isPdf ? (
                   <div className="w-full h-96 flex items-center justify-center bg-gray-100">
                     <p className="text-gray-500">{t("documentDetail.loading")}</p>
                   </div>
+                ) : isPdf ? (
+                  <PdfPageRenderer
+                    pdfUrl={isCompleted && signedDocumentPreviewUrl ? signedDocumentPreviewUrl : (documentUrl || "")}
+                    currentPage={currentPdfPage}
+                    zoomLevel={1}
+                    onPageDimensionsChange={setPdfPageDimensions}
+                  />
                 ) : (
                   <img
                     src={displayImageUrl}
@@ -806,70 +879,80 @@ export default function DocumentDetailComponent({
                   />
                 )}
               {/* Signature Area Overlays - Only show for non-completed documents */}
-              {!isCompleted && (isEditMode ? signatureAreas : signatures).map((area, index) => {
-                // Find matching signature data
-                const signatureInfo = signatureData.find(sig => sig.area_index === index);
-                const hasSignature = signatureInfo && signatureInfo.signature_data;
-                const areaType = (area as RelativeSignatureArea).type ||
-                  ((area as any).area_type === 'text' ? 'text' : 'signature');
-                const isText = areaType === 'text';
+              {!isCompleted && (() => {
+                const allAreas = isEditMode ? signatureAreas : signatures;
+                const filteredWithIndex = allAreas
+                  .map((area, originalIndex) => ({ area, originalIndex }))
+                  .filter(({ area }) => {
+                    if (!isPdf) return true;
+                    const pageNum = (area as any).pageNumber ?? (area as any).page_number ?? 0;
+                    return pageNum === currentPdfPage - 1;
+                  });
 
-                return (
-                  <div
-                    key={index}
-                    className={`absolute border-2 flex items-center justify-center ${
-                      hasSignature
-                        ? "border-green-500 bg-green-500/10"
-                        : isEditMode
-                        ? isText
-                          ? "border-indigo-500 bg-indigo-500/10 cursor-pointer"
-                          : "border-red-500 bg-red-500/10 cursor-pointer"
-                        : isText
-                        ? "border-indigo-500 bg-indigo-500/10"
-                        : "border-blue-500 bg-blue-500/10"
-                    }`}
-                    style={{
-                      position: "absolute",
-                      left: `${area.x}%`,
-                      top: `${area.y}%`,
-                      width: `${area.width}%`,
-                      height: `${area.height}%`,
-                      pointerEvents: (isCompleted || hasSignature) ? "none" : "auto",
-                      cursor: isEditMode ? "pointer" : "default",
-                    }}
-                    onClick={
-                      isEditMode ? () => handleRemoveArea(index) : undefined
-                    }
-                  >
-                    {hasSignature ? (
-                      <div className="w-full h-full relative">
-                        <img
-                          src={signatureInfo.signature_data!}
-                          alt="Signature"
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                    ) : (
-                      <span
-                        className={`text-xs font-medium ${
-                          hasSignature
-                            ? "text-green-600"
-                            : isEditMode
-                            ? isText ? "text-indigo-600" : "text-red-600"
-                            : isText ? "text-indigo-600" : "text-blue-600"
-                        }`}
-                      >
-                        <span className="hidden sm:inline">
-                          {isText
-                            ? `${t("documentDetail.textArea")} ${index + 1}`
-                            : `${t("documentDetail.signatureArea")} ${index + 1}`}
+                return filteredWithIndex.map(({ area, originalIndex }) => {
+                  const signatureInfo = signatureData.find(sig => sig.area_index === originalIndex);
+                  const hasSignature = signatureInfo && signatureInfo.signature_data;
+                  const areaType = (area as RelativeSignatureArea).type ||
+                    ((area as any).area_type === 'text' ? 'text' : 'signature');
+                  const isText = areaType === 'text';
+
+                  return (
+                    <div
+                      key={originalIndex}
+                      className={`absolute border-2 flex items-center justify-center ${
+                        hasSignature
+                          ? "border-green-500 bg-green-500/10"
+                          : isEditMode
+                          ? isText
+                            ? "border-indigo-500 bg-indigo-500/10 cursor-pointer"
+                            : "border-red-500 bg-red-500/10 cursor-pointer"
+                          : isText
+                          ? "border-indigo-500 bg-indigo-500/10"
+                          : "border-blue-500 bg-blue-500/10"
+                      }`}
+                      style={{
+                        position: "absolute",
+                        left: `${area.x}%`,
+                        top: `${area.y}%`,
+                        width: `${area.width}%`,
+                        height: `${area.height}%`,
+                        pointerEvents: (isCompleted || hasSignature) ? "none" : "auto",
+                        cursor: isEditMode ? "pointer" : "default",
+                      }}
+                      onClick={
+                        isEditMode ? () => handleRemoveArea(originalIndex) : undefined
+                      }
+                    >
+                      {hasSignature ? (
+                        <div className="w-full h-full relative">
+                          <img
+                            src={signatureInfo.signature_data!}
+                            alt="Signature"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <span
+                          className={`text-xs font-medium ${
+                            hasSignature
+                              ? "text-green-600"
+                              : isEditMode
+                              ? isText ? "text-indigo-600" : "text-red-600"
+                              : isText ? "text-indigo-600" : "text-blue-600"
+                          }`}
+                        >
+                          <span className="hidden sm:inline">
+                            {isText
+                              ? `${t("documentDetail.textArea")} ${originalIndex + 1}`
+                              : `${t("documentDetail.signatureArea")} ${originalIndex + 1}`}
+                          </span>
+                          <span className="sm:hidden">{originalIndex + 1}</span>
                         </span>
-                        <span className="sm:hidden">{index + 1}</span>
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
+                      )}
+                    </div>
+                  );
+                });
+              })()}
               </div>
             </div>
           )}
