@@ -284,6 +284,7 @@ export default function DocumentUpload() {
     setError(null);
 
     try {
+      let lastDocumentId = "";
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
         const areas = signatureAreasMap.get(i) || [];
@@ -315,6 +316,8 @@ export default function DocumentUpload() {
           return;
         }
 
+        lastDocumentId = uploadResult.document.id;
+
         // Step 2: Create signature areas
         const relativeAreas: SignatureArea[] = areas.map(area => ({
           x: area.x,
@@ -335,9 +338,13 @@ export default function DocumentUpload() {
         }
       }
 
-      // Success: Redirect to upload page (dashboard) after all documents uploaded
-      router.push("/upload");
-      router.refresh();
+      // Success: single image → document detail, multiple → dashboard
+      if (images.length === 1 && lastDocumentId) {
+        router.push(`/document/${lastDocumentId}`);
+      } else {
+        router.push("/upload");
+        router.refresh();
+      }
     } catch (error) {
       console.error("Error uploading documents:", error);
       setError("An unexpected error occurred while uploading the documents");
