@@ -57,6 +57,13 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.aliasOptional": "선택사항",
     "upload.aliasPlaceholder": "문서 이름을 입력하세요 (예: 계약서, 회의록 등)",
     "upload.aliasDescription": "문서를 구분하기 쉽도록 별칭을 지정할 수 있습니다. 입력하지 않으면 파일 이름이 표시됩니다.",
+    "upload.multipleFiles": "여러 파일을 선택할 수 있습니다",
+    "upload.imageIndex": "{current} / {total}",
+    "upload.noSignatureAreaWarningTitle": "서명 영역 미지정",
+    "upload.noSignatureAreaWarningDesc": "아직 서명 영역이 없는 이미지가 있습니다.",
+    "upload.noSignatureAreaWarningItem": "{index}번째 이미지에 서명 영역이 없습니다.",
+    "upload.goToImage": "해당 이미지로 이동",
+    "upload.savingProgress": "저장 중... ({current}/{total})",
 
     // Sign Page
     "sign.loading": "문서 로딩 중...",
@@ -1174,6 +1181,13 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.aliasOptional": "Optional",
     "upload.aliasPlaceholder": "Enter a document name (e.g., Contract, Meeting Notes)",
     "upload.aliasDescription": "You can specify an alias to easily identify the document. If not provided, the file name will be displayed.",
+    "upload.multipleFiles": "You can select multiple files",
+    "upload.imageIndex": "{current} / {total}",
+    "upload.noSignatureAreaWarningTitle": "Missing Signature Areas",
+    "upload.noSignatureAreaWarningDesc": "Some images don't have any signature areas yet.",
+    "upload.noSignatureAreaWarningItem": "Image {index} has no signature area.",
+    "upload.goToImage": "Go to Image",
+    "upload.savingProgress": "Saving... ({current}/{total})",
 
     // Sign Page
     "sign.loading": "Loading document...",
