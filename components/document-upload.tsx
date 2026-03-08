@@ -2,13 +2,27 @@
 
 import type React from "react";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCcw, Type } from "lucide-react";
+import { Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import AreaSelector from "@/components/area-selector";
 import {
   uploadDocument,
@@ -23,16 +37,27 @@ import {
   type RelativeSignatureArea,
 } from "@/lib/utils";
 
+interface ImageData {
+  file: File;
+  dataUrl: string;
+  fileName: string;
+}
+
 export default function DocumentUpload() {
   const { t } = useLanguage();
   const router = useRouter();
-  const [document, setDocument] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>("");
+
+  // Multi-image state
+  const [images, setImages] = useState<ImageData[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [alias, setAlias] = useState<string>("");
-  const [originalFile, setOriginalFile] = useState<File | null>(null);
-  const [signatureAreas, setSignatureAreas] = useState<RelativeSignatureArea[]>([]);
+
+  // Per-image signature areas: index -> areas
+  const [signatureAreasMap, setSignatureAreasMap] = useState<Map<number, RelativeSignatureArea[]>>(new Map());
+
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [savingProgress, setSavingProgress] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentContainerRef = useRef<HTMLDivElement>(null);
@@ -42,23 +67,61 @@ export default function DocumentUpload() {
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [currentAreaType, setCurrentAreaType] = useState<'signature' | 'text'>('signature');
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      setOriginalFile(file);
-      setError(null);
+  // Carousel API
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
 
+  // Validation modal
+  const [showValidationModal, setShowValidationModal] = useState<boolean>(false);
+  const [missingAreaIndices, setMissingAreaIndices] = useState<number[]>([]);
+
+  // Sync carousel index with state
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const onSelect = () => {
+      setCurrentIndex(carouselApi.selectedScrollSnap());
+    };
+
+    carouselApi.on("select", onSelect);
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setError(null);
+    const newImages: ImageData[] = [];
+    let loaded = 0;
+
+    Array.from(files).forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
-        setDocument(event.target?.result as string);
+        newImages.push({
+          file,
+          dataUrl: event.target?.result as string,
+          fileName: file.name,
+        });
+        loaded++;
+        if (loaded === files.length) {
+          // Sort by original file order (since FileReader is async)
+          const fileArray = Array.from(files);
+          newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
+          setImages((prev) => [...prev, ...newImages]);
+        }
       };
       reader.readAsDataURL(file);
-    }
+    });
+
+    // Reset file input so the same files can be selected again
+    e.target.value = "";
   };
 
+  const currentAreas = signatureAreasMap.get(currentIndex) || [];
+
   const handleAddSignatureArea = () => {
-    // Save current scroll position before switching to selection mode
     if (documentContainerRef.current) {
       scrollPositionRef.current = {
         top: documentContainerRef.current.scrollTop,
@@ -69,11 +132,14 @@ export default function DocumentUpload() {
   };
 
   const handleAreaSelected = (area: RelativeSignatureArea, scrollPosition: { top: number; left: number }) => {
-    // Store the area coordinates as relative percentages
-    setSignatureAreas([...signatureAreas, area]);
+    setSignatureAreasMap((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(currentIndex) || [];
+      newMap.set(currentIndex, [...existing, area]);
+      return newMap;
+    });
     setIsSelecting(false);
 
-    // Restore scroll position from AreaSelector (not the initial position)
     requestAnimationFrame(() => {
       if (documentContainerRef.current) {
         documentContainerRef.current.scrollTop = scrollPosition.top;
@@ -82,20 +148,24 @@ export default function DocumentUpload() {
     });
   };
 
-  const handleRemoveArea = (index: number) => {
-    const updatedAreas = [...signatureAreas];
-    updatedAreas.splice(index, 1);
-    setSignatureAreas(updatedAreas);
+  const handleRemoveArea = (areaIndex: number) => {
+    setSignatureAreasMap((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(currentIndex) || [];
+      const updated = [...existing];
+      updated.splice(areaIndex, 1);
+      newMap.set(currentIndex, updated);
+      return newMap;
+    });
   };
 
   const handleClearDocument = () => {
-    setDocument(null);
-    setFileName("");
+    setImages([]);
     setAlias("");
-    setOriginalFile(null);
-    setSignatureAreas([]);
+    setSignatureAreasMap(new Map());
     setError(null);
     setZoomLevel(1);
+    setCurrentIndex(0);
   };
 
   const handleZoomIn = () => {
@@ -110,9 +180,7 @@ export default function DocumentUpload() {
     setZoomLevel(1);
   };
 
-
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Allow dragging when zoomed or when content overflows container
     const container = documentContainerRef.current;
     const canScroll = container && (
       container.scrollWidth > container.clientWidth ||
@@ -143,11 +211,8 @@ export default function DocumentUpload() {
     setIsDragging(false);
   };
 
-
-  // Simplified touch event handlers for document viewing
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
-      // Two finger touch - start document panning
       e.preventDefault();
       setIsDragging(true);
       const touch1 = e.touches[0];
@@ -156,18 +221,16 @@ export default function DocumentUpload() {
       const centerY = (touch1.clientY + touch2.clientY) / 2;
       setDragStart({ x: centerX, y: centerY });
     }
-    // Single touch does nothing in document view mode (no area selection here)
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 2 && isDragging && documentContainerRef.current) {
-      // Two finger panning
       e.preventDefault();
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       const centerX = (touch1.clientX + touch2.clientX) / 2;
       const centerY = (touch1.clientY + touch2.clientY) / 2;
-      
+
       const deltaX = centerX - dragStart.x;
       const deltaY = centerY - dragStart.y;
 
@@ -180,17 +243,35 @@ export default function DocumentUpload() {
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (e.touches.length === 0) {
-      // All touches ended - stop panning
       setIsDragging(false);
     } else if (e.touches.length === 1 && isDragging) {
-      // From two fingers to one finger - stop panning
       setIsDragging(false);
     }
   };
 
+  const goToImage = useCallback((index: number) => {
+    setCurrentIndex(index);
+    carouselApi?.scrollTo(index);
+  }, [carouselApi]);
+
   const handleSaveDocument = async () => {
-    if (!originalFile || signatureAreas.length === 0) {
-      setError("Please upload a document and add at least one signature area");
+    if (images.length === 0) {
+      setError("Please upload at least one document");
+      return;
+    }
+
+    // Validation: check every image has at least one signature area
+    const missing: number[] = [];
+    for (let i = 0; i < images.length; i++) {
+      const areas = signatureAreasMap.get(i) || [];
+      if (areas.length === 0) {
+        missing.push(i);
+      }
+    }
+
+    if (missing.length > 0) {
+      setMissingAreaIndices(missing);
+      setShowValidationModal(true);
       return;
     }
 
@@ -198,59 +279,84 @@ export default function DocumentUpload() {
     setError(null);
 
     try {
-      // Step 1: Upload document (without signature areas)
-      const formData = new FormData();
-      formData.append("file", originalFile);
-      formData.append("filename", fileName);
-      if (alias.trim()) {
-        formData.append("alias", alias.trim());
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        const areas = signatureAreasMap.get(i) || [];
+
+        setSavingProgress(
+          t("upload.savingProgress")
+            .replace("{current}", String(i + 1))
+            .replace("{total}", String(images.length))
+        );
+
+        // Step 1: Upload document
+        const formData = new FormData();
+        formData.append("file", img.file);
+        formData.append("filename", img.fileName);
+        if (alias.trim()) {
+          // For multiple images, append index to alias
+          const docAlias = images.length > 1
+            ? `${alias.trim()} (${i + 1})`
+            : alias.trim();
+          formData.append("alias", docAlias);
+        }
+
+        const uploadResult = await uploadDocument(formData);
+
+        if (uploadResult.error) {
+          setError(uploadResult.error);
+          return;
+        }
+
+        if (!uploadResult.success || !uploadResult.document) {
+          setError("Failed to upload document");
+          return;
+        }
+
+        // Step 2: Create signature areas
+        const relativeAreas: SignatureArea[] = areas.map(area => ({
+          x: area.x,
+          y: area.y,
+          width: area.width,
+          height: area.height,
+          type: area.type || 'signature',
+        }));
+
+        const areasResult = await createSignatureAreas(
+          uploadResult.document.id,
+          relativeAreas
+        );
+
+        if (areasResult.error) {
+          setError(areasResult.error);
+          return;
+        }
       }
 
-      const uploadResult = await uploadDocument(formData);
-
-      if (uploadResult.error) {
-        setError(uploadResult.error);
-        return;
-      }
-
-      if (!uploadResult.success || !uploadResult.document) {
-        setError("Failed to upload document");
-        return;
-      }
-
-      // Step 2: Create signature areas
-      // Store relative coordinates directly (no conversion needed)
-      const relativeAreas: SignatureArea[] = signatureAreas.map(area => ({
-        x: area.x,
-        y: area.y,
-        width: area.width,
-        height: area.height,
-        type: area.type || 'signature',
-      }));
-
-      const areasResult = await createSignatureAreas(
-        uploadResult.document.id,
-        relativeAreas
-      );
-
-      if (areasResult.error) {
-        setError(areasResult.error);
-        return;
-      }
-
-      // Success: Redirect to document detail page
-      router.push(`/document/${uploadResult.document.id}`);
+      // Success: Redirect to upload page (dashboard) after all documents uploaded
+      router.push("/upload");
+      router.refresh();
     } catch (error) {
-      console.error("Error uploading document:", error);
-      setError("An unexpected error occurred while uploading the document");
+      console.error("Error uploading documents:", error);
+      setError("An unexpected error occurred while uploading the documents");
     } finally {
       setIsLoading(false);
+      setSavingProgress("");
     }
   };
 
+  const handleGoToMissingImage = (index: number) => {
+    setShowValidationModal(false);
+    goToImage(index);
+  };
+
+  const totalAreasCount = Array.from(signatureAreasMap.values()).reduce(
+    (sum, areas) => sum + areas.length, 0
+  );
+
   return (
     <div className="space-y-8">
-      {!document ? (
+      {images.length === 0 ? (
         <Card className="border-dashed border-2">
           <CardContent className="p-6">
             <div className="flex flex-col items-center justify-center space-y-4 py-12">
@@ -261,6 +367,9 @@ export default function DocumentUpload() {
                 <h3 className="font-medium text-lg">{t("upload.title")}</h3>
                 <p className="text-muted-foreground text-sm">
                   {t("upload.description")}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {t("upload.multipleFiles")}
                 </p>
               </div>
               <label htmlFor="document-upload">
@@ -278,6 +387,7 @@ export default function DocumentUpload() {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handleFileChange}
                 />
@@ -316,10 +426,10 @@ export default function DocumentUpload() {
             <Button
               onClick={handleSaveDocument}
               disabled={
-                signatureAreas.length === 0 || isLoading || !originalFile
+                totalAreasCount === 0 || isLoading || images.length === 0
               }
             >
-              {isLoading ? t("upload.saving") : t("upload.save")}
+              {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
             </Button>
           </div>
 
@@ -329,7 +439,11 @@ export default function DocumentUpload() {
               <Label htmlFor="document-filename" className="text-sm font-medium">
                 {t("upload.filename")}
               </Label>
-              <p className="text-sm text-muted-foreground mt-1">{fileName}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {images.length === 1
+                  ? images[0].fileName
+                  : `${images.length} files`}
+              </p>
             </div>
 
             <div>
@@ -339,6 +453,7 @@ export default function DocumentUpload() {
               </Label>
               <Input
                 id="document-alias"
+                name="document-alias"
                 type="text"
                 placeholder={t("upload.aliasPlaceholder")}
                 value={alias}
@@ -352,6 +467,53 @@ export default function DocumentUpload() {
             </div>
           </div>
 
+          {/* Carousel Navigation */}
+          {images.length > 1 && (
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToImage(Math.max(0, currentIndex - 1))}
+                disabled={currentIndex === 0 || isSelecting}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-2">
+                {images.map((_, idx) => {
+                  const hasAreas = (signatureAreasMap.get(idx) || []).length > 0;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => !isSelecting && goToImage(idx)}
+                      className={`w-3 h-3 rounded-full transition-colors ${
+                        idx === currentIndex
+                          ? "bg-primary scale-125"
+                          : hasAreas
+                            ? "bg-green-400"
+                            : "bg-muted-foreground/30"
+                      }`}
+                      disabled={isSelecting}
+                    />
+                  );
+                })}
+              </div>
+              <span className="text-sm font-medium text-muted-foreground min-w-[60px] text-center">
+                {t("upload.imageIndex")
+                  .replace("{current}", String(currentIndex + 1))
+                  .replace("{total}", String(images.length))}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToImage(Math.min(images.length - 1, currentIndex + 1))}
+                disabled={currentIndex === images.length - 1 || isSelecting}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {/* Document Viewer with Carousel */}
           <div className="relative border rounded-lg overflow-hidden">
             {/* Zoom Controls */}
             <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
@@ -386,18 +548,20 @@ export default function DocumentUpload() {
                 {Math.round(zoomLevel * 100)}%
               </div>
             </div>
+
             {isSelecting ? (
               <AreaSelector
-                image={document}
+                image={images[currentIndex].dataUrl}
                 onAreaSelected={handleAreaSelected}
                 onCancel={() => setIsSelecting(false)}
-                existingAreas={signatureAreas}
+                existingAreas={currentAreas}
                 initialScrollPosition={scrollPositionRef.current}
                 zoomLevel={zoomLevel}
                 onZoomChange={setZoomLevel}
                 areaType={currentAreaType}
               />
-            ) : (
+            ) : images.length === 1 ? (
+              // Single image: no carousel needed
               <div
                 ref={documentContainerRef}
                 className="relative overflow-auto max-h-[70vh]"
@@ -428,13 +592,13 @@ export default function DocumentUpload() {
                   }}
                 >
                   <img
-                    src={document || "/placeholder.svg"}
+                    src={images[0].dataUrl}
                     alt="Document"
                     className="w-full h-auto object-contain block"
                     draggable="false"
                     style={{ userSelect: "none", WebkitUserSelect: "none" }}
                   />
-                  {signatureAreas.map((area, index) => (
+                  {currentAreas.map((area, index) => (
                     <div
                       key={index}
                       className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
@@ -456,6 +620,79 @@ export default function DocumentUpload() {
                   ))}
                 </div>
               </div>
+            ) : (
+              // Multiple images: use Carousel
+              <Carousel
+                setApi={setCarouselApi}
+                opts={{ watchDrag: false }}
+                className="w-full"
+              >
+                <CarouselContent>
+                  {images.map((img, imgIdx) => (
+                    <CarouselItem key={imgIdx}>
+                      <div
+                        ref={imgIdx === currentIndex ? documentContainerRef : undefined}
+                        className="relative overflow-auto max-h-[70vh]"
+                        style={{
+                          cursor: (() => {
+                            if (imgIdx !== currentIndex) return 'default';
+                            const container = documentContainerRef.current;
+                            const canScroll = container && (
+                              container.scrollWidth > container.clientWidth ||
+                              container.scrollHeight > container.clientHeight
+                            );
+                            return canScroll ? (isDragging ? 'grabbing' : 'grab') : 'default';
+                          })(),
+                          touchAction: 'none'
+                        }}
+                        onMouseDown={imgIdx === currentIndex ? handleMouseDown : undefined}
+                        onMouseMove={imgIdx === currentIndex ? handleMouseMove : undefined}
+                        onMouseUp={imgIdx === currentIndex ? handleMouseUp : undefined}
+                        onMouseLeave={imgIdx === currentIndex ? handleMouseUp : undefined}
+                        onTouchStart={imgIdx === currentIndex ? handleTouchStart : undefined}
+                        onTouchMove={imgIdx === currentIndex ? handleTouchMove : undefined}
+                        onTouchEnd={imgIdx === currentIndex ? handleTouchEnd : undefined}
+                      >
+                        <div
+                          className="relative inline-block"
+                          style={{
+                            width: `${100 * zoomLevel}%`,
+                            height: 'auto'
+                          }}
+                        >
+                          <img
+                            src={img.dataUrl}
+                            alt={`Document ${imgIdx + 1}`}
+                            className="w-full h-auto object-contain block"
+                            draggable="false"
+                            style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                          />
+                          {(signatureAreasMap.get(imgIdx) || []).map((area, areaIdx) => (
+                            <div
+                              key={areaIdx}
+                              className={`absolute border-2 flex items-center justify-center ${area.type === 'text' ? 'border-blue-500 bg-blue-500/10' : 'border-red-500 bg-red-500/10'}`}
+                              style={{
+                                position: "absolute",
+                                left: `${area.x}%`,
+                                top: `${area.y}%`,
+                                width: `${area.width}%`,
+                                height: `${area.height}%`,
+                                pointerEvents: "auto",
+                                cursor: imgIdx === currentIndex ? "pointer" : "default",
+                              }}
+                              onClick={() => imgIdx === currentIndex && handleRemoveArea(areaIdx)}
+                            >
+                              <span className={`text-xs font-medium ${area.type === 'text' ? 'text-blue-600' : 'text-red-600'}`}>
+                                {area.type === 'text' ? `${t("upload.textArea")} ${areaIdx + 1}` : `${t("upload.signature")} ${areaIdx + 1}`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
             )}
           </div>
 
@@ -466,6 +703,45 @@ export default function DocumentUpload() {
           )}
         </div>
       )}
+
+      {/* Validation Modal */}
+      <Dialog open={showValidationModal} onOpenChange={setShowValidationModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              {t("upload.noSignatureAreaWarningTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("upload.noSignatureAreaWarningDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {missingAreaIndices.map((idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-md"
+              >
+                <span className="text-sm text-yellow-800">
+                  {t("upload.noSignatureAreaWarningItem").replace("{index}", String(idx + 1))}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGoToMissingImage(idx)}
+                >
+                  {t("upload.goToImage")}
+                </Button>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowValidationModal(false)}>
+              {t("upload.clear") === "지우기" ? "닫기" : "Close"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
