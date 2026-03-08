@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileImage, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Upload, FileImage, FileText, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, ChevronLeft, ChevronRight, AlertTriangle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -84,6 +84,9 @@ export default function DocumentUpload() {
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [currentAreaType, setCurrentAreaType] = useState<'signature' | 'text'>('signature');
 
+  // Upload mode: 'image' or 'pdf'
+  const [uploadMode, setUploadMode] = useState<'image' | 'pdf'>('image');
+
   // PDF-related state
   const [canUsePdf, setCanUsePdf] = useState<boolean>(false);
   const [pdfCheckDone, setPdfCheckDone] = useState<boolean>(false);
@@ -140,16 +143,6 @@ export default function DocumentUpload() {
 
     fileArray.forEach((file) => {
       const isPdf = file.type === "application/pdf";
-
-      if (isPdf && !canUsePdf) {
-        setError(t("pdf_upload_pro_only"));
-        loaded++;
-        if (loaded === totalFiles && newImages.length > 0) {
-          newImages.sort((a, b) => fileArray.indexOf(a.file) - fileArray.indexOf(b.file));
-          setImages((prev) => [...prev, ...newImages]);
-        }
-        return;
-      }
 
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -294,6 +287,7 @@ export default function DocumentUpload() {
     setZoomLevel(1);
     setCurrentIndex(0);
     setCurrentPdfPage(1);
+    setUploadMode('image');
   };
 
   const handleZoomIn = () => {
@@ -496,52 +490,92 @@ export default function DocumentUpload() {
         </div>
       )}
       {images.length === 0 ? (
-        <Card className="border-dashed border-2">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center justify-center space-y-4 py-12">
-              <div className="rounded-full bg-primary/10 p-4">
-                <FileImage className="h-10 w-10 text-primary" />
-              </div>
-              <div className="text-center space-y-2">
-                <h3 className="font-medium text-lg">{t("upload.title")}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {t("upload.description")}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {t("upload.multipleFiles")}
-                </p>
-                {canUsePdf && (
-                  <p className="text-muted-foreground text-xs">
-                    {t("pdf_file_supported")}
-                    <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                      {t("pdf_pro_badge")}
-                    </span>
-                  </p>
-                )}
-              </div>
-              <label htmlFor="document-upload">
-                <div className="cursor-pointer">
-                  <Button
-                    onClick={() => fileInputRef.current?.click()}
-                    type="button"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {t("upload.button")}
-                  </Button>
+        <div className="space-y-4">
+          {/* Upload Mode Selector */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setUploadMode('image')}
+              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                uploadMode === 'image'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-muted hover:border-muted-foreground/30'
+              }`}
+            >
+              <FileImage className={`h-6 w-6 ${uploadMode === 'image' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <span className={`text-sm font-medium ${uploadMode === 'image' ? 'text-primary' : 'text-muted-foreground'}`}>
+                {t("upload.title")}
+              </span>
+            </button>
+            <button
+              onClick={() => canUsePdf && setUploadMode('pdf')}
+              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all relative ${
+                !canUsePdf
+                  ? 'border-muted opacity-60 cursor-not-allowed'
+                  : uploadMode === 'pdf'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-muted hover:border-muted-foreground/30 cursor-pointer'
+              }`}
+            >
+              <FileText className={`h-6 w-6 ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <span className={`text-sm font-medium ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`}>
+                {t("pdf_document")}
+              </span>
+              {!canUsePdf ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                  <Lock className="h-3 w-3" />
+                  {t("pdf_pro_badge")}
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  {t("pdf_pro_badge")}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Upload Card */}
+          <Card className="border-dashed border-2">
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center justify-center space-y-4 py-12">
+                <div className="rounded-full bg-primary/10 p-4">
+                  {uploadMode === 'pdf' ? (
+                    <FileText className="h-10 w-10 text-primary" />
+                  ) : (
+                    <FileImage className="h-10 w-10 text-primary" />
+                  )}
                 </div>
+                <div className="text-center space-y-2">
+                  <h3 className="font-medium text-lg">
+                    {uploadMode === 'pdf' ? t("pdf_document") : t("upload.title")}
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    {t("upload.description")}
+                  </p>
+                  {uploadMode === 'image' && (
+                    <p className="text-muted-foreground text-xs">
+                      {t("upload.multipleFiles")}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {t("upload.button")}
+                </Button>
                 <input
-                  id="document-upload"
                   ref={fileInputRef}
                   type="file"
-                  accept={canUsePdf ? "image/*,.pdf,application/pdf" : "image/*"}
-                  multiple
+                  accept={uploadMode === 'pdf' ? ".pdf,application/pdf" : "image/*"}
+                  multiple={uploadMode === 'image'}
                   className="hidden"
                   onChange={handleFileChange}
                 />
-              </label>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <div className="space-y-4">
           {/* 1. Clear / Save buttons */}
