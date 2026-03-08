@@ -771,10 +771,10 @@ export async function generateSignedPdfFromPdf(documentId: string) {
     }
 
     // Save the signed PDF
-    const signedPdfBytes = await pdfDoc.save({ useObjectStreams: true });
+    const signedPdfBytes = await pdfDoc.save();
     console.log(`[PDF-Sign] Signed PDF generated: ${Math.round(signedPdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
 
-    const pdfBlob = new Blob([signedPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+    const pdfBlob = new Blob([signedPdfBytes], { type: 'application/pdf' });
     const pdfFilename = `signed_${documentId}.pdf`;
     const pdfPath = `${document.user_id}/${pdfFilename}`;
 
