@@ -66,11 +66,27 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
             renderTaskRef.current = null;
           }
 
-          const loadingTask = pdfjsLib.getDocument({
-            url: pdfUrl,
-            cMapUrl: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
-            cMapPacked: true,
-          });
+          // Handle data URLs by converting to binary data
+          let loadingTask;
+          if (pdfUrl.startsWith("data:")) {
+            const base64 = pdfUrl.split(",")[1];
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+              bytes[i] = binary.charCodeAt(i);
+            }
+            loadingTask = pdfjsLib.getDocument({
+              data: bytes,
+              cMapUrl: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
+              cMapPacked: true,
+            });
+          } else {
+            loadingTask = pdfjsLib.getDocument({
+              url: pdfUrl,
+              cMapUrl: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
+              cMapPacked: true,
+            });
+          }
 
           const pdf = await loadingTask.promise;
 
