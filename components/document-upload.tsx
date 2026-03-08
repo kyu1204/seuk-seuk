@@ -225,6 +225,7 @@ export default function DocumentUpload() {
         y: area.y,
         width: area.width,
         height: area.height,
+        type: area.type || 'signature',
       }));
 
       const areasResult = await createSignatureAreas(
