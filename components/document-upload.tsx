@@ -517,19 +517,19 @@ export default function DocumentUpload() {
               }`}
             >
               <FileText className={`h-6 w-6 ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <span className={`text-sm font-medium ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <span className={`text-sm font-medium flex items-center gap-1.5 ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`}>
                 {t("pdf_document")}
+                {!canUsePdf ? (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                    <Lock className="h-3 w-3" />
+                    {t("pdf_pro_badge")}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                    {t("pdf_pro_badge")}
+                  </span>
+                )}
               </span>
-              {!canUsePdf ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                  <Lock className="h-3 w-3" />
-                  {t("pdf_pro_badge")}
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                  {t("pdf_pro_badge")}
-                </span>
-              )}
             </button>
           </div>
 
