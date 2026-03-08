@@ -627,7 +627,7 @@ export default function DocumentUpload() {
               // Multiple images: use Carousel
               <Carousel
                 setApi={setCarouselApi}
-                opts={{ watchDrag: false }}
+                opts={{ watchDrag: false, startIndex: currentIndex }}
                 className="w-full"
               >
                 <CarouselContent>
