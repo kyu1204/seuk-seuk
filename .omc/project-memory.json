@@ -1,0 +1,471 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1772964274648,
+  "projectRoot": "/Users/minkyu/Documents/seuk-seuk",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "14.2.16",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "18",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "18",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "pnpm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "pnpm build",
+    "testCommand": null,
+    "lintCommand": "pnpm lint",
+    "devCommand": "pnpm dev",
+    "scripts": {
+      "build": "next build",
+      "dev": "next dev",
+      "lint": "next lint",
+      "start": "next start"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase",
+    "importStyle": "ES modules",
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "app",
+      "components",
+      "docs",
+      "lib",
+      "public"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 5,
+      "lastAccessed": 1772964274578,
+      "keyFiles": [
+        "global-error.tsx",
+        "globals.css",
+        "layout.tsx",
+        "robots.ts",
+        "sitemap.ts"
+      ]
+    },
+    "components": {
+      "path": "components",
+      "purpose": "UI components",
+      "fileCount": 10,
+      "lastAccessed": 1772964274580,
+      "keyFiles": [
+        "area-selector.tsx",
+        "breadcrumb.tsx",
+        "delete-document-modal.tsx",
+        "document-upload.tsx",
+        "language-selector.tsx"
+      ]
+    },
+    "contexts": {
+      "path": "contexts",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1772964274610,
+      "keyFiles": [
+        "language-context.tsx"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 0,
+      "lastAccessed": 1772964274612,
+      "keyFiles": []
+    },
+    "hooks": {
+      "path": "hooks",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1772964274613,
+      "keyFiles": [
+        "use-auth.ts",
+        "use-mobile.tsx",
+        "use-toast.ts",
+        "usePaddlePrices.ts"
+      ]
+    },
+    "lib": {
+      "path": "lib",
+      "purpose": "Library code",
+      "fileCount": 4,
+      "lastAccessed": 1772964274613,
+      "keyFiles": [
+        "api.types.ts",
+        "client-image-merger.ts",
+        "url-generator.ts",
+        "utils.ts"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 7,
+      "lastAccessed": 1772964274614,
+      "keyFiles": [
+        "favicon.ico",
+        "favicon.svg",
+        "placeholder-logo.png",
+        "placeholder-logo.svg",
+        "placeholder-user.jpg"
+      ]
+    },
+    "styles": {
+      "path": "styles",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1772964274614,
+      "keyFiles": [
+        "globals.css"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "app/actions/document-actions.ts",
+      "accessCount": 77,
+      "lastAccessed": 1773019128438,
+      "type": "file"
+    },
+    {
+      "path": "components/document-upload.tsx",
+      "accessCount": 67,
+      "lastAccessed": 1773013219758,
+      "type": "file"
+    },
+    {
+      "path": "lib/supabase/database.types.ts",
+      "accessCount": 49,
+      "lastAccessed": 1773018967621,
+      "type": "file"
+    },
+    {
+      "path": "app/(document)/document/[id]/components/DocumentDetailPage.tsx",
+      "accessCount": 45,
+      "lastAccessed": 1773019026878,
+      "type": "file"
+    },
+    {
+      "path": "app/(sign)/sign/[id]/components/SignSingleDocument.tsx",
+      "accessCount": 44,
+      "lastAccessed": 1773019064620,
+      "type": "file"
+    },
+    {
+      "path": "contexts/language-context.tsx",
+      "accessCount": 42,
+      "lastAccessed": 1773018974609,
+      "type": "file"
+    },
+    {
+      "path": "app/(sign)/sign/[id]/components/SignPage.tsx",
+      "accessCount": 30,
+      "lastAccessed": 1773019017046,
+      "type": "file"
+    },
+    {
+      "path": "lib/utils.ts",
+      "accessCount": 22,
+      "lastAccessed": 1773013190900,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 16,
+      "lastAccessed": 1773018938992,
+      "type": "directory"
+    },
+    {
+      "path": "components/area-selector.tsx",
+      "accessCount": 14,
+      "lastAccessed": 1772975502707,
+      "type": "file"
+    },
+    {
+      "path": "components/pdf-page-renderer.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1773013006027,
+      "type": "file"
+    },
+    {
+      "path": "components/text-input-modal.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1772973908396,
+      "type": "file"
+    },
+    {
+      "path": "app/actions/subscription-actions.ts",
+      "accessCount": 8,
+      "lastAccessed": 1773005053233,
+      "type": "file"
+    },
+    {
+      "path": "app/actions/publication-actions.ts",
+      "accessCount": 7,
+      "lastAccessed": 1773019107750,
+      "type": "file"
+    },
+    {
+      "path": "app/(document)/upload/components/UploadPage.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1772973894359,
+      "type": "file"
+    },
+    {
+      "path": "app/(sign)/sign/[id]/components/SignPageContainer.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1772973894936,
+      "type": "file"
+    },
+    {
+      "path": "components/signature-modal.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1772973895015,
+      "type": "file"
+    },
+    {
+      "path": "app/(sign)",
+      "accessCount": 3,
+      "lastAccessed": 1773008639467,
+      "type": "directory"
+    },
+    {
+      "path": "app/(home)/components/HomePage.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1773013812968,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/toast.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1772973388356,
+      "type": "file"
+    },
+    {
+      "path": "app/(sign)/sign/[id]/page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1772973880861,
+      "type": "file"
+    },
+    {
+      "path": "lib",
+      "accessCount": 2,
+      "lastAccessed": 1772973929771,
+      "type": "directory"
+    },
+    {
+      "path": "lib/paddle/pricing-config.ts",
+      "accessCount": 2,
+      "lastAccessed": 1772974836153,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 2,
+      "lastAccessed": 1772975433291,
+      "type": "file"
+    },
+    {
+      "path": "app/(sign)/sign/[id]",
+      "accessCount": 2,
+      "lastAccessed": 1773008394204,
+      "type": "directory"
+    },
+    {
+      "path": "app",
+      "accessCount": 2,
+      "lastAccessed": 1773013807820,
+      "type": "directory"
+    },
+    {
+      "path": "migration.sql",
+      "accessCount": 1,
+      "lastAccessed": 1772967648811,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/carousel.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772970759017,
+      "type": "file"
+    },
+    {
+      "path": "components/site-header.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973239963,
+      "type": "file"
+    },
+    {
+      "path": "components/user-avatar.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973240071,
+      "type": "file"
+    },
+    {
+      "path": "components/language-selector.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973245208,
+      "type": "file"
+    },
+    {
+      "path": "app/(home)/layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973256043,
+      "type": "file"
+    },
+    {
+      "path": "app/layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973280228,
+      "type": "file"
+    },
+    {
+      "path": "app/(document)/layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973288069,
+      "type": "file"
+    },
+    {
+      "path": "app/(profile)/layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973288803,
+      "type": "file"
+    },
+    {
+      "path": "app/(billing)/layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973288875,
+      "type": "file"
+    },
+    {
+      "path": "app/(document)/upload/layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973301823,
+      "type": "file"
+    },
+    {
+      "path": "app/globals.css",
+      "accessCount": 1,
+      "lastAccessed": 1772973309946,
+      "type": "file"
+    },
+    {
+      "path": "app/(publication)/layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973319670,
+      "type": "file"
+    },
+    {
+      "path": "components/theme-toggle.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973319914,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/dropdown-menu.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973349565,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/toaster.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772973361389,
+      "type": "file"
+    },
+    {
+      "path": "lib/api.types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772973890655,
+      "type": "file"
+    },
+    {
+      "path": "lib/client-image-merger.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772973917880,
+      "type": "file"
+    },
+    {
+      "path": "lib/supabase",
+      "accessCount": 1,
+      "lastAccessed": 1772973924432,
+      "type": "directory"
+    },
+    {
+      "path": "next.config.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1772975854978,
+      "type": "directory"
+    },
+    {
+      "path": "app/actions",
+      "accessCount": 1,
+      "lastAccessed": 1773008403576,
+      "type": "directory"
+    },
+    {
+      "path": "app/(document)/document/[id]",
+      "accessCount": 1,
+      "lastAccessed": 1773008649677,
+      "type": "directory"
+    },
+    {
+      "path": "app/(billing)/pricing/components/PricingPage.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773013812498,
+      "type": "directory"
+    },
+    {
+      "path": ".env.example",
+      "accessCount": 1,
+      "lastAccessed": 1773013829547,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

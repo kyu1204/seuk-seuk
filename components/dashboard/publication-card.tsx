@@ -46,26 +46,26 @@ export function PublicationCard({
   const canDelete = publication.status === "completed";
 
   const getStatusBadge = (status: ClientPublication["status"]) => {
-    const statusMap = {
+    const statusMap: Record<string, { label: string; variant: "default" | "success" | "secondary" }> = {
       active: {
         label: t("dashboard.publications.status.active"),
-        variant: "default" as const,
+        variant: "default",
       },
       completed: {
         label: t("dashboard.publications.status.completed"),
-        variant: "success" as const,
+        variant: "success",
       },
       expired: {
         label: t("dashboard.publications.status.expired"),
-        variant: "secondary" as const,
+        variant: "secondary",
       },
     };
 
-    return statusMap[status] || statusMap.active;
+    return statusMap[status ?? "active"] || statusMap.active;
   };
 
   const statusBadge = getStatusBadge(publication.status);
-  const formattedDate = new Date(publication.created_at).toLocaleDateString(
+  const formattedDate = new Date(publication.created_at ?? "").toLocaleDateString(
     language === "ko" ? "ko-KR" : "en-US",
     {
       year: "numeric",
@@ -166,7 +166,7 @@ export function PublicationCard({
                 <Badge variant={statusBadge.variant} className="flex-shrink-0 text-xs">
                   {statusBadge.label}
                 </Badge>
-                {publication.requiresPassword && (
+                {(publication as any).requiresPassword && (
                   <Lock className="h-3 w-3 text-muted-foreground" />
                 )}
               </div>
@@ -220,7 +220,7 @@ export function PublicationCard({
               {truncateName(publication.name)}
             </h3>
             <div className="text-xs text-muted-foreground">
-              {publication.documentCount}{t("dashboard.publications.card.documentCount")}
+              {(publication as any).documentCount}{t("dashboard.publications.card.documentCount")}
             </div>
           </div>
         </CardHeader>
@@ -228,7 +228,7 @@ export function PublicationCard({
         <CardContent className="pt-0 pb-4 mt-auto space-y-3">
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
-            <time dateTime={publication.created_at}>{formattedDate}</time>
+            <time dateTime={publication.created_at ?? undefined}>{formattedDate}</time>
           </div>
 
           {/* Action buttons */}

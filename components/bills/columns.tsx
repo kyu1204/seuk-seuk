@@ -45,11 +45,11 @@ export const columns: ColumnDef<Document>[] = [
     header: "Status",
     size: columnSize,
     cell: ({ row }) => {
-      const status = row.getValue("status") as Document["status"];
-      const statusMap = {
-        draft: { label: "Draft", variant: "secondary" as const },
-        published: { label: "Published", variant: "default" as const },
-        completed: { label: "Completed", variant: "success" as const },
+      const status = (row.getValue("status") as string) ?? "draft";
+      const statusMap: Record<string, { label: string; variant: "secondary" | "default" | "success" }> = {
+        draft: { label: "Draft", variant: "secondary" },
+        published: { label: "Published", variant: "default" },
+        completed: { label: "Completed", variant: "success" },
       };
       const statusInfo = statusMap[status] || statusMap.draft;
       return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;

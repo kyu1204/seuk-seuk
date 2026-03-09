@@ -100,6 +100,7 @@ export async function uploadDocument(formData: FormData) {
       user_id: user.id,
       file_type: fileType,
       page_count: pageCount,
+      created_month: new Date().toISOString().slice(0, 7),
     };
 
     const { data: document, error: dbError } = await supabase
@@ -579,7 +580,7 @@ export async function generateSignedPdf(
     });
     console.log(`[PDF] PDF generated: ${Math.round(pdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
 
-    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const pdfBlob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     const pdfFilename = `signed_${documentId}.pdf`;
     const pdfPath = `${document.user_id}/${pdfFilename}`;
 
@@ -789,7 +790,7 @@ export async function generateSignedPdfFromPdf(documentId: string) {
     const signedPdfBytes = await pdfDoc.save();
     console.log(`[PDF-Sign] Signed PDF generated: ${Math.round(signedPdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
 
-    const pdfBlob = new Blob([signedPdfBytes], { type: 'application/pdf' });
+    const pdfBlob = new Blob([signedPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     const pdfFilename = `signed_${documentId}.pdf`;
     const pdfPath = `${document.user_id}/${pdfFilename}`;
 
@@ -1131,7 +1132,7 @@ export async function getUserDocumentsClient(
     const hasMore = offset + limit < total;
 
     return {
-      documents: documents || [],
+      documents: (documents || []) as unknown as Document[],
       hasMore,
     };
   } catch (error) {
@@ -1580,7 +1581,7 @@ export async function getDashboardData(
     if (countsResult.error) {
       console.error("Counts query error:", countsResult.error);
       return {
-        documents: documentsResult.data || [],
+        documents: (documentsResult.data || []) as unknown as Document[],
         hasMore: false,
         total: documentsResult.count || 0,
         counts: { all: 0, draft: 0, published: 0, completed: 0 },
@@ -1604,7 +1605,7 @@ export async function getDashboardData(
     const hasMore = offset + limit < total;
 
     return {
-      documents: documentsResult.data || [],
+      documents: (documentsResult.data || []) as unknown as Document[],
       hasMore,
       total,
       counts: statusCounts,

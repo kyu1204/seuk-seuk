@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,24 +25,24 @@ export function DocumentDetailCard({ document }: DocumentDetailCardProps) {
   const { t } = useLanguage();
 
   const getStatusInfo = (status: Document["status"]) => {
-    const statusMap = {
+    const statusMap: Record<string, { label: string; variant: "secondary" | "default" | "success"; icon: React.ElementType }> = {
       draft: {
         label: t("status.draft"),
-        variant: "secondary" as const,
+        variant: "secondary",
         icon: Edit,
       },
       published: {
         label: t("status.published"),
-        variant: "default" as const,
+        variant: "default",
         icon: Clock,
       },
       completed: {
         label: t("status.completed"),
-        variant: "success" as const,
+        variant: "success",
         icon: CheckCircle,
       },
     };
-    return statusMap[status] || statusMap.draft;
+    return statusMap[status ?? "draft"] || statusMap.draft;
   };
 
   const statusInfo = getStatusInfo(document.status);
@@ -105,14 +106,14 @@ export function DocumentDetailCard({ document }: DocumentDetailCardProps) {
             <span className="font-medium">{formattedDate}</span>
           </div>
 
-          {document.expires_at && (
+          {(document as any).expires_at && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 {t("bills.expires")}
               </span>
               <span className="font-medium">
-                {new Date(document.expires_at).toLocaleDateString()}
+                {new Date((document as any).expires_at).toLocaleDateString()}
               </span>
             </div>
           )}

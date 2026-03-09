@@ -3,7 +3,7 @@
 import { getPaddleInstance } from "@/lib/paddle/get-paddle-instance";
 import { getCustomerId } from "@/lib/paddle/get-customer-id";
 import { parseSDKResponse } from "@/lib/paddle/data-helpers";
-import type { SubscriptionEffectiveFrom } from "@paddle/paddle-node-sdk/dist/types/enums/subscription/subscription-effective-from";
+type SubscriptionEffectiveFrom = "immediately" | "next_billing_period";
 
 export async function cancelSubscription(
   subscriptionId: string,

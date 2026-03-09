@@ -68,7 +68,7 @@ export default function SignSingleDocument({
   const { t } = useLanguage();
 
   // Get signatures for this document
-  const documentSignatures = documentData.signatures || [];
+  const documentSignatures = (documentData as any).signatures || [];
 
   const [localSignatures, setLocalSignatures] =
     useState<Signature[]>(documentSignatures);
@@ -154,6 +154,8 @@ export default function SignSingleDocument({
           y: 0,
           width: 0,
           height: 0,
+          area_type: 'signature',
+          page_number: 0,
           status: "pending",
           signer_name: null,
           signed_at: null,
@@ -295,7 +297,14 @@ export default function SignSingleDocument({
         for (const { signature, image: signatureImage } of signatureImages) {
           let pixelCoords;
           try {
-            const relativeArea = ensureRelativeCoordinate(signature, naturalWidth, naturalHeight);
+            const relativeArea = ensureRelativeCoordinate({
+              x: signature.x ?? 0,
+              y: signature.y ?? 0,
+              width: signature.width ?? 0,
+              height: signature.height ?? 0,
+              type: signature.area_type as 'signature' | 'text',
+              pageNumber: signature.page_number,
+            }, naturalWidth, naturalHeight);
             pixelCoords = convertSignatureAreaToPixels(relativeArea, naturalWidth, naturalHeight);
           } catch (error) {
             pixelCoords = {
@@ -339,7 +348,7 @@ export default function SignSingleDocument({
             }, 'image/png');
           });
         } else {
-          const dataUrl = canvas.toDataURL("image/png");
+          const dataUrl = (canvas as HTMLCanvasElement).toDataURL("image/png");
           const response = await fetch(dataUrl);
           blob = await response.blob();
         }
@@ -467,7 +476,7 @@ export default function SignSingleDocument({
     } else if (e.touches.length === 2) {
       // Pinch gesture start
       e.preventDefault();
-      const distance = getTouchDistance(e.touches);
+      const distance = getTouchDistance(e.touches as unknown as TouchList);
       setLastTouchDistance(distance);
       setTouchStartZoom(zoomLevel);
       setIsDragging(false);
@@ -488,7 +497,7 @@ export default function SignSingleDocument({
     } else if (e.touches.length === 2) {
       // Pinch zoom
       e.preventDefault();
-      const distance = getTouchDistance(e.touches);
+      const distance = getTouchDistance(e.touches as unknown as TouchList);
       if (lastTouchDistance > 0) {
         const scale = distance / lastTouchDistance;
         const newZoom = Math.min(Math.max(touchStartZoom * scale, 0.5), 3);
@@ -669,10 +678,10 @@ export default function SignSingleDocument({
                 <p className="text-sm text-red-700 text-center font-medium">
                   {documentData.alias || documentData.filename}
                 </p>
-                {documentData.expires_at && (
+                {(documentData as any).expires_at && (
                   <p className="text-xs text-red-600 text-center mt-1">
                     {t("sign.expired.date")}{" "}
-                    {new Date(documentData.expires_at).toLocaleDateString(
+                    {new Date((documentData as any).expires_at).toLocaleDateString(
                       "ko-KR"
                     )}
                   </p>
@@ -876,7 +885,14 @@ export default function SignSingleDocument({
                         }
 
                         const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
-                        const relativeArea = ensureRelativeCoordinate(signature, originalWidth, originalHeight);
+                        const relativeArea = ensureRelativeCoordinate({
+                          x: signature.x ?? 0,
+                          y: signature.y ?? 0,
+                          width: signature.width ?? 0,
+                          height: signature.height ?? 0,
+                          type: signature.area_type as 'signature' | 'text',
+                          pageNumber: signature.page_number,
+                        }, originalWidth, originalHeight);
                         return {
                           left: `${relativeArea.x}%`,
                           top: `${relativeArea.y}%`,

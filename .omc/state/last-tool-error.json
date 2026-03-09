@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"git add app/(document)/document/\\\\[id\\\\]/components/DocumentDetailPage.tsx app/\\\\(sign\\\\)/sign/\\\\[id\\\\]/components/SignPage.tsx app/\\\\(sign\\\\)/sign/\\\\[id\\\\]/components/SignSingleDocument.t...",
+  "error": "Exit code 1\n(eval):1: no matches found: app/(document)/document/[id]/components/DocumentDetailPage.tsx",
+  "timestamp": "2026-03-09T01:19:33.932Z",
+  "retry_count": 1
+}

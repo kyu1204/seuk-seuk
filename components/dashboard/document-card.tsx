@@ -26,22 +26,22 @@ export function DocumentCard({ document, isSelectionMode, isSelected, onToggleSe
   };
 
   const getStatusBadge = (status: Document["status"]) => {
-    const statusMap = {
+    const statusMap: Record<string, { label: string; variant: "secondary" | "default" | "success" }> = {
       draft: {
         label: t("status.draft"),
-        variant: "secondary" as const,
+        variant: "secondary",
       },
       published: {
         label: t("status.published"),
-        variant: "default" as const,
+        variant: "default",
       },
       completed: {
         label: t("status.completed"),
-        variant: "success" as const,
+        variant: "success",
       },
     };
 
-    return statusMap[status] || statusMap.draft;
+    return statusMap[status ?? "draft"] || statusMap.draft;
   };
 
   const statusBadge = getStatusBadge(document.status);

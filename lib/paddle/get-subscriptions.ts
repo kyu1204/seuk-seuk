@@ -12,7 +12,6 @@ export async function getSubscriptions(): Promise<SubscriptionResponse> {
       const subscriptionCollection = getPaddleInstance().subscriptions.list({
         customerId: [customerId],
         perPage: 20,
-        include: ['next_transaction', 'recurring_transaction_details'],
       });
       const subscriptions = await subscriptionCollection.next();
       return {

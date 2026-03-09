@@ -104,10 +104,10 @@ export default function DocumentDetailComponent({
       if (!isEditMode) {
         // Entering edit mode - load existing signature areas and alias
         setSignatureAreas(signatures.map((sig) => ({
-          x: sig.x,
-          y: sig.y,
-          width: sig.width,
-          height: sig.height,
+          x: sig.x ?? 0,
+          y: sig.y ?? 0,
+          width: sig.width ?? 0,
+          height: sig.height ?? 0,
           type: (sig as any).area_type === 'text' ? 'text' : 'signature',
           pageNumber: (sig as any).page_number ?? 0,
         })));
@@ -466,7 +466,7 @@ export default function DocumentDetailComponent({
               {displayName}
             </h1>
             <div className="self-start sm:self-center">
-              {getStatusBadge(document.status)}
+              {getStatusBadge(document.status ?? 'draft')}
             </div>
           </div>
 

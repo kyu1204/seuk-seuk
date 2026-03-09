@@ -270,7 +270,7 @@ export async function getUserPublications(): Promise<{
     }
 
     // Transform to ClientPublication format (without password hash)
-    const clientPublications: ClientPublication[] = (publications || []).map((pub: any) => ({
+    const clientPublications = (publications || []).map((pub: any) => ({
       id: pub.id,
       user_id: pub.user_id,
       name: pub.name,
@@ -283,7 +283,7 @@ export async function getUserPublications(): Promise<{
       documentCount: pub.documents?.[0]?.count || 0
     }));
 
-    return { success: true, publications: clientPublications };
+    return { success: true, publications: clientPublications as unknown as ClientPublication[] };
   } catch (error) {
     console.error("Get user publications error:", error);
     return { error: "An unexpected error occurred" };
