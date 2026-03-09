@@ -534,12 +534,12 @@ export default function DocumentUpload() {
                   {t("pdf_document")}
                 </span>
                 {!canUsePdf ? (
-                  <span className="absolute left-[calc(50%+1.5em)] ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap">
+                  <span className="absolute left-[calc(50%+1.5em)] ml-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap">
                     <Lock className="h-3 w-3" />
                     {t("pdf_pro_badge")}
                   </span>
                 ) : (
-                  <span className="absolute left-[calc(50%+1.5em)] ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary whitespace-nowrap">
+                  <span className="absolute left-[calc(50%+1.5em)] ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary whitespace-nowrap">
                     {t("pdf_pro_badge")}
                   </span>
                 )}
