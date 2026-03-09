@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -122,12 +122,10 @@ export default function TextInputModal({
         </DialogHeader>
 
         <div className="my-4">
-          <Textarea
+          <Input
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t("textModal.placeholder")}
-            rows={5}
-            className="resize-none"
           />
         </div>
 
