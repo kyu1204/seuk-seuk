@@ -81,43 +81,24 @@ export default function TextInputModal({
     const maxHeight = logicalHeight - padding * 2;
     const fontFamily = '-apple-system, "Noto Sans KR", sans-serif';
 
-    // Dynamic font sizing: find the largest font that fits the canvas
-    let fontSize = 200; // start large
-    let lines: string[] = [];
-    while (fontSize > 20) {
-      ctx.font = `bold ${fontSize}px ${fontFamily}`;
-      lines = wrapText(ctx, inputText, maxWidth);
-      const totalHeight = lines.length * fontSize * 1.3;
-      if (totalHeight <= maxHeight) break;
+    // Dynamic font sizing: single line, fit to fill the width
+    let fontSize = maxHeight; // start with max height as upper bound
+    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+    while (fontSize > 20 && ctx.measureText(inputText).width > maxWidth) {
       fontSize -= 4;
+      ctx.font = `bold ${fontSize}px ${fontFamily}`;
     }
-
-    // If single line, also check width and shrink if needed
-    if (lines.length === 1) {
-      while (fontSize > 20 && ctx.measureText(lines[0]).width > maxWidth) {
-        fontSize -= 4;
-        ctx.font = `bold ${fontSize}px ${fontFamily}`;
-      }
-    }
-
-    const lineHeight = fontSize * 1.3;
-    const totalTextHeight = lines.length * lineHeight;
 
     ctx.clearRect(0, 0, logicalWidth, logicalHeight);
     ctx.font = `bold ${fontSize}px ${fontFamily}`;
     ctx.fillStyle = "#000000";
-    ctx.textBaseline = "top";
+    ctx.textBaseline = "middle";
 
-    // Center text vertically
-    let y = Math.max(padding, (logicalHeight - totalTextHeight) / 2);
-    for (const line of lines) {
-      // Center text horizontally
-      const lineWidth = ctx.measureText(line).width;
-      const x = (logicalWidth - lineWidth) / 2;
-      ctx.fillText(line, x, y);
-      y += lineHeight;
-      if (y + lineHeight > logicalHeight) break;
-    }
+    // Center text
+    const textWidth = ctx.measureText(inputText).width;
+    const x = (logicalWidth - textWidth) / 2;
+    const y = logicalHeight / 2;
+    ctx.fillText(inputText, x, y);
 
     return canvas.toDataURL("image/png");
   };
