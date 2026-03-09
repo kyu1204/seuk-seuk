@@ -100,6 +100,7 @@ export async function uploadDocument(formData: FormData) {
       user_id: user.id,
       file_type: fileType,
       page_count: pageCount,
+      created_month: new Date().toISOString().slice(0, 7),
     };
 
     const { data: document, error: dbError } = await supabase
@@ -579,7 +580,7 @@ export async function generateSignedPdf(
     });
     console.log(`[PDF] PDF generated: ${Math.round(pdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
 
-    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const pdfBlob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     const pdfFilename = `signed_${documentId}.pdf`;
     const pdfPath = `${document.user_id}/${pdfFilename}`;
 
@@ -601,10 +602,10 @@ export async function generateSignedPdf(
       data: { publicUrl: pdfPublicUrl },
     } = supabaseService.storage.from('signed-documents').getPublicUrl(pdfPath);
 
-    // Update document with signed file URLs
+    // Update document with signed file URLs (use PDF URL for both)
     const { error: updateError } = await supabase
       .from('documents')
-      .update({ signed_file_url: publicUrl, signed_pdf_url: pdfPublicUrl })
+      .update({ signed_file_url: pdfPublicUrl, signed_pdf_url: pdfPublicUrl })
       .eq('id', documentId);
 
     if (updateError) {
@@ -615,12 +616,24 @@ export async function generateSignedPdf(
       return { error: 'Failed to update document with signed file URL' };
     }
 
+    // Delete the intermediate PNG file since PDF is now the primary format
+    const { error: pngDeleteError } = await supabaseService.storage
+      .from('signed-documents')
+      .remove([signedImagePath]);
+
+    if (pngDeleteError) {
+      // Non-critical: log but don't fail the operation
+      console.warn(`[PDF] Failed to cleanup PNG file ${signedImagePath}:`, pngDeleteError);
+    } else {
+      console.log(`[PDF] PNG cleanup successful: ${signedImagePath} (${Date.now() - startTime}ms)`);
+    }
+
     console.log(`[PDF] Database updated (${Date.now() - startTime}ms)`);
 
     const totalTime = Date.now() - startTime;
     console.log(`[PDF] ✅ Complete! Total time: ${totalTime}ms`);
 
-    return { success: true, signedFileUrl: publicUrl, signedPdfUrl: pdfPublicUrl };
+    return { success: true, signedPdfUrl: pdfPublicUrl };
   } catch (error) {
     console.error('[PDF] ❌ Unexpected error:', error);
     return { error: 'An unexpected error occurred' };
@@ -777,7 +790,7 @@ export async function generateSignedPdfFromPdf(documentId: string) {
     const signedPdfBytes = await pdfDoc.save();
     console.log(`[PDF-Sign] Signed PDF generated: ${Math.round(signedPdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
 
-    const pdfBlob = new Blob([signedPdfBytes], { type: 'application/pdf' });
+    const pdfBlob = new Blob([signedPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     const pdfFilename = `signed_${documentId}.pdf`;
     const pdfPath = `${document.user_id}/${pdfFilename}`;
 
@@ -1119,7 +1132,7 @@ export async function getUserDocumentsClient(
     const hasMore = offset + limit < total;
 
     return {
-      documents: documents || [],
+      documents: (documents || []) as unknown as Document[],
       hasMore,
     };
   } catch (error) {
@@ -1568,7 +1581,7 @@ export async function getDashboardData(
     if (countsResult.error) {
       console.error("Counts query error:", countsResult.error);
       return {
-        documents: documentsResult.data || [],
+        documents: (documentsResult.data || []) as unknown as Document[],
         hasMore: false,
         total: documentsResult.count || 0,
         counts: { all: 0, draft: 0, published: 0, completed: 0 },
@@ -1592,7 +1605,7 @@ export async function getDashboardData(
     const hasMore = offset + limit < total;
 
     return {
-      documents: documentsResult.data || [],
+      documents: (documentsResult.data || []) as unknown as Document[],
       hasMore,
       total,
       counts: statusCounts,

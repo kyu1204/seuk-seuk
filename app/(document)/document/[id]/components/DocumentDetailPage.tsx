@@ -103,14 +103,16 @@ export default function DocumentDetailComponent({
     if (document.status === "draft") {
       if (!isEditMode) {
         // Entering edit mode - load existing signature areas and alias
-        setSignatureAreas(signatures.map((sig) => ({
-          x: sig.x,
-          y: sig.y,
-          width: sig.width,
-          height: sig.height,
-          type: (sig as any).area_type === 'text' ? 'text' : 'signature',
-          pageNumber: (sig as any).page_number ?? 0,
-        })));
+        setSignatureAreas(signatures
+          .filter((sig) => sig.x != null && sig.y != null && sig.width != null && sig.height != null)
+          .map((sig) => ({
+            x: sig.x!,
+            y: sig.y!,
+            width: sig.width!,
+            height: sig.height!,
+            type: (sig as any).area_type === 'text' ? 'text' : 'signature',
+            pageNumber: (sig as any).page_number ?? 0,
+          })));
         setEditedAlias(document.alias || "");
       } else {
         // Exiting edit mode - clear signature areas and reset alias
@@ -272,6 +274,7 @@ export default function DocumentDetailComponent({
   const canEdit = document.status === "draft";
   const canDelete = document.status === "draft" || document.status === "completed";
   const isCompleted = document.status === "completed";
+  const shouldRenderAsPdf = isPdf || (isCompleted && !!signedDocumentPreviewUrl && signedDocumentPreviewUrl.includes('.pdf'));
 
   // Display alias if exists, otherwise show filename
   const displayName = document.alias || document.filename;
@@ -466,7 +469,7 @@ export default function DocumentDetailComponent({
               {displayName}
             </h1>
             <div className="self-start sm:self-center">
-              {getStatusBadge(document.status)}
+              {getStatusBadge(document.status ?? 'draft')}
             </div>
           </div>
 
@@ -856,11 +859,11 @@ export default function DocumentDetailComponent({
                   height: 'auto'
                 }}
               >
-                {!displayImageUrl && !isPdf ? (
+                {!displayImageUrl && !shouldRenderAsPdf ? (
                   <div className="w-full h-96 flex items-center justify-center bg-gray-100">
                     <p className="text-gray-500">{t("documentDetail.loading")}</p>
                   </div>
-                ) : isPdf ? (
+                ) : shouldRenderAsPdf ? (
                   <PdfPageRenderer
                     pdfUrl={isCompleted && signedDocumentPreviewUrl ? signedDocumentPreviewUrl : (documentUrl || "")}
                     currentPage={currentPdfPage}

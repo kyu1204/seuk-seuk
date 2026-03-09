@@ -2405,10 +2405,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     // Replace parameters in the translation string (supports {{param}} format)
     if (actualParams) {
       Object.keys(actualParams).forEach((param) => {
-        translation = translation.replace(
+        translation = translation?.replace(
           new RegExp(`\\{\\{${param}\\}\\}`, "g"),
           String(actualParams![param])
-        );
+        ) ?? '';
       });
     }
 

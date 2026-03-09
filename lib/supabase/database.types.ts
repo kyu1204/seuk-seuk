@@ -658,3 +658,16 @@ export interface SignatureArea {
   type: 'signature' | 'text';
   pageNumber?: number;
 }
+
+// Convenience type aliases
+export type Document = Tables<"documents">;
+export type DocumentInsert = TablesInsert<"documents">;
+export type Signature = Tables<"signatures">;
+export type SignatureInsert = TablesInsert<"signatures">;
+export type Publication = Tables<"publications">;
+export type PublicationInsert = TablesInsert<"publications">;
+export type ClientDocument = Document;
+export type ClientPublication = Publication;
+export type PublicationWithDocuments = Publication & {
+  documents: (Document & { signatures: Signature[] })[];
+};
