@@ -55,7 +55,9 @@ export default async function RootLayout({
 
   return (
     <html lang={language === "ko" ? "ko" : "en"} suppressHydrationWarning>
-      <head />
+      <head>
+        <meta name="naver-site-verification" content="24ae5cf6d9a265c90d7a677e7b820b8fbb00472b" />
+      </head>
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
