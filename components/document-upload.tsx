@@ -529,20 +529,20 @@ export default function DocumentUpload() {
               }`}
             >
               <FileText className={`h-6 w-6 ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <div className="relative flex items-center justify-center w-full">
-                <span className={`text-sm font-medium ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <div className="flex items-center justify-center w-full">
+                <span className={`relative text-sm font-medium ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`}>
                   {t("pdf_document")}
+                  {!canUsePdf ? (
+                    <span className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap">
+                      <Lock className="h-3 w-3" />
+                      {t("pdf_pro_badge")}
+                    </span>
+                  ) : (
+                    <span className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary whitespace-nowrap">
+                      {t("pdf_pro_badge")}
+                    </span>
+                  )}
                 </span>
-                {!canUsePdf ? (
-                  <span className="absolute left-[calc(50%+1.5em)] ml-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap">
-                    <Lock className="h-3 w-3" />
-                    {t("pdf_pro_badge")}
-                  </span>
-                ) : (
-                  <span className="absolute left-[calc(50%+1.5em)] ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary whitespace-nowrap">
-                    {t("pdf_pro_badge")}
-                  </span>
-                )}
               </div>
             </button>
           </div>
