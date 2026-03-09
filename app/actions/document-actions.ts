@@ -601,10 +601,10 @@ export async function generateSignedPdf(
       data: { publicUrl: pdfPublicUrl },
     } = supabaseService.storage.from('signed-documents').getPublicUrl(pdfPath);
 
-    // Update document with signed file URLs
+    // Update document with signed file URLs (use PDF URL for both)
     const { error: updateError } = await supabase
       .from('documents')
-      .update({ signed_file_url: publicUrl, signed_pdf_url: pdfPublicUrl })
+      .update({ signed_file_url: pdfPublicUrl, signed_pdf_url: pdfPublicUrl })
       .eq('id', documentId);
 
     if (updateError) {
@@ -615,12 +615,24 @@ export async function generateSignedPdf(
       return { error: 'Failed to update document with signed file URL' };
     }
 
+    // Delete the intermediate PNG file since PDF is now the primary format
+    const { error: pngDeleteError } = await supabaseService.storage
+      .from('signed-documents')
+      .remove([signedImagePath]);
+
+    if (pngDeleteError) {
+      // Non-critical: log but don't fail the operation
+      console.warn(`[PDF] Failed to cleanup PNG file ${signedImagePath}:`, pngDeleteError);
+    } else {
+      console.log(`[PDF] PNG cleanup successful: ${signedImagePath} (${Date.now() - startTime}ms)`);
+    }
+
     console.log(`[PDF] Database updated (${Date.now() - startTime}ms)`);
 
     const totalTime = Date.now() - startTime;
     console.log(`[PDF] ✅ Complete! Total time: ${totalTime}ms`);
 
-    return { success: true, signedFileUrl: publicUrl, signedPdfUrl: pdfPublicUrl };
+    return { success: true, signedPdfUrl: pdfPublicUrl };
   } catch (error) {
     console.error('[PDF] ❌ Unexpected error:', error);
     return { error: 'An unexpected error occurred' };
