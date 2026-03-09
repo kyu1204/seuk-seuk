@@ -99,8 +99,8 @@ export class ProcessWebhook {
       // Log detailed subscription data for debugging
       console.log('[subscription] Paddle data:', JSON.stringify({
         status: eventData.data.status,
-        scheduledChange: eventData.data.scheduledChange,
-        nextBilledAt: eventData.data.nextBilledAt,
+        scheduled_change: eventData.data.scheduled_change,
+        next_billed_at: eventData.data.next_billed_at,
         current_billing_period: eventData.data.currentBillingPeriod,
       }, null, 2));
 
@@ -109,8 +109,8 @@ export class ProcessWebhook {
       let finalStatus = this.mapPaddleStatus(eventData.data.status);
       
       // Priority 1: If subscription has scheduled cancellation, use effective_at
-      if (eventData.data.scheduledChange?.action === 'cancel') {
-        endsAt = eventData.data.scheduledChange.effectiveAt || null;
+      if (eventData.data.scheduled_change?.action === 'cancel') {
+        endsAt = eventData.data.scheduled_change.effective_at || null;
         console.log(`[subscription] Scheduled cancellation detected, ends_at: ${endsAt}`);
 
         // Check if subscription has already expired
@@ -120,8 +120,8 @@ export class ProcessWebhook {
         }
       }
       // Priority 2: Use next_billed_at for active recurring subscriptions
-      else if (eventData.data.nextBilledAt) {
-        endsAt = eventData.data.nextBilledAt;
+      else if (eventData.data.next_billed_at) {
+        endsAt = eventData.data.next_billed_at;
         console.log(`[subscription] Setting ends_at to next billing date: ${endsAt}`);
       }
       // Priority 3: Fallback to current billing period end date
