@@ -274,6 +274,7 @@ export default function DocumentDetailComponent({
   const canEdit = document.status === "draft";
   const canDelete = document.status === "draft" || document.status === "completed";
   const isCompleted = document.status === "completed";
+  const shouldRenderAsPdf = isPdf || (isCompleted && !!signedDocumentPreviewUrl && signedDocumentPreviewUrl.includes('.pdf'));
 
   // Display alias if exists, otherwise show filename
   const displayName = document.alias || document.filename;
@@ -858,11 +859,11 @@ export default function DocumentDetailComponent({
                   height: 'auto'
                 }}
               >
-                {!displayImageUrl && !isPdf ? (
+                {!displayImageUrl && !shouldRenderAsPdf ? (
                   <div className="w-full h-96 flex items-center justify-center bg-gray-100">
                     <p className="text-gray-500">{t("documentDetail.loading")}</p>
                   </div>
-                ) : isPdf ? (
+                ) : shouldRenderAsPdf ? (
                   <PdfPageRenderer
                     pdfUrl={isCompleted && signedDocumentPreviewUrl ? signedDocumentPreviewUrl : (documentUrl || "")}
                     currentPage={currentPdfPage}
