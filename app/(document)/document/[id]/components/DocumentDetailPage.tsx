@@ -103,14 +103,16 @@ export default function DocumentDetailComponent({
     if (document.status === "draft") {
       if (!isEditMode) {
         // Entering edit mode - load existing signature areas and alias
-        setSignatureAreas(signatures.map((sig) => ({
-          x: sig.x ?? 0,
-          y: sig.y ?? 0,
-          width: sig.width ?? 0,
-          height: sig.height ?? 0,
-          type: (sig as any).area_type === 'text' ? 'text' : 'signature',
-          pageNumber: (sig as any).page_number ?? 0,
-        })));
+        setSignatureAreas(signatures
+          .filter((sig) => sig.x != null && sig.y != null && sig.width != null && sig.height != null)
+          .map((sig) => ({
+            x: sig.x!,
+            y: sig.y!,
+            width: sig.width!,
+            height: sig.height!,
+            type: (sig as any).area_type === 'text' ? 'text' : 'signature',
+            pageNumber: (sig as any).page_number ?? 0,
+          })));
         setEditedAlias(document.alias || "");
       } else {
         // Exiting edit mode - clear signature areas and reset alias

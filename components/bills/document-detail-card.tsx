@@ -106,17 +106,7 @@ export function DocumentDetailCard({ document }: DocumentDetailCardProps) {
             <span className="font-medium">{formattedDate}</span>
           </div>
 
-          {(document as any).expires_at && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                {t("bills.expires")}
-              </span>
-              <span className="font-medium">
-                {new Date((document as any).expires_at).toLocaleDateString()}
-              </span>
-            </div>
-          )}
+
         </div>
 
         <Separator />

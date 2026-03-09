@@ -275,11 +275,12 @@ export default function SignPageComponent({
         // Convert signature coordinates to absolute pixels based on original image size
         let pixelCoords;
         try {
+          if (signature.x == null || signature.y == null || signature.width == null || signature.height == null) continue;
           const relativeArea = ensureRelativeCoordinate({
-            x: signature.x ?? 0,
-            y: signature.y ?? 0,
-            width: signature.width ?? 0,
-            height: signature.height ?? 0,
+            x: signature.x,
+            y: signature.y,
+            width: signature.width,
+            height: signature.height,
             type: signature.area_type as 'signature' | 'text',
             pageNumber: signature.page_number,
           }, naturalWidth, naturalHeight);
@@ -700,10 +701,10 @@ export default function SignPageComponent({
                 <p className="text-sm text-red-700 text-center font-medium">
                   {documentData.alias || documentData.filename}
                 </p>
-                {(documentData as any).expires_at && (
+                {publicationData.expires_at && (
                   <p className="text-xs text-red-600 text-center mt-1">
                     {t("sign.expired.date")}{" "}
-                    {new Date((documentData as any).expires_at).toLocaleDateString(
+                    {new Date(publicationData.expires_at).toLocaleDateString(
                       "ko-KR"
                     )}
                   </p>
@@ -905,11 +906,14 @@ export default function SignPageComponent({
                       }
 
                       const { width: originalWidth, height: originalHeight } = getImageNaturalDimensions(documentContainerRef.current);
+                      if (signature.x == null || signature.y == null || signature.width == null || signature.height == null) {
+                        return { left: '0px', top: '0px', width: '0px', height: '0px' };
+                      }
                       const relativeArea = ensureRelativeCoordinate({
-                        x: signature.x ?? 0,
-                        y: signature.y ?? 0,
-                        width: signature.width ?? 0,
-                        height: signature.height ?? 0,
+                        x: signature.x,
+                        y: signature.y,
+                        width: signature.width,
+                        height: signature.height,
                         type: signature.area_type as 'signature' | 'text',
                         pageNumber: signature.page_number,
                       }, originalWidth, originalHeight);
