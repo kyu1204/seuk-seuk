@@ -681,7 +681,7 @@ export default function DocumentUpload() {
               <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading || isSelecting}
+                disabled={isLoading || isSelecting || images.some((img) => img.isPdf)}
               >
                 <Upload className="mr-1.5 h-4 w-4" />
                 {t("upload.addMore")}
