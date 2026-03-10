@@ -678,14 +678,16 @@ export default function DocumentUpload() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading || isSelecting || images.some((img) => img.isPdf)}
-              >
-                <Upload className="mr-1.5 h-4 w-4" />
-                {t("upload.addMore")}
-              </Button>
+              {!images.some((img) => img.isPdf) && (
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || isSelecting}
+                >
+                  <Upload className="mr-1.5 h-4 w-4" />
+                  {t("upload.addMore")}
+                </Button>
+              )}
               <Button
                 onClick={handleSaveDocument}
                 disabled={
