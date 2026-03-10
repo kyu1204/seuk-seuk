@@ -70,6 +70,8 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.deleteImageCancel": "취소",
     "upload.deleteImageDelete": "삭제",
     "upload.clearAll": "전체 삭제",
+    "upload.clearAllTitle": "전체 삭제",
+    "upload.clearAllConfirm": "업로드된 {count}개의 이미지를 모두 삭제하시겠습니까?",
 
     // PDF
     pdf_document: "PDF 문서",
@@ -1215,6 +1217,8 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.deleteImageCancel": "Cancel",
     "upload.deleteImageDelete": "Delete",
     "upload.clearAll": "Clear All",
+    "upload.clearAllTitle": "Clear All",
+    "upload.clearAllConfirm": "Are you sure you want to delete all {count} images?",
 
     // PDF
     pdf_document: "PDF Document",

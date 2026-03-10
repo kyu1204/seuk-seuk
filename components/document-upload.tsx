@@ -103,6 +103,8 @@ export default function DocumentUpload() {
 
   // Delete image confirmation modal
   const [showDeleteImageModal, setShowDeleteImageModal] = useState<boolean>(false);
+  // Clear all confirmation modal
+  const [showClearAllModal, setShowClearAllModal] = useState<boolean>(false);
 
   // Sync carousel index with state
   useEffect(() => {
@@ -660,7 +662,7 @@ export default function DocumentUpload() {
               {images.length > 1 && (
                 <Button
                   variant="outline"
-                  onClick={handleClearDocument}
+                  onClick={() => setShowClearAllModal(true)}
                   className="text-muted-foreground"
                   size="sm"
                 >
@@ -1132,6 +1134,29 @@ export default function DocumentUpload() {
             </Button>
             <Button variant="destructive" onClick={handleRemoveImage}>
               {t("upload.deleteImageDelete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear All Confirmation Modal */}
+      <Dialog open={showClearAllModal} onOpenChange={setShowClearAllModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              {t("upload.clearAllTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("upload.clearAllConfirm").replace("{count}", String(images.length))}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowClearAllModal(false)}>
+              {t("upload.deleteImageCancel")}
+            </Button>
+            <Button variant="destructive" onClick={() => { setShowClearAllModal(false); handleClearDocument(); }}>
+              {t("upload.clearAll")}
             </Button>
           </DialogFooter>
         </DialogContent>
