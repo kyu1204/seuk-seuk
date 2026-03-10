@@ -101,6 +101,11 @@ export default function DocumentUpload() {
   const [showValidationModal, setShowValidationModal] = useState<boolean>(false);
   const [missingAreaIndices, setMissingAreaIndices] = useState<number[]>([]);
 
+  // Delete image confirmation modal
+  const [showDeleteImageModal, setShowDeleteImageModal] = useState<boolean>(false);
+  // Clear all confirmation modal
+  const [showClearAllModal, setShowClearAllModal] = useState<boolean>(false);
+
   // Sync carousel index with state
   useEffect(() => {
     if (!carouselApi) return;
@@ -302,6 +307,61 @@ export default function DocumentUpload() {
     setUploadMode('image');
   };
 
+  const handleRemoveImage = () => {
+    const indexToRemove = currentIndex;
+
+    // Clear selection state to prevent stale selector on next image
+    setIsSelecting(false);
+    setPdfPageImageForSelector(null);
+
+    // If only one image, clear everything
+    if (images.length <= 1) {
+      handleClearDocument();
+      setShowDeleteImageModal(false);
+      return;
+    }
+
+    // Remove image from array
+    const newImages = images.filter((_, i) => i !== indexToRemove);
+
+    // Rebuild aliasMap with shifted indices
+    const newAliasMap = new Map<number, string>();
+    aliasMap.forEach((value, key) => {
+      if (key < indexToRemove) {
+        newAliasMap.set(key, value);
+      } else if (key > indexToRemove) {
+        newAliasMap.set(key - 1, value);
+      }
+    });
+
+    // Rebuild signatureAreasMap with shifted indices
+    const newSignatureAreasMap = new Map<number, RelativeSignatureArea[]>();
+    signatureAreasMap.forEach((value, key) => {
+      if (key < indexToRemove) {
+        newSignatureAreasMap.set(key, value);
+      } else if (key > indexToRemove) {
+        newSignatureAreasMap.set(key - 1, value);
+      }
+    });
+
+    // Adjust currentIndex
+    const newIndex = indexToRemove >= newImages.length
+      ? newImages.length - 1
+      : indexToRemove;
+
+    setImages(newImages);
+    setAliasMap(newAliasMap);
+    setSignatureAreasMap(newSignatureAreasMap);
+    setCurrentIndex(newIndex);
+    setCurrentPdfPage(1);
+    setShowDeleteImageModal(false);
+
+    // Sync carousel after state update
+    requestAnimationFrame(() => {
+      carouselApi?.scrollTo(newIndex);
+    });
+  };
+
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 0.25, 3));
   };
@@ -496,6 +556,15 @@ export default function DocumentUpload() {
 
   return (
     <div className="space-y-8">
+      {/* Hidden file input shared across initial and editing views */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={uploadMode === 'pdf' ? ".pdf,application/pdf" : "image/*"}
+        multiple={uploadMode === 'image'}
+        className="hidden"
+        onChange={handleFileChange}
+      />
       {error && images.length === 0 && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
           {error}
@@ -578,38 +647,56 @@ export default function DocumentUpload() {
                   <Upload className="mr-2 h-4 w-4" />
                   {t("upload.button")}
                 </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={uploadMode === 'pdf' ? ".pdf,application/pdf" : "image/*"}
-                  multiple={uploadMode === 'image'}
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
               </div>
             </CardContent>
           </Card>
         </div>
       ) : (
         <div className="space-y-4">
-          {/* 1. Clear / Save buttons */}
+          {/* 1. Delete / Clear / Save buttons */}
           <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={handleClearDocument}
-              className="text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/5"
-            >
-              <Trash2 className="mr-1.5 h-4 w-4" />
-              {t("upload.clear")}
-            </Button>
-            <Button
-              onClick={handleSaveDocument}
-              disabled={
-                totalAreasCount === 0 || isLoading || images.length === 0
-              }
-            >
-              {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteImageModal(true)}
+                disabled={isLoading || isSelecting}
+                className="text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/5"
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                {t("upload.clear")}
+              </Button>
+              {images.length > 1 && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowClearAllModal(true)}
+                  disabled={isLoading || isSelecting}
+                  className="text-muted-foreground"
+                  size="sm"
+                >
+                  {t("upload.clearAll")}
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {!images.some((img) => img.isPdf) && (
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || isSelecting}
+                >
+                  <Upload className="mr-1.5 h-4 w-4" />
+                  {t("upload.addMore")}
+                </Button>
+              )}
+              <Button
+                onClick={handleSaveDocument}
+                disabled={
+                  totalAreasCount === 0 || isLoading || images.length === 0
+                }
+              >
+                {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
+              </Button>
+            </div>
           </div>
 
           {/* 2. File Information - per image */}
@@ -1042,6 +1129,57 @@ export default function DocumentUpload() {
           )}
         </div>
       )}
+
+      {/* Delete Image Confirmation Modal */}
+      <Dialog open={showDeleteImageModal} onOpenChange={setShowDeleteImageModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              {t("upload.deleteImageTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("upload.deleteImageConfirm")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm text-muted-foreground">
+              {t("upload.deleteImageFileName").replace("{fileName}", images[currentIndex]?.fileName || "")}
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowDeleteImageModal(false)}>
+              {t("upload.deleteImageCancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleRemoveImage} disabled={isLoading}>
+              {t("upload.deleteImageDelete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear All Confirmation Modal */}
+      <Dialog open={showClearAllModal} onOpenChange={setShowClearAllModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              {t("upload.clearAllTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("upload.clearAllConfirm").replace("{count}", String(images.length))}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowClearAllModal(false)}>
+              {t("upload.deleteImageCancel")}
+            </Button>
+            <Button variant="destructive" disabled={isLoading} onClick={() => { setShowClearAllModal(false); handleClearDocument(); }}>
+              {t("upload.clearAll")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Validation Modal */}
       <Dialog open={showValidationModal} onOpenChange={setShowValidationModal}>

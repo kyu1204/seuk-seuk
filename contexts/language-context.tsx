@@ -64,6 +64,15 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.noSignatureAreaWarningItem": "{index}번째 이미지에 서명 영역이 없습니다.",
     "upload.goToImage": "해당 이미지로 이동",
     "upload.savingProgress": "저장 중... ({current}/{total})",
+    "upload.deleteImageTitle": "이미지 삭제",
+    "upload.deleteImageConfirm": "이 이미지를 삭제하시겠습니까?",
+    "upload.deleteImageFileName": "파일명: {fileName}",
+    "upload.deleteImageCancel": "취소",
+    "upload.deleteImageDelete": "삭제",
+    "upload.clearAll": "전체 삭제",
+    "upload.clearAllTitle": "전체 삭제",
+    "upload.clearAllConfirm": "업로드된 {count}개의 이미지를 모두 삭제하시겠습니까?",
+    "upload.addMore": "문서 추가",
 
     // PDF
     pdf_document: "PDF 문서",
@@ -1203,6 +1212,15 @@ const translations: Record<Language, Record<string, string>> = {
     "upload.noSignatureAreaWarningItem": "Image {index} has no signature area.",
     "upload.goToImage": "Go to Image",
     "upload.savingProgress": "Saving... ({current}/{total})",
+    "upload.deleteImageTitle": "Delete Image",
+    "upload.deleteImageConfirm": "Are you sure you want to delete this image?",
+    "upload.deleteImageFileName": "File: {fileName}",
+    "upload.deleteImageCancel": "Cancel",
+    "upload.deleteImageDelete": "Delete",
+    "upload.clearAll": "Clear All",
+    "upload.clearAllTitle": "Clear All",
+    "upload.clearAllConfirm": "Are you sure you want to delete all {count} images?",
+    "upload.addMore": "Add Document",
 
     // PDF
     pdf_document: "PDF Document",
