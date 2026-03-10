@@ -101,6 +101,9 @@ export default function DocumentUpload() {
   const [showValidationModal, setShowValidationModal] = useState<boolean>(false);
   const [missingAreaIndices, setMissingAreaIndices] = useState<number[]>([]);
 
+  // Delete image confirmation modal
+  const [showDeleteImageModal, setShowDeleteImageModal] = useState<boolean>(false);
+
   // Sync carousel index with state
   useEffect(() => {
     if (!carouselApi) return;
@@ -300,6 +303,57 @@ export default function DocumentUpload() {
     setCurrentIndex(0);
     setCurrentPdfPage(1);
     setUploadMode('image');
+  };
+
+  const handleRemoveImage = () => {
+    const indexToRemove = currentIndex;
+
+    // If only one image, clear everything
+    if (images.length <= 1) {
+      handleClearDocument();
+      setShowDeleteImageModal(false);
+      return;
+    }
+
+    // Remove image from array
+    const newImages = images.filter((_, i) => i !== indexToRemove);
+
+    // Rebuild aliasMap with shifted indices
+    const newAliasMap = new Map<number, string>();
+    aliasMap.forEach((value, key) => {
+      if (key < indexToRemove) {
+        newAliasMap.set(key, value);
+      } else if (key > indexToRemove) {
+        newAliasMap.set(key - 1, value);
+      }
+    });
+
+    // Rebuild signatureAreasMap with shifted indices
+    const newSignatureAreasMap = new Map<number, RelativeSignatureArea[]>();
+    signatureAreasMap.forEach((value, key) => {
+      if (key < indexToRemove) {
+        newSignatureAreasMap.set(key, value);
+      } else if (key > indexToRemove) {
+        newSignatureAreasMap.set(key - 1, value);
+      }
+    });
+
+    // Adjust currentIndex
+    const newIndex = indexToRemove >= newImages.length
+      ? newImages.length - 1
+      : indexToRemove;
+
+    setImages(newImages);
+    setAliasMap(newAliasMap);
+    setSignatureAreasMap(newSignatureAreasMap);
+    setCurrentIndex(newIndex);
+    setCurrentPdfPage(1);
+    setShowDeleteImageModal(false);
+
+    // Sync carousel after state update
+    requestAnimationFrame(() => {
+      carouselApi?.scrollTo(newIndex);
+    });
   };
 
   const handleZoomIn = () => {
@@ -592,16 +646,28 @@ export default function DocumentUpload() {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* 1. Clear / Save buttons */}
+          {/* 1. Delete / Clear / Save buttons */}
           <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={handleClearDocument}
-              className="text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/5"
-            >
-              <Trash2 className="mr-1.5 h-4 w-4" />
-              {t("upload.clear")}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteImageModal(true)}
+                className="text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/5"
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                {t("upload.clear")}
+              </Button>
+              {images.length > 1 && (
+                <Button
+                  variant="outline"
+                  onClick={handleClearDocument}
+                  className="text-muted-foreground"
+                  size="sm"
+                >
+                  {t("upload.clearAll")}
+                </Button>
+              )}
+            </div>
             <Button
               onClick={handleSaveDocument}
               disabled={
@@ -1042,6 +1108,34 @@ export default function DocumentUpload() {
           )}
         </div>
       )}
+
+      {/* Delete Image Confirmation Modal */}
+      <Dialog open={showDeleteImageModal} onOpenChange={setShowDeleteImageModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              {t("upload.deleteImageTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("upload.deleteImageConfirm")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm text-muted-foreground">
+              {t("upload.deleteImageFileName").replace("{fileName}", images[currentIndex]?.fileName || "")}
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowDeleteImageModal(false)}>
+              {t("upload.deleteImageCancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleRemoveImage}>
+              {t("upload.deleteImageDelete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Validation Modal */}
       <Dialog open={showValidationModal} onOpenChange={setShowValidationModal}>
