@@ -552,6 +552,15 @@ export default function DocumentUpload() {
 
   return (
     <div className="space-y-8">
+      {/* Hidden file input shared across initial and editing views */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={uploadMode === 'pdf' ? ".pdf,application/pdf" : "image/*"}
+        multiple={uploadMode === 'image'}
+        className="hidden"
+        onChange={handleFileChange}
+      />
       {error && images.length === 0 && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
           {error}
@@ -634,14 +643,6 @@ export default function DocumentUpload() {
                   <Upload className="mr-2 h-4 w-4" />
                   {t("upload.button")}
                 </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={uploadMode === 'pdf' ? ".pdf,application/pdf" : "image/*"}
-                  multiple={uploadMode === 'image'}
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
               </div>
             </CardContent>
           </Card>
@@ -670,14 +671,24 @@ export default function DocumentUpload() {
                 </Button>
               )}
             </div>
-            <Button
-              onClick={handleSaveDocument}
-              disabled={
-                totalAreasCount === 0 || isLoading || images.length === 0
-              }
-            >
-              {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || isSelecting}
+              >
+                <Upload className="mr-1.5 h-4 w-4" />
+                {t("upload.addMore")}
+              </Button>
+              <Button
+                onClick={handleSaveDocument}
+                disabled={
+                  totalAreasCount === 0 || isLoading || images.length === 0
+                }
+              >
+                {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
+              </Button>
+            </div>
           </div>
 
           {/* 2. File Information - per image */}
