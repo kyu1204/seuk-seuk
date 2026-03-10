@@ -310,6 +310,10 @@ export default function DocumentUpload() {
   const handleRemoveImage = () => {
     const indexToRemove = currentIndex;
 
+    // Clear selection state to prevent stale selector on next image
+    setIsSelecting(false);
+    setPdfPageImageForSelector(null);
+
     // If only one image, clear everything
     if (images.length <= 1) {
       handleClearDocument();
@@ -655,6 +659,7 @@ export default function DocumentUpload() {
               <Button
                 variant="outline"
                 onClick={() => setShowDeleteImageModal(true)}
+                disabled={isLoading || isSelecting}
                 className="text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/5"
               >
                 <Trash2 className="mr-1.5 h-4 w-4" />
@@ -664,6 +669,7 @@ export default function DocumentUpload() {
                 <Button
                   variant="outline"
                   onClick={() => setShowClearAllModal(true)}
+                  disabled={isLoading || isSelecting}
                   className="text-muted-foreground"
                   size="sm"
                 >
@@ -1143,7 +1149,7 @@ export default function DocumentUpload() {
             <Button variant="outline" onClick={() => setShowDeleteImageModal(false)}>
               {t("upload.deleteImageCancel")}
             </Button>
-            <Button variant="destructive" onClick={handleRemoveImage}>
+            <Button variant="destructive" onClick={handleRemoveImage} disabled={isLoading}>
               {t("upload.deleteImageDelete")}
             </Button>
           </DialogFooter>
@@ -1166,7 +1172,7 @@ export default function DocumentUpload() {
             <Button variant="outline" onClick={() => setShowClearAllModal(false)}>
               {t("upload.deleteImageCancel")}
             </Button>
-            <Button variant="destructive" onClick={() => { setShowClearAllModal(false); handleClearDocument(); }}>
+            <Button variant="destructive" disabled={isLoading} onClick={() => { setShowClearAllModal(false); handleClearDocument(); }}>
               {t("upload.clearAll")}
             </Button>
           </DialogFooter>
