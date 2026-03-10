@@ -83,14 +83,17 @@ export default function TextInputModal({
 
     // Dynamic font sizing: single line, fit to fill the width
     let fontSize = maxHeight; // start with max height as upper bound
-    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+    ctx.font = `${fontSize}px ${fontFamily}`;
     while (fontSize > 20 && ctx.measureText(inputText).width > maxWidth) {
       fontSize -= 4;
-      ctx.font = `bold ${fontSize}px ${fontFamily}`;
+      ctx.font = `${fontSize}px ${fontFamily}`;
     }
 
+    // Reduce font size by 30% for thinner strokes matching signature pen width
+    fontSize = Math.round(fontSize * 0.7);
+
     ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+    ctx.font = `${fontSize}px ${fontFamily}`;
     ctx.fillStyle = "#000000";
     ctx.textBaseline = "middle";
 
