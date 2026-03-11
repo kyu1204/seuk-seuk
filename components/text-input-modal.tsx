@@ -81,10 +81,13 @@ export default function TextInputModal({
     const maxHeight = logicalHeight - padding * 2;
     const fontFamily = '-apple-system, "Noto Sans KR", sans-serif';
 
-    // Dynamic font sizing: single line, fit to fill the width
-    let fontSize = maxHeight; // start with max height as upper bound
+    // Dynamic font sizing with multi-line support
+    const minFontSize = 40; // minimum readable font size (before 0.7 reduction)
+    let fontSize = maxHeight;
     ctx.font = `${fontSize}px ${fontFamily}`;
-    while (fontSize > 20 && ctx.measureText(inputText).width > maxWidth) {
+
+    // Shrink font to fit single line, but stop at minFontSize
+    while (fontSize > minFontSize && ctx.measureText(inputText).width > maxWidth) {
       fontSize -= 4;
       ctx.font = `${fontSize}px ${fontFamily}`;
     }
@@ -97,11 +100,41 @@ export default function TextInputModal({
     ctx.fillStyle = "#000000";
     ctx.textBaseline = "middle";
 
-    // Center text
-    const textWidth = ctx.measureText(inputText).width;
-    const x = (logicalWidth - textWidth) / 2;
-    const y = logicalHeight / 2;
-    ctx.fillText(inputText, x, y);
+    const lineHeight = fontSize * 1.3;
+
+    // Check if text still overflows — if so, wrap into multiple lines
+    if (ctx.measureText(inputText).width > maxWidth) {
+      const lines = wrapText(ctx, inputText, maxWidth);
+      const totalHeight = lines.length * lineHeight;
+
+      // If lines overflow vertically, reduce font size further to fit
+      if (totalHeight > maxHeight) {
+        fontSize = Math.max(Math.floor(fontSize * (maxHeight / totalHeight)), 14);
+        ctx.font = `${fontSize}px ${fontFamily}`;
+        const newLineHeight = fontSize * 1.3;
+        const newLines = wrapText(ctx, inputText, maxWidth);
+        const newTotalHeight = newLines.length * newLineHeight;
+        const startY = (logicalHeight - newTotalHeight) / 2 + newLineHeight / 2;
+        for (let i = 0; i < newLines.length; i++) {
+          const tw = ctx.measureText(newLines[i]).width;
+          const x = (logicalWidth - tw) / 2;
+          ctx.fillText(newLines[i], x, startY + i * newLineHeight);
+        }
+      } else {
+        const startY = (logicalHeight - totalHeight) / 2 + lineHeight / 2;
+        for (let i = 0; i < lines.length; i++) {
+          const tw = ctx.measureText(lines[i]).width;
+          const x = (logicalWidth - tw) / 2;
+          ctx.fillText(lines[i], x, startY + i * lineHeight);
+        }
+      }
+    } else {
+      // Single line — center it
+      const textWidth = ctx.measureText(inputText).width;
+      const x = (logicalWidth - textWidth) / 2;
+      const y = logicalHeight / 2;
+      ctx.fillText(inputText, x, y);
+    }
 
     return canvas.toDataURL("image/png");
   };
