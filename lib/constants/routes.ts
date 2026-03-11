@@ -55,6 +55,7 @@ export const sitemapRoutes = [
   "/term",
   "/contact",
   "/forgot-password",
+  "/pricing",
 ] as const;
 
 /**
