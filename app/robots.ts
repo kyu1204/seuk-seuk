@@ -9,10 +9,24 @@ export default function robots(): MetadataRoute.Robots {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL!;
 
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: [
+          "/dashboard",
+          "/upload",
+          "/document/",
+          "/publish",
+          "/mypage",
+          "/bills",
+          "/checkout/",
+          "/auth/",
+          "/reset-password",
+          "/error",
+        ],
+      },
+    ],
     sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
