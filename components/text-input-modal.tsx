@@ -68,72 +68,46 @@ export default function TextInputModal({
     const ctx = canvas.getContext("2d");
     if (!ctx) return "";
 
-    // High-DPI scaling for sharp text
     const scale = 3;
-    const logicalWidth = 800;
-    const logicalHeight = 400;
+    const fontFamily = '-apple-system, "Noto Sans KR", sans-serif';
+    const padding = 20;
+
+    // Use a fixed font size that looks like handwriting
+    const fontSize = 60;
+    ctx.font = `${fontSize}px ${fontFamily}`;
+
+    const lineHeight = fontSize * 1.3;
+    const maxLineWidth = 800; // max width before wrapping
+
+    // Wrap text into lines
+    const lines = wrapText(ctx, inputText, maxLineWidth);
+
+    // Calculate actual content dimensions
+    let contentWidth = 0;
+    for (const line of lines) {
+      const w = ctx.measureText(line).width;
+      if (w > contentWidth) contentWidth = w;
+    }
+    const contentHeight = lines.length * lineHeight;
+
+    // Size canvas tightly around content
+    const logicalWidth = Math.ceil(contentWidth + padding * 2);
+    const logicalHeight = Math.ceil(contentHeight + padding * 2);
     canvas.width = logicalWidth * scale;
     canvas.height = logicalHeight * scale;
     ctx.scale(scale, scale);
-
-    const padding = 16;
-    const maxWidth = logicalWidth - padding * 2;
-    const maxHeight = logicalHeight - padding * 2;
-    const fontFamily = '-apple-system, "Noto Sans KR", sans-serif';
-
-    // Dynamic font sizing with multi-line support
-    const minFontSize = 40; // minimum readable font size (before 0.7 reduction)
-    let fontSize = maxHeight;
-    ctx.font = `${fontSize}px ${fontFamily}`;
-
-    // Shrink font to fit single line, but stop at minFontSize
-    while (fontSize > minFontSize && ctx.measureText(inputText).width > maxWidth) {
-      fontSize -= 4;
-      ctx.font = `${fontSize}px ${fontFamily}`;
-    }
-
-    // Reduce font size by 30% for thinner strokes matching signature pen width
-    fontSize = Math.round(fontSize * 0.7);
 
     ctx.clearRect(0, 0, logicalWidth, logicalHeight);
     ctx.font = `${fontSize}px ${fontFamily}`;
     ctx.fillStyle = "#000000";
     ctx.textBaseline = "middle";
 
-    const lineHeight = fontSize * 1.3;
-
-    // Check if text still overflows — if so, wrap into multiple lines
-    if (ctx.measureText(inputText).width > maxWidth) {
-      const lines = wrapText(ctx, inputText, maxWidth);
-      const totalHeight = lines.length * lineHeight;
-
-      // If lines overflow vertically, reduce font size further to fit
-      if (totalHeight > maxHeight) {
-        fontSize = Math.max(Math.floor(fontSize * (maxHeight / totalHeight)), 14);
-        ctx.font = `${fontSize}px ${fontFamily}`;
-        const newLineHeight = fontSize * 1.3;
-        const newLines = wrapText(ctx, inputText, maxWidth);
-        const newTotalHeight = newLines.length * newLineHeight;
-        const startY = (logicalHeight - newTotalHeight) / 2 + newLineHeight / 2;
-        for (let i = 0; i < newLines.length; i++) {
-          const tw = ctx.measureText(newLines[i]).width;
-          const x = (logicalWidth - tw) / 2;
-          ctx.fillText(newLines[i], x, startY + i * newLineHeight);
-        }
-      } else {
-        const startY = (logicalHeight - totalHeight) / 2 + lineHeight / 2;
-        for (let i = 0; i < lines.length; i++) {
-          const tw = ctx.measureText(lines[i]).width;
-          const x = (logicalWidth - tw) / 2;
-          ctx.fillText(lines[i], x, startY + i * lineHeight);
-        }
-      }
-    } else {
-      // Single line — center it
-      const textWidth = ctx.measureText(inputText).width;
-      const x = (logicalWidth - textWidth) / 2;
-      const y = logicalHeight / 2;
-      ctx.fillText(inputText, x, y);
+    // Draw lines centered horizontally
+    const startY = padding + lineHeight / 2;
+    for (let i = 0; i < lines.length; i++) {
+      const tw = ctx.measureText(lines[i]).width;
+      const x = (logicalWidth - tw) / 2;
+      ctx.fillText(lines[i], x, startY + i * lineHeight);
     }
 
     return canvas.toDataURL("image/png");
