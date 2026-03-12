@@ -18,6 +18,7 @@ interface TextInputModalProps {
   onClose: () => void;
   onComplete: (textImageData: string) => void;
   existingText?: string;
+  areaAspectRatio?: number; // width / height of the signature area
 }
 
 export default function TextInputModal({
@@ -25,6 +26,7 @@ export default function TextInputModal({
   onClose,
   onComplete,
   existingText,
+  areaAspectRatio = 4,
 }: TextInputModalProps) {
   const { t } = useLanguage();
   const [text, setText] = useState(existingText ?? "");
@@ -42,22 +44,18 @@ export default function TextInputModal({
   };
 
   const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
-    const paragraphs = text.split("\n");
     const lines: string[] = [];
-    for (const paragraph of paragraphs) {
-      if (paragraph === "") { lines.push(""); continue; }
-      let currentLine = "";
-      for (const char of paragraph) {
-        const testLine = currentLine + char;
-        if (ctx.measureText(testLine).width > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = char;
-        } else {
-          currentLine = testLine;
-        }
+    let currentLine = "";
+    for (const char of text) {
+      const testLine = currentLine + char;
+      if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = char;
+      } else {
+        currentLine = testLine;
       }
-      if (currentLine) lines.push(currentLine);
     }
+    if (currentLine) lines.push(currentLine);
     return lines;
   };
 
@@ -68,40 +66,69 @@ export default function TextInputModal({
     const ctx = canvas.getContext("2d");
     if (!ctx) return "";
 
-    // High-DPI scaling for sharp text
     const scale = 3;
-    const logicalWidth = 800;
-    const logicalHeight = 400;
-    canvas.width = logicalWidth * scale;
-    canvas.height = logicalHeight * scale;
+    const fontFamily = '-apple-system, "Noto Sans KR", sans-serif';
+    const padding = 10;
+
+    // Canvas logical size based on area aspect ratio
+    const canvasWidth = 800;
+    const canvasHeight = Math.round(canvasWidth / areaAspectRatio);
+    const maxWidth = canvasWidth - padding * 2;
+    const maxHeight = canvasHeight - padding * 2;
+
+    canvas.width = canvasWidth * scale;
+    canvas.height = canvasHeight * scale;
     ctx.scale(scale, scale);
 
-    const padding = 16;
-    const maxWidth = logicalWidth - padding * 2;
-    const maxHeight = logicalHeight - padding * 2;
-    const fontFamily = '-apple-system, "Noto Sans KR", sans-serif';
-
-    // Dynamic font sizing: single line, fit to fill the width
-    let fontSize = maxHeight; // start with max height as upper bound
+    // Find optimal font size that fills the area
+    let fontSize = maxHeight; // start large
     ctx.font = `${fontSize}px ${fontFamily}`;
-    while (fontSize > 20 && ctx.measureText(inputText).width > maxWidth) {
-      fontSize -= 4;
+
+    // Try to fit as single line first, shrink until it fits or hits limit
+    while (fontSize > 12 && ctx.measureText(inputText).width > maxWidth) {
+      fontSize -= 2;
       ctx.font = `${fontSize}px ${fontFamily}`;
     }
 
-    // Reduce font size by 30% for thinner strokes matching signature pen width
-    fontSize = Math.round(fontSize * 0.7);
+    // If single line fits, use it
+    if (ctx.measureText(inputText).width <= maxWidth) {
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      ctx.fillStyle = "#000000";
+      ctx.textBaseline = "middle";
+      const textWidth = ctx.measureText(inputText).width;
+      const x = (canvasWidth - textWidth) / 2;
+      const y = canvasHeight / 2;
+      ctx.fillText(inputText, x, y);
+      return canvas.toDataURL("image/png");
+    }
 
-    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+    // Text too long for single line — find font size that fills area with wrapping
+    fontSize = maxHeight;
+    while (fontSize > 12) {
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      const lineHeight = fontSize * 1.3;
+      const lines = wrapText(ctx, inputText, maxWidth);
+      const totalHeight = lines.length * lineHeight;
+      if (totalHeight <= maxHeight) break;
+      fontSize -= 2;
+    }
+
+    const lineHeight = fontSize * 1.3;
+    const lines = wrapText(ctx, inputText, maxWidth);
+    const totalHeight = lines.length * lineHeight;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     ctx.font = `${fontSize}px ${fontFamily}`;
     ctx.fillStyle = "#000000";
     ctx.textBaseline = "middle";
 
-    // Center text
-    const textWidth = ctx.measureText(inputText).width;
-    const x = (logicalWidth - textWidth) / 2;
-    const y = logicalHeight / 2;
-    ctx.fillText(inputText, x, y);
+    const startY = (canvasHeight - totalHeight) / 2 + lineHeight / 2;
+    for (let i = 0; i < lines.length; i++) {
+      const tw = ctx.measureText(lines[i]).width;
+      const x = (canvasWidth - tw) / 2;
+      ctx.fillText(lines[i], x, startY + i * lineHeight);
+    }
 
     return canvas.toDataURL("image/png");
   };
