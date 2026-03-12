@@ -41,26 +41,6 @@ export default function TextInputModal({
     setText("");
   };
 
-  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
-    const paragraphs = text.split("\n");
-    const lines: string[] = [];
-    for (const paragraph of paragraphs) {
-      if (paragraph === "") { lines.push(""); continue; }
-      let currentLine = "";
-      for (const char of paragraph) {
-        const testLine = currentLine + char;
-        if (ctx.measureText(testLine).width > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = char;
-        } else {
-          currentLine = testLine;
-        }
-      }
-      if (currentLine) lines.push(currentLine);
-    }
-    return lines;
-  };
-
   const renderTextToCanvas = (inputText: string): string => {
     const canvas = canvasRef.current;
     if (!canvas) return "";
@@ -70,29 +50,15 @@ export default function TextInputModal({
 
     const scale = 3;
     const fontFamily = '-apple-system, "Noto Sans KR", sans-serif';
-    const padding = 20;
-
-    // Use a fixed font size that looks like handwriting
+    const padding = 10;
     const fontSize = 60;
+
     ctx.font = `${fontSize}px ${fontFamily}`;
 
-    const lineHeight = fontSize * 1.3;
-    const maxLineWidth = 800; // max width before wrapping
-
-    // Wrap text into lines
-    const lines = wrapText(ctx, inputText, maxLineWidth);
-
-    // Calculate actual content dimensions
-    let contentWidth = 0;
-    for (const line of lines) {
-      const w = ctx.measureText(line).width;
-      if (w > contentWidth) contentWidth = w;
-    }
-    const contentHeight = lines.length * lineHeight;
-
-    // Size canvas tightly around content
-    const logicalWidth = Math.ceil(contentWidth + padding * 2);
-    const logicalHeight = Math.ceil(contentHeight + padding * 2);
+    // Single line — canvas fits text tightly
+    const textWidth = ctx.measureText(inputText).width;
+    const logicalWidth = Math.ceil(textWidth + padding * 2);
+    const logicalHeight = Math.ceil(fontSize * 1.3 + padding * 2);
     canvas.width = logicalWidth * scale;
     canvas.height = logicalHeight * scale;
     ctx.scale(scale, scale);
@@ -102,13 +68,9 @@ export default function TextInputModal({
     ctx.fillStyle = "#000000";
     ctx.textBaseline = "middle";
 
-    // Draw lines centered horizontally
-    const startY = padding + lineHeight / 2;
-    for (let i = 0; i < lines.length; i++) {
-      const tw = ctx.measureText(lines[i]).width;
-      const x = (logicalWidth - tw) / 2;
-      ctx.fillText(lines[i], x, startY + i * lineHeight);
-    }
+    const x = (logicalWidth - textWidth) / 2;
+    const y = logicalHeight / 2;
+    ctx.fillText(inputText, x, y);
 
     return canvas.toDataURL("image/png");
   };
