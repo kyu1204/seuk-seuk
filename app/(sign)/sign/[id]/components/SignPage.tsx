@@ -988,6 +988,10 @@ export default function SignPageComponent({
             onClose={() => setIsModalOpen(false)}
             onComplete={handleSignatureComplete}
             existingText={undefined}
+            areaAspectRatio={(() => {
+              const area = localSignatures.find(s => s.area_index === selectedArea);
+              return area && area.height > 0 ? area.width / area.height : 4;
+            })()}
           />
         ) : (
           <SignatureModal

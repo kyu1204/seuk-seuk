@@ -956,6 +956,10 @@ export default function SignSingleDocument({
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onComplete={handleSignatureComplete}
+            areaAspectRatio={(() => {
+              const area = localSignatures.find(s => s.area_index === selectedArea);
+              return area && area.height > 0 ? area.width / area.height : 4;
+            })()}
           />
         ) : (
           <SignatureModal
