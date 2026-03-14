@@ -27,6 +27,7 @@ import AreaSelector from "@/components/area-selector";
 import {
   uploadDocument,
   createSignatureAreas,
+  createPreviewUploadUrls,
 } from "@/app/actions/document-actions";
 import { canUploadPdf } from "@/app/actions/subscription-actions";
 import { useLanguage } from "@/contexts/language-context";
@@ -449,6 +450,61 @@ export default function DocumentUpload() {
     carouselApi?.scrollTo(index);
   }, [carouselApi]);
 
+  // Generate JPEG preview images for PDF pages
+  const generatePdfPreviews = async (file: File, documentId: string, pageCount: number) => {
+    try {
+      const pdfjsLib = await import("pdfjs-dist");
+      if (typeof window !== "undefined") {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+
+      // Get presigned upload URLs
+      const urlResult = await createPreviewUploadUrls(documentId, pageCount);
+      if (urlResult.error || !urlResult.uploadUrls) {
+        console.error("Failed to get preview upload URLs:", urlResult.error);
+        return;
+      }
+
+      // Render each page and upload
+      for (let i = 0; i < pageCount; i++) {
+        const page = await pdf.getPage(i + 1); // pdf.js pages are 1-indexed
+        const viewport = page.getViewport({ scale: 2 }); // 2x for good quality
+
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) continue;
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
+        // Convert to JPEG blob
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob((b) => resolve(b), "image/jpeg", 0.85);
+        });
+        if (!blob) continue;
+
+        // Upload to presigned URL
+        const uploadInfo = urlResult.uploadUrls.find((u) => u.page === i);
+        if (!uploadInfo) continue;
+
+        await fetch(uploadInfo.url, {
+          method: "PUT",
+          body: blob,
+          headers: { "Content-Type": "image/jpeg" },
+        });
+      }
+
+      pdf.destroy();
+    } catch (err) {
+      console.error("Failed to generate PDF previews:", err);
+      // Non-fatal: previews are optional, PDF still works on modern browsers
+    }
+  };
+
   const handleSaveDocument = async () => {
     if (images.length === 0) {
       setError("Please upload at least one document");
@@ -526,6 +582,12 @@ export default function DocumentUpload() {
         if (areasResult.error) {
           setError(areasResult.error);
           return;
+        }
+
+        // Step 3: Generate JPEG preview images for PDF documents (non-blocking)
+        if (img.file.type === "application/pdf") {
+          const pageCount = (uploadResult.document as any).page_count || 1;
+          await generatePdfPreviews(img.file, uploadResult.document.id, pageCount);
         }
       }
 

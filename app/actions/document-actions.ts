@@ -1679,3 +1679,92 @@ export async function updateDocumentAlias(
     return { error: "An unexpected error occurred" };
   }
 }
+
+/**
+ * Create presigned upload URLs for PDF preview images
+ * Called after PDF upload to generate JPEG preview images for each page
+ */
+export async function createPreviewUploadUrls(
+  documentId: string,
+  pageCount: number
+): Promise<{
+  uploadUrls?: { page: number; url: string; path: string }[];
+  error?: string;
+}> {
+  try {
+    const supabaseService = createServiceSupabase();
+
+    const urls: { page: number; url: string; path: string }[] = [];
+
+    for (let i = 0; i < pageCount; i++) {
+      const filePath = `previews/${documentId}/page-${i}.jpg`;
+
+      // Remove existing file if any
+      await supabaseService.storage
+        .from("documents")
+        .remove([filePath]);
+
+      const { data, error } = await supabaseService.storage
+        .from("documents")
+        .createSignedUploadUrl(filePath);
+
+      if (error || !data) {
+        console.error(`Failed to create upload URL for page ${i}:`, error);
+        return { error: `Failed to create upload URL for page ${i}` };
+      }
+
+      urls.push({
+        page: i,
+        url: data.signedUrl,
+        path: filePath,
+      });
+    }
+
+    return { uploadUrls: urls };
+  } catch (error) {
+    console.error("Create preview upload URLs error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Get signed URLs for PDF preview images
+ * Used by sign page and document detail to load JPEG previews instead of rendering PDF client-side
+ */
+export async function getPreviewImageSignedUrls(
+  documentId: string,
+  pageCount: number
+): Promise<{
+  urls?: (string | null)[];
+  error?: string;
+}> {
+  try {
+    const supabaseService = createServiceSupabase();
+
+    const urls: (string | null)[] = [];
+
+    for (let i = 0; i < pageCount; i++) {
+      const filePath = `previews/${documentId}/page-${i}.jpg`;
+
+      const { data, error } = await supabaseService.storage
+        .from("documents")
+        .createSignedUrl(filePath, 3600);
+
+      if (error || !data) {
+        urls.push(null);
+      } else {
+        urls.push(data.signedUrl);
+      }
+    }
+
+    // If no valid URLs found, previews don't exist
+    if (urls.every(u => u === null)) {
+      return { urls: [], error: "No preview images found" };
+    }
+
+    return { urls };
+  } catch (error) {
+    console.error("Get preview image signed URLs error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
