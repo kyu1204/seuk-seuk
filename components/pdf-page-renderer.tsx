@@ -148,7 +148,9 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
           const totalPixels = originalViewportForCalc.width * originalViewportForCalc.height;
 
           // iOS devices have lower canvas pixel limits
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          // iPadOS 13+ reports desktop UA, so also check maxTouchPoints
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
           const maxPixels = isIOS ? 8_000_000 : 16_000_000;
 
           const baseScale = totalPixels > maxPixels
