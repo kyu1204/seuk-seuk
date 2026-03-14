@@ -3,11 +3,9 @@
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 
-// Set worker source - use CDN for reliability in Next.js
+// Use local worker file from public/ to avoid CDN issues and iOS Safari compatibility problems
 if (typeof window !== "undefined") {
-  // Use .js instead of .mjs for broader iOS Safari compatibility (iOS < 15)
-  // Use explicit https:// instead of protocol-relative URL
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 }
 
 export interface PdfPageDimensions {
