@@ -4,6 +4,7 @@ import {
   updateSignatureAreas,
   getSignedDocumentUrls,
   deleteDocument,
+  getPreviewImageSignedUrls,
 } from "@/app/actions/document-actions";
 import AreaSelector from "@/components/area-selector";
 import DeleteDocumentModal from "@/components/delete-document-modal";
@@ -85,6 +86,7 @@ export default function DocumentDetailComponent({
   const [currentPdfPage, setCurrentPdfPage] = useState<number>(1);
   const [pdfPageDimensions, setPdfPageDimensions] = useState<PdfPageDimensions | null>(null);
   const [pdfPageImageForSelector, setPdfPageImageForSelector] = useState<string | null>(null);
+  const [previewImageUrls, setPreviewImageUrls] = useState<(string | null)[]>([]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -347,6 +349,17 @@ export default function DocumentDetailComponent({
     document.signed_file_url,
     document.signed_pdf_url,
   ]);
+
+  // Load PDF preview images for viewing
+  useEffect(() => {
+    if (isPdf && totalPages > 0) {
+      getPreviewImageSignedUrls(documentData.id, totalPages).then((result) => {
+        if (result.urls && result.urls.length > 0) {
+          setPreviewImageUrls(result.urls);
+        }
+      }).catch(() => {});
+    }
+  }, [isPdf, totalPages, documentData.id]);
 
   // Force re-render when image loads to ensure signature areas display correctly
   useEffect(() => {
@@ -864,12 +877,22 @@ export default function DocumentDetailComponent({
                     <p className="text-gray-500">{t("documentDetail.loading")}</p>
                   </div>
                 ) : shouldRenderAsPdf ? (
-                  <PdfPageRenderer
-                    pdfUrl={isCompleted && signedDocumentPreviewUrl ? signedDocumentPreviewUrl : (documentUrl || "")}
-                    currentPage={currentPdfPage}
-                    zoomLevel={1}
-                    onPageDimensionsChange={setPdfPageDimensions}
-                  />
+                  previewImageUrls.length > 0 && previewImageUrls[currentPdfPage - 1] && !isCompleted ? (
+                    <img
+                      src={previewImageUrls[currentPdfPage - 1]!}
+                      alt={`Page ${currentPdfPage}`}
+                      className="w-full h-auto object-contain block"
+                      draggable="false"
+                      style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                    />
+                  ) : (
+                    <PdfPageRenderer
+                      pdfUrl={isCompleted && signedDocumentPreviewUrl ? signedDocumentPreviewUrl : (documentUrl || "")}
+                      currentPage={currentPdfPage}
+                      zoomLevel={1}
+                      onPageDimensionsChange={setPdfPageDimensions}
+                    />
+                  )
                 ) : (
                   <img
                     src={displayImageUrl}
