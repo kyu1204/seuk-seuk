@@ -258,8 +258,9 @@ export default function SignSingleDocument({
         originalImage.crossOrigin = "anonymous";
 
         await new Promise((resolve, reject) => {
-          originalImage.onload = resolve;
-          originalImage.onerror = reject;
+          const timeout = setTimeout(() => reject(new Error("이미지 로딩 시간이 초과되었습니다.")), 30000);
+          originalImage.onload = () => { clearTimeout(timeout); resolve(undefined); };
+          originalImage.onerror = () => { clearTimeout(timeout); reject(new Error("이미지를 불러올 수 없습니다.")); };
           originalImage.src = documentSignedUrl || documentData.file_url;
         });
 

@@ -5,7 +5,9 @@ import * as pdfjsLib from "pdfjs-dist";
 
 // Set worker source - use CDN for reliability in Next.js
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+  // Use .js instead of .mjs for broader iOS Safari compatibility (iOS < 15)
+  // Use explicit https:// instead of protocol-relative URL
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
 }
 
 export interface PdfPageDimensions {
@@ -84,13 +86,13 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
             }
             loadingTask = pdfjsLib.getDocument({
               data: bytes,
-              cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+              cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
               cMapPacked: true,
             });
           } else {
             loadingTask = pdfjsLib.getDocument({
               url: pdfUrl,
-              cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+              cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
               cMapPacked: true,
             });
           }
@@ -141,16 +143,32 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
 
           if (cancelled) return;
 
-          // Use a base scale that renders at good quality
-          // PDF default is 72 DPI, we render at 2x for crisp display
-          const baseScale = 2;
+          // Dynamically adjust scale based on device canvas pixel limits
+          // iOS Safari has stricter limits: ~8MP on older devices, ~16MP on newer
+          const defaultScale = 2;
+          const originalViewportForCalc = page.getViewport({ scale: defaultScale });
+          const totalPixels = originalViewportForCalc.width * originalViewportForCalc.height;
+
+          // iOS devices have lower canvas pixel limits
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const maxPixels = isIOS ? 8_000_000 : 16_000_000;
+
+          const baseScale = totalPixels > maxPixels
+            ? defaultScale * Math.sqrt(maxPixels / totalPixels)
+            : defaultScale;
+
           const viewport = page.getViewport({ scale: baseScale });
 
           const canvas = canvasRef.current;
           if (!canvas) return;
 
           const context = canvas.getContext("2d");
-          if (!context) return;
+          if (!context) {
+            console.error("Failed to get canvas 2d context - device may have insufficient memory");
+            onLoadError?.("이 기기에서 PDF를 표시할 수 없습니다. 메모리가 부족합니다.");
+            setIsLoading(false);
+            return;
+          }
 
           // Set canvas dimensions to the viewport size
           canvas.width = viewport.width;
