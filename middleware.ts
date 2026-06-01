@@ -14,9 +14,9 @@ export const config = {
      * - favicon.ico (favicon file)
      * - sitemap.xml (SEO sitemap)
      * - robots.txt (SEO robots)
-     * - .*\\.(?:ico|png|svg|jpg|jpeg|gif|webp)$ (image files)
+     * - .*\\.(?:ico|png|svg|jpg|jpeg|gif|webp|mjs|js|wasm)$ (image/static asset files)
      * - api/webhook (Paddle webhook endpoint)
      */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/webhook|.*\\.(?:ico|png|svg|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/webhook|.*\\.(?:ico|png|svg|jpg|jpeg|gif|webp|mjs|js|wasm)$).*)",
   ],
 };
