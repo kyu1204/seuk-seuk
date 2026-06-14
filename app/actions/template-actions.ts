@@ -72,6 +72,18 @@ export async function createTemplate(formData: FormData): Promise<{
       return { error: "File and name are required" };
     }
 
+    // Whitelist allowed MIME types so non-image/non-PDF files can't be stored
+    // with mismatched metadata.
+    const allowedMime = new Set([
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+    ]);
+    if (!allowedMime.has(file.type)) {
+      return { error: "지원하지 않는 파일 형식입니다." };
+    }
+
     const isPdf = file.type === "application/pdf";
     const fileType = isPdf ? "pdf" : "image";
     let pageCount = 1;
@@ -171,6 +183,18 @@ export async function createTemplateAreas(
 
     if (verifyError || !template) {
       return { error: "Template not found or not owned by user" };
+    }
+
+    // Make the operation idempotent: clear existing areas before inserting so
+    // repeated calls (retries / edits) don't accumulate duplicate area_index.
+    const { error: clearError } = await supabase
+      .from("template_signature_areas")
+      .delete()
+      .eq("template_id", templateId);
+
+    if (clearError) {
+      console.error("Reset template areas error:", clearError);
+      return { error: "Failed to reset template areas" };
     }
 
     const inserts = buildTemplateAreaInserts(templateId, signatureAreas);
@@ -352,7 +376,7 @@ export async function publishFromTemplate(
     // Same charging policy as a normal document creation
     const { canCreateDocument, incrementDocumentCreated, decrementDocumentCreated } =
       await import("./subscription-actions");
-    const { deductCredit } = await import("./credit-actions");
+    const { deductCredit, refundCredit } = await import("./credit-actions");
 
     const { canCreate, usingCredit, reason, error: limitError } =
       await canCreateDocument();
@@ -401,6 +425,7 @@ export async function publishFromTemplate(
 
     // Track usage + credits exactly like uploadDocument
     await incrementDocumentCreated();
+    let creditDeducted = false;
     if (usingCredit) {
       const { success, error: creditError } = await deductCredit(
         "create",
@@ -413,7 +438,18 @@ export async function publishFromTemplate(
         await supabase.storage.from("documents").remove([newFilePath]);
         return { error: "크레딧 차감 실패" };
       }
+      creditDeducted = true;
     }
+
+    // Compensating rollback for failures after usage/credit were applied.
+    const rollbackClone = async () => {
+      await decrementDocumentCreated();
+      if (creditDeducted) {
+        await refundCredit("create", document.id);
+      }
+      await supabase.from("documents").delete().eq("id", document.id);
+      await supabase.storage.from("documents").remove([newFilePath]);
+    };
 
     // Clone signature areas as pending signatures
     const signatureInserts = buildClonedSignatureInserts(
@@ -427,8 +463,7 @@ export async function publishFromTemplate(
 
       if (sigError) {
         console.error("Cloned signatures insert error:", sigError);
-        await supabase.from("documents").delete().eq("id", document.id);
-        await supabase.storage.from("documents").remove([newFilePath]);
+        await rollbackClone();
         return { error: "Failed to clone signature areas" };
       }
     }
@@ -444,6 +479,7 @@ export async function publishFromTemplate(
 
     if (result.error || !result.shortUrl) {
       console.error("Publish from template error:", result.error);
+      await rollbackClone();
       return { error: result.error || "Failed to publish" };
     }
 

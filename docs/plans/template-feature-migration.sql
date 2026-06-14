@@ -13,7 +13,7 @@ CREATE TABLE document_templates (
   name        VARCHAR(255) NOT NULL,
   file_url    TEXT NOT NULL,                 -- 템플릿 전용 storage 경로 ({user_id}/templates/{uuid}.{ext})
   file_type   VARCHAR(20) NOT NULL DEFAULT 'image' CHECK (file_type IN ('image', 'pdf')),
-  page_count  INTEGER NOT NULL DEFAULT 1,
+  page_count  INTEGER NOT NULL DEFAULT 1 CHECK (page_count > 0),
   is_deleted  BOOLEAN NOT NULL DEFAULT FALSE,
   deleted_at  TIMESTAMPTZ,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -32,12 +32,11 @@ CREATE POLICY "Users can create their own templates"
   ON document_templates FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- 소프트 삭제(is_deleted/deleted_at)는 UPDATE 경로로만 처리한다.
+-- 하드 DELETE 정책을 두지 않아 deleteTemplate의 소프트 삭제 설계와
+-- 감사 이력 유지를 보장한다.
 CREATE POLICY "Users can update their own templates"
   ON document_templates FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own templates"
-  ON document_templates FOR DELETE
   USING (auth.uid() = user_id);
 
 -- ------------------------------------------------------------
@@ -57,6 +56,10 @@ CREATE TABLE template_signature_areas (
 );
 
 CREATE INDEX idx_template_signature_areas_template_id ON template_signature_areas(template_id);
+
+-- 동일 템플릿 내 area_index 중복 방지 (재시도/중복 호출 시 레이아웃 오염 방지)
+CREATE UNIQUE INDEX uq_template_signature_areas_template_area_index
+  ON template_signature_areas(template_id, area_index);
 
 ALTER TABLE template_signature_areas ENABLE ROW LEVEL SECURITY;
 

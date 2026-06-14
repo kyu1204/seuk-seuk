@@ -58,30 +58,39 @@ export default function TemplatesPageContent({
       return;
     }
     setIsSubmitting(true);
-    const result = await publishFromTemplate(publishTarget.id, {
-      name: name.trim(),
-      password,
-      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-    });
-    setIsSubmitting(false);
+    try {
+      const result = await publishFromTemplate(publishTarget.id, {
+        name: name.trim(),
+        password,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+      });
 
-    if (result.error) {
-      toast.error(result.error);
-      return;
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(t("templates.publish", "이 템플릿으로 발행"));
+      setPublishTarget(null);
+      router.push("/dashboard");
+    } catch {
+      toast.error(t("publish.errorPublishing", "발행 중 오류가 발생했습니다."));
+    } finally {
+      setIsSubmitting(false);
     }
-    toast.success(t("templates.publish", "이 템플릿으로 발행"));
-    setPublishTarget(null);
-    router.push("/dashboard");
   };
 
   const handleDelete = async (template: DocumentTemplate) => {
-    const result = await deleteTemplate(template.id);
-    if (result.error) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await deleteTemplate(template.id);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(t("templates.delete", "삭제"));
+      router.refresh();
+    } catch {
+      toast.error(t("templates.error", "오류가 발생했습니다."));
     }
-    toast.success(t("templates.delete", "삭제"));
-    router.refresh();
   };
 
   // Upsell view for non-Pro users

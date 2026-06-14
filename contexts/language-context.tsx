@@ -381,6 +381,7 @@ const translations: Record<Language, Record<string, string>> = {
     "templates.upgrade.title": "Pro 전용 기능",
     "templates.upgrade.description": "템플릿 기능은 Pro 또는 Enterprise 플랜에서 사용할 수 있습니다. 업그레이드하고 발행을 자동화하세요.",
     "templates.upgrade.cta": "요금제 보기",
+    "templates.error": "오류가 발생했습니다.",
     "dashboard.empty.title": "아직 업로드된 문서가 없습니다",
     "dashboard.empty.description":
       "첫 번째 문서를 업로드하여 시작해보세요. 문서를 업로드하고 서명 영역을 지정한 후 다른 사람과 공유할 수 있습니다.",
@@ -1548,6 +1549,7 @@ const translations: Record<Language, Record<string, string>> = {
     "templates.upgrade.title": "Pro-only feature",
     "templates.upgrade.description": "Templates are available on the Pro or Enterprise plan. Upgrade to automate your publishing.",
     "templates.upgrade.cta": "View pricing",
+    "templates.error": "Something went wrong.",
     "dashboard.empty.title": "No documents uploaded yet",
     "dashboard.empty.description":
       "Get started by uploading your first document. You can upload documents, define signature areas, and share them with others.",

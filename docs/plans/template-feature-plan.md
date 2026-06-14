@@ -1,4 +1,4 @@
-# 템플릿 기능 작업 계획 (Pro 플랜 전용)
+# 템플릿 기능 작업 계획 (Pro / Enterprise 플랜 전용)
 
 > 작성일: 2026-06-14
 > 상태: 계획 확정 대기 → 구현 예정
@@ -19,7 +19,7 @@
 ## 2. 현재 구조 분석 (리서치 결과)
 
 ### 데이터 모델
-```
+```text
 publications (1) ──< documents (N) ──< signatures (N)
    발행 단위           문서 인스턴스        서명영역 + 서명데이터
 ```
@@ -31,7 +31,7 @@ publications (1) ──< documents (N) ──< signatures (N)
 | `publications` | `short_url`, `password`(bcrypt), `expires_at`, `status` | 외부 공유 단위 |
 
 ### 생명주기 흐름 & 관련 코드
-```
+```text
 uploadDocument          → status=draft              (document-actions.ts:23)
 createSignatureAreas    → signatures insert         (document-actions.ts:363)
 createPublication       → status=draft→published    (publication-actions.ts:22)

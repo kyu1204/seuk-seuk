@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig, configDefaults } from "vitest/config";
 import { resolve } from "node:path";
 
 export default defineConfig({
@@ -9,7 +9,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts", "lib/**/*.spec.ts"],
+    include: ["**/*.{test,spec}.ts", "**/*.{test,spec}.tsx"],
+    exclude: [...configDefaults.exclude, ".next/**"],
     globals: false,
   },
 });
