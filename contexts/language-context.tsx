@@ -366,6 +366,21 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.header.description": "문서를 관리하고 서명을 수집하세요",
     "dashboard.publish": "문서 발행",
     "dashboard.upload": "업로드",
+
+    // Templates (Pro/Enterprise)
+    "templates.nav": "템플릿",
+    "templates.title": "템플릿",
+    "templates.description": "자주 쓰는 문서와 서명 영역을 템플릿으로 저장하고 발행만 반복하세요",
+    "templates.create": "템플릿 만들기",
+    "templates.publish": "이 템플릿으로 발행",
+    "templates.delete": "삭제",
+    "templates.empty.title": "아직 템플릿이 없습니다",
+    "templates.empty.description": "문서와 서명 영역 레이아웃을 템플릿으로 저장하면 동일한 양식을 반복해서 발행할 수 있습니다.",
+    "templates.empty.action": "첫 템플릿 만들기",
+    "templates.pageCount": "{{count}} 페이지",
+    "templates.upgrade.title": "Pro 전용 기능",
+    "templates.upgrade.description": "템플릿 기능은 Pro 또는 Enterprise 플랜에서 사용할 수 있습니다. 업그레이드하고 발행을 자동화하세요.",
+    "templates.upgrade.cta": "요금제 보기",
     "dashboard.empty.title": "아직 업로드된 문서가 없습니다",
     "dashboard.empty.description":
       "첫 번째 문서를 업로드하여 시작해보세요. 문서를 업로드하고 서명 영역을 지정한 후 다른 사람과 공유할 수 있습니다.",
@@ -1518,6 +1533,21 @@ const translations: Record<Language, Record<string, string>> = {
       "Manage your documents and collect signatures",
     "dashboard.publish": "Publish",
     "dashboard.upload": "Upload",
+
+    // Templates (Pro/Enterprise)
+    "templates.nav": "Templates",
+    "templates.title": "Templates",
+    "templates.description": "Save frequently used documents and signature layouts as templates and just keep publishing",
+    "templates.create": "Create template",
+    "templates.publish": "Publish from this template",
+    "templates.delete": "Delete",
+    "templates.empty.title": "No templates yet",
+    "templates.empty.description": "Save a document and its signature layout as a template to publish the same form again and again.",
+    "templates.empty.action": "Create your first template",
+    "templates.pageCount": "{{count}} pages",
+    "templates.upgrade.title": "Pro-only feature",
+    "templates.upgrade.description": "Templates are available on the Pro or Enterprise plan. Upgrade to automate your publishing.",
+    "templates.upgrade.cta": "View pricing",
     "dashboard.empty.title": "No documents uploaded yet",
     "dashboard.empty.description":
       "Get started by uploading your first document. You can upload documents, define signature areas, and share them with others.",

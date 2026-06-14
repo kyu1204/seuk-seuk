@@ -198,6 +198,92 @@ export type Database = {
           },
         ]
       }
+      document_templates: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          file_type: string
+          file_url: string
+          id: string
+          is_deleted: boolean
+          name: string
+          page_count: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          file_type?: string
+          file_url: string
+          id?: string
+          is_deleted?: boolean
+          name: string
+          page_count?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          is_deleted?: boolean
+          name?: string
+          page_count?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      template_signature_areas: {
+        Row: {
+          area_index: number
+          area_type: string
+          created_at: string
+          height: number | null
+          id: string
+          page_number: number
+          template_id: string
+          width: number | null
+          x: number | null
+          y: number | null
+        }
+        Insert: {
+          area_index: number
+          area_type?: string
+          created_at?: string
+          height?: number | null
+          id?: string
+          page_number?: number
+          template_id: string
+          width?: number | null
+          x?: number | null
+          y?: number | null
+        }
+        Update: {
+          area_index?: number
+          area_type?: string
+          created_at?: string
+          height?: number | null
+          id?: string
+          page_number?: number
+          template_id?: string
+          width?: number | null
+          x?: number | null
+          y?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_signature_areas_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "document_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_usage: {
         Row: {
           created_at: string | null
@@ -670,4 +756,13 @@ export type ClientDocument = Document;
 export type ClientPublication = Publication;
 export type PublicationWithDocuments = Publication & {
   documents: (Document & { signatures: Signature[] })[];
+};
+
+// Template types
+export type DocumentTemplate = Tables<"document_templates">;
+export type DocumentTemplateInsert = TablesInsert<"document_templates">;
+export type TemplateSignatureArea = Tables<"template_signature_areas">;
+export type TemplateSignatureAreaInsert = TablesInsert<"template_signature_areas">;
+export type TemplateWithAreas = DocumentTemplate & {
+  template_signature_areas: TemplateSignatureArea[];
 };
