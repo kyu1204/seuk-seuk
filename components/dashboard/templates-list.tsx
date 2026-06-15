@@ -49,7 +49,11 @@ export function TemplatesList() {
     try {
       const gate = await canUseTemplate();
       if (!gate.canUse) {
-        setAllowed(false);
+        if (gate.reason === "plan_not_allowed") {
+          setAllowed(false);
+          return;
+        }
+        setError(gate.error || "Failed to load templates");
         return;
       }
       setAllowed(true);

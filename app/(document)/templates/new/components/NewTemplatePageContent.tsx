@@ -9,9 +9,13 @@ import Link from "next/link";
 
 interface NewTemplatePageContentProps {
   allowed: boolean;
+  error?: string;
 }
 
-export function NewTemplatePageContent({ allowed }: NewTemplatePageContentProps) {
+export function NewTemplatePageContent({
+  allowed,
+  error,
+}: NewTemplatePageContentProps) {
   const { t } = useLanguage();
 
   if (!allowed) {
@@ -24,14 +28,22 @@ export function NewTemplatePageContent({ allowed }: NewTemplatePageContentProps)
               <Sparkles className="h-12 w-12 text-primary" />
             </div>
             <h1 className="text-2xl font-bold mb-2">
-              {t("templates.upgrade.title")}
+              {error ? t("templates.loadError.title") : t("templates.upgrade.title")}
             </h1>
             <p className="text-muted-foreground mb-6 max-w-md">
-              {t("templates.upgrade.description")}
+              {error || t("templates.upgrade.description")}
             </p>
-            <Button asChild size="lg">
-              <Link href="/pricing">{t("templates.upgrade.cta")}</Link>
-            </Button>
+            {error ? (
+              <Button asChild size="lg" variant="outline">
+                <Link href="/dashboard?tab=templates">
+                  {t("breadcrumb.dashboard")}
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild size="lg">
+                <Link href="/pricing">{t("templates.upgrade.cta")}</Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>

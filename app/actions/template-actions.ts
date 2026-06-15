@@ -25,12 +25,13 @@ import { getCurrentSubscription } from "./subscription-actions";
  */
 export async function canUseTemplate(): Promise<{
   canUse: boolean;
+  reason?: "plan_not_allowed" | "error";
   error?: string;
 }> {
   try {
     const { subscription, error } = await getCurrentSubscription();
     if (error) {
-      return { canUse: false, error };
+      return { canUse: false, reason: "error", error };
     }
 
     if (isTemplateAllowedPlan(subscription?.plan?.name)) {
@@ -39,11 +40,16 @@ export async function canUseTemplate(): Promise<{
 
     return {
       canUse: false,
+      reason: "plan_not_allowed",
       error: "템플릿 기능은 Pro 또는 Enterprise 플랜에서만 사용할 수 있습니다.",
     };
   } catch (error) {
     console.error("Can use template error:", error);
-    return { canUse: false, error: "An unexpected error occurred" };
+    return {
+      canUse: false,
+      reason: "error",
+      error: "An unexpected error occurred",
+    };
   }
 }
 

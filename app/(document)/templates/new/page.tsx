@@ -15,7 +15,12 @@ export default async function NewTemplatePage() {
     redirect("/login");
   }
 
-  const { canUse } = await canUseTemplate();
+  const gate = await canUseTemplate();
 
-  return <NewTemplatePageContent allowed={canUse} />;
+  return (
+    <NewTemplatePageContent
+      allowed={gate.canUse}
+      error={gate.reason === "error" ? gate.error : undefined}
+    />
+  );
 }
