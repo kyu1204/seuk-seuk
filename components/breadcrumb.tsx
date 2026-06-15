@@ -51,13 +51,6 @@ export function ProjectBreadcrumb() {
       });
     }
 
-    // Templates page
-    else if (pathname === "/templates") {
-      items.push({
-        label: t("templates.nav"),
-      });
-    }
-
     // Publication detail page
     else if (pathname.startsWith("/publication/")) {
       items.push({

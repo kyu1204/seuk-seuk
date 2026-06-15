@@ -6,6 +6,7 @@ import { BulkDeleteModal } from "@/components/dashboard/bulk-delete-modal";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { InfiniteScrollDocuments } from "@/components/dashboard/infinite-scroll-documents";
 import { PublicationsList } from "@/components/dashboard/publications-list";
+import { TemplatesList } from "@/components/dashboard/templates-list";
 import { StatusFilter } from "@/components/dashboard/status-filter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-type TabType = "documents" | "publications";
+type TabType = "documents" | "publications" | "templates";
 
 export function DashboardContent() {
   const { t } = useLanguage();
@@ -226,9 +227,10 @@ export function DashboardContent() {
     <>
       {/* Tab Switcher */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)} className="mb-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="documents">{t("dashboard.tabs.documents")}</TabsTrigger>
           <TabsTrigger value="publications">{t("dashboard.tabs.publications")}</TabsTrigger>
+          <TabsTrigger value="templates">{t("dashboard.tabs.templates")}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -304,6 +306,9 @@ export function DashboardContent() {
       {activeTab === "publications" && (
         <PublicationsList statusFilter={publicationStatus} />
       )}
+
+      {/* Templates Tab */}
+      {activeTab === "templates" && <TemplatesList />}
 
       {/* Bulk Delete Modal */}
       <BulkDeleteModal
