@@ -28,6 +28,11 @@ import {
   uploadDocument,
   createSignatureAreas,
 } from "@/app/actions/document-actions";
+import {
+  createTemplate,
+  createTemplateAreas,
+  deleteTemplate,
+} from "@/app/actions/template-actions";
 import { canUploadPdf } from "@/app/actions/subscription-actions";
 import { useLanguage } from "@/contexts/language-context";
 import type { SignatureArea } from "@/lib/supabase/database.types";
@@ -58,9 +63,16 @@ interface UploadFileData {
   pdfTotalPages?: number;
 }
 
-export default function DocumentUpload() {
+type DocumentUploadMode = "document" | "template";
+
+interface DocumentUploadProps {
+  mode?: DocumentUploadMode;
+}
+
+export default function DocumentUpload({ mode = "document" }: DocumentUploadProps) {
   const { t } = useLanguage();
   const router = useRouter();
+  const isTemplateMode = mode === "template";
 
   // Multi-image state
   const [images, setImages] = useState<UploadFileData[]>([]);
@@ -451,7 +463,11 @@ export default function DocumentUpload() {
 
   const handleSaveDocument = async () => {
     if (images.length === 0) {
-      setError("Please upload at least one document");
+      setError(
+        isTemplateMode
+          ? t("templates.create.errorNoFile", "템플릿으로 저장할 문서를 업로드하세요")
+          : "Please upload at least one document"
+      );
       return;
     }
 
@@ -480,10 +496,55 @@ export default function DocumentUpload() {
         const areas = signatureAreasMap.get(i) || [];
 
         setSavingProgress(
-          t("upload.savingProgress")
+          (isTemplateMode
+            ? t("templates.create.savingProgress", "템플릿 저장 중... ({{current}}/{{total}})")
+            : t("upload.savingProgress")
+          )
+            .replace("{{current}}", String(i + 1))
+            .replace("{{total}}", String(images.length))
             .replace("{current}", String(i + 1))
             .replace("{total}", String(images.length))
         );
+
+        const relativeAreas: SignatureArea[] = areas.map(area => ({
+          x: area.x,
+          y: area.y,
+          width: area.width,
+          height: area.height,
+          type: area.type || 'signature',
+          pageNumber: area.pageNumber ?? 0,
+        }));
+
+        if (isTemplateMode) {
+          const formData = new FormData();
+          formData.append("file", img.file);
+          formData.append("name", aliasMap.get(i)?.trim() || img.fileName);
+
+          const templateResult = await createTemplate(formData);
+
+          if (templateResult.error) {
+            setError(templateResult.error);
+            return;
+          }
+
+          if (!templateResult.success || !templateResult.templateId) {
+            setError(t("templates.create.error", "템플릿 저장에 실패했습니다."));
+            return;
+          }
+
+          const areasResult = await createTemplateAreas(
+            templateResult.templateId,
+            relativeAreas
+          );
+
+          if (areasResult.error) {
+            await deleteTemplate(templateResult.templateId);
+            setError(areasResult.error);
+            return;
+          }
+
+          continue;
+        }
 
         // Step 1: Upload document
         const formData = new FormData();
@@ -509,15 +570,6 @@ export default function DocumentUpload() {
         lastDocumentId = uploadResult.document.id;
 
         // Step 2: Create signature areas
-        const relativeAreas: SignatureArea[] = areas.map(area => ({
-          x: area.x,
-          y: area.y,
-          width: area.width,
-          height: area.height,
-          type: area.type || 'signature',
-          pageNumber: area.pageNumber ?? 0,
-        }));
-
         const areasResult = await createSignatureAreas(
           uploadResult.document.id,
           relativeAreas
@@ -529,6 +581,12 @@ export default function DocumentUpload() {
         }
       }
 
+      if (isTemplateMode) {
+        router.push("/dashboard?tab=templates");
+        router.refresh();
+        return;
+      }
+
       // Success: single image → document detail, multiple → dashboard
       if (images.length === 1 && lastDocumentId) {
         router.push(`/document/${lastDocumentId}`);
@@ -538,7 +596,11 @@ export default function DocumentUpload() {
       }
     } catch (error) {
       console.error("Error uploading documents:", error);
-      setError("An unexpected error occurred while uploading the documents");
+      setError(
+        isTemplateMode
+          ? t("templates.create.unexpectedError", "템플릿 저장 중 예상치 못한 오류가 발생했습니다.")
+          : "An unexpected error occurred while uploading the documents"
+      );
     } finally {
       setIsLoading(false);
       setSavingProgress("");
@@ -561,7 +623,7 @@ export default function DocumentUpload() {
         ref={fileInputRef}
         type="file"
         accept={uploadMode === 'pdf' ? ".pdf,application/pdf" : "image/*"}
-        multiple={uploadMode === 'image'}
+        multiple={uploadMode === 'image' && !isTemplateMode}
         className="hidden"
         onChange={handleFileChange}
       />
@@ -629,12 +691,14 @@ export default function DocumentUpload() {
                 </div>
                 <div className="text-center space-y-2">
                   <h3 className="font-medium text-lg">
-                    {uploadMode === 'pdf' ? t("pdf_document") : t("upload.title")}
+                    {isTemplateMode
+                      ? (uploadMode === 'pdf' ? t("templates.create.pdfTitle") : t("templates.create.imageTitle"))
+                      : (uploadMode === 'pdf' ? t("pdf_document") : t("upload.title"))}
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    {t("upload.description")}
+                    {isTemplateMode ? t("templates.create.dropDescription") : t("upload.description")}
                   </p>
-                  {uploadMode === 'image' && (
+                  {uploadMode === 'image' && !isTemplateMode && (
                     <p className="text-muted-foreground text-xs">
                       {t("upload.multipleFiles")}
                     </p>
@@ -678,7 +742,7 @@ export default function DocumentUpload() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {!images.some((img) => img.isPdf) && (
+              {!isTemplateMode && !images.some((img) => img.isPdf) && (
                 <Button
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
@@ -694,7 +758,9 @@ export default function DocumentUpload() {
                   totalAreasCount === 0 || isLoading || images.length === 0
                 }
               >
-                {isLoading ? (savingProgress || t("upload.saving")) : t("upload.save")}
+                {isLoading
+                  ? (savingProgress || (isTemplateMode ? t("templates.create.saving") : t("upload.saving")))
+                  : (isTemplateMode ? t("templates.create.save") : t("upload.save"))}
               </Button>
             </div>
           </div>
@@ -719,14 +785,14 @@ export default function DocumentUpload() {
               </div>
               <div>
                 <Label htmlFor="document-alias" className="text-xs font-medium text-muted-foreground">
-                  {t("upload.alias")}
-                  <span className="ml-1">({t("upload.aliasOptional")})</span>
+                  {isTemplateMode ? t("templates.create.name") : t("upload.alias")}
+                  <span className="ml-1">({isTemplateMode ? t("templates.create.nameDefault") : t("upload.aliasOptional")})</span>
                 </Label>
                 <Input
                   id="document-alias"
                   name="document-alias"
                   type="text"
-                  placeholder={t("upload.aliasPlaceholder")}
+                  placeholder={isTemplateMode ? t("templates.create.namePlaceholder") : t("upload.aliasPlaceholder")}
                   value={aliasMap.get(currentIndex) || ""}
                   onChange={(e) => {
                     setAliasMap((prev) => {

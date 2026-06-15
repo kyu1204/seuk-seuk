@@ -142,7 +142,7 @@ export async function createTemplate(formData: FormData): Promise<{
       return { error: "Failed to create template record" };
     }
 
-    revalidatePath("/templates");
+    revalidatePath("/dashboard");
     return { success: true, templateId: template.id };
   } catch (error) {
     console.error("Create template error:", error);
@@ -209,7 +209,7 @@ export async function createTemplateAreas(
       }
     }
 
-    revalidatePath(`/templates/${templateId}`);
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
     console.error("Create template areas error:", error);
@@ -333,7 +333,7 @@ export async function deleteTemplate(templateId: string): Promise<{
       return { error: "Failed to delete template" };
     }
 
-    revalidatePath("/templates");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
     console.error("Delete template error:", error);
@@ -484,7 +484,6 @@ export async function publishFromTemplate(
     }
 
     revalidatePath("/dashboard");
-    revalidatePath("/templates");
     return { success: true, shortUrl: result.shortUrl };
   } catch (error) {
     console.error("Publish from template error:", error);

@@ -92,6 +92,13 @@ export function DashboardContent() {
     loadDashboardData();
   }, [authLoading, isAuthenticated, selectedStatus, router]);
 
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (tab === "documents" || tab === "publications" || tab === "templates") {
+      setActiveTab(tab);
+    }
+  }, []);
+
   // Toggle individual document selection
   const toggleDocumentSelection = (documentId: string, canDelete: boolean) => {
     if (!canDelete) return;

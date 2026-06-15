@@ -44,6 +44,13 @@ export function ProjectBreadcrumb() {
       });
     }
 
+    // Template creation page
+    else if (pathname === "/templates/new") {
+      items.push({
+        label: t("templates.create"),
+      });
+    }
+
     // Publish page
     else if (pathname === "/publish") {
       items.push({

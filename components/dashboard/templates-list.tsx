@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FileX, FileStack, Sparkles, Send, Trash2 } from "lucide-react";
+import { FileX, FileStack, Plus, Sparkles, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/language-context";
 import {
@@ -154,6 +154,21 @@ export function TemplatesList() {
 
   return (
     <>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div>
+          <h2 className="text-lg font-semibold">{t("templates.title")}</h2>
+          <p className="text-sm text-muted-foreground">
+            {t("templates.description")}
+          </p>
+        </div>
+        <Button asChild className="gap-2 self-start sm:self-auto">
+          <Link href="/templates/new">
+            <Plus className="h-4 w-4" />
+            {t("templates.create")}
+          </Link>
+        </Button>
+      </div>
+
       {templates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="rounded-full bg-muted p-6 mb-6">
@@ -165,6 +180,12 @@ export function TemplatesList() {
           <p className="text-muted-foreground mb-6 max-w-md">
             {t("templates.empty.description")}
           </p>
+          <Button asChild size="lg" className="gap-2">
+            <Link href="/templates/new">
+              <Plus className="h-4 w-4" />
+              {t("templates.empty.action")}
+            </Link>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
