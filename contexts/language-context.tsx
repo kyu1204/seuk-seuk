@@ -334,7 +334,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.password.incorrect": "비밀번호가 올바르지 않습니다.",
     "sign.password.error": "비밀번호 확인 중 오류가 발생했습니다.",
     "sign.completed.title": "이미 제출된 문서입니다",
-    "sign.completed.message": "이 문서는 이미 서명이 완료되어 제출되었습니다. 서명 완료된 문서가 필요한 경우 문서 발행자에게 문의 부탁드립니다.",
+    "sign.completed.message": "이 문서는 서명이 완료되어 제출되었습니다. 아래 버튼을 눌러 서명 완료 문서를 다운로드할 수 있습니다.",
     "sign.completed.noEdit": "더 이상 수정할 수 없습니다.",
     "sign.completed.status": "서명 완료됨",
     "sign.completed.download": "서명 문서 다운로드",
@@ -1522,7 +1522,7 @@ const translations: Record<Language, Record<string, string>> = {
     "sign.password.error": "An error occurred while verifying the password.",
     "sign.completed.title": "Document Already Submitted",
     "sign.completed.message":
-      "This document has already been signed and submitted. If you need the signed document, please contact the document issuer.",
+      "This document has been signed and submitted. You can download the signed document using the button below.",
     "sign.completed.noEdit": "No further changes can be made.",
     "sign.completed.status": "Signature Completed",
     "sign.completed.download": "Download signed document",
