@@ -16,7 +16,7 @@ import type { DocumentTemplate } from "@/lib/supabase/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -124,6 +124,11 @@ export function TemplatesList() {
     }
   };
 
+  const truncateName = (templateName: string, maxLength: number = 35) => {
+    if (templateName.length <= maxLength) return templateName;
+    return `${templateName.slice(0, maxLength)}...`;
+  };
+
   if (loading) {
     return <DashboardSkeleton />;
   }
@@ -182,21 +187,30 @@ export function TemplatesList() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {templates.map((template) => (
-            <Card key={template.id}>
-              <CardContent className="flex flex-col gap-3 p-5">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-md bg-muted p-2 shrink-0">
-                    <FileStack className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold truncate">{template.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {template.file_type.toUpperCase()} ·{" "}
-                      {t("templates.pageCount", { count: template.page_count })}
-                    </p>
+            <Card
+              key={template.id}
+              className="h-64 flex flex-col transition-all duration-200 hover:shadow-md hover:border-primary/20"
+            >
+              <CardHeader className="pb-3 flex-1 flex flex-col justify-between">
+                <div className="h-6" />
+
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <FileStack className="h-8 w-8 text-primary flex-shrink-0" />
+                  <h3
+                    className="font-medium text-sm leading-relaxed text-center px-2 break-words"
+                    title={template.name}
+                  >
+                    {truncateName(template.name)}
+                  </h3>
+                  <div className="text-xs text-muted-foreground">
+                    {template.file_type.toUpperCase()} ·{" "}
+                    {t("templates.pageCount", { count: template.page_count })}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mt-2">
+              </CardHeader>
+
+              <CardContent className="pt-0 pb-4 mt-auto">
+                <div className="flex items-center justify-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
