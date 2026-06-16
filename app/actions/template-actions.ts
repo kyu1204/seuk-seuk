@@ -227,6 +227,91 @@ export async function createTemplateAreas(
 }
 
 /**
+ * Update a template's display name and reusable signature/text areas.
+ */
+export async function updateTemplate(
+  templateId: string,
+  options: { name: string; signatureAreas: SignatureArea[] }
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabase = await createServerSupabase();
+
+    const { canUse, error: gateError } = await canUseTemplate();
+    if (!canUse) {
+      return { error: gateError || "Template feature not available" };
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
+    const name = options.name.trim();
+    if (!name) {
+      return { error: "Template name is required" };
+    }
+
+    const { data: template, error: verifyError } = await supabase
+      .from("document_templates")
+      .select("id, user_id")
+      .eq("id", templateId)
+      .eq("user_id", user.id)
+      .eq("is_deleted", false)
+      .single();
+
+    if (verifyError || !template) {
+      return { error: "Template not found or not owned by user" };
+    }
+
+    const { error: clearError } = await supabase
+      .from("template_signature_areas")
+      .delete()
+      .eq("template_id", templateId);
+
+    if (clearError) {
+      console.error("Reset template areas error:", clearError);
+      return { error: "Failed to reset template areas" };
+    }
+
+    const inserts = buildTemplateAreaInserts(
+      templateId,
+      options.signatureAreas
+    );
+    if (inserts.length > 0) {
+      const { error } = await supabase
+        .from("template_signature_areas")
+        .insert(inserts);
+
+      if (error) {
+        console.error("Update template areas error:", error);
+        return { error: "Failed to update template areas" };
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from("document_templates")
+      .update({ name, updated_at: new Date().toISOString() })
+      .eq("id", templateId)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("Update template error:", updateError);
+      return { error: "Failed to update template" };
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/templates/${templateId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Update template error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * List the current user's templates.
  */
 export async function getUserTemplates(): Promise<{

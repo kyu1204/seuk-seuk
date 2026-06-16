@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FileX, FileStack, Sparkles, Send, Trash2 } from "lucide-react";
+import { FileX, FileStack, Sparkles, Send, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/language-context";
 import {
@@ -29,6 +29,7 @@ import { DashboardSkeleton } from "./dashboard-skeleton";
 export function TemplatesList() {
   const { t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [allowed, setAllowed] = useState(false);
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
@@ -75,6 +76,17 @@ export function TemplatesList() {
   useEffect(() => {
     loadTemplates();
   }, []);
+
+  useEffect(() => {
+    const publishTemplateId = searchParams.get("publishTemplate");
+    if (!publishTemplateId || templates.length === 0) return;
+
+    const template = templates.find((item) => item.id === publishTemplateId);
+    if (!template) return;
+
+    openPublish(template);
+    router.replace("/dashboard?tab=templates", { scroll: false });
+  }, [router, searchParams, templates]);
 
   const openPublish = (template: DocumentTemplate) => {
     setPublishTarget(template);
@@ -191,9 +203,7 @@ export function TemplatesList() {
               key={template.id}
               className="h-64 flex flex-col transition-all duration-200 hover:shadow-md hover:border-primary/20"
             >
-              <CardHeader className="pb-3 flex-1 flex flex-col justify-between">
-                <div className="h-6" />
-
+              <CardHeader className="pt-6 pb-3 flex-1 flex flex-col justify-center">
                 <div className="flex flex-col items-center text-center space-y-3">
                   <FileStack className="h-8 w-8 text-primary flex-shrink-0" />
                   <h3
@@ -219,6 +229,17 @@ export function TemplatesList() {
                   >
                     <Send className="h-3 w-3 mr-1" />
                     {t("templates.publish")}
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2"
+                    aria-label={t("templates.detail.edit", "상세/수정")}
+                  >
+                    <Link href={`/templates/${template.id}`}>
+                      <Pencil className="h-3 w-3" />
+                    </Link>
                   </Button>
                   <Button
                     size="sm"
