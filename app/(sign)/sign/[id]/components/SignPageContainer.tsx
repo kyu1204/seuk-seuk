@@ -65,6 +65,7 @@ export default function SignPageContainer({
         publicationData={publicationData}
         requiresPassword={requiresPassword}
         isPasswordVerified={isPasswordVerified}
+        verifiedPassword={verifiedPassword}
         onPasswordVerified={handlePasswordVerified}
         onSelectDocument={handleDocumentSelect}
       />

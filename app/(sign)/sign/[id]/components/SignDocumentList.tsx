@@ -26,6 +26,7 @@ interface SignDocumentListProps {
   publicationData: PublicationWithDocuments;
   requiresPassword: boolean;
   isPasswordVerified: boolean;
+  verifiedPassword?: string | null;
   onPasswordVerified: (password: string) => void;
   onSelectDocument: (documentId: string) => void;
 }
@@ -34,6 +35,7 @@ export default function SignDocumentList({
   publicationData,
   requiresPassword,
   isPasswordVerified,
+  verifiedPassword,
   onPasswordVerified,
   onSelectDocument,
 }: SignDocumentListProps) {
@@ -151,7 +153,7 @@ export default function SignDocumentList({
                       <SignedDocumentDownloadButton
                         shortUrl={publicationData.short_url}
                         documentId={doc.id}
-                        password={password}
+                        password={verifiedPassword ?? password}
                       />
                     </div>
                   ))}
