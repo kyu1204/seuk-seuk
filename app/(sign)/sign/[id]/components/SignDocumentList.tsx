@@ -2,6 +2,7 @@
 
 import { verifyPublicationPassword } from "@/app/actions/publication-actions";
 import LanguageSelector from "@/components/language-selector";
+import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,8 +97,10 @@ export default function SignDocumentList({
     return { completed, total };
   };
 
-  // Show completed document screen if publication is completed
-  if (isCompleted) {
+  // Show completed document screen if publication is completed.
+  // For password-protected publications, defer to the password gate below first
+  // so the entered password is available for signed-document downloads.
+  if (isCompleted && (!requiresPassword || isPasswordVerified)) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
         {/* Header with logo */}
@@ -138,6 +141,20 @@ export default function SignDocumentList({
                     {t("sign.completed.status")}
                   </p>
                 </div>
+                {publicationData.documents
+                  ?.filter((doc) => doc.status === "completed")
+                  .map((doc) => (
+                    <div key={doc.id} className="space-y-1">
+                      <p className="text-sm text-center text-gray-600">
+                        {doc.alias || doc.filename}
+                      </p>
+                      <SignedDocumentDownloadButton
+                        shortUrl={publicationData.short_url}
+                        documentId={doc.id}
+                        password={password}
+                      />
+                    </div>
+                  ))}
               </CardContent>
             </Card>
           </div>
