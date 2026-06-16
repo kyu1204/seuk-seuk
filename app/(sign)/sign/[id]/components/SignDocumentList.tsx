@@ -143,20 +143,29 @@ export default function SignDocumentList({
                     {t("sign.completed.status")}
                   </p>
                 </div>
-                {publicationData.documents
-                  ?.filter((doc) => doc.status === "completed")
-                  .map((doc) => (
+                {(() => {
+                  const completedDocs =
+                    publicationData.documents?.filter(
+                      (doc) => doc.status === "completed"
+                    ) ?? [];
+                  // Show per-document name only when there are multiple downloads;
+                  // for a single document the name is already shown above.
+                  const showDocName = completedDocs.length > 1;
+                  return completedDocs.map((doc) => (
                     <div key={doc.id} className="space-y-1">
-                      <p className="text-sm text-center text-gray-600">
-                        {doc.alias || doc.filename}
-                      </p>
+                      {showDocName && (
+                        <p className="text-sm text-center text-gray-600">
+                          {doc.alias || doc.filename}
+                        </p>
+                      )}
                       <SignedDocumentDownloadButton
                         shortUrl={publicationData.short_url}
                         documentId={doc.id}
                         password={verifiedPassword ?? password}
                       />
                     </div>
-                  ))}
+                  ));
+                })()}
               </CardContent>
             </Card>
           </div>
