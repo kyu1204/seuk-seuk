@@ -1283,6 +1283,107 @@ export async function getSignedDocumentUrls(documentId: string): Promise<{
 }
 
 /**
+ * Get a short-lived signed download URL of a completed document for the
+ * anonymous signer (no auth). Access is scoped to the publication referenced
+ * by `shortUrl`, and the document must belong to that publication and be
+ * completed. Password-protected publications require server-side re-verification.
+ */
+export async function getSignedDocumentUrlForSigner(
+  shortUrl: string,
+  documentId: string,
+  password?: string | null
+): Promise<{ downloadUrl: string | null; error?: string }> {
+  try {
+    // Service role: anonymous signers have no auth session
+    const supabaseService = createServiceSupabase();
+
+    // 1. Resolve publication by short URL
+    const { data: publication, error: pubError } = await supabaseService
+      .from("publications")
+      .select("id, password")
+      .eq("short_url", shortUrl)
+      .single();
+
+    if (pubError || !publication) {
+      return { downloadUrl: null, error: "Publication not found" };
+    }
+
+    // 2. Password gate (server-side re-verification, not just client state)
+    if (publication.password) {
+      if (!password) {
+        return { downloadUrl: null, error: "Password required" };
+      }
+      const isValid = await bcrypt.compare(password, publication.password);
+      if (!isValid) {
+        return { downloadUrl: null, error: "Invalid password" };
+      }
+    }
+
+    // 3. Document must belong to this publication and be completed (IDOR defense)
+    const { data: document, error: docError } = await supabaseService
+      .from("documents")
+      .select("id, filename, status, signed_pdf_url, signed_file_url, publication_id")
+      .eq("id", documentId)
+      .eq("publication_id", publication.id)
+      .single();
+
+    if (docError || !document) {
+      return { downloadUrl: null, error: "Document not found" };
+    }
+
+    if (document.status !== "completed") {
+      return { downloadUrl: null, error: "Document not completed" };
+    }
+
+    const extractPath = (value: string) => {
+      if (!value) return null;
+      if (value.startsWith("http://") || value.startsWith("https://")) {
+        try {
+          const url = new URL(value);
+          const parts = url.pathname.split("/");
+          const index = parts.indexOf("signed-documents");
+          if (index === -1) return null;
+          return parts.slice(index + 1).join("/");
+        } catch {
+          return null;
+        }
+      }
+      return value.startsWith("signed-documents/")
+        ? value.substring("signed-documents/".length)
+        : value;
+    };
+
+    // Prefer the PDF artifact; fall back to legacy image artifact
+    const isPdf = !!document.signed_pdf_url;
+    const source = document.signed_pdf_url || document.signed_file_url;
+    const path = source ? extractPath(source) : null;
+
+    if (!path) {
+      return { downloadUrl: null, error: "Signed document not available" };
+    }
+
+    const originalName =
+      document.filename.replace(/\.[^/.]+$/, "") || document.filename;
+    const downloadName = `서명완료_${originalName}.${isPdf ? "pdf" : "png"}`;
+
+    // 4. Issue short-lived (5 min) signed URL with download disposition
+    const { data, error: urlError } = await supabaseService.storage
+      .from("signed-documents")
+      .createSignedUrl(path, 300, { download: downloadName });
+
+    if (urlError || !data) {
+      console.error("Error creating signer download URL:", urlError);
+      return { downloadUrl: null, error: "Failed to generate download URL" };
+    }
+
+    return { downloadUrl: data.signedUrl };
+  } catch (error) {
+    console.error("Get signer download URL error:", error);
+    return { downloadUrl: null, error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * Delete a document (only draft status documents can be deleted)
  */
 export async function deleteDocument(documentId: string): Promise<{

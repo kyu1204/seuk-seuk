@@ -25,7 +25,7 @@ interface SignDocumentListProps {
   publicationData: PublicationWithDocuments;
   requiresPassword: boolean;
   isPasswordVerified: boolean;
-  onPasswordVerified: () => void;
+  onPasswordVerified: (password: string) => void;
   onSelectDocument: (documentId: string) => void;
 }
 
@@ -68,7 +68,7 @@ export default function SignDocumentList({
       }
 
       if (result.isValid) {
-        onPasswordVerified();
+        onPasswordVerified(password);
       } else {
         setError(t("sign.password.incorrect"));
       }

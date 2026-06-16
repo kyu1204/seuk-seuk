@@ -9,6 +9,7 @@ import {
   createSignedDocumentUploadUrl,
 } from "@/app/actions/document-actions";
 import LanguageSelector from "@/components/language-selector";
+import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
 import SignatureModal from "@/components/signature-modal";
 import TextInputModal from "@/components/text-input-modal";
 import { Button } from "@/components/ui/button";
@@ -53,8 +54,9 @@ interface SignSingleDocumentProps {
   documentData: ClientDocument & { signatures: Signature[] };
   requiresPassword: boolean;
   isPasswordVerified: boolean;
+  verifiedPassword?: string | null;
   onBack: () => void;
-  onComplete: (documentName: string) => void;
+  onComplete: (documentName: string, documentId: string) => void;
 }
 
 export default function SignSingleDocument({
@@ -62,6 +64,7 @@ export default function SignSingleDocument({
   documentData,
   requiresPassword,
   isPasswordVerified,
+  verifiedPassword,
   onBack,
   onComplete,
 }: SignSingleDocumentProps) {
@@ -213,7 +216,7 @@ export default function SignSingleDocument({
         setIsGenerating(false);
         setGeneratingProgress("");
         setProgressValue(0);
-        onComplete(documentData.alias || documentData.filename);
+        onComplete(documentData.alias || documentData.filename, documentData.id);
       } else {
         // === Image Document: Existing client-side canvas compositing ===
         setProgressValue(10);
@@ -408,7 +411,7 @@ export default function SignSingleDocument({
         setIsGenerating(false);
         setGeneratingProgress("");
         setProgressValue(0);
-        onComplete(documentData.alias || documentData.filename);
+        onComplete(documentData.alias || documentData.filename, documentData.id);
       }
     } catch (err) {
       console.error("Error generating signed document:", err);
@@ -642,6 +645,13 @@ export default function SignSingleDocument({
                     {t("sign.completed.status")}
                   </p>
                 </div>
+                {isDocumentCompleted && (
+                  <SignedDocumentDownloadButton
+                    shortUrl={publicationData.short_url}
+                    documentId={documentData.id}
+                    password={verifiedPassword}
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
