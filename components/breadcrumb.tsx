@@ -44,6 +44,20 @@ export function ProjectBreadcrumb() {
       });
     }
 
+    // Template creation page
+    else if (pathname === "/templates/new") {
+      items.push({
+        label: t("templates.create"),
+      });
+    }
+
+    // Template detail/edit page
+    else if (pathname.startsWith("/templates/")) {
+      items.push({
+        label: t("templates.detail.title", "템플릿 상세"),
+      });
+    }
+
     // Publish page
     else if (pathname === "/publish") {
       items.push({
