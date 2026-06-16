@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FileX, FileStack, Sparkles, Send, Trash2, Pencil } from "lucide-react";
+import { FileX, FileStack, Sparkles, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/language-context";
 import {
@@ -201,7 +201,17 @@ export function TemplatesList() {
           {templates.map((template) => (
             <Card
               key={template.id}
-              className="h-64 flex flex-col transition-all duration-200 hover:shadow-md hover:border-primary/20"
+              role="link"
+              tabIndex={0}
+              className="h-64 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              onClick={() => router.push(`/templates/${template.id}`)}
+              onKeyDown={(event) => {
+                if (event.target !== event.currentTarget) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  router.push(`/templates/${template.id}`);
+                }
+              }}
             >
               <CardHeader className="pt-6 pb-3 flex-1 flex flex-col justify-center">
                 <div className="flex flex-col items-center text-center space-y-3">
@@ -225,27 +235,22 @@ export function TemplatesList() {
                     variant="outline"
                     size="sm"
                     className="flex-1 h-8 text-xs"
-                    onClick={() => openPublish(template)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openPublish(template);
+                    }}
                   >
                     <Send className="h-3 w-3 mr-1" />
                     {t("templates.publish")}
                   </Button>
                   <Button
-                    asChild
-                    size="sm"
-                    variant="outline"
-                    className="h-8 px-2"
-                    aria-label={t("templates.detail.edit", "상세/수정")}
-                  >
-                    <Link href={`/templates/${template.id}`}>
-                      <Pencil className="h-3 w-3" />
-                    </Link>
-                  </Button>
-                  <Button
                     size="sm"
                     variant="outline"
                     className="h-8 px-2 hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={() => handleDelete(template)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDelete(template);
+                    }}
                     aria-label={t("templates.delete")}
                   >
                     <Trash2 className="h-3 w-3" />

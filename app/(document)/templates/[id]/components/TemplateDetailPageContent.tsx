@@ -347,11 +347,6 @@ export function TemplateDetailPageContent({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="outline" disabled={isSaving}>
-              <Link href="/dashboard?tab=templates">
-                {t("common.cancel", "취소")}
-              </Link>
-            </Button>
             {isEditMode ? (
               <>
                 <Button
