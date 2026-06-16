@@ -2,7 +2,7 @@
 
 import { verifyPublicationPassword } from "@/app/actions/publication-actions";
 import LanguageSelector from "@/components/language-selector";
-import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
+import SignedDocumentBundleButton from "./SignedDocumentBundleButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,29 +143,14 @@ export default function SignDocumentList({
                     {t("sign.completed.status")}
                   </p>
                 </div>
-                {(() => {
-                  const completedDocs =
-                    publicationData.documents?.filter(
-                      (doc) => doc.status === "completed"
-                    ) ?? [];
-                  // Show per-document name only when there are multiple downloads;
-                  // for a single document the name is already shown above.
-                  const showDocName = completedDocs.length > 1;
-                  return completedDocs.map((doc) => (
-                    <div key={doc.id} className="space-y-1">
-                      {showDocName && (
-                        <p className="text-sm text-center text-gray-600">
-                          {doc.alias || doc.filename}
-                        </p>
-                      )}
-                      <SignedDocumentDownloadButton
-                        shortUrl={publicationData.short_url}
-                        documentId={doc.id}
-                        password={verifiedPassword ?? password}
-                      />
-                    </div>
-                  ));
-                })()}
+                {publicationData.documents?.some(
+                  (doc) => doc.status === "completed"
+                ) && (
+                  <SignedDocumentBundleButton
+                    shortUrl={publicationData.short_url}
+                    password={verifiedPassword ?? password}
+                  />
+                )}
               </CardContent>
             </Card>
           </div>

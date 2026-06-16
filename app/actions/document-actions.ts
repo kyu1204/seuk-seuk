@@ -1384,6 +1384,152 @@ export async function getSignedDocumentUrlForSigner(
 }
 
 /**
+ * Resolve a stored signed-document URL/path into a storage object path.
+ */
+function extractSignedDocumentPath(value: string | null): string | null {
+  if (!value) return null;
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    try {
+      const url = new URL(value);
+      const parts = url.pathname.split("/");
+      const index = parts.indexOf("signed-documents");
+      if (index === -1) return null;
+      return parts.slice(index + 1).join("/");
+    } catch {
+      return null;
+    }
+  }
+  return value.startsWith("signed-documents/")
+    ? value.substring("signed-documents/".length)
+    : value;
+}
+
+/**
+ * Get a single download for the anonymous signer covering ALL completed
+ * documents of a publication. One completed document → a direct signed URL;
+ * multiple → a zip archive (base64) bundling each signed document.
+ * Access is scoped to the publication and gated by its password.
+ */
+export async function getSignedDocumentBundleForSigner(
+  shortUrl: string,
+  password?: string | null
+): Promise<{
+  downloadUrl?: string | null;
+  zipBase64?: string;
+  filename?: string;
+  error?: string;
+}> {
+  try {
+    const supabaseService = createServiceSupabase();
+
+    // 1. Resolve publication by short URL
+    const { data: publication, error: pubError } = await supabaseService
+      .from("publications")
+      .select("id, name, password")
+      .eq("short_url", shortUrl)
+      .single();
+
+    if (pubError || !publication) {
+      return { error: "Publication not found" };
+    }
+
+    // 2. Password gate (server-side re-verification)
+    if (publication.password) {
+      if (!password) {
+        return { error: "Password required" };
+      }
+      const isValid = await bcrypt.compare(password, publication.password);
+      if (!isValid) {
+        return { error: "Invalid password" };
+      }
+    }
+
+    // 3. All completed documents belonging to this publication
+    const { data: documents, error: docError } = await supabaseService
+      .from("documents")
+      .select("id, filename, alias, status, signed_pdf_url, signed_file_url")
+      .eq("publication_id", publication.id)
+      .eq("status", "completed");
+
+    if (docError) {
+      return { error: "Failed to load documents" };
+    }
+
+    const completed = (documents ?? [])
+      .map((doc) => {
+        const isPdf = !!doc.signed_pdf_url;
+        const path = extractSignedDocumentPath(
+          doc.signed_pdf_url || doc.signed_file_url
+        );
+        const baseName =
+          (doc.alias || doc.filename || "document").replace(/\.[^/.]+$/, "") ||
+          "document";
+        return path ? { path, isPdf, baseName } : null;
+      })
+      .filter((d): d is { path: string; isPdf: boolean; baseName: string } => !!d);
+
+    if (completed.length === 0) {
+      return { error: "Signed document not available" };
+    }
+
+    const storage = supabaseService.storage.from("signed-documents");
+
+    // 4a. Single document → direct signed URL (no zip)
+    if (completed.length === 1) {
+      const { path, isPdf, baseName } = completed[0];
+      const downloadName = `서명완료_${baseName}.${isPdf ? "pdf" : "png"}`;
+      const { data, error: urlError } = await storage.createSignedUrl(
+        path,
+        300,
+        { download: downloadName }
+      );
+      if (urlError || !data) {
+        console.error("Error creating signer download URL:", urlError);
+        return { error: "Failed to generate download URL" };
+      }
+      return { downloadUrl: data.signedUrl };
+    }
+
+    // 4b. Multiple documents → zip archive
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    const usedNames = new Set<string>();
+
+    for (const { path, isPdf, baseName } of completed) {
+      const { data: blob, error: dlError } = await storage.download(path);
+      if (dlError || !blob) {
+        console.error(`Failed to download ${path} for zip:`, dlError);
+        continue;
+      }
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      let name = `서명완료_${baseName}.${isPdf ? "pdf" : "png"}`;
+      let counter = 2;
+      while (usedNames.has(name)) {
+        name = `서명완료_${baseName} (${counter}).${isPdf ? "pdf" : "png"}`;
+        counter += 1;
+      }
+      usedNames.add(name);
+      zip.file(name, bytes);
+    }
+
+    if (usedNames.size === 0) {
+      return { error: "Signed document not available" };
+    }
+
+    const zipBase64 = await zip.generateAsync({ type: "base64" });
+    const publicationName = (publication.name || "서명문서").replace(
+      /[\\/:*?"<>|]/g,
+      "_"
+    );
+
+    return { zipBase64, filename: `${publicationName}_서명완료.zip` };
+  } catch (error) {
+    console.error("Get signer document bundle error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * Delete a document (only draft status documents can be deleted)
  */
 export async function deleteDocument(documentId: string): Promise<{
