@@ -366,6 +366,10 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.header.description": "문서를 관리하고 서명을 수집하세요",
     "dashboard.publish": "문서 발행",
     "dashboard.upload": "업로드",
+    "dashboard.upload.document": "문서 업로드",
+    "dashboard.upload.documentDescription": "한 번 발행할 문서 만들기",
+    "dashboard.upload.template": "템플릿 만들기",
+    "dashboard.upload.templateDescription": "반복 발행할 양식 저장",
 
     // Templates (Pro/Enterprise)
     "templates.nav": "템플릿",
@@ -1549,6 +1553,10 @@ const translations: Record<Language, Record<string, string>> = {
       "Manage your documents and collect signatures",
     "dashboard.publish": "Publish",
     "dashboard.upload": "Upload",
+    "dashboard.upload.document": "Upload document",
+    "dashboard.upload.documentDescription": "Create a one-time document",
+    "dashboard.upload.template": "Create template",
+    "dashboard.upload.templateDescription": "Save a reusable form",
 
     // Templates (Pro/Enterprise)
     "templates.nav": "Templates",
