@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { PublicationWithDocuments } from "@/lib/supabase/database.types";
 import SignDocumentList from "./SignDocumentList";
 import SignSingleDocument from "./SignSingleDocument";
+import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, FileSignature, ArrowLeft } from "lucide-react";
@@ -28,7 +29,9 @@ export default function SignPageContainer({
   const [currentView, setCurrentView] = useState<View>("list");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [completedDocumentName, setCompletedDocumentName] = useState<string>("");
+  const [completedDocumentId, setCompletedDocumentId] = useState<string | null>(null);
   const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(!requiresPassword);
+  const [verifiedPassword, setVerifiedPassword] = useState<string | null>(null);
 
   const handleDocumentSelect = (documentId: string) => {
     setSelectedDocumentId(documentId);
@@ -42,12 +45,14 @@ export default function SignPageContainer({
     setSelectedDocumentId(null);
   };
 
-  const handlePasswordVerified = () => {
+  const handlePasswordVerified = (password: string) => {
     setIsPasswordVerified(true);
+    setVerifiedPassword(password);
   };
 
-  const handleDocumentComplete = (documentName: string) => {
+  const handleDocumentComplete = (documentName: string, documentId: string) => {
     setCompletedDocumentName(documentName);
+    setCompletedDocumentId(documentId);
     setCurrentView("completed");
     // Refresh data immediately to get updated publication status
     router.refresh();
@@ -60,6 +65,7 @@ export default function SignPageContainer({
         publicationData={publicationData}
         requiresPassword={requiresPassword}
         isPasswordVerified={isPasswordVerified}
+        verifiedPassword={verifiedPassword}
         onPasswordVerified={handlePasswordVerified}
         onSelectDocument={handleDocumentSelect}
       />
@@ -84,6 +90,7 @@ export default function SignPageContainer({
         documentData={selectedDocument}
         requiresPassword={requiresPassword}
         isPasswordVerified={isPasswordVerified}
+        verifiedPassword={verifiedPassword}
         onBack={handleBackToList}
         onComplete={handleDocumentComplete}
       />
@@ -132,6 +139,13 @@ export default function SignPageContainer({
                     {t("sign.completed.status")}
                   </p>
                 </div>
+                {completedDocumentId && (
+                  <SignedDocumentDownloadButton
+                    shortUrl={publicationData.short_url}
+                    documentId={completedDocumentId}
+                    password={verifiedPassword}
+                  />
+                )}
                 {/* Hide back button if publication is already completed */}
                 {publicationData.status !== "completed" && (
                   <Button

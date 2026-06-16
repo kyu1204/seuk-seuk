@@ -2,6 +2,7 @@
 
 import { verifyPublicationPassword } from "@/app/actions/publication-actions";
 import LanguageSelector from "@/components/language-selector";
+import SignedDocumentBundleButton from "./SignedDocumentBundleButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +26,8 @@ interface SignDocumentListProps {
   publicationData: PublicationWithDocuments;
   requiresPassword: boolean;
   isPasswordVerified: boolean;
-  onPasswordVerified: () => void;
+  verifiedPassword?: string | null;
+  onPasswordVerified: (password: string) => void;
   onSelectDocument: (documentId: string) => void;
 }
 
@@ -33,6 +35,7 @@ export default function SignDocumentList({
   publicationData,
   requiresPassword,
   isPasswordVerified,
+  verifiedPassword,
   onPasswordVerified,
   onSelectDocument,
 }: SignDocumentListProps) {
@@ -68,7 +71,7 @@ export default function SignDocumentList({
       }
 
       if (result.isValid) {
-        onPasswordVerified();
+        onPasswordVerified(password);
       } else {
         setError(t("sign.password.incorrect"));
       }
@@ -96,8 +99,10 @@ export default function SignDocumentList({
     return { completed, total };
   };
 
-  // Show completed document screen if publication is completed
-  if (isCompleted) {
+  // Show completed document screen if publication is completed.
+  // For password-protected publications, defer to the password gate below first
+  // so the entered password is available for signed-document downloads.
+  if (isCompleted && (!requiresPassword || isPasswordVerified)) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
         {/* Header with logo */}
@@ -138,6 +143,14 @@ export default function SignDocumentList({
                     {t("sign.completed.status")}
                   </p>
                 </div>
+                {publicationData.documents?.some(
+                  (doc) => doc.status === "completed"
+                ) && (
+                  <SignedDocumentBundleButton
+                    shortUrl={publicationData.short_url}
+                    password={verifiedPassword ?? password}
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
