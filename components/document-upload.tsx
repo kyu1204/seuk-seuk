@@ -31,7 +31,7 @@ import {
 import {
   createTemplate,
   createTemplateAreas,
-  deleteTemplate,
+  rollbackTemplateCreation,
 } from "@/app/actions/template-actions";
 import { canUploadPdf } from "@/app/actions/subscription-actions";
 import { useLanguage } from "@/contexts/language-context";
@@ -538,7 +538,12 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           );
 
           if (areasResult.error) {
-            await deleteTemplate(templateResult.templateId);
+            const rollback = await rollbackTemplateCreation(
+              templateResult.templateId
+            );
+            if (rollback.error) {
+              console.error("Template rollback failed:", rollback.error);
+            }
             setError(areasResult.error);
             return;
           }

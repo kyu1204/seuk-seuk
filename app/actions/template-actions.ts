@@ -1,6 +1,9 @@
 "use server";
 
-import { createServerSupabase } from "@/lib/supabase/server";
+import {
+  createServerSupabase,
+  createServiceSupabase,
+} from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import type {
@@ -343,6 +346,78 @@ export async function deleteTemplate(templateId: string): Promise<{
     return { success: true };
   } catch (error) {
     console.error("Delete template error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Hard-clean a template that failed during creation. This is intentionally
+ * separate from user-facing deleteTemplate, which is a soft delete for audit
+ * and recoverability.
+ */
+export async function rollbackTemplateCreation(templateId: string): Promise<{
+  success?: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+    const serviceSupabase = createServiceSupabase();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
+    const { data: template, error: verifyError } = await serviceSupabase
+      .from("document_templates")
+      .select("id, user_id, file_url")
+      .eq("id", templateId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (verifyError || !template) {
+      return { error: "Template not found or not owned by user" };
+    }
+
+    const cleanupErrors: string[] = [];
+
+    if (template.file_url) {
+      const { error: storageError } = await serviceSupabase.storage
+        .from("documents")
+        .remove([template.file_url]);
+      if (storageError) {
+        cleanupErrors.push(`storage: ${storageError.message}`);
+      }
+    }
+
+    const { error: areasError } = await serviceSupabase
+      .from("template_signature_areas")
+      .delete()
+      .eq("template_id", templateId);
+    if (areasError) {
+      cleanupErrors.push(`areas: ${areasError.message}`);
+    }
+
+    const { error: templateError } = await serviceSupabase
+      .from("document_templates")
+      .delete()
+      .eq("id", templateId)
+      .eq("user_id", user.id);
+    if (templateError) {
+      cleanupErrors.push(`template: ${templateError.message}`);
+    }
+
+    if (cleanupErrors.length > 0) {
+      return { error: cleanupErrors.join("; ") };
+    }
+
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("Rollback template creation error:", error);
     return { error: "An unexpected error occurred" };
   }
 }
