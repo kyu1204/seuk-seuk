@@ -198,21 +198,22 @@ export function TemplatesList() {
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <Button
+                    variant="outline"
                     size="sm"
-                    className="gap-1 flex-1"
+                    className="flex-1 h-8 text-xs"
                     onClick={() => openPublish(template)}
                   >
-                    <Send className="h-3.5 w-3.5" />
+                    <Send className="h-3 w-3 mr-1" />
                     {t("templates.publish")}
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="text-destructive"
+                    variant="outline"
+                    className="h-8 px-2 hover:bg-destructive hover:text-destructive-foreground"
                     onClick={() => handleDelete(template)}
                     aria-label={t("templates.delete")}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               </CardContent>
