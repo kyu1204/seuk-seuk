@@ -8,6 +8,7 @@
 //   - Uint8Array.fromBase64/.toBase64/.fromHex/.toHex  18.2
 //   - URL.parse                   18.4
 //   - ReadableStream async iteration (for await...of)  18.4
+//   - Map/WeakMap.getOrInsertComputed  (very recent proposal; Safari 26)
 // (Float16Array is feature-detected by pdf.js itself, so no polyfill is needed.)
 
 // Promise.withResolvers — 17.4+
@@ -129,6 +130,30 @@ if (
   if (typeof (ReadableStream.prototype as any).values !== "function") {
     (ReadableStream.prototype as any).values = asyncIterator;
   }
+}
+
+// Map / WeakMap getOrInsertComputed + getOrInsert — very recent "upsert" proposal
+// (Safari 26). pdf.js v5 uses getOrInsertComputed for caching, including the render path.
+{
+  const defineGetOrInsert = (proto: any) => {
+    if (proto && typeof proto.getOrInsertComputed !== "function") {
+      proto.getOrInsertComputed = function (key: any, callbackFn: (key: any) => any) {
+        if (this.has(key)) return this.get(key);
+        const value = callbackFn(key);
+        this.set(key, value);
+        return value;
+      };
+    }
+    if (proto && typeof proto.getOrInsert !== "function") {
+      proto.getOrInsert = function (key: any, value: any) {
+        if (this.has(key)) return this.get(key);
+        this.set(key, value);
+        return value;
+      };
+    }
+  };
+  if (typeof Map !== "undefined") defineGetOrInsert(Map.prototype);
+  if (typeof WeakMap !== "undefined") defineGetOrInsert(WeakMap.prototype);
 }
 
 export {};
