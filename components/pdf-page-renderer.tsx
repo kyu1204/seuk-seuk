@@ -213,8 +213,16 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
         } catch (err: any) {
           if (cancelled || err?.name === "RenderingCancelledException") return;
           console.error("PDF render error:", err);
+          Sentry.captureException(err, {
+            tags: { area: "pdf-render" },
+            extra: {
+              userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+              pdfjsVersion: pdfjsLib.version,
+            },
+          });
           setIsLoading(false);
-          onLoadError?.("PDF 페이지를 렌더링할 수 없습니다.");
+          const detail = err?.name || err?.message ? ` (${err?.name || ""}: ${err?.message || ""})` : "";
+          onLoadError?.(`PDF 페이지를 렌더링할 수 없습니다.${detail}`);
         }
       };
 
