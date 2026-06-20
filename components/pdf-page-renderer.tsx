@@ -201,7 +201,6 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
           const renderTask = page.render({
             canvasContext: context,
             viewport: viewport,
-            canvas: canvas,
           });
           renderTaskRef.current = renderTask;
 
