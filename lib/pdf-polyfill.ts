@@ -5,8 +5,9 @@
 // Missing-API timeline (iOS Safari):
 //   - Promise.withResolvers       17.4
 //   - Promise.try                 18.2
-//   - Uint8Array.fromBase64/.toBase64  18.2
+//   - Uint8Array.fromBase64/.toBase64/.fromHex/.toHex  18.2
 //   - URL.parse                   18.4
+//   - ReadableStream async iteration (for await...of)  18.4
 // (Float16Array is feature-detected by pdf.js itself, so no polyfill is needed.)
 
 // Promise.withResolvers — 17.4+
@@ -62,6 +63,72 @@ if (typeof Uint8Array !== "undefined" && typeof (Uint8Array.prototype as any).to
     }
     return btoa(binary);
   };
+}
+
+// Uint8Array.prototype.toHex — 18.2+. pdf.js uses it for document fingerprints during load.
+if (typeof Uint8Array !== "undefined" && typeof (Uint8Array.prototype as any).toHex !== "function") {
+  (Uint8Array.prototype as any).toHex = function toHex() {
+    let hex = "";
+    const bytes = this as Uint8Array;
+    for (let i = 0; i < bytes.length; i++) {
+      hex += bytes[i].toString(16).padStart(2, "0");
+    }
+    return hex;
+  };
+}
+
+// Uint8Array.fromHex — 18.2+ (counterpart to toHex).
+if (typeof Uint8Array !== "undefined" && typeof (Uint8Array as any).fromHex !== "function") {
+  (Uint8Array as any).fromHex = function fromHex(str: string) {
+    const length = str.length >> 1;
+    const bytes = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
+      bytes[i] = parseInt(str.substr(i * 2, 2), 16);
+    }
+    return bytes;
+  };
+}
+
+// ReadableStream async iteration (for await...of / .values()) — 18.4+.
+// pdf.js uses it in text-extraction and save paths.
+if (
+  typeof ReadableStream !== "undefined" &&
+  typeof (ReadableStream.prototype as any)[Symbol.asyncIterator] !== "function"
+) {
+  const asyncIterator = function (this: ReadableStream, options?: { preventCancel?: boolean }) {
+    const reader = this.getReader();
+    const preventCancel = !!(options && options.preventCancel);
+    return {
+      next() {
+        return reader.read().then(
+          (result) => {
+            if (result.done) reader.releaseLock();
+            return result;
+          },
+          (err) => {
+            reader.releaseLock();
+            throw err;
+          }
+        );
+      },
+      return(value?: unknown) {
+        if (!preventCancel) {
+          const cancelPromise = reader.cancel(value);
+          reader.releaseLock();
+          return cancelPromise.then(() => ({ done: true, value }));
+        }
+        reader.releaseLock();
+        return Promise.resolve({ done: true, value });
+      },
+      [Symbol.asyncIterator]() {
+        return this;
+      },
+    };
+  };
+  (ReadableStream.prototype as any)[Symbol.asyncIterator] = asyncIterator;
+  if (typeof (ReadableStream.prototype as any).values !== "function") {
+    (ReadableStream.prototype as any).values = asyncIterator;
+  }
 }
 
 export {};
