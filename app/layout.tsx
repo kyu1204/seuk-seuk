@@ -99,6 +99,16 @@ export default async function RootLayout({
   return (
     <html lang={language === "ko" ? "ko" : "en"} suppressHydrationWarning>
       <head>
+        {/*
+          Polyfill Promise.withResolvers for iOS/Safari < 17.4.
+          pdf.js v5 relies on it; without this, PDF documents fail to load
+          on older devices (e.g. iOS 17.3.x). Runs synchronously before any app code.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(typeof Promise.withResolvers!=="function"){Promise.withResolvers=function(){var resolve,reject;var promise=new Promise(function(res,rej){resolve=res;reject=rej;});return{promise:promise,resolve:resolve,reject:reject};};}`,
+          }}
+        />
         <meta name="naver-site-verification" content="24ae5cf6d9a265c90d7a677e7b820b8fbb00472b" />
         <OrganizationJsonLd />
         <WebSiteJsonLd baseUrl={BASE_URL} />
