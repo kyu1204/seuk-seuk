@@ -100,16 +100,10 @@ export default async function RootLayout({
     <html lang={language === "ko" ? "ko" : "en"} suppressHydrationWarning>
       <head>
         {/*
-          Fallback polyfills for older iOS/Safari that pdf.js v5 relies on
-          (Promise.withResolvers: 17.4+, URL.parse: 18.4+). The authoritative
-          main-thread polyfill is lib/pdf-polyfill.ts (imported before pdfjs-dist);
-          this inline copy is a harmless early-running safety net.
+          Main-thread pdf.js polyfills for older iOS/Safari live in lib/pdf-polyfill.ts
+          and are imported before pdfjs-dist in the components that use it
+          (pdf-page-renderer, document-upload), which is the proven load order.
         */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if(typeof Promise.withResolvers!=="function"){Promise.withResolvers=function(){var resolve,reject;var promise=new Promise(function(res,rej){resolve=res;reject=rej;});return{promise:promise,resolve:resolve,reject:reject};};}if(typeof URL!=="undefined"&&typeof URL.parse!=="function"){URL.parse=function(u,b){try{return(b!==undefined&&b!==null)?new URL(u,b):new URL(u);}catch(e){return null;}};}`,
-          }}
-        />
         <meta name="naver-site-verification" content="24ae5cf6d9a265c90d7a677e7b820b8fbb00472b" />
         <OrganizationJsonLd />
         <WebSiteJsonLd baseUrl={BASE_URL} />
