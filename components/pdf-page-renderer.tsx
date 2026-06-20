@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
+import "@/lib/pdf-polyfill"; // must come before pdfjs-dist (main-thread Promise.withResolvers)
 import * as pdfjsLib from "pdfjs-dist";
+import * as Sentry from "@sentry/nextjs";
 
-// Use local worker file from public/ to avoid CDN issues and iOS Safari compatibility problems
+// Use local worker file from public/ to avoid CDN issues and iOS Safari compatibility problems.
+// The version query string busts stale CDN/browser caches of the (previously non-polyfilled) worker.
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs?v=${pdfjsLib.version}`;
 }
 
 export interface PdfPageDimensions {
@@ -102,12 +105,22 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
 
           setPdfDoc(pdf);
           onTotalPagesChange?.(pdf.numPages);
-        } catch (err) {
+        } catch (err: any) {
           if (cancelled) return;
           console.error("PDF load error:", err);
+          // Report the real error so we can diagnose old-iOS/Safari failures (e.g. missing APIs).
+          Sentry.captureException(err, {
+            tags: { area: "pdf-load" },
+            extra: {
+              userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+              pdfjsVersion: pdfjsLib.version,
+              hasPromiseWithResolvers: typeof (Promise as any).withResolvers === "function",
+            },
+          });
           setIsLoading(false);
           setPdfDoc(null);
-          onLoadError?.("PDF 파일을 불러올 수 없습니다.");
+          const detail = err?.name || err?.message ? ` (${err?.name || ""}: ${err?.message || ""})` : "";
+          onLoadError?.(`PDF 파일을 불러올 수 없습니다.${detail}`);
         }
       };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import "@/lib/pdf-polyfill"; // Promise.withResolvers polyfill before any pdfjs-dist usage (iOS < 17.4)
 import type React from "react";
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -182,7 +183,8 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
               if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
                 // Use the local, polyfilled worker (see scripts/build-pdf-worker.mjs)
                 // so PDFs work on iOS/Safari < 17.4 instead of the CDN worker.
-                pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+                // Version query busts stale caches of the old non-polyfilled worker.
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs?v=${pdfjsLib.version}`;
               }
               const arrayBuffer = await file.arrayBuffer();
               const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
