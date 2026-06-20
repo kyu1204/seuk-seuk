@@ -180,7 +180,9 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           import("pdfjs-dist").then(async (pdfjsLib) => {
             try {
               if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+                // Use the local, polyfilled worker (see scripts/build-pdf-worker.mjs)
+                // so PDFs work on iOS/Safari < 17.4 instead of the CDN worker.
+                pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
               }
               const arrayBuffer = await file.arrayBuffer();
               const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;

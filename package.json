@@ -9,7 +9,7 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "postinstall": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs"
+    "postinstall": "node scripts/build-pdf-worker.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
