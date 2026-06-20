@@ -15,4 +15,16 @@ if (typeof Promise !== "undefined" && typeof (Promise as any).withResolvers !== 
   };
 }
 
+// URL.parse static method — Safari/iOS 18.4+. pdf.js v5 calls URL.parse(url, base)
+// and returns null on failure instead of throwing.
+if (typeof URL !== "undefined" && typeof (URL as any).parse !== "function") {
+  (URL as any).parse = function parse(url: string | URL, base?: string | URL) {
+    try {
+      return base !== undefined && base !== null ? new URL(url, base) : new URL(url);
+    } catch {
+      return null;
+    }
+  };
+}
+
 export {};
