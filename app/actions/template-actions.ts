@@ -22,6 +22,7 @@ import {
   buildTemplateAreaInserts,
 } from "@/lib/templates/clone";
 import { getCurrentSubscription } from "./subscription-actions";
+import { getStorage } from "@/lib/storage";
 
 /**
  * Gate the template feature to Pro / Enterprise plans.
@@ -121,9 +122,12 @@ export async function createTemplate(formData: FormData): Promise<{
     const ext = extractFileExtension(file.name) || (isPdf ? "pdf" : "png");
     const filePath = buildTemplateStoragePath(user.id, ext, randomUUID());
 
-    const { error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(filePath, file);
+    const { error: uploadError } = await getStorage().upload(
+      "documents",
+      filePath,
+      file,
+      { contentType: file.type }
+    );
 
     if (uploadError) {
       console.error("Template upload error:", uploadError);
@@ -147,7 +151,7 @@ export async function createTemplate(formData: FormData): Promise<{
     if (dbError || !template) {
       console.error("Template DB error:", dbError);
       // Rollback uploaded file
-      await supabase.storage.from("documents").remove([filePath]);
+      await getStorage().remove("documents", [filePath]);
       return { error: "Failed to create template record" };
     }
 
@@ -470,11 +474,11 @@ export async function rollbackTemplateCreation(templateId: string): Promise<{
     const cleanupErrors: string[] = [];
 
     if (template.file_url) {
-      const { error: storageError } = await serviceSupabase.storage
-        .from("documents")
-        .remove([template.file_url]);
+      const { error: storageError } = await getStorage().remove("documents", [
+        template.file_url,
+      ]);
       if (storageError) {
-        cleanupErrors.push(`storage: ${storageError.message}`);
+        cleanupErrors.push(`storage: ${storageError}`);
       }
     }
 
@@ -560,9 +564,11 @@ export async function publishFromTemplate(
       randomUUID()
     );
 
-    const { error: copyError } = await supabase.storage
-      .from("documents")
-      .copy(fullTemplate.file_url, newFilePath);
+    const { error: copyError } = await getStorage().copy(
+      "documents",
+      fullTemplate.file_url,
+      newFilePath
+    );
 
     if (copyError) {
       console.error("Template file copy error:", copyError);
@@ -585,7 +591,7 @@ export async function publishFromTemplate(
 
     if (docError || !document) {
       console.error("Cloned document insert error:", docError);
-      await supabase.storage.from("documents").remove([newFilePath]);
+      await getStorage().remove("documents", [newFilePath]);
       return { error: "Failed to create document from template" };
     }
 
@@ -601,7 +607,7 @@ export async function publishFromTemplate(
         console.error("Failed to deduct credit:", creditError);
         await decrementDocumentCreated();
         await supabase.from("documents").delete().eq("id", document.id);
-        await supabase.storage.from("documents").remove([newFilePath]);
+        await getStorage().remove("documents", [newFilePath]);
         return { error: "크레딧 차감 실패" };
       }
       creditDeducted = true;
@@ -614,7 +620,7 @@ export async function publishFromTemplate(
         await refundCredit("create", document.id);
       }
       await supabase.from("documents").delete().eq("id", document.id);
-      await supabase.storage.from("documents").remove([newFilePath]);
+      await getStorage().remove("documents", [newFilePath]);
     };
 
     // Clone signature areas as pending signatures
