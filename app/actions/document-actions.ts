@@ -939,6 +939,51 @@ export async function getDocumentFileSignedUrl(
 }
 
 /**
+ * Owner-scoped presigned URL for the original document file (for preview in the
+ * document detail page). Replaces client-side RLS storage.download so the
+ * browser never talks to storage directly.
+ */
+export async function getOwnedDocumentFileUrl(documentId: string): Promise<{
+  url: string | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { url: null, error: "User not authenticated" };
+    }
+
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, file_url")
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (docError || !document?.file_url) {
+      return { url: null, error: "Document not found" };
+    }
+
+    const { url, error } = await getStorage().createSignedDownloadUrl(
+      "documents",
+      document.file_url,
+      { expiresIn: 3600 }
+    );
+    if (error || !url) {
+      return { url: null, error: error ?? "Failed to generate URL" };
+    }
+    return { url };
+  } catch (error) {
+    console.error("Get owned document file URL error:", error);
+    return { url: null, error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * Get document by ID (for server components)
  */
 export async function getDocumentById(id: string): Promise<{

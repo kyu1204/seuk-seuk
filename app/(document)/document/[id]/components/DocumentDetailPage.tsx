@@ -4,6 +4,7 @@ import {
   updateSignatureAreas,
   getSignedDocumentUrls,
   deleteDocument,
+  getOwnedDocumentFileUrl,
 } from "@/app/actions/document-actions";
 import AreaSelector from "@/components/area-selector";
 import DeleteDocumentModal from "@/components/delete-document-modal";
@@ -42,7 +43,6 @@ import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw, Share2, Type, Chevr
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
-import { createClientSupabase } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentDetailComponentProps {
@@ -288,21 +288,17 @@ export default function DocumentDetailComponent({
   useEffect(() => {
     const loadDocumentUrl = async () => {
       if (document.file_url) {
-        const supabase = createClientSupabase();
-        const { data, error } = await supabase.storage
-          .from('documents')
-          .download(document.file_url);
+        const { url, error } = await getOwnedDocumentFileUrl(document.id);
 
-        if (error) {
+        if (error || !url) {
           console.error('Failed to load document:', error);
           return;
         }
 
-        if (data) {
-          // Create blob URL from downloaded data
-          const url = URL.createObjectURL(data);
-          setDocumentUrl(url);
-        }
+        // Fetch via presigned URL and keep the blob-URL contract for renderers.
+        const res = await fetch(url);
+        const blob = await res.blob();
+        setDocumentUrl(URL.createObjectURL(blob));
       }
     };
 

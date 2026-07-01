@@ -392,6 +392,50 @@ export async function getTemplateById(templateId: string): Promise<{
 }
 
 /**
+ * Owner-scoped presigned URL for a template's source file (for preview).
+ * Replaces client-side RLS storage.download.
+ */
+export async function getOwnedTemplateFileUrl(templateId: string): Promise<{
+  url: string | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { url: null, error: "User not authenticated" };
+    }
+
+    const { data: template, error } = await supabase
+      .from("document_templates")
+      .select("id, file_url")
+      .eq("id", templateId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (error || !template?.file_url) {
+      return { url: null, error: "Template not found" };
+    }
+
+    const { url, error: urlError } = await getStorage().createSignedDownloadUrl(
+      "documents",
+      template.file_url,
+      { expiresIn: 3600 }
+    );
+    if (urlError || !url) {
+      return { url: null, error: urlError ?? "Failed to generate URL" };
+    }
+    return { url };
+  } catch (error) {
+    console.error("Get owned template file URL error:", error);
+    return { url: null, error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * Soft-delete a template (keeps storage cleanup best-effort).
  */
 export async function deleteTemplate(templateId: string): Promise<{

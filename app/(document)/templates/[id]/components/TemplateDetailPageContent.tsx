@@ -26,7 +26,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/language-context";
-import { createClientSupabase } from "@/lib/supabase/client";
 import type {
   SignatureArea,
   TemplateWithAreas,
@@ -35,6 +34,7 @@ import type { RelativeSignatureArea } from "@/lib/utils";
 import {
   deleteTemplate,
   updateTemplate,
+  getOwnedTemplateFileUrl,
 } from "@/app/actions/template-actions";
 
 interface TemplateDetailPageContentProps {
@@ -99,22 +99,23 @@ export function TemplateDetailPageContent({
     let active = true;
 
     const loadTemplateFile = async () => {
-      const supabase = createClientSupabase();
-      const { data, error: downloadError } = await supabase.storage
-        .from("documents")
-        .download(template.file_url);
+      const { url, error: urlError } = await getOwnedTemplateFileUrl(template.id);
 
       if (!active) return;
 
-      if (downloadError || !data) {
-        console.error("Failed to load template file:", downloadError);
+      if (urlError || !url) {
+        console.error("Failed to load template file:", urlError);
         setError(
           t("templates.detail.loadFileError", "템플릿 파일을 불러오지 못했습니다.")
         );
         return;
       }
 
-      objectUrl = URL.createObjectURL(data);
+      const res = await fetch(url);
+      const blob = await res.blob();
+      if (!active) return;
+
+      objectUrl = URL.createObjectURL(blob);
       setDocumentUrl(objectUrl);
     };
 
