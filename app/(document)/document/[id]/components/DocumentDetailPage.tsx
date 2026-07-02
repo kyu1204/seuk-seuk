@@ -4,6 +4,7 @@ import {
   updateSignatureAreas,
   getSignedDocumentUrls,
   deleteDocument,
+  getOwnedDocumentFileUrl,
 } from "@/app/actions/document-actions";
 import AreaSelector from "@/components/area-selector";
 import DeleteDocumentModal from "@/components/delete-document-modal";
@@ -42,7 +43,6 @@ import { Edit, Download, Trash2, ZoomIn, ZoomOut, RotateCcw, Share2, Type, Chevr
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
-import { createClientSupabase } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentDetailComponentProps {
@@ -284,37 +284,42 @@ export default function DocumentDetailComponent({
     setIsMounted(true);
   }, []);
 
-  // Load original document URL from private storage using authenticated download
+  // Load original document URL via server-issued presigned URL
   useEffect(() => {
+    let objectUrl: string | null = null;
+    let active = true;
+
     const loadDocumentUrl = async () => {
-      if (document.file_url) {
-        const supabase = createClientSupabase();
-        const { data, error } = await supabase.storage
-          .from('documents')
-          .download(document.file_url);
-
-        if (error) {
-          console.error('Failed to load document:', error);
-          return;
+      if (!document.file_url) return;
+      try {
+        const { url, error } = await getOwnedDocumentFileUrl(document.id);
+        if (!active) return;
+        if (error || !url) {
+          throw new Error(error || "Missing document file URL");
         }
 
-        if (data) {
-          // Create blob URL from downloaded data
-          const url = URL.createObjectURL(data);
-          setDocumentUrl(url);
-        }
+        // Fetch via presigned URL and keep the blob-URL contract for renderers.
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Failed to fetch document: ${res.status}`);
+        const blob = await res.blob();
+        if (!active) return;
+        objectUrl = URL.createObjectURL(blob);
+        setDocumentUrl(objectUrl);
+      } catch (err) {
+        if (!active) return;
+        console.error('Failed to load document:', err);
+        setError(t("documentDetail.errorLoadFile", "문서를 불러오지 못했습니다."));
       }
     };
 
     loadDocumentUrl();
 
-    // Cleanup: revoke blob URL when component unmounts
+    // Cleanup: revoke the exact blob URL created in this effect run.
     return () => {
-      if (documentUrl) {
-        URL.revokeObjectURL(documentUrl);
-      }
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [document.file_url]);
+  }, [document.id, document.file_url]);
 
   // 완료된 문서의 경우 서명된 문서 리소스 가져오기
   useEffect(() => {

@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
+import { getStorage } from "@/lib/storage";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -162,9 +163,10 @@ export async function deleteAccount(
 
       // Delete from documents bucket
       if (filePaths.length > 0) {
-        const { error: storageError } = await serviceSupabase.storage
-          .from("documents")
-          .remove(filePaths);
+        const { error: storageError } = await getStorage().remove(
+          "documents",
+          filePaths
+        );
 
         if (storageError) {
           console.error("[Account Deletion] Error deleting from documents storage:", storageError);
@@ -176,9 +178,10 @@ export async function deleteAccount(
 
       // Delete from signed-documents bucket
       if (signedFilePaths.length > 0) {
-        const { error: signedStorageError } = await serviceSupabase.storage
-          .from("signed-documents")
-          .remove(signedFilePaths);
+        const { error: signedStorageError } = await getStorage().remove(
+          "signed-documents",
+          signedFilePaths
+        );
 
         if (signedStorageError) {
           console.error("[Account Deletion] Error deleting from signed-documents storage:", signedStorageError);
