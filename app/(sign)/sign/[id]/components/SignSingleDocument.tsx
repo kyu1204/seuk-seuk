@@ -840,6 +840,11 @@ export default function SignSingleDocument({
                 <img
                   src={documentSignedUrl || documentData.file_url}
                   alt="Document"
+                  // CORS mode must match the canvas-compositing Image() load:
+                  // without it Chrome caches the response sans ACAO header and
+                  // the later crossOrigin re-request fails (R2 unlike Supabase
+                  // only emits CORS headers when Origin is sent).
+                  crossOrigin="anonymous"
                   className="w-full h-auto object-contain block"
                   draggable="false"
                   style={{ userSelect: "none", WebkitUserSelect: "none" }}

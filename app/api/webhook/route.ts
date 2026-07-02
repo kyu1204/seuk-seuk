@@ -31,11 +31,9 @@ export async function POST(request: NextRequest) {
     );
     const eventName = eventData?.eventType ?? "Unknown event";
 
-    console.log(`Received Paddle webhook: ${eventName}`);
 
     if (eventData) {
       await webhookProcessor.processEvent(eventData);
-      console.log(`Successfully processed webhook: ${eventName}`);
     }
 
     return Response.json({ status: 200, eventName });

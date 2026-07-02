@@ -50,7 +50,6 @@ export async function validateAndGetPriceId(
 
   // 5. customer 레코드가 없으면 첫 구매 → 무료체험 허용
   if (!customer) {
-    console.log(`No customer record for ${userEmail}, allowing free trial`);
     return requestedPriceId;
   }
 
@@ -60,9 +59,6 @@ export async function validateAndGetPriceId(
       cycle === "month" ? tier.priceId.monthNoTrial : tier.priceId.yearNoTrial;
 
     if (noTrialPriceId) {
-      console.log(
-        `Price validation: ${userEmail} requested ${requestedPriceId}, returned ${noTrialPriceId} (trial already used)`
-      );
       return noTrialPriceId;
     } else {
       console.warn(
@@ -73,7 +69,6 @@ export async function validateAndGetPriceId(
   }
 
   // 7. 이력 없으면 원래 priceId 반환 (무료체험 제공)
-  console.log(`Price validation: ${userEmail} eligible for free trial`);
   return requestedPriceId;
 }
 

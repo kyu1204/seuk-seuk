@@ -20,7 +20,6 @@ interface CreditPurchaseCustomData {
 
 export class ProcessWebhook {
   async processEvent(eventData: EventEntity) {
-    console.log(`Processing Paddle webhook event: ${eventData.eventType}`);
 
     switch (eventData.eventType) {
       case EventName.SubscriptionCreated:
@@ -36,7 +35,6 @@ export class ProcessWebhook {
         await this.handleTransactionCompleted(eventData);
         break;
       default:
-        console.log(`Unhandled event type: ${eventData.eventType}`);
     }
   }
 
@@ -52,11 +50,6 @@ export class ProcessWebhook {
         ? "canceled"
         : "updated";
 
-      console.log(
-        `[subscription.${eventType}] Processing subscription ${eventData.data.id} for customer ${
-          eventData.data.customerId
-        }`
-      );
 
       // customer_id로 customers 테이블에서 user_id 조회 (없을 수도 있음 - customer.created가 먼저 와야 함)
       const { data: customerData } = await supabase
@@ -65,13 +58,6 @@ export class ProcessWebhook {
         .eq("customer_id", eventData.data.customerId)
         .single();
 
-      console.log(
-        `[subscription] Customer ${
-          eventData.data.customerId
-        } exists: ${!!customerData}, user_id: ${
-          customerData?.user_id || "not linked yet"
-        }`
-      );
 
       // IMPORTANT: customer가 없어도 계속 진행
       // customer.created 이벤트가 나중에 와서 customer를 생성하고 subscription을 연결할 것임
@@ -97,12 +83,6 @@ export class ProcessWebhook {
       // 4. 기존 subscriptions 테이블에 Paddle 구독 정보 upsert
 
       // Log detailed subscription data for debugging
-      console.log('[subscription] Paddle data:', JSON.stringify({
-        status: eventData.data.status,
-        scheduled_change: eventData.data.scheduled_change,
-        next_billed_at: eventData.data.next_billed_at,
-        current_billing_period: eventData.data.currentBillingPeriod,
-      }, null, 2));
 
       // Calculate ends_at from scheduled_change or next_billed_at
       let endsAt: string | null = null;
@@ -111,23 +91,19 @@ export class ProcessWebhook {
       // Priority 1: If subscription has scheduled cancellation, use effective_at
       if (eventData.data.scheduled_change?.action === 'cancel') {
         endsAt = eventData.data.scheduled_change.effective_at || null;
-        console.log(`[subscription] Scheduled cancellation detected, ends_at: ${endsAt}`);
 
         // Check if subscription has already expired
         if (endsAt && new Date(endsAt) < new Date()) {
           finalStatus = 'expired';
-          console.log(`[subscription] Subscription already expired, changing status to 'expired'`);
         }
       }
       // Priority 2: Use next_billed_at for active recurring subscriptions
       else if (eventData.data.next_billed_at) {
         endsAt = eventData.data.next_billed_at;
-        console.log(`[subscription] Setting ends_at to next billing date: ${endsAt}`);
       }
       // Priority 3: Fallback to current billing period end date
       else if (eventData.data.currentBillingPeriod?.endsAt) {
         endsAt = eventData.data.currentBillingPeriod.endsAt;
-        console.log(`[subscription] Using current billing period end date: ${endsAt}`);
       }
 
       // If still no ends_at and status is canceled, log warning
@@ -139,7 +115,6 @@ export class ProcessWebhook {
 
       // user_id가 있으면 기존 subscription 레코드를 업데이트, 없으면 새로 생성
       if (customerData?.user_id) {
-        console.log(`[subscription] User ${customerData.user_id} exists, checking for existing subscription...`);
 
         // 이 user의 기존 subscription 찾기 (plan_id 포함)
         const { data: existingUserSub } = await supabase
@@ -150,7 +125,6 @@ export class ProcessWebhook {
 
         if (existingUserSub) {
           // 기존 subscription 업데이트 (Free → Pro 등)
-          console.log(`[subscription] Updating existing subscription ${existingUserSub.id} to ${planName}`);
 
           // Check if this is a plan upgrade by comparing old and new plan_id
           const isUpgrade = existingUserSub.plan_id !== planData.id;
@@ -169,14 +143,12 @@ export class ProcessWebhook {
               .eq("id", planData.id)
               .single();
 
-            console.log(`[subscription] Plan change detected: ${oldPlan?.name} → ${newPlan?.name}`);
 
             // Reset monthly usage if upgrading to a higher tier (higher limits)
             if (oldPlan && newPlan && 
                 (newPlan.monthly_document_limit > oldPlan.monthly_document_limit ||
                  newPlan.active_document_limit > oldPlan.active_document_limit)) {
               
-              console.log(`[subscription] Plan upgrade detected! Resetting monthly usage for user ${customerData.user_id}`);
 
               const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
               
@@ -192,7 +164,6 @@ export class ProcessWebhook {
               if (resetError) {
                 console.error("[subscription] Failed to reset monthly usage:", resetError);
               } else {
-                console.log(`[subscription] ✅ Successfully reset monthly usage for ${currentMonth}`);
               }
             }
           }
@@ -219,10 +190,8 @@ export class ProcessWebhook {
           }
 
           subscriptionId = updatedSub!.id;
-          console.log(`[subscription] Updated subscription to ${planName}: ${subscriptionId}`);
         } else {
           // user는 있지만 subscription이 없는 경우 (정상적이지 않은 상황)
-          console.log(`[subscription] User has no subscription, creating new one`);
 
           const { data: newSub, error: insertError } = await supabase
             .from("subscriptions")
@@ -246,11 +215,9 @@ export class ProcessWebhook {
           }
 
           subscriptionId = newSub!.id;
-          console.log(`[subscription] Created subscription: ${subscriptionId}`);
         }
       } else {
         // user_id가 없으면 일단 subscription만 생성 (transaction.completed에서 연결됨)
-        console.log(`[subscription] No user linked yet, creating unlinked subscription`);
 
         const { data: newSub, error: insertError } = await supabase
           .from("subscriptions")
@@ -274,7 +241,6 @@ export class ProcessWebhook {
         }
 
         subscriptionId = newSub!.id;
-        console.log(`[subscription] Created unlinked subscription: ${subscriptionId}`);
       }
 
       // 5. users.current_subscription_id 업데이트 (user_id가 있을 때만)
@@ -291,13 +257,7 @@ export class ProcessWebhook {
           );
         }
 
-        console.log(
-          `Updated user ${customerData.user_id} subscription to ${planName} (${finalStatus})`
-        );
       } else {
-        console.log(
-          `Created subscription ${subscriptionId} for ${planName} (${finalStatus}) - waiting for transaction.completed to link to user`
-        );
       }
     } catch (error) {
       console.error("Error processing subscription webhook:", error);
@@ -317,13 +277,6 @@ export class ProcessWebhook {
     const supabase = createServiceSupabase();
 
     try {
-      console.log(
-        `[customer.${
-          eventData.eventType.includes("created") ? "created" : "updated"
-        }] Processing customer ${eventData.data.id} with email ${
-          eventData.data.email
-        }`
-      );
 
       // 이메일로 사용자 찾기 (Supabase Auth Admin API 사용)
       const {
@@ -346,11 +299,6 @@ export class ProcessWebhook {
         throw error;
       }
 
-      console.log(
-        `[customer] Upserted customer: ${eventData.data.id} with email ${
-          eventData.data.email
-        }, user: ${user?.id || "not found"}`
-      );
 
       // user_id가 있으면, 이 customer의 subscription을 찾아서 user_id 연결 (보조적 역할)
       if (user?.id) {
@@ -362,9 +310,6 @@ export class ProcessWebhook {
           .is("user_id", null);
 
         if (subscriptions && subscriptions.length > 0) {
-          console.log(
-            `[customer] Found ${subscriptions.length} unlinked subscription(s) for customer ${eventData.data.id} - linking to user ${user.id}`
-          );
 
           for (const sub of subscriptions) {
             // subscription의 user_id 업데이트
@@ -392,9 +337,6 @@ export class ProcessWebhook {
                 .eq("id", user.id);
             }
 
-            console.log(
-              `[customer] Linked subscription ${sub.id} (${sub.paddle_subscription_id}) to user ${user.id}`
-            );
           }
         }
       }
@@ -418,7 +360,6 @@ export class ProcessWebhook {
       const customData = eventData.data.customData as CreditPurchaseCustomData | undefined;
 
       if (customData?.type === "credit") {
-        console.log("[transaction.completed] Credit purchase detected");
         await this.handleCreditPurchase(eventData, customData);
         return;
       }
@@ -426,27 +367,17 @@ export class ProcessWebhook {
       const customerId = eventData.data.customerId;
 
       if (!customerId) {
-        console.log("[transaction.completed] No customer_id in event");
         return;
       }
 
-      console.log(
-        `[transaction.completed] Processing for customer ${customerId}`
-      );
 
       // 1. Paddle API로 customer 정보 가져오기 (실제 이메일 포함)
       const paddle = getPaddleInstance();
       let customerEmail: string | null = null;
 
       try {
-        console.log(
-          `[transaction.completed] Fetching customer info from Paddle API...`
-        );
         const paddleCustomer = await paddle.customers.get(customerId);
         customerEmail = paddleCustomer.email;
-        console.log(
-          `[transaction.completed] Fetched customer email from Paddle: ${customerEmail}`
-        );
       } catch (apiError) {
         console.error(
           `[transaction.completed] Failed to fetch customer from Paddle API:`,
@@ -461,21 +392,12 @@ export class ProcessWebhook {
 
         if (dbCustomer?.email && !dbCustomer.email.includes("placeholder")) {
           customerEmail = dbCustomer.email;
-          console.log(
-            `[transaction.completed] Using email from database: ${customerEmail}`
-          );
         } else {
-          console.log(
-            `[transaction.completed] No valid email found, waiting for customer.created event`
-          );
           return;
         }
       }
 
       if (!customerEmail) {
-        console.log(
-          `[transaction.completed] No email available for customer ${customerId}`
-        );
         return;
       }
 
@@ -487,9 +409,6 @@ export class ProcessWebhook {
         .single();
 
       if (customerError || !customerData) {
-        console.log(
-          `[transaction.completed] Customer ${customerId} not in database, creating...`
-        );
 
         // customer 레코드 생성 (실제 이메일 사용)
         const { data: newCustomer, error: insertError } = await supabase
@@ -511,16 +430,10 @@ export class ProcessWebhook {
         }
 
         customerData = newCustomer;
-        console.log(
-          `[transaction.completed] Created customer ${customerId} with email ${customerEmail}`
-        );
       }
 
       // 3. user_id가 없으면 이메일로 user 찾아서 업데이트
       if (!customerData.user_id) {
-        console.log(
-          `[transaction.completed] Looking up user by email: ${customerEmail}`
-        );
 
         const {
           data: { users },
@@ -538,9 +451,6 @@ export class ProcessWebhook {
         const user = users?.find((u) => u.email === customerEmail);
 
         if (user) {
-          console.log(
-            `[transaction.completed] Found user ${user.id} for email ${customerEmail}`
-          );
 
           // 2a. customers 테이블에 user_id 업데이트
           const { error: customerUpdateError } = await supabase
@@ -556,9 +466,6 @@ export class ProcessWebhook {
             return;
           }
 
-          console.log(
-            `[transaction.completed] Updated customer ${customerId} with user_id ${user.id}`
-          );
 
           // 2b. 이 customer의 모든 unlinked subscriptions 찾아서 연결
           const { data: subscriptions, error: subsError } = await supabase
@@ -576,9 +483,6 @@ export class ProcessWebhook {
           }
 
           if (subscriptions && subscriptions.length > 0) {
-            console.log(
-              `[transaction.completed] Found ${subscriptions.length} unlinked subscription(s) for customer ${customerId}`
-            );
 
             for (const sub of subscriptions) {
               // subscription에 user_id 연결
@@ -613,30 +517,18 @@ export class ProcessWebhook {
                 }
               }
 
-              console.log(
-                `[transaction.completed] Successfully linked subscription ${sub.id} (${sub.paddle_subscription_id}) to user ${user.id}`
-              );
             }
 
-            console.log(
-              `[transaction.completed] ✅ Successfully linked all subscriptions for customer ${customerId} to user ${user.id}`
-            );
 
             // Check if this transaction includes a free trial and record usage
             const priceId = eventData.data.items[0]?.price?.id;
             if (priceId && this.isPriceWithTrial(priceId)) {
-              console.log(
-                `[transaction.completed] Free trial detected for priceId: ${priceId}`
-              );
               await this.recordTrialUsage(customerId);
             }
 
             // Send payment notification
             await this.sendPaymentNotification(subscriptions[0].id, supabase);
           } else {
-            console.log(
-              `[transaction.completed] No unlinked subscriptions found for customer ${customerId}`
-            );
           }
         } else {
           console.warn(
@@ -644,9 +536,6 @@ export class ProcessWebhook {
           );
         }
       } else if (customerData.user_id) {
-        console.log(
-          `[transaction.completed] Customer ${customerId} already linked to user ${customerData.user_id} - checking for unlinked subscriptions`
-        );
 
         // customer는 이미 linked되어 있지만 subscription이 아직 linked 안 되어있을 수 있음
         const { data: subscriptions } = await supabase
@@ -656,9 +545,6 @@ export class ProcessWebhook {
           .is("user_id", null);
 
         if (subscriptions && subscriptions.length > 0) {
-          console.log(
-            `[transaction.completed] Found ${subscriptions.length} unlinked subscription(s) - linking now`
-          );
 
           for (const sub of subscriptions) {
             await supabase
@@ -676,9 +562,6 @@ export class ProcessWebhook {
                 .eq("id", customerData.user_id);
             }
 
-            console.log(
-              `[transaction.completed] Linked subscription ${sub.id} to existing user ${customerData.user_id}`
-            );
           }
 
           // Send payment notification for the first active subscription
@@ -686,18 +569,12 @@ export class ProcessWebhook {
             await this.sendPaymentNotification(subscriptions[0].id, supabase);
           }
         } else {
-          console.log(
-            `[transaction.completed] No unlinked subscriptions found - subscription already linked by subscription.created event`
-          );
         }
 
         // IMPORTANT: Check for free trial REGARDLESS of whether subscription was just linked or already linked
         // This handles the case where subscription.created came before transaction.completed
         const priceId = eventData.data.items[0]?.price?.id;
         if (priceId && this.isPriceWithTrial(priceId)) {
-          console.log(
-            `[transaction.completed] Free trial detected for priceId: ${priceId}`
-          );
           await this.recordTrialUsage(customerId);
         }
       }
@@ -770,9 +647,6 @@ export class ProcessWebhook {
           error
         );
       } else {
-        console.log(
-          `[trial-tracking] ✅ Recorded trial usage for customer: ${customerId}`
-        );
       }
     } catch (error) {
       console.error(
@@ -832,13 +706,11 @@ export class ProcessWebhook {
       
       const notificationEndpoint = process.env.NOTIFICATION_ENDPOINT;
       if (!notificationEndpoint) {
-        console.log("[notification] NOTIFICATION_ENDPOINT not configured, skipping notification");
         return;
       }
 
       const notificationBody = `플랜: ${planName}\n상태: ${subscription.status}`;
 
-      console.log(`[notification] Sending payment notification for plan: ${planName}`);
 
       const response = await fetch(notificationEndpoint, {
         method: "POST",
@@ -854,7 +726,6 @@ export class ProcessWebhook {
       if (!response.ok) {
         console.error(`[notification] Failed to send notification: ${response.status} ${response.statusText}`);
       } else {
-        console.log(`[notification] ✅ Successfully sent payment notification for ${planName}`);
       }
     } catch (notificationError) {
       console.error("[notification] Error sending payment notification:", notificationError);
@@ -887,9 +758,6 @@ export class ProcessWebhook {
         return;
       }
 
-      console.log(
-        `[credit-purchase] Processing credit purchase: ${quantity} credits for customer ${customerId}`
-      );
 
       // Check for duplicate transaction
       const { data: existingTransaction } = await supabase
@@ -899,9 +767,6 @@ export class ProcessWebhook {
         .single();
 
       if (existingTransaction) {
-        console.log(
-          `[credit-purchase] Transaction ${transactionId} already processed, skipping`
-        );
         return;
       }
 
@@ -917,10 +782,8 @@ export class ProcessWebhook {
 
       if (customerData?.user_id) {
         userId = customerData.user_id;
-        console.log(`[credit-purchase] Found user ${userId} from existing customer record`);
       } else {
         // 1b. Customer doesn't exist or not linked - fetch from Paddle API and find user by email
-        console.log(`[credit-purchase] Customer not found in DB, fetching from Paddle API...`);
 
         const paddle = getPaddleInstance();
         let customerEmail: string | null = null;
@@ -928,7 +791,6 @@ export class ProcessWebhook {
         try {
           const paddleCustomer = await paddle.customers.get(customerId);
           customerEmail = paddleCustomer.email;
-          console.log(`[credit-purchase] Fetched customer email from Paddle: ${customerEmail}`);
         } catch (apiError) {
           console.error(`[credit-purchase] Failed to fetch customer from Paddle API:`, apiError);
           return;
@@ -960,7 +822,6 @@ export class ProcessWebhook {
         }
 
         userId = user.id;
-        console.log(`[credit-purchase] Found user ${userId} by email ${customerEmail}`);
 
         // Create or update customer record
         await supabase
@@ -971,7 +832,6 @@ export class ProcessWebhook {
             user_id: userId,
           });
 
-        console.log(`[credit-purchase] Created/updated customer record for ${customerId}`);
       }
 
       if (!userId) {
@@ -1022,10 +882,6 @@ export class ProcessWebhook {
         throw balanceError;
       }
 
-      console.log(
-        `[credit-purchase] ✅ Successfully added ${quantity} credits for user ${userId}. ` +
-        `New balance: create=${newCreateCredits}, publish=${newPublishCredits}`
-      );
 
       // 4. Send notification (optional)
       await this.sendCreditPurchaseNotification(quantity, userId);
@@ -1042,13 +898,11 @@ export class ProcessWebhook {
     try {
       const notificationEndpoint = process.env.NOTIFICATION_ENDPOINT;
       if (!notificationEndpoint) {
-        console.log("[notification] NOTIFICATION_ENDPOINT not configured, skipping notification");
         return;
       }
 
       const notificationBody = `수량: ${quantity}개\n사용자 ID: ${userId.substring(0, 8)}...`;
 
-      console.log(`[notification] Sending credit purchase notification: ${quantity} credits`);
 
       const response = await fetch(notificationEndpoint, {
         method: "POST",
@@ -1064,7 +918,6 @@ export class ProcessWebhook {
       if (!response.ok) {
         console.error(`[notification] Failed to send notification: ${response.status} ${response.statusText}`);
       } else {
-        console.log(`[notification] ✅ Successfully sent credit purchase notification`);
       }
     } catch (notificationError) {
       console.error("[notification] Error sending credit notification:", notificationError);
