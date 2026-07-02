@@ -411,8 +411,6 @@ export async function createSignedDocumentUploadUrl(
 ): Promise<{
   uploadUrl?: string;
   filePath?: string;
-  token?: string;
-  provider?: "supabase" | "r2";
   error?: string;
 }> {
   try {
@@ -469,8 +467,6 @@ export async function createSignedDocumentUploadUrl(
     return {
       uploadUrl: result.url,
       filePath,
-      token: result.token,
-      provider: result.provider,
     };
   } catch (error) {
     console.error('[Upload] Unexpected error:', error);

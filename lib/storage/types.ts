@@ -12,14 +12,10 @@ export interface SignedDownloadOptions {
 }
 
 export interface SignedUploadResult {
-  /** URL the client uploads to. */
+  /** URL the client uploads to (plain HTTP PUT). */
   url: string;
   /** Storage key the file will land at. */
   key: string;
-  /** Provider discriminator so the client uploads with the right method. */
-  provider: "supabase" | "r2";
-  /** Supabase signed-upload token (Supabase provider only). */
-  token?: string;
 }
 
 export interface StorageDownload {
@@ -29,7 +25,7 @@ export interface StorageDownload {
 }
 
 export interface StorageProvider {
-  readonly name: "supabase" | "r2" | "dual";
+  readonly name: "r2";
 
   upload(
     bucket: StorageBucket,

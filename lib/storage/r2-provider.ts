@@ -141,7 +141,7 @@ export class R2StorageProvider implements StorageProvider {
       const url = await getSignedUrl(this.s3, command, {
         expiresIn: opts?.expiresIn ?? 300,
       });
-      return { result: { url, key, provider: "r2" } };
+      return { result: { url, key } };
     } catch (e) {
       return { result: null, error: e instanceof Error ? e.message : "Failed to sign upload" };
     }
