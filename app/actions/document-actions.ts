@@ -16,6 +16,7 @@ import { randomUUID } from "crypto";
 import { canCreateDocument, incrementDocumentCreated, decrementDocumentCreated } from "./subscription-actions";
 import { sendDocumentCompletionEmail } from "./notification-actions";
 import { deductCredit, wasDocumentCreatedWithCredit, refundCredit } from "./credit-actions";
+import { getStorage } from "@/lib/storage";
 
 /**
  * Upload a file to Supabase Storage and create a document record
@@ -78,10 +79,13 @@ export async function uploadDocument(formData: FormData) {
     const uniqueFilename = `${randomUUID()}.${fileExtension}`;
     const filePath = `${user.id}/${uniqueFilename}`;
 
-    // Upload file to Supabase Storage with user_id folder structure
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(filePath, file);
+    // Upload file to storage with user_id folder structure
+    const { error: uploadError } = await getStorage().upload(
+      "documents",
+      filePath,
+      file,
+      { contentType: file.type }
+    );
 
     if (uploadError) {
       console.error("Upload error:", uploadError);
@@ -133,7 +137,7 @@ export async function uploadDocument(formData: FormData) {
 
         // Rollback: delete document and storage file
         await supabase.from("documents").delete().eq("id", document.id);
-        await supabase.storage.from("documents").remove([filePath]);
+        await getStorage().remove("documents", [filePath]);
 
         return { error: "크레딧 차감 실패" };
       }
@@ -408,6 +412,7 @@ export async function createSignedDocumentUploadUrl(
   uploadUrl?: string;
   filePath?: string;
   token?: string;
+  provider?: "supabase" | "r2";
   error?: string;
 }> {
   try {
@@ -439,34 +444,34 @@ export async function createSignedDocumentUploadUrl(
     const filePath = `${document.user_id}/${filename}`;
 
     // Check if file already exists and delete it (cleanup from failed previous attempts)
-    const { data: existingFiles } = await supabaseService.storage
-      .from('signed-documents')
-      .list(document.user_id, {
-        search: `signed_${documentId}`
-      });
+    const storage = getStorage();
+    const { keys: existingFiles } = await storage.list(
+      "signed-documents",
+      `${document.user_id}/signed_${documentId}`
+    );
 
-    if (existingFiles && existingFiles.length > 0) {
+    if (existingFiles.length > 0) {
       console.log(`[Upload] Cleaning up ${existingFiles.length} existing files for document ${documentId}`);
-      const filesToDelete = existingFiles.map(f => `${document.user_id}/${f.name}`);
-      await supabaseService.storage
-        .from('signed-documents')
-        .remove(filesToDelete);
+      await storage.remove("signed-documents", existingFiles);
     }
 
     // Create presigned upload URL (valid for 5 minutes)
-    const { data, error: urlError } = await supabaseService.storage
-      .from('signed-documents')
-      .createSignedUploadUrl(filePath);
+    const { result, error: urlError } = await storage.createSignedUploadUrl(
+      "signed-documents",
+      filePath,
+      { expiresIn: 300 }
+    );
 
-    if (urlError || !data) {
+    if (urlError || !result) {
       console.error('[Upload] Failed to create presigned URL:', urlError);
       return { error: 'Failed to create upload URL' };
     }
 
     return {
-      uploadUrl: data.signedUrl,
+      uploadUrl: result.url,
       filePath,
-      token: data.token,
+      token: result.token,
+      provider: result.provider,
     };
   } catch (error) {
     console.error('[Upload] Unexpected error:', error);
@@ -486,8 +491,6 @@ export async function generateSignedPdf(
   console.log(`[PDF] Starting PDF generation for ${documentId}`);
 
   try {
-    // Use service role to bypass RLS
-    const supabaseService = createServiceSupabase();
     const supabase = await createServerSupabase();
 
     // Get document to verify existence and get user_id
@@ -504,26 +507,27 @@ export async function generateSignedPdf(
 
     console.log(`[PDF] Document verified (${Date.now() - startTime}ms)`);
 
-    // Download the signed image from storage
-    const { data: imageData, error: downloadError } = await supabaseService.storage
-      .from('signed-documents')
-      .download(signedImagePath);
+    // Restrict to the owner's expected key (storage RLS is not a backstop when
+    // using service-role / R2). Prevents reading/deleting arbitrary keys.
+    const expectedImagePath = `${document.user_id}/signed_${documentId}.png`;
+    if (signedImagePath !== expectedImagePath) {
+      console.error("[PDF] Invalid signed image path:", signedImagePath);
+      return { error: "Invalid signed image path" };
+    }
 
-    if (downloadError || !imageData) {
+    // Download the signed image from storage
+    const storage = getStorage();
+    const { data: imageBytes, contentType: imageType, error: downloadError } =
+      await storage.download("signed-documents", signedImagePath);
+
+    if (downloadError || !imageBytes) {
       console.error('[PDF] Failed to download signed image:', downloadError);
       return { error: 'Failed to download signed image' };
     }
 
-    const arrayBuffer = await imageData.arrayBuffer();
-    const imageBytes = new Uint8Array(arrayBuffer);
     console.log(
-      `[PDF] Image downloaded: ${imageData.type || 'unknown'}, ${Math.round(imageData.size / 1024)}KB (${Date.now() - startTime}ms)`
+      `[PDF] Image downloaded: ${imageType || 'unknown'}, ${Math.round(imageBytes.length / 1024)}KB (${Date.now() - startTime}ms)`
     );
-
-    // Get public URL for the uploaded file
-    const {
-      data: { publicUrl },
-    } = supabaseService.storage.from('signed-documents').getPublicUrl(signedImagePath);
 
     // Generate PDF from signed image with A4 size optimization
     const { PDFDocument } = await import('pdf-lib');
@@ -532,9 +536,9 @@ export async function generateSignedPdf(
     // Embed image based on MIME type
     let embeddedImage;
     try {
-      if (imageData.type === 'image/png' || !imageData.type) {
+      if (imageType === 'image/png' || !imageType) {
         embeddedImage = await pdfDoc.embedPng(imageBytes);
-      } else if (imageData.type === 'image/jpeg' || imageData.type === 'image/jpg') {
+      } else if (imageType === 'image/jpeg' || imageType === 'image/jpg') {
         embeddedImage = await pdfDoc.embedJpg(imageBytes);
       } else {
         // Fallback: try PNG first, then JPG
@@ -584,12 +588,12 @@ export async function generateSignedPdf(
     const pdfFilename = `signed_${documentId}.pdf`;
     const pdfPath = `${document.user_id}/${pdfFilename}`;
 
-    const { error: pdfUploadError } = await supabaseService.storage
-      .from('signed-documents')
-      .upload(pdfPath, pdfBlob, {
-        upsert: true,
-        contentType: 'application/pdf',
-      });
+    const { error: pdfUploadError } = await storage.upload(
+      "signed-documents",
+      pdfPath,
+      pdfBlob,
+      { upsert: true, contentType: 'application/pdf' }
+    );
 
     if (pdfUploadError) {
       console.error('[PDF] PDF upload failed:', pdfUploadError);
@@ -598,28 +602,20 @@ export async function generateSignedPdf(
 
     console.log(`[PDF] PDF uploaded successfully (${Date.now() - startTime}ms)`);
 
-    const {
-      data: { publicUrl: pdfPublicUrl },
-    } = supabaseService.storage.from('signed-documents').getPublicUrl(pdfPath);
-
-    // Update document with signed file URLs (use PDF URL for both)
+    // Store the storage key (private bucket; URLs are generated on read)
     const { error: updateError } = await supabase
       .from('documents')
-      .update({ signed_file_url: pdfPublicUrl, signed_pdf_url: pdfPublicUrl })
+      .update({ signed_file_url: pdfPath, signed_pdf_url: pdfPath })
       .eq('id', documentId);
 
     if (updateError) {
       console.error('[PDF] Update document error:', updateError);
-      await supabaseService.storage
-        .from('signed-documents')
-        .remove([pdfPath]);
+      await storage.remove("signed-documents", [pdfPath]);
       return { error: 'Failed to update document with signed file URL' };
     }
 
     // Delete the intermediate PNG file since PDF is now the primary format
-    const { error: pngDeleteError } = await supabaseService.storage
-      .from('signed-documents')
-      .remove([signedImagePath]);
+    const { error: pngDeleteError } = await storage.remove("signed-documents", [signedImagePath]);
 
     if (pngDeleteError) {
       // Non-critical: log but don't fail the operation
@@ -633,7 +629,7 @@ export async function generateSignedPdf(
     const totalTime = Date.now() - startTime;
     console.log(`[PDF] ✅ Complete! Total time: ${totalTime}ms`);
 
-    return { success: true, signedPdfUrl: pdfPublicUrl };
+    return { success: true, signedPdfUrl: pdfPath };
   } catch (error) {
     console.error('[PDF] ❌ Unexpected error:', error);
     return { error: 'An unexpected error occurred' };
@@ -669,11 +665,13 @@ export async function generateSignedPdfFromPdf(documentId: string) {
     }
 
     // Download original PDF
-    const { data: pdfData, error: downloadError } = await supabaseService.storage
-      .from('documents')
-      .download(document.file_url);
+    const storage = getStorage();
+    const { data: pdfBytes, error: downloadError } = await storage.download(
+      "documents",
+      document.file_url
+    );
 
-    if (downloadError || !pdfData) {
+    if (downloadError || !pdfBytes) {
       console.error('[PDF-Sign] Failed to download PDF:', downloadError);
       return { error: 'Failed to download original PDF' };
     }
@@ -694,8 +692,7 @@ export async function generateSignedPdfFromPdf(documentId: string) {
 
     // Load original PDF with pdf-lib
     const { PDFDocument } = await import('pdf-lib');
-    const pdfArrayBuffer = await pdfData.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+    const pdfDoc = await PDFDocument.load(pdfBytes);
     const pages = pdfDoc.getPages();
 
     console.log(`[PDF-Sign] PDF loaded with ${pages.length} pages (${Date.now() - startTime}ms)`);
@@ -795,37 +792,34 @@ export async function generateSignedPdfFromPdf(documentId: string) {
     const pdfPath = `${document.user_id}/${pdfFilename}`;
 
     // Upload signed PDF
-    const { error: uploadError } = await supabaseService.storage
-      .from('signed-documents')
-      .upload(pdfPath, pdfBlob, {
-        upsert: true,
-        contentType: 'application/pdf',
-      });
+    const { error: uploadError } = await storage.upload(
+      "signed-documents",
+      pdfPath,
+      pdfBlob,
+      { upsert: true, contentType: 'application/pdf' }
+    );
 
     if (uploadError) {
       console.error('[PDF-Sign] Upload failed:', uploadError);
       return { error: 'Failed to upload signed PDF' };
     }
 
-    const { data: { publicUrl: pdfPublicUrl } } = supabaseService.storage
-      .from('signed-documents')
-      .getPublicUrl(pdfPath);
-
-    // Update document with signed file URLs
+    // Store the storage key (private bucket; URLs are generated on read)
     const { error: updateError } = await supabase
       .from('documents')
-      .update({ signed_file_url: pdfPublicUrl, signed_pdf_url: pdfPublicUrl })
+      .update({ signed_file_url: pdfPath, signed_pdf_url: pdfPath })
       .eq('id', documentId);
 
     if (updateError) {
       console.error('[PDF-Sign] Update error:', updateError);
+      await storage.remove("signed-documents", [pdfPath]);
       return { error: 'Failed to update document' };
     }
 
     const totalTime = Date.now() - startTime;
     console.log(`[PDF-Sign] ✅ Complete! Total time: ${totalTime}ms`);
 
-    return { success: true, signedPdfUrl: pdfPublicUrl };
+    return { success: true, signedPdfUrl: pdfPath };
   } catch (error) {
     console.error('[PDF-Sign] ❌ Unexpected error:', error);
     return { error: 'An unexpected error occurred' };
@@ -916,8 +910,6 @@ export async function getDocumentFileSignedUrl(
   error?: string;
 }> {
   try {
-    // Use service role to bypass RLS for signed URL generation
-    const supabaseService = createServiceSupabase();
     const supabase = await createServerSupabase();
 
     // Get document
@@ -936,20 +928,67 @@ export async function getDocumentFileSignedUrl(
       return { signedUrl: null, error: "Document already completed" };
     }
 
-    // Generate signed URL (1 hour validity) using service role to bypass RLS
-    const { data, error: signError } = await supabaseService.storage
-      .from("documents")
-      .createSignedUrl(document.file_url, 3600);
+    // Generate signed URL (1 hour validity)
+    const { url, error: signError } = await getStorage().createSignedDownloadUrl(
+      "documents",
+      document.file_url,
+      { expiresIn: 3600 }
+    );
 
-    if (signError || !data) {
+    if (signError || !url) {
       console.error("Error creating signed URL:", signError);
       return { signedUrl: null, error: "Failed to generate signed URL" };
     }
 
-    return { signedUrl: data.signedUrl };
+    return { signedUrl: url };
   } catch (error) {
     console.error("Get document file signed URL error:", error);
     return { signedUrl: null, error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Owner-scoped presigned URL for the original document file (for preview in the
+ * document detail page). Replaces client-side RLS storage.download so the
+ * browser never talks to storage directly.
+ */
+export async function getOwnedDocumentFileUrl(documentId: string): Promise<{
+  url: string | null;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { url: null, error: "User not authenticated" };
+    }
+
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("id, file_url")
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (docError || !document?.file_url) {
+      return { url: null, error: "Document not found" };
+    }
+
+    const { url, error } = await getStorage().createSignedDownloadUrl(
+      "documents",
+      document.file_url,
+      { expiresIn: 3600 }
+    );
+    if (error || !url) {
+      return { url: null, error: error ?? "Failed to generate URL" };
+    }
+    return { url };
+  } catch (error) {
+    console.error("Get owned document file URL error:", error);
+    return { url: null, error: "An unexpected error occurred" };
   }
 }
 
@@ -1208,19 +1247,20 @@ export async function getSignedDocumentUrls(documentId: string): Promise<{
       return trimmed;
     };
 
-    const storage = supabase.storage.from("signed-documents");
+    const storage = getStorage();
 
     if (document.signed_file_url) {
       const filePath = extractPath(document.signed_file_url);
       if (filePath) {
-        const { data, error: previewError } = await storage.createSignedUrl(
+        const { url, error: previewError } = await storage.createSignedDownloadUrl(
+          "signed-documents",
           filePath,
-          3600
+          { expiresIn: 3600 }
         );
         if (previewError) {
           console.error("Error creating preview URL:", previewError);
         } else {
-          previewUrl = data?.signedUrl ?? null;
+          previewUrl = url;
         }
       }
     }
@@ -1231,15 +1271,15 @@ export async function getSignedDocumentUrls(documentId: string): Promise<{
         const originalName =
           document.filename.replace(/\.[^/.]+$/, "") || document.filename;
         const downloadName = `서명완료_${originalName}.pdf`;
-        const { data, error: downloadError } = await storage.createSignedUrl(
+        const { url, error: downloadError } = await storage.createSignedDownloadUrl(
+          "signed-documents",
           pdfPath,
-          3600,
-          { download: downloadName }
+          { expiresIn: 3600, downloadName }
         );
         if (downloadError) {
           console.error("Error creating download URL:", downloadError);
         } else {
-          downloadUrl = data?.signedUrl ?? null;
+          downloadUrl = url;
         }
       }
     }
@@ -1250,15 +1290,15 @@ export async function getSignedDocumentUrls(documentId: string): Promise<{
       if (filePath) {
         const originalName = document.filename.replace(/\.[^/.]+$/, "");
         const fallbackName = `서명완료_${originalName}.png`;
-        const { data, error: fallbackError } = await storage.createSignedUrl(
+        const { url, error: fallbackError } = await storage.createSignedDownloadUrl(
+          "signed-documents",
           filePath,
-          3600,
-          { download: fallbackName }
+          { expiresIn: 3600, downloadName: fallbackName }
         );
         if (fallbackError) {
           console.error("Error creating fallback download URL:", fallbackError);
         } else {
-          downloadUrl = data?.signedUrl ?? null;
+          downloadUrl = url;
         }
       }
     }
@@ -1367,16 +1407,18 @@ export async function getSignedDocumentUrlForSigner(
     const downloadName = `서명완료_${originalName}.${isPdf ? "pdf" : "png"}`;
 
     // 4. Issue short-lived (5 min) signed URL with download disposition
-    const { data, error: urlError } = await supabaseService.storage
-      .from("signed-documents")
-      .createSignedUrl(path, 300, { download: downloadName });
+    const { url, error: urlError } = await getStorage().createSignedDownloadUrl(
+      "signed-documents",
+      path,
+      { expiresIn: 300, downloadName }
+    );
 
-    if (urlError || !data) {
+    if (urlError || !url) {
       console.error("Error creating signer download URL:", urlError);
       return { downloadUrl: null, error: "Failed to generate download URL" };
     }
 
-    return { downloadUrl: data.signedUrl };
+    return { downloadUrl: url };
   } catch (error) {
     console.error("Get signer download URL error:", error);
     return { downloadUrl: null, error: "An unexpected error occurred" };
@@ -1472,22 +1514,22 @@ export async function getSignedDocumentBundleForSigner(
       return { error: "Signed document not available" };
     }
 
-    const storage = supabaseService.storage.from("signed-documents");
+    const storage = getStorage();
 
     // 4a. Single document → direct signed URL (no zip)
     if (completed.length === 1) {
       const { path, isPdf, baseName } = completed[0];
       const downloadName = `서명완료_${baseName}.${isPdf ? "pdf" : "png"}`;
-      const { data, error: urlError } = await storage.createSignedUrl(
+      const { url, error: urlError } = await storage.createSignedDownloadUrl(
+        "signed-documents",
         path,
-        300,
-        { download: downloadName }
+        { expiresIn: 300, downloadName }
       );
-      if (urlError || !data) {
+      if (urlError || !url) {
         console.error("Error creating signer download URL:", urlError);
         return { error: "Failed to generate download URL" };
       }
-      return { downloadUrl: data.signedUrl };
+      return { downloadUrl: url };
     }
 
     // 4b. Multiple documents → zip archive
@@ -1496,12 +1538,14 @@ export async function getSignedDocumentBundleForSigner(
     const usedNames = new Set<string>();
 
     for (const { path, isPdf, baseName } of completed) {
-      const { data: blob, error: dlError } = await storage.download(path);
-      if (dlError || !blob) {
+      const { data: bytes, error: dlError } = await storage.download(
+        "signed-documents",
+        path
+      );
+      if (dlError || !bytes) {
         console.error(`Failed to download ${path} for zip:`, dlError);
         continue;
       }
-      const bytes = new Uint8Array(await blob.arrayBuffer());
       let name = `서명완료_${baseName}.${isPdf ? "pdf" : "png"}`;
       let counter = 2;
       while (usedNames.has(name)) {
@@ -1629,9 +1673,10 @@ export async function deleteDocument(documentId: string): Promise<{
       if (document.file_url) {
         try {
           // file_url now contains the storage path: {user_id}/{filename}
-          const { error: storageError } = await supabase.storage
-            .from("documents")
-            .remove([document.file_url]);
+          const { error: storageError } = await getStorage().remove(
+            "documents",
+            [document.file_url]
+          );
 
           if (storageError) {
             console.error("⚠️ SERVER: Delete file error:", storageError);
