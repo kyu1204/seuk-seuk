@@ -81,13 +81,9 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
     });
   };
 
-  // Select all deletable publications
+  // Select all publications. Non-completed publications are reset to draft on delete.
   const handleSelectAll = () => {
-    const deletablePublicationIds = publications
-      .filter((pub) => pub.status === "completed")
-      .map((pub) => pub.id);
-
-    setSelectedPublicationIds(new Set(deletablePublicationIds));
+    setSelectedPublicationIds(new Set(publications.map((pub) => pub.id)));
   };
 
   // Deselect all publications
