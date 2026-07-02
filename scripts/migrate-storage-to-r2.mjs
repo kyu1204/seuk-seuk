@@ -67,6 +67,7 @@ async function collectKeys() {
     const { data, error } = await supabase
       .from("documents")
       .select("file_url, signed_file_url, signed_pdf_url")
+      .order("id", { ascending: true })
       .range(from, from + page - 1);
     if (error) throw error;
     if (!data.length) break;
@@ -85,6 +86,7 @@ async function collectKeys() {
     const { data, error } = await supabase
       .from("document_templates")
       .select("file_url")
+      .order("id", { ascending: true })
       .range(from, from + page - 1);
     if (error) throw error;
     if (!data.length) break;

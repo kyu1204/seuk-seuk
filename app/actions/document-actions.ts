@@ -1602,7 +1602,7 @@ export async function deleteDocument(documentId: string): Promise<{
     // Get document to verify ownership and status
     const { data: document, error: docError } = await supabase
       .from("documents")
-      .select("id, user_id, status, file_url")
+      .select("id, user_id, status, file_url, signed_file_url, signed_pdf_url")
       .eq("id", documentId)
       .eq("user_id", user.id)
       .single();
@@ -1635,6 +1635,43 @@ export async function deleteDocument(documentId: string): Promise<{
       if (softDeleteError) {
         console.error("❌ SERVER: Soft delete error:", softDeleteError);
         return { error: "Failed to delete document" };
+      }
+
+      // Reclaim storage: the DB row remains as a soft-delete tombstone, but the
+      // underlying files are no longer needed. Best-effort — failures here must
+      // not fail the delete (the row is already marked deleted).
+      try {
+        const storage = getStorage();
+
+        if (document.file_url) {
+          const { error: docStorageError } = await storage.remove("documents", [
+            document.file_url,
+          ]);
+          if (docStorageError) {
+            console.error("⚠️ SERVER: Soft delete - documents storage cleanup failed:", docStorageError);
+          }
+        }
+
+        // signed-documents: deterministic path + any paths embedded in the URLs.
+        const signedPaths = new Set<string>([
+          `${document.user_id}/signed_${documentId}.pdf`,
+          `${document.user_id}/signed_${documentId}.png`, // intermediate artifact, if any
+        ]);
+        const s1 = extractSignedDocumentPath(document.signed_file_url);
+        const s2 = extractSignedDocumentPath(document.signed_pdf_url);
+        if (s1) signedPaths.add(s1);
+        if (s2) signedPaths.add(s2);
+
+        const { error: signedStorageError } = await storage.remove(
+          "signed-documents",
+          [...signedPaths]
+        );
+        if (signedStorageError) {
+          console.error("⚠️ SERVER: Soft delete - signed-documents storage cleanup failed:", signedStorageError);
+        }
+      } catch (storageError) {
+        console.error("⚠️ SERVER: Soft delete - storage cleanup error:", storageError);
+        // Non-critical: document is already soft-deleted.
       }
 
       // Revalidate pages
