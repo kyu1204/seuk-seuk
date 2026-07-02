@@ -42,8 +42,8 @@ export function PublicationCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  // Check if publication can be deleted (only completed)
-  const canDelete = publication.status === "completed";
+  // Publications can always be selected/deleted; non-completed ones are reset to draft.
+  const canDelete = true;
 
   const getStatusBadge = (status: ClientPublication["status"]) => {
     const statusMap: Record<string, { label: string; variant: "default" | "success" | "secondary" }> = {
@@ -282,7 +282,9 @@ export function PublicationCard({
             <AlertDialogDescription>
               {t("dashboard.publications.delete.description", { name: publication.name })}
               <br />
-              {t("dashboard.publications.delete.warning")}
+              {publication.status === "completed"
+                ? t("dashboard.publications.delete.warningCompleted")
+                : t("dashboard.publications.delete.warningReset")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

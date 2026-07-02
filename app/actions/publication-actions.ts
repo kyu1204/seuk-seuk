@@ -312,6 +312,7 @@ export async function getPublicationByShortUrl(
         documents(*, signatures(*))
       `)
       .eq("short_url", shortUrl)
+      .eq("is_deleted", false)
       .single();
 
     if (pubError || !publication) {
@@ -458,7 +459,12 @@ export async function checkAndCompletePublication(
 }
 
 /**
- * Delete a publication and unlink documents
+ * Delete a publication and unlink documents.
+ *
+ * Completed publications are archived with their completed documents. Any
+ * non-completed publication can be deleted on request: its documents are
+ * detached, reset to draft, and any in-progress signature data is cleared so
+ * the owner can publish them again cleanly.
  */
 export async function deletePublication(
   publicationId: string
@@ -471,7 +477,7 @@ export async function deletePublication(
       return { error: "User not authenticated" };
     }
 
-    // Verify publication belongs to user and get documents with signatures
+    // Verify publication belongs to user and get related documents/signatures.
     const { data: publication, error: verifyError } = await supabase
       .from("publications")
       .select(`
@@ -486,38 +492,42 @@ export async function deletePublication(
       `)
       .eq("id", publicationId)
       .eq("user_id", user.id)
+      .eq("is_deleted", false)
       .single();
 
     if (verifyError || !publication) {
       return { error: "Publication not found or not owned by user" };
     }
 
-    // Handle completed publications with soft delete
+    const deletedAt = new Date().toISOString();
+    const documents = (publication.documents as any[]) || [];
+    const documentIds = documents.map((doc) => doc.id).filter(Boolean);
+
+    // Completed publications keep their final state but are hidden from lists.
     if (publication.status === "completed") {
-      // Soft delete publication
       const { error: softDeletePubError } = await supabase
         .from("publications")
         .update({
           is_deleted: true,
-          deleted_at: new Date().toISOString()
+          deleted_at: deletedAt,
         })
-        .eq("id", publicationId);
+        .eq("id", publicationId)
+        .eq("user_id", user.id);
 
       if (softDeletePubError) {
         console.error("Publication soft delete error:", softDeletePubError);
         return { error: "Failed to delete publication" };
       }
 
-      // Soft delete all associated documents (keep status as completed)
-      const documentIds = (publication.documents as any[])?.map(doc => doc.id) || [];
       if (documentIds.length > 0) {
         const { error: softDeleteDocsError } = await supabase
           .from("documents")
           .update({
             is_deleted: true,
-            deleted_at: new Date().toISOString()
+            deleted_at: deletedAt,
           })
-          .in("id", documentIds);
+          .in("id", documentIds)
+          .eq("user_id", user.id);
 
         if (softDeleteDocsError) {
           console.error("Documents soft delete error:", softDeleteDocsError);
@@ -531,76 +541,51 @@ export async function deletePublication(
       return { success: true };
     }
 
-    // Handle active publications
-    if (publication.status === "active") {
-      // Check if any document has signatures
-      const documents = (publication.documents as any[]) || [];
-      const hasSignatures = documents.some(doc =>
-        doc.signatures && doc.signatures.length > 0
-      );
+    // Non-completed publications are intentionally deletable even when some
+    // signature fields were already filled. Reset those fields so republishing
+    // starts from the original signature areas, not stale signer data.
+    if (documentIds.length > 0) {
+      const { error: resetSignaturesError } = await supabase
+        .from("signatures")
+        .update({
+          signature_data: null,
+          status: "pending",
+          signer_name: null,
+          signed_at: null,
+        })
+        .in("document_id", documentIds);
 
-      if (hasSignatures) {
-        return { error: "Cannot delete publication with signed documents" };
+      if (resetSignaturesError) {
+        console.error("Signature reset error:", resetSignaturesError);
+        return { error: "Failed to reset signatures" };
       }
 
-      // No signatures - can delete and revert documents to draft
-      // Unlink documents (set publication_id to null and status to draft)
       const { error: unlinkError } = await supabase
         .from("documents")
         .update({
           publication_id: null,
-          status: "draft"
+          status: "draft",
+          signed_file_url: null,
+          signed_pdf_url: null,
         })
-        .eq("publication_id", publicationId);
+        .in("id", documentIds)
+        .eq("user_id", user.id);
 
       if (unlinkError) {
         console.error("Document unlinking error:", unlinkError);
         return { error: "Failed to unlink documents" };
       }
-
-      // Note: monthly_usage.published_completed_count is automatically updated by
-      // the database trigger (trigger_document_status_change) when document status changes
-      // No need to manually decrement here
-
-      // Delete publication
-      const { error: deleteError } = await supabase
-        .from("publications")
-        .delete()
-        .eq("id", publicationId);
-
-      if (deleteError) {
-        console.error("Publication deletion error:", deleteError);
-        return { error: "Failed to delete publication" };
-      }
-
-      revalidatePath("/dashboard");
-      revalidatePath("/publish");
-
-      return { success: true };
     }
 
-    // Handle expired publications (treat like active)
-    if (publication.status === "expired") {
-      // Check if any document has signatures
-      const documents = (publication.documents as any[]) || [];
-      const hasSignatures = documents.some(doc =>
-        doc.signatures && doc.signatures.length > 0
-      );
+    const { error: deleteError } = await supabase
+      .from("publications")
+      .delete()
+      .eq("id", publicationId)
+      .eq("user_id", user.id);
 
-      if (hasSignatures) {
-        return { error: "Cannot delete publication with signed documents" };
-      }
-
-      // No signatures - can delete
-      const { error: deleteError } = await supabase
-        .from("publications")
-        .delete()
-        .eq("id", publicationId);
-
-      if (deleteError) {
-        console.error("Publication deletion error:", deleteError);
-        return { error: "Failed to delete publication" };
-      }
+    if (deleteError) {
+      console.error("Publication deletion error:", deleteError);
+      return { error: "Failed to delete publication" };
     }
 
     revalidatePath("/dashboard");

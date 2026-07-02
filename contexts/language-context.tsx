@@ -427,14 +427,16 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.publications.card.documentCount": "개 문서",
     "dashboard.publications.card.copied": "복사됨",
     "dashboard.publications.card.copyLink": "링크",
-    "dashboard.publications.card.cannotDelete": "완료된 발행은 삭제할 수 없습니다",
+    "dashboard.publications.card.cannotDelete": "발행을 삭제할 수 있습니다",
     "dashboard.publications.delete.title": "발행 삭제",
     "dashboard.publications.delete.description": "\"{name}\" 발행을 삭제하시겠습니까?",
     "dashboard.publications.delete.warning": "이 발행에 포함된 모든 문서는 초안 상태로 돌아갑니다.",
+    "dashboard.publications.delete.warningReset": "이 발행은 삭제되고 포함된 문서는 초안으로 돌아가며, 진행 중인 서명 데이터는 초기화됩니다.",
+    "dashboard.publications.delete.warningCompleted": "완료된 발행과 포함 문서는 보관 처리되어 목록에서 숨겨집니다.",
     "dashboard.publications.delete.cancel": "취소",
     "dashboard.publications.delete.confirm": "삭제",
     "dashboard.publications.delete.deleting": "삭제 중...",
-    "dashboard.publications.bulkDelete.cannotDelete": "완료되지 않은 발행은 삭제할 수 없습니다",
+    "dashboard.publications.bulkDelete.cannotDelete": "발행을 삭제할 수 있습니다",
     "dashboard.publications.bulkDelete.successMessage": "{{count}}개의 발행이 삭제되었습니다",
     "dashboard.publications.bulkDelete.errorMessage": "{{count}}개의 발행 삭제 실패: {{details}}",
     "dashboard.bulkDelete.selected": "{{count}}개 선택됨",
@@ -1618,14 +1620,16 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.publications.card.documentCount": " documents",
     "dashboard.publications.card.copied": "Copied",
     "dashboard.publications.card.copyLink": "Link",
-    "dashboard.publications.card.cannotDelete": "Cannot delete completed publications",
+    "dashboard.publications.card.cannotDelete": "Publication can be deleted",
     "dashboard.publications.delete.title": "Delete Publication",
     "dashboard.publications.delete.description": "Are you sure you want to delete \"{name}\"?",
     "dashboard.publications.delete.warning": "All documents in this publication will return to draft status.",
+    "dashboard.publications.delete.warningReset": "This publication will be deleted, included documents will return to draft, and in-progress signature data will be reset.",
+    "dashboard.publications.delete.warningCompleted": "The completed publication and included documents will be archived and hidden from the list.",
     "dashboard.publications.delete.cancel": "Cancel",
     "dashboard.publications.delete.confirm": "Delete",
     "dashboard.publications.delete.deleting": "Deleting...",
-    "dashboard.publications.bulkDelete.cannotDelete": "Cannot delete non-completed publications",
+    "dashboard.publications.bulkDelete.cannotDelete": "Publication can be deleted",
     "dashboard.publications.bulkDelete.successMessage": "{{count}} publication(s) deleted successfully",
     "dashboard.publications.bulkDelete.errorMessage": "Failed to delete {{count}} publication(s): {{details}}",
     "dashboard.bulkDelete.selected": "{{count}} selected",
@@ -2496,11 +2500,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Replace parameters in the translation string (supports {{param}} format)
+    // Replace parameters in the translation string. Existing copy uses both
+    // {{param}} and {param}, so support both formats in a single pass.
     if (actualParams) {
       Object.keys(actualParams).forEach((param) => {
+        const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         translation = translation?.replace(
-          new RegExp(`\\{\\{${param}\\}\\}`, "g"),
+          new RegExp(`\\{\\{${escapedParam}\\}\\}|\\{${escapedParam}\\}`, "g"),
           String(actualParams![param])
         ) ?? '';
       });
