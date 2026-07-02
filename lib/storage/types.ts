@@ -29,7 +29,7 @@ export interface StorageDownload {
 }
 
 export interface StorageProvider {
-  readonly name: "supabase" | "r2";
+  readonly name: "supabase" | "r2" | "dual";
 
   upload(
     bucket: StorageBucket,

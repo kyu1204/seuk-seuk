@@ -5,6 +5,7 @@ import {
   DeleteObjectsCommand,
   CopyObjectCommand,
   ListObjectsV2Command,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type {
@@ -74,6 +75,17 @@ export class R2StorageProvider implements StorageProvider {
       return {};
     } catch (e) {
       return { error: e instanceof Error ? e.message : "Upload failed" };
+    }
+  }
+
+  async exists(bucket: StorageBucket, key: string): Promise<boolean> {
+    try {
+      await this.s3.send(
+        new HeadObjectCommand({ Bucket: this.physicalBucket(bucket), Key: key })
+      );
+      return true;
+    } catch {
+      return false;
     }
   }
 
