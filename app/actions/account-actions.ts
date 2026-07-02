@@ -102,7 +102,6 @@ export async function deleteAccount(
       };
     }
 
-    console.log(`[Account Deletion] Starting deletion for user: ${user.id}`);
 
     // 3. Query user's documents to get file paths
     const { data: documents, error: docQueryError } = await supabase
@@ -172,7 +171,6 @@ export async function deleteAccount(
           console.error("[Account Deletion] Error deleting from documents storage:", storageError);
           // Continue with deletion
         } else {
-          console.log(`[Account Deletion] Deleted ${filePaths.length} files from documents storage`);
         }
       }
 
@@ -187,7 +185,6 @@ export async function deleteAccount(
           console.error("[Account Deletion] Error deleting from signed-documents storage:", signedStorageError);
           // Continue with deletion
         } else {
-          console.log(`[Account Deletion] Deleted ${signedFilePaths.length} files from signed-documents storage`);
         }
       }
 
@@ -202,7 +199,6 @@ export async function deleteAccount(
           console.error("[Account Deletion] Error deleting signatures:", signaturesError);
           // Continue with deletion
         } else {
-          console.log("[Account Deletion] Deleted signatures");
         }
       }
     }
@@ -217,7 +213,6 @@ export async function deleteAccount(
       console.error("[Account Deletion] Error deleting documents:", documentsError);
       // Continue with deletion
     } else {
-      console.log("[Account Deletion] Deleted documents");
     }
 
     // 6. Break circular reference: Set users.current_subscription_id to NULL (using service role)
@@ -230,7 +225,6 @@ export async function deleteAccount(
       console.error("[Account Deletion] Error updating users.current_subscription_id:", updateUserError);
       // Continue with deletion
     } else {
-      console.log("[Account Deletion] Cleared users.current_subscription_id");
     }
 
     // 7. Delete subscriptions (using service role to bypass RLS)
@@ -243,7 +237,6 @@ export async function deleteAccount(
       console.error("[Account Deletion] Error deleting subscriptions:", subscriptionsError);
       // Continue with deletion
     } else {
-      console.log("[Account Deletion] Deleted subscriptions");
     }
 
     // 8. Delete monthly_usage (using service role to bypass RLS)
@@ -256,7 +249,6 @@ export async function deleteAccount(
       console.error("[Account Deletion] Error deleting monthly_usage:", usageError);
       // Continue with deletion
     } else {
-      console.log("[Account Deletion] Deleted monthly_usage");
     }
 
     // 9. Delete customers record (using service role to bypass RLS)
@@ -269,7 +261,6 @@ export async function deleteAccount(
       console.error("[Account Deletion] Error deleting customers:", customersError);
       // Continue with deletion
     } else {
-      console.log("[Account Deletion] Deleted customers");
     }
 
     // 10. Delete users profile (using service role to bypass RLS)
@@ -282,7 +273,6 @@ export async function deleteAccount(
       console.error("[Account Deletion] Error deleting users profile:", usersError);
       // Continue with deletion
     } else {
-      console.log("[Account Deletion] Deleted users profile");
     }
 
     // 11. Delete auth.users account (using service role)
@@ -299,12 +289,10 @@ export async function deleteAccount(
       };
     }
 
-    console.log("[Account Deletion] Successfully deleted auth user");
 
     // 12. Sign out the user
     await supabase.auth.signOut();
 
-    console.log("[Account Deletion] Deletion completed successfully");
 
     // 13. Revalidate
     revalidatePath("/");

@@ -33,7 +33,6 @@ export default function CreditCheckoutPage() {
         token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
         environment: process.env.NEXT_PUBLIC_PADDLE_ENV as Environments,
         eventCallback: (event) => {
-          console.log("Paddle event:", event);
           if (event.name === "checkout.error") {
             console.error("Paddle checkout error:", event);
           }
@@ -53,10 +52,6 @@ export default function CreditCheckoutPage() {
       }).then(async (paddleInstance) => {
         if (paddleInstance && PADDLE_CREDIT_PRICE_ID) {
           setPaddle(paddleInstance);
-          console.log("Opening Paddle checkout with:", {
-            priceId: PADDLE_CREDIT_PRICE_ID,
-            quantity,
-          });
           paddleInstance.Checkout.open({
             items: [{ priceId: PADDLE_CREDIT_PRICE_ID, quantity }],
             discountId: PADDLE_CREDIT_DISCOUNT_ID,

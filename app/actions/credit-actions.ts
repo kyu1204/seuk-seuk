@@ -199,11 +199,6 @@ export async function deductCredit(
     }
 
     // Only return success when data === true
-    console.log("Credit deduction successful", {
-      userId: user.id,
-      type,
-      documentId,
-    });
     return { success: true };
   } catch (error) {
     console.error("Deduct credit error:", error);
@@ -249,7 +244,6 @@ export async function addCredits(
 
     // Log if this was a duplicate (idempotent retry)
     if (result.error_message === "Already processed") {
-      console.log(`Idempotent webhook: ${paddleTransactionId} already processed`);
     }
 
     return { success: true };

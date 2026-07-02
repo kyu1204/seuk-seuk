@@ -140,7 +140,6 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
       try {
         const result = await canUploadPdf();
         if (!active) return;
-        console.log("[PDF Permission Check]", result);
         setCanUsePdf(result.canUpload);
       } catch (err) {
         if (!active) return;

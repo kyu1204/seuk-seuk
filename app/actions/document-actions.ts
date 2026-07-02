@@ -451,7 +451,6 @@ export async function createSignedDocumentUploadUrl(
     );
 
     if (existingFiles.length > 0) {
-      console.log(`[Upload] Cleaning up ${existingFiles.length} existing files for document ${documentId}`);
       await storage.remove("signed-documents", existingFiles);
     }
 
@@ -488,7 +487,6 @@ export async function generateSignedPdf(
   signedImagePath: string
 ) {
   const startTime = Date.now();
-  console.log(`[PDF] Starting PDF generation for ${documentId}`);
 
   try {
     const supabase = await createServerSupabase();
@@ -505,7 +503,6 @@ export async function generateSignedPdf(
       return { error: 'Document not found' };
     }
 
-    console.log(`[PDF] Document verified (${Date.now() - startTime}ms)`);
 
     // Restrict to the owner's expected key (storage RLS is not a backstop when
     // using service-role / R2). Prevents reading/deleting arbitrary keys.
@@ -525,9 +522,6 @@ export async function generateSignedPdf(
       return { error: 'Failed to download signed image' };
     }
 
-    console.log(
-      `[PDF] Image downloaded: ${imageType || 'unknown'}, ${Math.round(imageBytes.length / 1024)}KB (${Date.now() - startTime}ms)`
-    );
 
     // Generate PDF from signed image with A4 size optimization
     const { PDFDocument } = await import('pdf-lib');
@@ -582,7 +576,6 @@ export async function generateSignedPdf(
     const pdfBytes = await pdfDoc.save({
       useObjectStreams: true, // Enable compression
     });
-    console.log(`[PDF] PDF generated: ${Math.round(pdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
 
     const pdfBlob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     const pdfFilename = `signed_${documentId}.pdf`;
@@ -600,7 +593,6 @@ export async function generateSignedPdf(
       return { error: 'Failed to upload signed document PDF' };
     }
 
-    console.log(`[PDF] PDF uploaded successfully (${Date.now() - startTime}ms)`);
 
     // Store the storage key (private bucket; URLs are generated on read)
     const { error: updateError } = await supabase
@@ -621,13 +613,10 @@ export async function generateSignedPdf(
       // Non-critical: log but don't fail the operation
       console.warn(`[PDF] Failed to cleanup PNG file ${signedImagePath}:`, pngDeleteError);
     } else {
-      console.log(`[PDF] PNG cleanup successful: ${signedImagePath} (${Date.now() - startTime}ms)`);
     }
 
-    console.log(`[PDF] Database updated (${Date.now() - startTime}ms)`);
 
     const totalTime = Date.now() - startTime;
-    console.log(`[PDF] ✅ Complete! Total time: ${totalTime}ms`);
 
     return { success: true, signedPdfUrl: pdfPath };
   } catch (error) {
@@ -642,7 +631,6 @@ export async function generateSignedPdf(
  */
 export async function generateSignedPdfFromPdf(documentId: string) {
   const startTime = Date.now();
-  console.log(`[PDF-Sign] Starting PDF signing for ${documentId}`);
 
   try {
     const supabaseService = createServiceSupabase();
@@ -676,7 +664,6 @@ export async function generateSignedPdfFromPdf(documentId: string) {
       return { error: 'Failed to download original PDF' };
     }
 
-    console.log(`[PDF-Sign] Original PDF downloaded (${Date.now() - startTime}ms)`);
 
     // Get all signed signatures for this document
     const { data: signatures, error: sigError } = await supabaseService
@@ -695,13 +682,10 @@ export async function generateSignedPdfFromPdf(documentId: string) {
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const pages = pdfDoc.getPages();
 
-    console.log(`[PDF-Sign] PDF loaded with ${pages.length} pages (${Date.now() - startTime}ms)`);
 
-    console.log(`[PDF-Sign] Found ${signatures.length} signed signatures`);
 
     // Embed each signature into the correct page
     for (const sig of signatures) {
-      console.log(`[PDF-Sign] Processing sig ${sig.id}: page=${sig.page_number}, coords=(${sig.x},${sig.y},${sig.width},${sig.height})`);
 
       if (!sig.signature_data || sig.x == null || sig.y == null || sig.width == null || sig.height == null) {
         console.warn(`[PDF-Sign] Skipping sig ${sig.id}: missing data or coordinates`);
@@ -731,7 +715,6 @@ export async function generateSignedPdfFromPdf(documentId: string) {
       // Flip Y axis: PDF y=0 is bottom, web y=0 is top
       const sigY = pageHeight - ((sy / 100) * pageHeight) - sigHeight;
 
-      console.log(`[PDF-Sign] Page ${pageIndex} size: ${pageWidth}x${pageHeight}, sig coords: (${sigX.toFixed(1)}, ${sigY.toFixed(1)}) ${sigWidth.toFixed(1)}x${sigHeight.toFixed(1)}`);
 
       try {
         // Extract base64 data from data URL
@@ -741,7 +724,6 @@ export async function generateSignedPdfFromPdf(documentId: string) {
           return { error: `Failed to process signature data for sig ${sig.id}` };
         }
 
-        console.log(`[PDF-Sign] Sig ${sig.id}: data length ${base64Data.length}`);
 
         const sigBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
 
@@ -776,7 +758,6 @@ export async function generateSignedPdfFromPdf(documentId: string) {
           height: drawHeight,
         });
 
-        console.log(`[PDF-Sign] Embedded sig ${sig.id} on page ${pageIndex} at (${sigX.toFixed(1)}, ${sigY.toFixed(1)}) size ${drawWidth.toFixed(1)}x${drawHeight.toFixed(1)}`);
       } catch (embedErr) {
         console.error(`[PDF-Sign] Failed to embed signature ${sig.id}:`, embedErr);
         return { error: `Failed to embed signature on page ${pageIndex}` };
@@ -785,7 +766,6 @@ export async function generateSignedPdfFromPdf(documentId: string) {
 
     // Save the signed PDF
     const signedPdfBytes = await pdfDoc.save();
-    console.log(`[PDF-Sign] Signed PDF generated: ${Math.round(signedPdfBytes.length / 1024)}KB (${Date.now() - startTime}ms)`);
 
     const pdfBlob = new Blob([signedPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     const pdfFilename = `signed_${documentId}.pdf`;
@@ -817,7 +797,6 @@ export async function generateSignedPdfFromPdf(documentId: string) {
     }
 
     const totalTime = Date.now() - startTime;
-    console.log(`[PDF-Sign] ✅ Complete! Total time: ${totalTime}ms`);
 
     return { success: true, signedPdfUrl: pdfPath };
   } catch (error) {
