@@ -1641,46 +1641,31 @@ export async function deleteDocument(documentId: string): Promise<{
       // underlying files are no longer needed. Best-effort — failures here must
       // not fail the delete (the row is already marked deleted).
       try {
-        const supabaseService = createServiceSupabase();
+        const storage = getStorage();
 
         if (document.file_url) {
-          const { error: docStorageError } = await supabaseService.storage
-            .from("documents")
-            .remove([document.file_url]);
+          const { error: docStorageError } = await storage.remove("documents", [
+            document.file_url,
+          ]);
           if (docStorageError) {
             console.error("⚠️ SERVER: Soft delete - documents storage cleanup failed:", docStorageError);
           }
         }
 
         // signed-documents: deterministic path + any paths embedded in the URLs.
-        const extractSignedPath = (value: string | null): string | null => {
-          if (!value) return null;
-          if (value.startsWith("http://") || value.startsWith("https://")) {
-            try {
-              const parts = new URL(value).pathname.split("/");
-              const idx = parts.indexOf("signed-documents");
-              return idx === -1 ? null : parts.slice(idx + 1).join("/");
-            } catch {
-              return null;
-            }
-          }
-          return value.startsWith("signed-documents/")
-            ? value.substring("signed-documents/".length)
-            : value;
-        };
-
         const signedPaths = new Set<string>([
           `${document.user_id}/signed_${documentId}.pdf`,
           `${document.user_id}/signed_${documentId}.png`, // intermediate artifact, if any
         ]);
-        const s1 = extractSignedPath(document.signed_file_url);
-        const s2 = extractSignedPath(document.signed_pdf_url);
+        const s1 = extractSignedDocumentPath(document.signed_file_url);
+        const s2 = extractSignedDocumentPath(document.signed_pdf_url);
         if (s1) signedPaths.add(s1);
         if (s2) signedPaths.add(s2);
 
-        const { error: signedStorageError } = await supabaseService.storage
-          .from("signed-documents")
-          .remove([...signedPaths]);
+        const { error: signedStorageError } = await storage.remove(
+          "signed-documents",
+          [...signedPaths]
+        );
         if (signedStorageError) {
           console.error("⚠️ SERVER: Soft delete - signed-documents storage cleanup failed:", signedStorageError);
         }
