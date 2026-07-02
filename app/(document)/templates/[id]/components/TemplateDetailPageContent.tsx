@@ -26,7 +26,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/language-context";
-import { createClientSupabase } from "@/lib/supabase/client";
 import type {
   SignatureArea,
   TemplateWithAreas,
@@ -35,6 +34,7 @@ import type { RelativeSignatureArea } from "@/lib/utils";
 import {
   deleteTemplate,
   updateTemplate,
+  getOwnedTemplateFileUrl,
 } from "@/app/actions/template-actions";
 
 interface TemplateDetailPageContentProps {
@@ -99,23 +99,27 @@ export function TemplateDetailPageContent({
     let active = true;
 
     const loadTemplateFile = async () => {
-      const supabase = createClientSupabase();
-      const { data, error: downloadError } = await supabase.storage
-        .from("documents")
-        .download(template.file_url);
+      try {
+        const { url, error: urlError } = await getOwnedTemplateFileUrl(template.id);
+        if (!active) return;
+        if (urlError || !url) {
+          throw new Error(urlError || "Missing template file URL");
+        }
 
-      if (!active) return;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Failed to fetch template file: ${res.status}`);
+        const blob = await res.blob();
+        if (!active) return;
 
-      if (downloadError || !data) {
-        console.error("Failed to load template file:", downloadError);
+        objectUrl = URL.createObjectURL(blob);
+        setDocumentUrl(objectUrl);
+      } catch (err) {
+        if (!active) return;
+        console.error("Failed to load template file:", err);
         setError(
           t("templates.detail.loadFileError", "템플릿 파일을 불러오지 못했습니다.")
         );
-        return;
       }
-
-      objectUrl = URL.createObjectURL(data);
-      setDocumentUrl(objectUrl);
     };
 
     loadTemplateFile();
