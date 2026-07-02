@@ -85,6 +85,7 @@ async function main() {
       .from("documents")
       .select("id, user_id, file_url, signed_file_url, signed_pdf_url")
       .eq("is_deleted", true)
+      .order("id", { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) throw error;
     docs.push(...data);
