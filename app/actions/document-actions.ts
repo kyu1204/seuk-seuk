@@ -17,6 +17,10 @@ import { canCreateDocument, incrementDocumentCreated, decrementDocumentCreated }
 import { sendDocumentCompletionEmail } from "./notification-actions";
 import { deductCredit, wasDocumentCreatedWithCredit, refundCredit } from "./credit-actions";
 import { getStorage } from "@/lib/storage";
+import {
+  getDocumentDownloadBaseName,
+  getDocumentDownloadName,
+} from "@/lib/documents/download-name";
 
 /**
  * Upload a file to Supabase Storage and create a document record
@@ -1186,7 +1190,7 @@ export async function getSignedDocumentUrls(documentId: string): Promise<{
     // Get document to verify ownership and get signed file path
     const { data: document, error: docError } = await supabase
       .from("documents")
-      .select("id, user_id, filename, signed_file_url, signed_pdf_url")
+      .select("id, user_id, filename, alias, signed_file_url, signed_pdf_url")
       .eq("id", documentId)
       .eq("user_id", user.id)
       .single();
@@ -1243,9 +1247,11 @@ export async function getSignedDocumentUrls(documentId: string): Promise<{
     if (document.signed_pdf_url) {
       const pdfPath = extractPath(document.signed_pdf_url);
       if (pdfPath) {
-        const originalName =
-          document.filename.replace(/\.[^/.]+$/, "") || document.filename;
-        const downloadName = `서명완료_${originalName}.pdf`;
+        const downloadName = getDocumentDownloadName(
+          "pdf",
+          document.alias,
+          document.filename
+        );
         const { url, error: downloadError } = await storage.createSignedDownloadUrl(
           "signed-documents",
           pdfPath,
@@ -1263,8 +1269,11 @@ export async function getSignedDocumentUrls(documentId: string): Promise<{
     if (!downloadUrl && document.signed_file_url) {
       const filePath = extractPath(document.signed_file_url);
       if (filePath) {
-        const originalName = document.filename.replace(/\.[^/.]+$/, "");
-        const fallbackName = `서명완료_${originalName}.png`;
+        const fallbackName = getDocumentDownloadName(
+          "png",
+          document.alias,
+          document.filename
+        );
         const { url, error: fallbackError } = await storage.createSignedDownloadUrl(
           "signed-documents",
           filePath,
@@ -1337,7 +1346,7 @@ export async function getSignedDocumentUrlForSigner(
     // 3. Document must belong to this publication and be completed (IDOR defense)
     const { data: document, error: docError } = await supabaseService
       .from("documents")
-      .select("id, filename, status, signed_pdf_url, signed_file_url, publication_id")
+      .select("id, filename, alias, status, signed_pdf_url, signed_file_url, publication_id")
       .eq("id", documentId)
       .eq("publication_id", publication.id)
       .single();
@@ -1377,9 +1386,11 @@ export async function getSignedDocumentUrlForSigner(
       return { downloadUrl: null, error: "Signed document not available" };
     }
 
-    const originalName =
-      document.filename.replace(/\.[^/.]+$/, "") || document.filename;
-    const downloadName = `서명완료_${originalName}.${isPdf ? "pdf" : "png"}`;
+    const downloadName = getDocumentDownloadName(
+      isPdf ? "pdf" : "png",
+      document.alias,
+      document.filename
+    );
 
     // 4. Issue short-lived (5 min) signed URL with download disposition
     const { url, error: urlError } = await getStorage().createSignedDownloadUrl(
@@ -1478,9 +1489,7 @@ export async function getSignedDocumentBundleForSigner(
         const path = extractSignedDocumentPath(
           doc.signed_pdf_url || doc.signed_file_url
         );
-        const baseName =
-          (doc.alias || doc.filename || "document").replace(/\.[^/.]+$/, "") ||
-          "document";
+        const baseName = getDocumentDownloadBaseName(doc.alias, doc.filename);
         return path ? { path, isPdf, baseName } : null;
       })
       .filter((d): d is { path: string; isPdf: boolean; baseName: string } => !!d);
@@ -1494,7 +1503,7 @@ export async function getSignedDocumentBundleForSigner(
     // 4a. Single document → direct signed URL (no zip)
     if (completed.length === 1) {
       const { path, isPdf, baseName } = completed[0];
-      const downloadName = `서명완료_${baseName}.${isPdf ? "pdf" : "png"}`;
+      const downloadName = `${baseName}.${isPdf ? "pdf" : "png"}`;
       const { url, error: urlError } = await storage.createSignedDownloadUrl(
         "signed-documents",
         path,
@@ -1521,10 +1530,10 @@ export async function getSignedDocumentBundleForSigner(
         console.error(`Failed to download ${path} for zip:`, dlError);
         continue;
       }
-      let name = `서명완료_${baseName}.${isPdf ? "pdf" : "png"}`;
+      let name = `${baseName}.${isPdf ? "pdf" : "png"}`;
       let counter = 2;
       while (usedNames.has(name)) {
-        name = `서명완료_${baseName} (${counter}).${isPdf ? "pdf" : "png"}`;
+        name = `${baseName} (${counter}).${isPdf ? "pdf" : "png"}`;
         counter += 1;
       }
       usedNames.add(name);
