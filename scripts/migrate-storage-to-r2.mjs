@@ -99,20 +99,38 @@ async function existsInR2(bucket, key) {
   try {
     await s3.send(new HeadObjectCommand({ Bucket: R2_BUCKET[bucket], Key: key }));
     return true;
-  } catch {
-    return false;
+  } catch (e) {
+    const status = e?.$metadata?.httpStatusCode;
+    if (status === 404 || e?.name === "NotFound" || e?.name === "NoSuchKey") return false;
+    // Surface auth/network/bucket errors instead of masking them as "missing".
+    throw e;
   }
+}
+
+// Lightweight source existence check (no download) for dry-run accuracy.
+async function existsInSupabase(bucket, key) {
+  const slash = key.lastIndexOf("/");
+  const folder = slash >= 0 ? key.slice(0, slash) : "";
+  const name = slash >= 0 ? key.slice(slash + 1) : key;
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .list(folder, { search: name, limit: 100 });
+  if (error) throw error;
+  return (data ?? []).some((f) => f.name === name);
 }
 
 async function migrateBucket(bucket, keys) {
   let copied = 0, skipped = 0, missing = 0, failed = 0, bytes = 0;
   for (const key of keys) {
     if (await existsInR2(bucket, key)) { skipped++; continue; }
-    if (DRY) { copied++; continue; } // report as "to copy" without downloading
+    if (DRY) {
+      if (await existsInSupabase(bucket, key)) copied++;
+      else { missing++; console.warn(`  ⚠️ source missing: ${bucket}/${key}`); }
+      continue;
+    }
     const { data, error } = await supabase.storage.from(bucket).download(key);
     if (error || !data) { missing++; console.warn(`  ⚠️ source missing: ${bucket}/${key}`); continue; }
     const buf = new Uint8Array(await data.arrayBuffer());
-    if (DRY) { copied++; bytes += buf.length; continue; }
     try {
       await s3.send(new PutObjectCommand({
         Bucket: R2_BUCKET[bucket],

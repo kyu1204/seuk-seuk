@@ -103,13 +103,22 @@ export class SupabaseStorageProvider implements StorageProvider {
     const slash = prefix.lastIndexOf("/");
     const folder = slash >= 0 ? prefix.slice(0, slash) : "";
     const search = slash >= 0 ? prefix.slice(slash + 1) : prefix;
-    const { data, error } = await this.client()
-      .from(bucket)
-      .list(folder, search ? { search } : undefined);
-    if (error) return { keys: [], error: error.message };
-    const keys = (data ?? []).map((f) =>
-      folder ? `${folder}/${f.name}` : f.name
-    );
+
+    // Supabase list() defaults to 100 items; page explicitly for full enumeration.
+    const client = this.client().from(bucket);
+    const pageSize = 1000;
+    const keys: string[] = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await client.list(folder, {
+        limit: pageSize,
+        offset,
+        ...(search ? { search } : {}),
+      });
+      if (error) return { keys: [], error: error.message };
+      if (!data || data.length === 0) break;
+      for (const f of data) keys.push(folder ? `${folder}/${f.name}` : f.name);
+      if (data.length < pageSize) break;
+    }
     return { keys };
   }
 }

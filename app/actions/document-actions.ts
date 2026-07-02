@@ -507,6 +507,14 @@ export async function generateSignedPdf(
 
     console.log(`[PDF] Document verified (${Date.now() - startTime}ms)`);
 
+    // Restrict to the owner's expected key (storage RLS is not a backstop when
+    // using service-role / R2). Prevents reading/deleting arbitrary keys.
+    const expectedImagePath = `${document.user_id}/signed_${documentId}.png`;
+    if (signedImagePath !== expectedImagePath) {
+      console.error("[PDF] Invalid signed image path:", signedImagePath);
+      return { error: "Invalid signed image path" };
+    }
+
     // Download the signed image from storage
     const storage = getStorage();
     const { data: imageBytes, contentType: imageType, error: downloadError } =
@@ -804,6 +812,7 @@ export async function generateSignedPdfFromPdf(documentId: string) {
 
     if (updateError) {
       console.error('[PDF-Sign] Update error:', updateError);
+      await storage.remove("signed-documents", [pdfPath]);
       return { error: 'Failed to update document' };
     }
 

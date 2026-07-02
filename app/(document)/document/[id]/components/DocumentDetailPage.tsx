@@ -284,12 +284,16 @@ export default function DocumentDetailComponent({
     setIsMounted(true);
   }, []);
 
-  // Load original document URL from private storage using authenticated download
+  // Load original document URL via server-issued presigned URL
   useEffect(() => {
-    const loadDocumentUrl = async () => {
-      if (document.file_url) {
-        const { url, error } = await getOwnedDocumentFileUrl(document.id);
+    let objectUrl: string | null = null;
+    let active = true;
 
+    const loadDocumentUrl = async () => {
+      if (!document.file_url) return;
+      try {
+        const { url, error } = await getOwnedDocumentFileUrl(document.id);
+        if (!active) return;
         if (error || !url) {
           console.error('Failed to load document:', error);
           return;
@@ -297,20 +301,24 @@ export default function DocumentDetailComponent({
 
         // Fetch via presigned URL and keep the blob-URL contract for renderers.
         const res = await fetch(url);
+        if (!res.ok) throw new Error(`Failed to fetch document: ${res.status}`);
         const blob = await res.blob();
-        setDocumentUrl(URL.createObjectURL(blob));
+        if (!active) return;
+        objectUrl = URL.createObjectURL(blob);
+        setDocumentUrl(objectUrl);
+      } catch (err) {
+        if (active) console.error('Failed to load document:', err);
       }
     };
 
     loadDocumentUrl();
 
-    // Cleanup: revoke blob URL when component unmounts
+    // Cleanup: revoke the exact blob URL created in this effect run.
     return () => {
-      if (documentUrl) {
-        URL.revokeObjectURL(documentUrl);
-      }
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [document.file_url]);
+  }, [document.id, document.file_url]);
 
   // 완료된 문서의 경우 서명된 문서 리소스 가져오기
   useEffect(() => {

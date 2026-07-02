@@ -99,24 +99,27 @@ export function TemplateDetailPageContent({
     let active = true;
 
     const loadTemplateFile = async () => {
-      const { url, error: urlError } = await getOwnedTemplateFileUrl(template.id);
+      try {
+        const { url, error: urlError } = await getOwnedTemplateFileUrl(template.id);
+        if (!active) return;
+        if (urlError || !url) {
+          throw new Error(urlError || "Missing template file URL");
+        }
 
-      if (!active) return;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Failed to fetch template file: ${res.status}`);
+        const blob = await res.blob();
+        if (!active) return;
 
-      if (urlError || !url) {
-        console.error("Failed to load template file:", urlError);
+        objectUrl = URL.createObjectURL(blob);
+        setDocumentUrl(objectUrl);
+      } catch (err) {
+        if (!active) return;
+        console.error("Failed to load template file:", err);
         setError(
           t("templates.detail.loadFileError", "템플릿 파일을 불러오지 못했습니다.")
         );
-        return;
       }
-
-      const res = await fetch(url);
-      const blob = await res.blob();
-      if (!active) return;
-
-      objectUrl = URL.createObjectURL(blob);
-      setDocumentUrl(objectUrl);
     };
 
     loadTemplateFile();

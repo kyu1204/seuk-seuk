@@ -145,12 +145,17 @@ export class R2StorageProvider implements StorageProvider {
   async remove(bucket: StorageBucket, keys: string[]): Promise<{ error?: string }> {
     if (keys.length === 0) return {};
     try {
-      await this.s3.send(
-        new DeleteObjectsCommand({
-          Bucket: this.physicalBucket(bucket),
-          Delete: { Objects: keys.map((Key) => ({ Key })) },
-        })
-      );
+      const b = this.physicalBucket(bucket);
+      // DeleteObjects allows max 1,000 keys per request.
+      for (let i = 0; i < keys.length; i += 1000) {
+        const chunk = keys.slice(i, i + 1000);
+        await this.s3.send(
+          new DeleteObjectsCommand({
+            Bucket: b,
+            Delete: { Objects: chunk.map((Key) => ({ Key })) },
+          })
+        );
+      }
       return {};
     } catch (e) {
       return { error: e instanceof Error ? e.message : "Delete failed" };
@@ -182,13 +187,21 @@ export class R2StorageProvider implements StorageProvider {
     prefix: string
   ): Promise<{ keys: string[]; error?: string }> {
     try {
-      const res = await this.s3.send(
-        new ListObjectsV2Command({
-          Bucket: this.physicalBucket(bucket),
-          Prefix: prefix,
-        })
-      );
-      const keys = (res.Contents ?? []).map((o) => o.Key!).filter(Boolean);
+      const b = this.physicalBucket(bucket);
+      const keys: string[] = [];
+      let token: string | undefined;
+      // Page through continuation tokens (ListObjectsV2 caps at 1,000/page).
+      do {
+        const res = await this.s3.send(
+          new ListObjectsV2Command({
+            Bucket: b,
+            Prefix: prefix,
+            ContinuationToken: token,
+          })
+        );
+        for (const o of res.Contents ?? []) if (o.Key) keys.push(o.Key);
+        token = res.IsTruncated ? res.NextContinuationToken : undefined;
+      } while (token);
       return { keys };
     } catch (e) {
       return { keys: [], error: e instanceof Error ? e.message : "List failed" };
