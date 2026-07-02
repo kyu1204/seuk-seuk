@@ -295,8 +295,7 @@ export default function DocumentDetailComponent({
         const { url, error } = await getOwnedDocumentFileUrl(document.id);
         if (!active) return;
         if (error || !url) {
-          console.error('Failed to load document:', error);
-          return;
+          throw new Error(error || "Missing document file URL");
         }
 
         // Fetch via presigned URL and keep the blob-URL contract for renderers.
@@ -307,7 +306,9 @@ export default function DocumentDetailComponent({
         objectUrl = URL.createObjectURL(blob);
         setDocumentUrl(objectUrl);
       } catch (err) {
-        if (active) console.error('Failed to load document:', err);
+        if (!active) return;
+        console.error('Failed to load document:', err);
+        setError(t("documentDetail.errorLoadFile", "문서를 불러오지 못했습니다."));
       }
     };
 

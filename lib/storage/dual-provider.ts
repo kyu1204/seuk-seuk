@@ -42,9 +42,15 @@ export class DualStorageProvider implements StorageProvider {
   }
 
   async download(bucket: StorageBucket, key: string): Promise<StorageDownload> {
-    const primary = await this.r2.download(bucket, key);
-    if (primary.data) return primary;
-    return this.sb.download(bucket, key);
+    // Only fall back to Supabase when the object is genuinely absent from R2.
+    // Real R2 errors (auth/network/config) must not silently serve stale data.
+    let inR2: boolean;
+    try {
+      inR2 = await this.r2.exists(bucket, key);
+    } catch (e) {
+      return { data: null, error: e instanceof Error ? e.message : "R2 error" };
+    }
+    return inR2 ? this.r2.download(bucket, key) : this.sb.download(bucket, key);
   }
 
   async createSignedDownloadUrl(
@@ -52,10 +58,15 @@ export class DualStorageProvider implements StorageProvider {
     key: string,
     opts?: SignedDownloadOptions
   ): Promise<{ url: string | null; error?: string }> {
-    if (await this.r2.exists(bucket, key)) {
-      return this.r2.createSignedDownloadUrl(bucket, key, opts);
+    let inR2: boolean;
+    try {
+      inR2 = await this.r2.exists(bucket, key);
+    } catch (e) {
+      return { url: null, error: e instanceof Error ? e.message : "R2 error" };
     }
-    return this.sb.createSignedDownloadUrl(bucket, key, opts);
+    return inR2
+      ? this.r2.createSignedDownloadUrl(bucket, key, opts)
+      : this.sb.createSignedDownloadUrl(bucket, key, opts);
   }
 
   async createSignedUploadUrl(
@@ -94,6 +105,10 @@ export class DualStorageProvider implements StorageProvider {
       this.r2.list(bucket, prefix),
       this.sb.list(bucket, prefix),
     ]);
+    // Surface partial failures so cleanup/account-deletion callers don't
+    // mistake an incomplete key set for the full listing.
+    if (r2Res.error) return { keys: [], error: r2Res.error };
+    if (sbRes.error) return { keys: [], error: sbRes.error };
     const keys = new Set([...(r2Res.keys ?? []), ...(sbRes.keys ?? [])]);
     return { keys: [...keys] };
   }

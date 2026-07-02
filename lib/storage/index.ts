@@ -16,11 +16,21 @@ let cached: StorageProvider | null = null;
 export function getStorage(): StorageProvider {
   if (cached) return cached;
   const provider = (process.env.STORAGE_PROVIDER || "supabase").toLowerCase();
-  cached =
-    provider === "r2"
-      ? new R2StorageProvider()
-      : provider === "dual"
-        ? new DualStorageProvider()
-        : new SupabaseStorageProvider();
+  switch (provider) {
+    case "r2":
+      cached = new R2StorageProvider();
+      break;
+    case "dual":
+      cached = new DualStorageProvider();
+      break;
+    case "supabase":
+      cached = new SupabaseStorageProvider();
+      break;
+    default:
+      // Fail fast: a typo must not silently split writes across providers.
+      throw new Error(
+        `Invalid STORAGE_PROVIDER "${process.env.STORAGE_PROVIDER}". Expected "supabase" | "dual" | "r2".`
+      );
+  }
   return cached;
 }

@@ -84,8 +84,13 @@ export class R2StorageProvider implements StorageProvider {
         new HeadObjectCommand({ Bucket: this.physicalBucket(bucket), Key: key })
       );
       return true;
-    } catch {
-      return false;
+    } catch (e: any) {
+      const status = e?.$metadata?.httpStatusCode;
+      if (status === 404 || e?.name === "NotFound" || e?.name === "NoSuchKey") {
+        return false;
+      }
+      // Surface auth/network/config errors instead of masking them as "absent".
+      throw e;
     }
   }
 
