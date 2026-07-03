@@ -237,6 +237,91 @@ export async function getDocumentByShortUrl(shortUrl: string): Promise<{
   }
 }
 
+type ServiceClient = ReturnType<typeof createServiceSupabase>;
+
+type SignableDocumentRow = {
+  id: string;
+  status: string;
+  publication_id: string | null;
+  user_id: string | null;
+  filename: string;
+  file_url: string;
+  file_type: string | null;
+  page_count: number | null;
+};
+
+type SignablePublicationRow = {
+  id: string;
+  short_url: string;
+  status: string;
+  expires_at: string | null;
+};
+
+/**
+ * Authorization gate for anonymous signer actions.
+ *
+ * Loads a document (and its publication) with the service-role client and
+ * validates that the document is currently signable: it must belong to a
+ * publication whose status is `active` and whose `expires_at` is null or in the
+ * future. The public RLS policies that used to let the anon key read/write
+ * `documents` and `signatures` are being removed (see
+ * db/rls-anon-lockdown-migration.sql), so every signer action must funnel its
+ * documents/signatures access through the returned service client after passing
+ * this gate — the client-provided `documentId` is otherwise unauthenticated.
+ *
+ * On a validation failure `error` is set. `document`/`service` are still
+ * returned whenever the document row exists so idempotent callers (e.g.
+ * markDocumentCompleted) can inspect the document status before treating the
+ * error as fatal.
+ */
+async function getSignableDocument(documentId: string): Promise<{
+  document?: SignableDocumentRow;
+  publication?: SignablePublicationRow;
+  service?: ServiceClient;
+  error?: string;
+}> {
+  const service = createServiceSupabase();
+
+  const { data: document, error: docError } = await service
+    .from("documents")
+    .select(
+      "id, status, publication_id, user_id, filename, file_url, file_type, page_count"
+    )
+    .eq("id", documentId)
+    .single();
+
+  if (docError || !document) {
+    return { error: "Document not found" };
+  }
+
+  if (!document.publication_id) {
+    return { error: "Document not found" };
+  }
+
+  const { data: publication, error: pubError } = await service
+    .from("publications")
+    .select("id, short_url, status, expires_at")
+    .eq("id", document.publication_id)
+    .single();
+
+  if (pubError || !publication) {
+    return { document, service, error: "Document not found" };
+  }
+
+  if (publication.status !== "active") {
+    return { document, service, error: "서명 기간이 만료되었습니다." };
+  }
+
+  if (
+    publication.expires_at &&
+    new Date(publication.expires_at) < new Date()
+  ) {
+    return { document, service, error: "서명 기간이 만료되었습니다." };
+  }
+
+  return { document, publication, service };
+}
+
 /**
  * Save a signature for a specific signature area
  */
@@ -246,17 +331,20 @@ export async function saveSignature(
   signatureData: string
 ) {
   try {
-    const supabase = await createServerSupabase();
+    // Validate signer access and switch to the service client (anon RLS removed)
+    const gate = await getSignableDocument(documentId);
+    if (gate.error || !gate.document || !gate.service) {
+      return { error: gate.error ?? "Document not found" };
+    }
+    const { document, publication, service } = gate;
 
-    // Get document to find publication_id for revalidation
-    const { data: document } = await supabase
-      .from("documents")
-      .select("publication_id")
-      .eq("id", documentId)
-      .single();
+    // Cannot sign a document that is already completed
+    if (document.status === "completed") {
+      return { error: "이미 제출된 문서입니다." };
+    }
 
     // Update signature with data, status, and signed_at
-    const { error: updateError } = await supabase
+    const { error: updateError } = await service
       .from("signatures")
       .update({
         signature_data: signatureData,
@@ -273,17 +361,8 @@ export async function saveSignature(
 
     // Revalidate relevant pages to show updated signature count
     revalidatePath(`/document/${documentId}`);
-    if (document?.publication_id) {
-      // Get publication short_url for revalidation
-      const { data: publication } = await supabase
-        .from("publications")
-        .select("short_url")
-        .eq("id", document.publication_id)
-        .single();
-
-      if (publication?.short_url) {
-        revalidatePath(`/publication/${publication.short_url}`);
-      }
+    if (publication?.short_url) {
+      revalidatePath(`/publication/${publication.short_url}`);
     }
 
     return { success: true };
@@ -298,26 +377,23 @@ export async function saveSignature(
  */
 export async function markDocumentCompleted(documentId: string) {
   try {
-    const supabase = await createServerSupabase();
+    const gate = await getSignableDocument(documentId);
 
-    // First check if document exists and is in the right state
-    const { data: document, error: docError } = await supabase
-      .from("documents")
-      .select("id, status, filename, publication_id")
-      .eq("id", documentId)
-      .single();
-
-    if (docError || !document) {
-      console.error("❌ Document not found:", docError);
-      return { error: "Document not found" };
-    }
-
-    if (document.status === "completed") {
+    // Idempotent: an already-completed document is a success regardless of the
+    // publication's current (possibly already-completed) state.
+    if (gate.document?.status === "completed") {
       return { success: true };
     }
 
+    if (gate.error || !gate.document || !gate.service) {
+      console.error("❌ Document not found:", gate.error);
+      return { error: gate.error ?? "Document not found" };
+    }
+
+    const { document, publication, service } = gate;
+
     // Update document status to completed
-    const { error } = await supabase
+    const { error } = await service
       .from("documents")
       .update({ status: "completed" })
       .eq("id", documentId);
@@ -340,13 +416,6 @@ export async function markDocumentCompleted(documentId: string) {
 
     // Check if document is part of a publication and auto-complete publication if all documents are done
     if (document.publication_id) {
-      // Get publication short_url for revalidation
-      const { data: publication } = await supabase
-        .from("publications")
-        .select("short_url")
-        .eq("id", document.publication_id)
-        .single();
-
       if (publication?.short_url) {
         revalidatePath(`/publication/${publication.short_url}`);
       }
@@ -418,21 +487,13 @@ export async function createSignedDocumentUploadUrl(
   error?: string;
 }> {
   try {
-    // Use service role to bypass RLS for presigned URL generation
-    const supabaseService = createServiceSupabase();
-    const supabase = await createServerSupabase();
-
-    // Get document to verify existence and get user_id
-    const { data: document, error: docError } = await supabase
-      .from('documents')
-      .select('id, user_id, status')
-      .eq('id', documentId)
-      .single();
-
-    if (docError || !document) {
-      console.error('[Upload] Document not found:', docError);
-      return { error: 'Document not found' };
+    // Validate signer access and use the service client (anon RLS removed)
+    const gate = await getSignableDocument(documentId);
+    if (gate.error || !gate.document) {
+      console.error('[Upload] Document not signable:', gate.error);
+      return { error: gate.error ?? 'Document not found' };
     }
+    const { document } = gate;
 
     if (document.status === 'completed') {
       return { error: 'Document already completed' };
@@ -489,19 +550,13 @@ export async function generateSignedPdf(
   const startTime = Date.now();
 
   try {
-    const supabase = await createServerSupabase();
-
-    // Get document to verify existence and get user_id
-    const { data: document, error: docError } = await supabase
-      .from('documents')
-      .select('id, user_id')
-      .eq('id', documentId)
-      .single();
-
-    if (docError || !document) {
-      console.error('[PDF] Document not found:', docError);
-      return { error: 'Document not found' };
+    // Validate signer access and use the service client (anon RLS removed)
+    const gate = await getSignableDocument(documentId);
+    if (gate.error || !gate.document || !gate.service) {
+      console.error('[PDF] Document not signable:', gate.error);
+      return { error: gate.error ?? 'Document not found' };
     }
+    const { document, service } = gate;
 
 
     // Restrict to the owner's expected key (storage RLS is not a backstop when
@@ -595,7 +650,7 @@ export async function generateSignedPdf(
 
 
     // Store the storage key (private bucket; URLs are generated on read)
-    const { error: updateError } = await supabase
+    const { error: updateError } = await service
       .from('documents')
       .update({ signed_file_url: pdfPath, signed_pdf_url: pdfPath })
       .eq('id', documentId);
@@ -633,20 +688,13 @@ export async function generateSignedPdfFromPdf(documentId: string) {
   const startTime = Date.now();
 
   try {
-    const supabaseService = createServiceSupabase();
-    const supabase = await createServerSupabase();
-
-    // Get document info
-    const { data: document, error: docError } = await supabase
-      .from('documents')
-      .select('id, user_id, file_url, file_type, page_count')
-      .eq('id', documentId)
-      .single();
-
-    if (docError || !document) {
-      console.error('[PDF-Sign] Document not found:', docError);
-      return { error: 'Document not found' };
+    // Validate signer access and use the service client (anon RLS removed)
+    const gate = await getSignableDocument(documentId);
+    if (gate.error || !gate.document || !gate.service) {
+      console.error('[PDF-Sign] Document not signable:', gate.error);
+      return { error: gate.error ?? 'Document not found' };
     }
+    const { document, service } = gate;
 
     if (document.file_type !== 'pdf') {
       return { error: 'Document is not a PDF type' };
@@ -666,7 +714,7 @@ export async function generateSignedPdfFromPdf(documentId: string) {
 
 
     // Get all signed signatures for this document
-    const { data: signatures, error: sigError } = await supabaseService
+    const { data: signatures, error: sigError } = await service
       .from('signatures')
       .select('*')
       .eq('document_id', documentId)
@@ -785,7 +833,7 @@ export async function generateSignedPdfFromPdf(documentId: string) {
     }
 
     // Store the storage key (private bucket; URLs are generated on read)
-    const { error: updateError } = await supabase
+    const { error: updateError } = await service
       .from('documents')
       .update({ signed_file_url: pdfPath, signed_pdf_url: pdfPath })
       .eq('id', documentId);
@@ -889,18 +937,12 @@ export async function getDocumentFileSignedUrl(
   error?: string;
 }> {
   try {
-    const supabase = await createServerSupabase();
-
-    // Get document
-    const { data: document, error: docError } = await supabase
-      .from("documents")
-      .select("id, file_url, status")
-      .eq("id", documentId)
-      .single();
-
-    if (docError || !document) {
-      return { signedUrl: null, error: "Document not found" };
+    // Validate signer access and use the service client (anon RLS removed)
+    const gate = await getSignableDocument(documentId);
+    if (gate.error || !gate.document) {
+      return { signedUrl: null, error: gate.error ?? "Document not found" };
     }
+    const { document } = gate;
 
     // Check completion
     if (document.status === "completed") {

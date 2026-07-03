@@ -403,7 +403,9 @@ export async function checkAndCompletePublication(
   publicationId: string
 ): Promise<{ success?: boolean; isCompleted?: boolean; error?: string }> {
   try {
-    const supabase = await createServerSupabase();
+    // Service role: invoked from the anonymous signer completion path, and its
+    // logic is scoped to the publicationId (existence + all-docs-completed).
+    const supabase = createServiceSupabase();
 
     // Get publication info with short_url
     const { data: publication, error: pubError } = await supabase
