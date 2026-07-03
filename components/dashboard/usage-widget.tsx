@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -24,97 +24,29 @@ import {
   ChevronUp,
   BookPlus,
 } from "lucide-react";
-import {
-  getUserUsageLimits,
-  getCurrentSubscription,
-} from "@/app/actions/subscription-actions";
 import type {
   UsageLimits,
   Subscription,
 } from "@/app/actions/subscription-actions";
-import { getCreditBalance } from "@/app/actions/credit-actions";
 import type { CreditBalance } from "@/app/actions/credit-actions";
 import { useLanguage } from "@/contexts/language-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export function UsageWidget() {
+export interface UsageWidgetData {
+  limits: UsageLimits | null;
+  subscription: Subscription | null;
+  credits: CreditBalance;
+  error?: string;
+}
+
+export function UsageWidget({ data }: { data: UsageWidgetData }) {
   const { t } = useLanguage();
   const router = useRouter();
-  const [limits, setLimits] = useState<UsageLimits | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [credits, setCredits] = useState<CreditBalance>({ create_credits: 0, publish_credits: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchUsageData() {
-      try {
-        const [limitsResult, subscriptionResult, creditsResult] = await Promise.all([
-          getUserUsageLimits(),
-          getCurrentSubscription(),
-          getCreditBalance(),
-        ]);
-
-        if (limitsResult.error) {
-          setError(limitsResult.error);
-          return;
-        }
-
-        if (subscriptionResult.error) {
-          setError(subscriptionResult.error);
-          return;
-        }
-
-        setLimits(limitsResult.limits);
-        setSubscription(subscriptionResult.subscription);
-
-        // 크레딧 조회 (에러는 무시하고 0으로 유지)
-        if (creditsResult.credits) {
-          setCredits(creditsResult.credits);
-        }
-      } catch (err) {
-        setError("Failed to load usage data");
-        console.error("Usage widget error:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchUsageData();
-  }, []);
-
-  if (loading) {
-    return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <Card>
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5" />
-                {t("usage.title")}
-                {isOpen ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                )}
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              <div className="space-y-4">
-                <div className="h-4 bg-muted rounded animate-pulse" />
-                <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-                <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
-    );
-  }
+  const { limits, subscription, error } = data;
+  const credits = data.credits ?? { create_credits: 0, publish_credits: 0 };
 
   if (error || !limits) {
     return (

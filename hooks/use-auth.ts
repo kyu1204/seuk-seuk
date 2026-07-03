@@ -26,19 +26,22 @@ export function useAuth() {
     setState((prev) => ({ ...prev, mounted: true }));
 
     // 현재 사용자 상태 가져오기
-    const getUser = async () => {
+    // 화면 표시(사용자 이름/아바타 등)용으로만 사용하며 인가 판단에는 쓰지 않는다.
+    // getUser()는 매번 네트워크 왕복이 발생하므로, 로컬 세션을 읽는
+    // getSession()으로 초기 표시를 빠르게 처리한다. 실제 인증 보장은 미들웨어가 담당.
+    const getInitialUser = async () => {
       try {
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
+          data: { session },
+        } = await supabase.auth.getSession();
         setState((prev) => ({
           ...prev,
-          user,
+          user: session?.user ?? null,
           loading: false,
           signingOut: false,
         }));
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error("Error fetching session:", error);
         setState((prev) => ({
           ...prev,
           user: null,
@@ -48,7 +51,7 @@ export function useAuth() {
       }
     };
 
-    getUser();
+    getInitialUser();
 
     // 인증 상태 변화 실시간 감지
     const {

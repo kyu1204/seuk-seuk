@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 export interface CreditBalance {
@@ -18,7 +18,8 @@ export async function getCreditBalance(): Promise<{
   try {
     const supabase = await createServerSupabase();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get current user (request-cached)
+    const { user, error: authError } = await getCachedUser();
     if (authError || !user) {
       return { error: "User not authenticated" };
     }

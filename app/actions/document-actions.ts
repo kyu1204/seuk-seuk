@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceSupabase, getCachedUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type {
   Document,
@@ -1032,11 +1032,8 @@ export async function getUserDocuments(
   try {
     const supabase = await createServerSupabase();
 
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Get current user (request-cached)
+    const { user, error: authError } = await getCachedUser();
     if (authError || !user) {
       return {
         documents: [],
@@ -1109,11 +1106,8 @@ export async function getUserDocumentsClient(
   try {
     const supabase = await createServerSupabase();
 
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Get current user (request-cached)
+    const { user, error: authError } = await getCachedUser();
     if (authError || !user) {
       return { documents: [], hasMore: false, error: "User not authenticated" };
     }
@@ -1835,11 +1829,8 @@ export async function getDashboardData(
   try {
     const supabase = await createServerSupabase();
 
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Get current user (request-cached)
+    const { user, error: authError } = await getCachedUser();
     if (authError || !user) {
       return {
         documents: [],

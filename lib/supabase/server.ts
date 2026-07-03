@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export async function createServerSupabase() {
   const cookieStore = cookies();
@@ -28,6 +29,19 @@ export async function createServerSupabase() {
     }
   );
 }
+
+// Request-scoped cached user lookup.
+// React `cache()` memoizes per-request only, so results are never shared across
+// requests/users. Do NOT swap this for `unstable_cache` or a module-level
+// variable — those would leak one user's auth result into another request.
+export const getCachedUser = cache(async () => {
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  return { user, error };
+});
 
 // Service role client for admin operations (Storage, etc.)
 export function createServiceSupabase() {

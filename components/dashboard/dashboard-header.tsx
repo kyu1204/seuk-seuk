@@ -10,9 +10,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, FileStack, Plus, Share2, Upload } from "lucide-react";
 import { UsageWidget } from "./usage-widget";
+import type { UsageWidgetData } from "./usage-widget";
 import { useLanguage } from "@/contexts/language-context";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  usage: UsageWidgetData;
+}
+
+export function DashboardHeader({ usage }: DashboardHeaderProps) {
   const { t } = useLanguage();
 
   return (
@@ -77,7 +82,7 @@ export function DashboardHeader() {
 
       {/* Usage Widget */}
       <div className="max-w-md">
-        <UsageWidget />
+        <UsageWidget data={usage} />
       </div>
     </div>
   );

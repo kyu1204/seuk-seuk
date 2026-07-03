@@ -1,7 +1,8 @@
 "use server";
 
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/supabase/server";
 import { getCreditBalance } from "./credit-actions";
+import type { CreditBalance } from "./credit-actions";
 
 // Types
 export interface SubscriptionPlan {
@@ -56,11 +57,8 @@ export async function getCurrentSubscription(): Promise<{
   try {
     const supabase = await createServerSupabase();
 
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Get current user (request-cached)
+    const { user, error: authError } = await getCachedUser();
 
     if (authError || !user) {
       return {
@@ -122,11 +120,8 @@ export async function getCurrentMonthUsage(): Promise<{
   try {
     const supabase = await createServerSupabase();
 
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Get current user (request-cached)
+    const { user, error: authError } = await getCachedUser();
 
     if (authError || !user) {
       return {
@@ -247,6 +242,181 @@ export async function getUserUsageLimits(): Promise<{
     console.error("Get usage limits error:", error);
     return {
       limits: null,
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Consolidated data fetch for the dashboard usage widget.
+ * One cached auth lookup + parallel queries for subscription, monthly usage,
+ * and credit balance. Mirrors the logic of getCurrentSubscription /
+ * getCurrentMonthUsage / getCreditBalance / getUserUsageLimits without the
+ * per-call auth round-trips.
+ */
+export async function getUsageWidgetData(): Promise<{
+  limits: UsageLimits | null;
+  subscription: Subscription | null;
+  credits: CreditBalance;
+  error?: string;
+}> {
+  const emptyCredits: CreditBalance = { create_credits: 0, publish_credits: 0 };
+  try {
+    const { user, error: authError } = await getCachedUser();
+    if (authError || !user) {
+      return {
+        limits: null,
+        subscription: null,
+        credits: emptyCredits,
+        error: "User not authenticated",
+      };
+    }
+
+    const supabase = await createServerSupabase();
+    const now = new Date().toISOString();
+    const currentMonth = now.slice(0, 7); // YYYY-MM format
+
+    // Run the three independent reads in parallel
+    const [subscriptionResult, usageResult, creditsResult] = await Promise.all([
+      supabase
+        .from("subscriptions")
+        .select(
+          `
+          *,
+          plan:subscription_plans!plan_id(*)
+        `
+        )
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .or(`ends_at.is.null,ends_at.gt.${now}`)
+        .single(),
+      supabase
+        .from("monthly_usage")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("year_month", currentMonth)
+        .single(),
+      supabase
+        .from("credit_balance")
+        .select("create_credits, publish_credits")
+        .eq("user_id", user.id)
+        .single(),
+    ]);
+
+    // --- Subscription (PGRST116 => no active subscription, not an error) ---
+    let subscription: Subscription | null = null;
+    if (subscriptionResult.error) {
+      if ((subscriptionResult.error as any).code !== "PGRST116") {
+        console.error(
+          "[getUsageWidgetData] Subscription error:",
+          subscriptionResult.error,
+          "for user:",
+          user.id
+        );
+        return {
+          limits: null,
+          subscription: null,
+          credits: emptyCredits,
+          error: "Failed to get subscription",
+        };
+      }
+    } else {
+      subscription = subscriptionResult.data as Subscription;
+    }
+
+    // --- Monthly usage (create record if missing) ---
+    let usage = usageResult.data as MonthlyUsage | null;
+    if (usageResult.error) {
+      if (usageResult.error.code === "PGRST116") {
+        const { data: newUsage, error: createError } = await supabase
+          .from("monthly_usage")
+          .insert({
+            user_id: user.id,
+            year_month: currentMonth,
+            documents_created: 0,
+            published_completed_count: 0,
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Create usage record error:", createError);
+          return {
+            limits: null,
+            subscription,
+            credits: emptyCredits,
+            error: "Failed to create usage record",
+          };
+        }
+        usage = newUsage as MonthlyUsage;
+      } else {
+        console.error("Get usage error:", usageResult.error);
+        return {
+          limits: null,
+          subscription,
+          credits: emptyCredits,
+          error: "Failed to get usage",
+        };
+      }
+    }
+
+    // --- Credit balance (missing record => zeros) ---
+    let credits: CreditBalance = emptyCredits;
+    if (creditsResult.error) {
+      if (creditsResult.error.code !== "PGRST116") {
+        console.error("Get credit balance error:", creditsResult.error);
+      }
+    } else if (creditsResult.data) {
+      credits = {
+        create_credits: creditsResult.data.create_credits,
+        publish_credits: creditsResult.data.publish_credits,
+      };
+    }
+
+    if (!usage) {
+      return {
+        limits: null,
+        subscription,
+        credits,
+        error: "Failed to get usage",
+      };
+    }
+
+    // --- Limits (same logic as getUserUsageLimits, incl. fallback plan) ---
+    let monthlyLimit: number;
+    let activeLimit: number;
+    if (!subscription) {
+      const { data: fallbackPlans } = await supabase
+        .from("subscription_plans")
+        .select("monthly_document_limit, active_document_limit")
+        .eq("is_active", true)
+        .order("order", { ascending: true })
+        .limit(1);
+      monthlyLimit = fallbackPlans?.[0]?.monthly_document_limit ?? 0;
+      activeLimit = fallbackPlans?.[0]?.active_document_limit ?? 0;
+    } else {
+      monthlyLimit = subscription.plan.monthly_document_limit;
+      activeLimit = subscription.plan.active_document_limit;
+    }
+
+    const limits: UsageLimits = {
+      monthlyCreationLimit: monthlyLimit,
+      activeDocumentLimit: activeLimit,
+      canCreateNew:
+        monthlyLimit === -1 || usage.documents_created < monthlyLimit,
+      canPublishMore:
+        activeLimit === -1 || usage.published_completed_count < activeLimit,
+      currentMonthlyCreated: usage.documents_created,
+      currentActiveDocuments: usage.published_completed_count,
+    };
+
+    return { limits, subscription, credits };
+  } catch (error) {
+    console.error("Get usage widget data error:", error);
+    return {
+      limits: null,
+      subscription: null,
+      credits: emptyCredits,
       error: "An unexpected error occurred",
     };
   }
