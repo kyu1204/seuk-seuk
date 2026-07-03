@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceSupabase, getCachedUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type {
   PublicationInsert,
@@ -252,7 +252,8 @@ export async function getUserPublications(): Promise<{
   try {
     const supabase = await createServerSupabase();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get current user (request-cached)
+    const { user, error: authError } = await getCachedUser();
     if (authError || !user) {
       return { error: "User not authenticated" };
     }

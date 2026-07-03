@@ -1,16 +1,11 @@
 import { redirect } from "next/navigation";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/supabase/server";
 import { getUserDocuments } from "@/app/actions/document-actions";
 import PublishPageContent from "./components/PublishPageContent";
 
 export default async function PublishPage() {
-  const supabase = await createServerSupabase();
-
-  // Check authentication
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  // Check authentication (request-cached; shared with getUserDocuments below)
+  const { user, error: authError } = await getCachedUser();
 
   if (authError || !user) {
     redirect("/login");

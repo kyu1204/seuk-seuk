@@ -11,26 +11,40 @@ import { StatusFilter } from "@/components/dashboard/status-filter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/contexts/language-context";
-import { useAuth } from "@/hooks/use-auth";
 import type { Document } from "@/lib/supabase/database.types";
 import { CheckSquare, FileX, Upload } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type TabType = "documents" | "publications" | "templates";
 
-export function DashboardContent() {
+interface DashboardInitialData {
+  documents: Document[];
+  hasMore: boolean;
+  total: number;
+  counts: {
+    all: number;
+    draft: number;
+    published: number;
+    completed: number;
+  };
+  error?: string;
+}
+
+interface DashboardContentProps {
+  initialData: DashboardInitialData;
+}
+
+export function DashboardContent({ initialData }: DashboardContentProps) {
   const { t } = useLanguage();
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("documents");
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [hasMore, setHasMore] = useState(false);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<Document[]>(initialData.documents);
+  const [hasMore, setHasMore] = useState(initialData.hasMore);
+  const [total, setTotal] = useState(initialData.total);
+  // Data is prefetched on the server, so no initial client-side loading state.
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(initialData.error ?? null);
   const [selectedStatus, setSelectedStatus] = useState<"all" | "draft" | "published" | "completed">("all");
   const [publicationStatus, setPublicationStatus] = useState<"all" | "active" | "completed" | "expired">("all");
   const [statusCounts, setStatusCounts] = useState<{
@@ -38,12 +52,10 @@ export function DashboardContent() {
     draft: number;
     published: number;
     completed: number;
-  }>({
-    all: 0,
-    draft: 0,
-    published: 0,
-    completed: 0,
-  });
+  }>(initialData.counts);
+
+  // Skip the first client fetch — the server already provided the "all" data.
+  const isFirstLoad = useRef(true);
 
   // Selection state for bulk delete
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -51,12 +63,11 @@ export function DashboardContent() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
-  // Load dashboard data (documents + counts) when filter changes or on mount
+  // Reload dashboard data (documents + counts) when the status filter changes.
+  // The first render is skipped because the server already prefetched the data.
   useEffect(() => {
-    if (authLoading) return;
-
-    if (!isAuthenticated) {
-      router.push("/login");
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
       return;
     }
 
@@ -90,7 +101,7 @@ export function DashboardContent() {
     setIsSelectionMode(false);
 
     loadDashboardData();
-  }, [authLoading, isAuthenticated, selectedStatus, router]);
+  }, [selectedStatus]);
 
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get("tab");
@@ -217,8 +228,8 @@ export function DashboardContent() {
     }
   };
 
-  // Show loading while checking auth or loading documents
-  if (authLoading || loading) {
+  // Show loading while (re)loading documents after a filter change
+  if (loading) {
     return <DashboardSkeleton />;
   }
 
