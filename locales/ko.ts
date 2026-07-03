@@ -179,7 +179,7 @@ export default {
     "언제든지 플랜을 변경하거나 취소할 수 있습니다.",
   "pricingPage.errorTitle": "오류가 발생했습니다",
   "pricingPage.backButton": "뒤로 가기",
-  "pricingPage.loadError": "Failed to load pricing data",
+  "pricingPage.loadError": "가격 정보를 불러오지 못했습니다",
   "pricingPage.alertMessage":
     "{planName} 플랜이 선택되었습니다. 결제 모듈 연동 예정입니다.",
 
@@ -393,7 +393,7 @@ export default {
   "dashboard.publications.card.documentCount": "개 문서",
   "dashboard.publications.card.copied": "복사됨",
   "dashboard.publications.card.copyLink": "링크",
-  "dashboard.publications.card.cannotDelete": "발행을 삭제할 수 있습니다",
+  "dashboard.publications.card.cannotDelete": "완료된 발행만 삭제할 수 있습니다",
   "dashboard.publications.delete.title": "발행 삭제",
   "dashboard.publications.delete.description": "\"{name}\" 발행을 삭제하시겠습니까?",
   "dashboard.publications.delete.warning": "이 발행에 포함된 모든 문서는 초안 상태로 돌아갑니다.",
@@ -402,7 +402,7 @@ export default {
   "dashboard.publications.delete.cancel": "취소",
   "dashboard.publications.delete.confirm": "삭제",
   "dashboard.publications.delete.deleting": "삭제 중...",
-  "dashboard.publications.bulkDelete.cannotDelete": "발행을 삭제할 수 있습니다",
+  "dashboard.publications.bulkDelete.cannotDelete": "완료된 발행만 삭제할 수 있습니다",
   "dashboard.publications.bulkDelete.successMessage": "{{count}}개의 발행이 삭제되었습니다",
   "dashboard.publications.bulkDelete.errorMessage": "{{count}}개의 발행 삭제 실패: {{details}}",
   "dashboard.bulkDelete.selected": "{{count}}개 선택됨",

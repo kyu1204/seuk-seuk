@@ -183,6 +183,42 @@ export async function getCurrentMonthUsage(): Promise<{
 }
 
 /**
+ * Shared limit computation for getUserUsageLimits / getUsageWidgetData.
+ * Falls back to the lowest (by order) active plan when there is no subscription.
+ */
+async function resolveUsageLimits(
+  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
+  subscription: Subscription | null,
+  usage: MonthlyUsage
+): Promise<UsageLimits> {
+  let monthlyLimit: number;
+  let activeLimit: number;
+  if (!subscription) {
+    const { data: fallbackPlans } = await supabase
+      .from("subscription_plans")
+      .select("monthly_document_limit, active_document_limit")
+      .eq("is_active", true)
+      .order("order", { ascending: true })
+      .limit(1);
+    monthlyLimit = fallbackPlans?.[0]?.monthly_document_limit ?? 0;
+    activeLimit = fallbackPlans?.[0]?.active_document_limit ?? 0;
+  } else {
+    monthlyLimit = subscription.plan.monthly_document_limit;
+    activeLimit = subscription.plan.active_document_limit;
+  }
+
+  return {
+    monthlyCreationLimit: monthlyLimit,
+    activeDocumentLimit: activeLimit,
+    canCreateNew: monthlyLimit === -1 || usage.documents_created < monthlyLimit,
+    canPublishMore:
+      activeLimit === -1 || usage.published_completed_count < activeLimit,
+    currentMonthlyCreated: usage.documents_created,
+    currentActiveDocuments: usage.published_completed_count,
+  };
+}
+
+/**
  * Get user's usage limits and current status
  */
 export async function getUserUsageLimits(): Promise<{
@@ -206,34 +242,7 @@ export async function getUserUsageLimits(): Promise<{
     const { usage } = usageResult;
 
     const supabase = await createServerSupabase();
-
-    // If no active subscription, fall back to the lowest (by order) active plan (Free)
-    let monthlyLimit: number;
-    let activeLimit: number;
-    if (!subscription) {
-      const { data: fallbackPlans } = await supabase
-        .from("subscription_plans")
-        .select("monthly_document_limit, active_document_limit")
-        .eq("is_active", true)
-        .order("order", { ascending: true })
-        .limit(1);
-      monthlyLimit = fallbackPlans?.[0]?.monthly_document_limit ?? 0;
-      activeLimit = fallbackPlans?.[0]?.active_document_limit ?? 0;
-    } else {
-      monthlyLimit = subscription.plan.monthly_document_limit;
-      activeLimit = subscription.plan.active_document_limit;
-    }
-
-    const limits: UsageLimits = {
-      monthlyCreationLimit: monthlyLimit,
-      activeDocumentLimit: activeLimit,
-      canCreateNew:
-        monthlyLimit === -1 || usage.documents_created < monthlyLimit,
-      canPublishMore:
-        activeLimit === -1 || usage.published_completed_count < activeLimit,
-      currentMonthlyCreated: usage.documents_created,
-      currentActiveDocuments: usage.published_completed_count,
-    };
+    const limits = await resolveUsageLimits(supabase, subscription, usage);
 
     return {
       limits,
@@ -382,33 +391,7 @@ export async function getUsageWidgetData(): Promise<{
       };
     }
 
-    // --- Limits (same logic as getUserUsageLimits, incl. fallback plan) ---
-    let monthlyLimit: number;
-    let activeLimit: number;
-    if (!subscription) {
-      const { data: fallbackPlans } = await supabase
-        .from("subscription_plans")
-        .select("monthly_document_limit, active_document_limit")
-        .eq("is_active", true)
-        .order("order", { ascending: true })
-        .limit(1);
-      monthlyLimit = fallbackPlans?.[0]?.monthly_document_limit ?? 0;
-      activeLimit = fallbackPlans?.[0]?.active_document_limit ?? 0;
-    } else {
-      monthlyLimit = subscription.plan.monthly_document_limit;
-      activeLimit = subscription.plan.active_document_limit;
-    }
-
-    const limits: UsageLimits = {
-      monthlyCreationLimit: monthlyLimit,
-      activeDocumentLimit: activeLimit,
-      canCreateNew:
-        monthlyLimit === -1 || usage.documents_created < monthlyLimit,
-      canPublishMore:
-        activeLimit === -1 || usage.published_completed_count < activeLimit,
-      currentMonthlyCreated: usage.documents_created,
-      currentActiveDocuments: usage.published_completed_count,
-    };
+    const limits = await resolveUsageLimits(supabase, subscription, usage);
 
     return { limits, subscription, credits };
   } catch (error) {

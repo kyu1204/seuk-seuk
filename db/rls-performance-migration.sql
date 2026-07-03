@@ -40,7 +40,15 @@
 -- Policies that get folded into a merged policy in SECTION B are NOT repeated
 -- here (see notes there); this covers the 22 policies that are NOT touched by
 -- any merge.
+--
+-- SECTIONS A+B run inside a single transaction: each policy is rebuilt as
+-- DROP + CREATE, and without a transaction a mid-run failure would leave a
+-- (table, cmd) with no policy at all — under RLS that means access denied,
+-- breaking e.g. the anon signing flow until manually repaired. SECTION C stays
+-- outside the transaction (CREATE INDEX CONCURRENTLY cannot run inside one).
 -- =============================================================================
+
+BEGIN;
 
 -- credit_balance ---------------------------------------------------------------
 DROP POLICY IF EXISTS "Service role can manage credits" ON public.credit_balance;
@@ -292,6 +300,8 @@ CREATE POLICY "publications_select_access" ON public.publications
 --    since it affects how safe/meaningful a future merge would be.
 -- =============================================================================
 
+COMMIT;
+
 
 -- =============================================================================
 -- SECTION C — unindexed_foreign_keys fix
@@ -318,12 +328,18 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_subscriptions_plan_id
 --    EXCEPT for the two "Manual review" policies noted above, which are already
 --    wrapped individually but still flagged by multiple_permissive_policies.
 --
+-- NOTE: pg_policies deparses expressions via pg_get_expr, so casing/whitespace
+-- vary and the auth. schema prefix may be stripped depending on search_path.
+-- The pattern below is case-insensitive and tolerates both variations.
+--
 -- select schemaname, tablename, policyname, cmd, qual, with_check
 -- from pg_policies
 -- where schemaname = 'public'
 --   and (
---     (qual ~ 'auth\.(uid|jwt|role)\(\)' and qual !~ '\(select auth\.(uid|jwt|role)\(\)\)')
---     or (with_check ~ 'auth\.(uid|jwt|role)\(\)' and with_check !~ '\(select auth\.(uid|jwt|role)\(\)\)')
+--     (qual ~* '(auth\.)?(uid|jwt|role)\s*\(\)'
+--       and qual !~* '\(\s*select\s+(auth\.)?(uid|jwt|role)\s*\(\)\s*\)')
+--     or (with_check ~* '(auth\.)?(uid|jwt|role)\s*\(\)'
+--       and with_check !~* '\(\s*select\s+(auth\.)?(uid|jwt|role)\s*\(\)\s*\)')
 --   );
 
 -- 2) Count remaining policies per table/cmd — multiple_permissive_policies
