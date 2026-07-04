@@ -18,8 +18,10 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://seukseuk.com";
 // Dynamic metadata based on language
 export async function generateMetadata(): Promise<Metadata> {
   const cookieStore = await cookies();
-  const language =
-    (cookieStore.get("seukSeukLanguage")?.value as "ko" | "en") || "ko";
+  // Normalize at runtime: the cookie is user-controlled, and an unexpected
+  // value would make the meta lookup below return undefined.
+  const language: "ko" | "en" =
+    cookieStore.get("seukSeukLanguage")?.value === "en" ? "en" : "ko";
 
   const meta = {
     ko: {
@@ -93,8 +95,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const language =
-    (cookieStore.get("seukSeukLanguage")?.value as "ko" | "en") || "ko";
+  const language: "ko" | "en" =
+    cookieStore.get("seukSeukLanguage")?.value === "en" ? "en" : "ko";
 
   return (
     <html lang={language === "ko" ? "ko" : "en"} suppressHydrationWarning>
