@@ -1,10 +1,72 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { getPublicationByShortUrl } from "@/app/actions/publication-actions";
+import { createServiceSupabase } from "@/lib/supabase/server";
 import SignPageContainer from "./components/SignPageContainer";
 
 // Server Component that fetches data and renders SPA container
 interface PageProps {
   params: { id: string };
+}
+
+// Dynamic metadata so shared links (KakaoTalk, iMessage, etc.) preview the
+// publication name. Sign links are private, so keep them out of search indexes.
+// Crawlers send no cookies, so they get the Korean default; human visitors get
+// their saved language, same as the root layout.
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const supabase = createServiceSupabase();
+  const { data: publication } = await supabase
+    .from("publications")
+    .select("name")
+    .eq("short_url", params.id)
+    .eq("is_deleted", false)
+    .single();
+
+  const robots = { index: false, follow: false };
+
+  if (!publication?.name) {
+    return { robots };
+  }
+
+  const cookieStore = cookies();
+  const language =
+    (cookieStore.get("seukSeukLanguage")?.value as "ko" | "en") || "ko";
+
+  const meta = {
+    ko: {
+      description: `"${publication.name}" 문서에 서명이 요청되었습니다. 슥슥에서 확인하고 서명해 주세요.`,
+      siteName: "슥슥",
+      locale: "ko_KR",
+    },
+    en: {
+      description: `You've been requested to sign "${publication.name}". Review and sign it on SeukSeuk.`,
+      siteName: "SeukSeuk",
+      locale: "en_US",
+    },
+  }[language];
+
+  const title = publication.name;
+
+  return {
+    title,
+    description: meta.description,
+    robots,
+    openGraph: {
+      title,
+      description: meta.description,
+      type: "website",
+      siteName: meta.siteName,
+      locale: meta.locale,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: meta.description,
+    },
+  };
 }
 
 export default async function SignPage({ params }: PageProps) {
