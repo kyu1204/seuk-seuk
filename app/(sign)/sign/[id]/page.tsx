@@ -33,8 +33,10 @@ export async function generateMetadata({
   }
 
   const cookieStore = cookies();
-  const language =
-    (cookieStore.get("seukSeukLanguage")?.value as "ko" | "en") || "ko";
+  // Normalize at runtime: the cookie is user-controlled, and an unexpected
+  // value would make the meta lookup below return undefined.
+  const language: "ko" | "en" =
+    cookieStore.get("seukSeukLanguage")?.value === "en" ? "en" : "ko";
 
   const documents = (publication.documents ?? [])
     .filter((doc) => !doc.is_deleted)
