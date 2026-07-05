@@ -74,8 +74,11 @@ export async function generateMetadata({
   // Defining `openGraph` here replaces the one inherited from the root layout
   // wholesale, dropping the file-based /opengraph-image — so re-add it
   // explicitly (metadataBase in the root layout resolves it to an absolute URL).
+  // The `v` query busts messenger-side image caches (Kakao caches images per
+  // URL, independent of the page scrape cache) — bump it when the OG image
+  // design changes.
   const ogImage = {
-    url: "/opengraph-image",
+    url: "/opengraph-image?v=2",
     width: 1200,
     height: 630,
     alt: "슥슥 SeukSeuk - 온라인 문서 서명 · Online Document Signing",
