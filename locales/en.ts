@@ -566,6 +566,7 @@ export default {
   "publicationDetail.status.expired": "Expired",
   "publicationDetail.status.unknown": "Unknown",
   "publicationDetail.createdAt": "Created",
+  "publicationDetail.completedAt": "Signed",
   "publicationDetail.expiresAt": "Expires",
   "publicationDetail.password": "Password",
   "publicationDetail.passwordSet": "Set",

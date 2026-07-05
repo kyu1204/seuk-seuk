@@ -399,6 +399,19 @@ export function PublicationDetailContent({
                                 }
                               )}
                             </span>
+                            {document.status === "completed" && document.completed_at && (
+                              <span>
+                                {t("publicationDetail.completedAt")}:{" "}
+                                {new Date(document.completed_at).toLocaleDateString(
+                                  language === "ko" ? "ko-KR" : "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                  }
+                                )}
+                              </span>
+                            )}
                             {totalSignatures > 0 && (
                               <span>
                                 {t("publicationDetail.signatures")}: {completedSignatures}/{totalSignatures}

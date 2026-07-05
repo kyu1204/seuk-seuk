@@ -139,6 +139,7 @@ export type Database = {
       documents: {
         Row: {
           alias: string | null
+          completed_at: string | null
           created_at: string
           created_month: string
           deleted_at: string | null
@@ -156,6 +157,7 @@ export type Database = {
         }
         Insert: {
           alias?: string | null
+          completed_at?: string | null
           created_at?: string
           created_month: string
           deleted_at?: string | null
@@ -173,6 +175,7 @@ export type Database = {
         }
         Update: {
           alias?: string | null
+          completed_at?: string | null
           created_at?: string
           created_month?: string
           deleted_at?: string | null
