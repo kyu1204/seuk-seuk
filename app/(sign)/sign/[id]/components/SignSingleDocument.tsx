@@ -21,15 +21,19 @@ import {
   getImageNaturalDimensions,
   ensureRelativeCoordinate,
   convertSignatureAreaToPixels,
+  documentDisplayLabel,
   type RelativeSignatureArea,
 } from "@/lib/utils";
 import {
+  Check,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
   Clock,
   FileSignature,
+  PenLine,
   RefreshCw,
+  Type,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -70,8 +74,26 @@ export default function SignSingleDocument({
 }: SignSingleDocumentProps) {
   const { t } = useLanguage();
 
+  // Map a server action result to a localized message. Prefer the stable
+  // `errorCode` (mapped via i18n); fall back to the legacy human-readable
+  // `error` string for callers that don't yet emit a code.
+  const resolveActionError = (result: {
+    error?: string;
+    errorCode?: string;
+  }): string =>
+    result.errorCode
+      ? t(`sign.gateError.${result.errorCode}`)
+      : result.error ?? t("sign.gateError.NOT_FOUND");
+
   // Get signatures for this document
   const documentSignatures = documentData.signatures || [];
+
+  // Human-friendly document title: alias → publication name → filename w/o ext.
+  const documentLabel = documentDisplayLabel(
+    documentData.alias,
+    documentData.filename,
+    publicationData.name
+  );
 
   const [localSignatures, setLocalSignatures] =
     useState<Signature[]>(documentSignatures);
@@ -129,7 +151,7 @@ export default function SignSingleDocument({
       );
 
       if (result.error) {
-        setError(result.error);
+        setError(resolveActionError(result));
         return;
       }
 
@@ -181,18 +203,18 @@ export default function SignSingleDocument({
     setIsGenerating(true);
     setError(null);
     setProgressValue(0);
-    setGeneratingProgress("문서 처리 준비 중...");
+    setGeneratingProgress(t("sign.progress.preparing"));
 
     try {
       if (isPdf) {
         // === PDF Document: Server-side PDF signing ===
         setProgressValue(30);
-        setGeneratingProgress("서명을 PDF에 합성 중...");
+        setGeneratingProgress(t("sign.progress.compositingPdf"));
 
         const pdfResult = await generateSignedPdfFromPdf(documentData.id);
 
         if (!pdfResult || pdfResult.error) {
-          setError(pdfResult?.error ?? "Failed to generate signed PDF");
+          setError(pdfResult ? resolveActionError(pdfResult) : "Failed to generate signed PDF");
           setIsGenerating(false);
           setGeneratingProgress("");
           setProgressValue(0);
@@ -200,12 +222,12 @@ export default function SignSingleDocument({
         }
 
         setProgressValue(90);
-        setGeneratingProgress("문서 완료 처리 중...");
+        setGeneratingProgress(t("sign.progress.finalizing"));
 
         const markResult = await markDocumentCompleted(documentData.id);
 
         if (!markResult || markResult.error) {
-          setError(markResult?.error ?? "Failed to mark document as completed");
+          setError(markResult ? resolveActionError(markResult) : "Failed to mark document as completed");
           setIsGenerating(false);
           setGeneratingProgress("");
           setProgressValue(0);
@@ -216,7 +238,7 @@ export default function SignSingleDocument({
         setIsGenerating(false);
         setGeneratingProgress("");
         setProgressValue(0);
-        onComplete(documentData.alias || documentData.filename, documentData.id);
+        onComplete(documentLabel, documentData.id);
       } else {
         // === Image Document: Existing client-side canvas compositing ===
         setProgressValue(10);
@@ -256,19 +278,19 @@ export default function SignSingleDocument({
         }
 
         setProgressValue(30);
-        setGeneratingProgress("원본 문서 로딩 중...");
+        setGeneratingProgress(t("sign.progress.loadingOriginal"));
         const originalImage = new Image();
         originalImage.crossOrigin = "anonymous";
 
         await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error("이미지 로딩 시간이 초과되었습니다.")), 30000);
+          const timeout = setTimeout(() => reject(new Error(t("sign.progress.imageTimeout"))), 30000);
           originalImage.onload = () => { clearTimeout(timeout); resolve(undefined); };
-          originalImage.onerror = () => { clearTimeout(timeout); reject(new Error("이미지를 불러올 수 없습니다.")); };
+          originalImage.onerror = () => { clearTimeout(timeout); reject(new Error(t("sign.progress.imageLoadFailed"))); };
           originalImage.src = documentSignedUrl || documentData.file_url;
         });
 
         setProgressValue(50);
-        setGeneratingProgress("서명 이미지 처리 중...");
+        setGeneratingProgress(t("sign.progress.processingSignatures"));
 
         const signatureImages = await Promise.all(
           localSignatures
@@ -295,7 +317,7 @@ export default function SignSingleDocument({
         ctx.imageSmoothingQuality = 'high';
 
         setProgressValue(60);
-        setGeneratingProgress("문서 합성 중...");
+        setGeneratingProgress(t("sign.progress.compositing"));
         ctx.drawImage(originalImage, 0, 0, canvasWidth, canvasHeight);
 
         for (const { signature, image: signatureImage } of signatureImages) {
@@ -343,7 +365,7 @@ export default function SignSingleDocument({
         }
 
         setProgressValue(70);
-        setGeneratingProgress("이미지 압축 중...");
+        setGeneratingProgress(t("sign.progress.compressing"));
         let blob: Blob;
         if ('toBlob' in canvas) {
           blob = await new Promise<Blob>((resolve, reject) => {
@@ -359,12 +381,12 @@ export default function SignSingleDocument({
         }
 
         setProgressValue(80);
-        setGeneratingProgress("서명된 문서 업로드 중...");
+        setGeneratingProgress(t("sign.progress.uploading"));
 
         const uploadUrlResult = await createSignedDocumentUploadUrl(documentData.id);
 
         if (uploadUrlResult.error || !uploadUrlResult.uploadUrl) {
-          setError(uploadUrlResult.error || "Failed to get upload URL");
+          setError(uploadUrlResult.error ? resolveActionError(uploadUrlResult) : "Failed to get upload URL");
           setIsGenerating(false);
           setGeneratingProgress("");
           return;
@@ -386,22 +408,22 @@ export default function SignSingleDocument({
         const filePath = uploadUrlResult.filePath!;
 
         setProgressValue(90);
-        setGeneratingProgress("PDF 생성 중...");
+        setGeneratingProgress(t("sign.progress.generatingPdf"));
         const pdfResult = await generateSignedPdf(documentData.id, filePath);
 
         if (!pdfResult || pdfResult.error) {
-          setError(pdfResult?.error ?? "Failed to generate PDF");
+          setError(pdfResult ? resolveActionError(pdfResult) : "Failed to generate PDF");
           setIsGenerating(false);
           setGeneratingProgress("");
           return;
         }
 
         setProgressValue(95);
-        setGeneratingProgress("문서 완료 처리 중...");
+        setGeneratingProgress(t("sign.progress.finalizing"));
         const markResult = await markDocumentCompleted(documentData.id);
 
         if (!markResult || markResult.error) {
-          setError(markResult?.error ?? "Failed to mark document as completed");
+          setError(markResult ? resolveActionError(markResult) : "Failed to mark document as completed");
           setIsGenerating(false);
           setGeneratingProgress("");
           return;
@@ -411,7 +433,7 @@ export default function SignSingleDocument({
         setIsGenerating(false);
         setGeneratingProgress("");
         setProgressValue(0);
-        onComplete(documentData.alias || documentData.filename, documentData.id);
+        onComplete(documentLabel, documentData.id);
       }
     } catch (err) {
       console.error("Error generating signed document:", err);
@@ -422,9 +444,11 @@ export default function SignSingleDocument({
     }
   };
 
-  const allAreasSigned =
-    localSignatures.length > 0 &&
-    localSignatures.every((s) => s.signature_data !== null);
+  const totalAreas = localSignatures.length;
+  const signedAreaCount = localSignatures.filter(
+    (s) => s.signature_data !== null
+  ).length;
+  const allAreasSigned = totalAreas > 0 && signedAreaCount === totalAreas;
 
   // Touch gesture helpers
   const getTouchDistance = (touches: TouchList) => {
@@ -571,7 +595,7 @@ export default function SignSingleDocument({
       const result = await getDocumentFileSignedUrl(documentData.id);
 
       if (result.error) {
-        setError(result.error);
+        setError(resolveActionError(result));
         return;
       }
 
@@ -639,7 +663,7 @@ export default function SignSingleDocument({
                 </div>
                 <div className="bg-green-50 border border-green-200 rounded-md p-3">
                   <p className="text-sm text-green-700 text-center font-medium">
-                    {documentData.alias || documentData.filename}
+                    {documentLabel}
                   </p>
                   <p className="text-xs text-green-600 text-center mt-1">
                     {t("sign.completed.status")}
@@ -730,8 +754,21 @@ export default function SignSingleDocument({
         )}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{documentData.alias || documentData.filename}</h1>
+            <h1 className="text-3xl font-bold mb-2">{documentLabel}</h1>
             <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
+            {totalAreas > 0 && (
+              <p
+                className={`mt-2 text-sm font-medium ${
+                  allAreasSigned ? "text-emerald-600" : "text-primary"
+                }`}
+              >
+                {allAreasSigned
+                  ? t("sign.allSignedPrompt")
+                  : t("sign.signProgress")
+                      .replace("{{completed}}", String(signedAreaCount))
+                      .replace("{{total}}", String(totalAreas))}
+              </p>
+            )}
           </div>
           <Button
             onClick={handleGenerateDocument}
@@ -864,12 +901,10 @@ export default function SignSingleDocument({
                 return (
                   <div
                     key={signature.area_index}
-                    className={`absolute cursor-pointer ${
+                    className={`absolute cursor-pointer rounded-sm border-2 ${
                       isSigned
-                        ? "border-green-500 bg-green-500/10"
-                        : (signature as any).area_type === 'text'
-                          ? "border-2 border-blue-500 bg-blue-500/10 animate-pulse"
-                          : "border-2 border-red-500 bg-red-500/10 animate-pulse"
+                        ? "border-emerald-500 bg-emerald-500/15"
+                        : "border-primary bg-primary/10 animate-pulse"
                     }`}
                     style={(() => {
                       try {
@@ -937,18 +972,22 @@ export default function SignSingleDocument({
                           alt="Signature"
                           className="w-full h-full object-contain"
                         />
+                        <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm ring-2 ring-background">
+                          <Check className="h-3 w-3" strokeWidth={3} />
+                        </span>
                       </div>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div className="signature-area-label w-full h-full flex items-center justify-center gap-1 px-1 overflow-hidden text-primary">
                         {(signature as any).area_type === 'text' ? (
-                          <span className="text-xs font-medium text-blue-600">
-                            {t("sign.clickToType")}
-                          </span>
+                          <Type className="h-3.5 w-3.5 shrink-0" />
                         ) : (
-                          <span className="text-xs font-medium text-red-600">
-                            {t("sign.clickToSign")}
-                          </span>
+                          <PenLine className="h-3.5 w-3.5 shrink-0" />
                         )}
+                        <span className="signature-area-label-text text-xs font-medium truncate min-w-0">
+                          {(signature as any).area_type === 'text'
+                            ? t("sign.clickToType")
+                            : t("sign.clickToSign")}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -974,7 +1013,9 @@ export default function SignSingleDocument({
             onComplete={handleSignatureComplete}
             areaAspectRatio={(() => {
               const area = localSignatures.find(s => s.area_index === selectedArea);
-              return area && area.height > 0 ? area.width / area.height : 4;
+              return area && area.width != null && area.height != null && area.height > 0
+                ? area.width / area.height
+                : 4;
             })()}
           />
         ) : (
@@ -1019,13 +1060,13 @@ export default function SignSingleDocument({
               {/* Progress Text */}
               <div className="text-center space-y-2">
                 <h3 className="text-xl font-semibold text-gray-900">
-                  문서 처리 중
+                  {t("sign.progress.title")}
                 </h3>
                 <p className="text-sm text-gray-600">
                   {generatingProgress}
                 </p>
                 <p className="text-xs text-gray-500 mt-4">
-                  잠시만 기다려주세요. 페이지를 벗어나지 마세요.
+                  {t("sign.progress.warning")}
                 </p>
               </div>
             </div>

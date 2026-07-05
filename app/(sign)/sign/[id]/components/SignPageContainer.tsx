@@ -121,12 +121,12 @@ export default function SignPageContainer({
               <CardHeader className="text-center">
                 <CheckCircle className="mx-auto h-12 w-12 text-green-400 mb-4" />
                 <CardTitle className="text-xl text-green-600">
-                  {t("sign.completed.title")}
+                  {t("sign.complete.title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center space-y-3">
-                  <p className="text-gray-600">{t("sign.completed.message")}</p>
+                  <p className="text-gray-600">{t("sign.complete.description")}</p>
                   <p className="text-sm text-gray-500">
                     {t("sign.completed.noEdit")}
                   </p>

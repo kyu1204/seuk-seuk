@@ -327,6 +327,38 @@ export default {
   "sign.documentList.readyToSubmit": "Ready to Submit",
   "sign.documentList.submitDocument": "Submit Document",
 
+  // Sign progress overlay
+  "sign.progress.title": "Processing document",
+  "sign.progress.warning": "Please wait a moment and do not leave this page.",
+  "sign.progress.preparing": "Preparing to process the document...",
+  "sign.progress.compositingPdf": "Embedding signatures into the PDF...",
+  "sign.progress.loadingOriginal": "Loading the original document...",
+  "sign.progress.processingSignatures": "Processing signature images...",
+  "sign.progress.compositing": "Compositing the document...",
+  "sign.progress.compressing": "Compressing the image...",
+  "sign.progress.uploading": "Uploading the signed document...",
+  "sign.progress.generatingPdf": "Generating the PDF...",
+  "sign.progress.finalizing": "Finalizing the document...",
+  "sign.progress.imageTimeout": "The image took too long to load.",
+  "sign.progress.imageLoadFailed": "Unable to load the image.",
+
+  // Sign gate error codes (server-returned errorCode → message)
+  "sign.gateError.ALREADY_SUBMITTED": "This document has already been submitted.",
+  "sign.gateError.EXPIRED": "The signing period has expired.",
+  "sign.gateError.NOT_FOUND": "The document could not be found.",
+
+  // Sign progress counter
+  "sign.signProgress": "{{completed}}/{{total}} signatures completed",
+  "sign.allSignedPrompt": "All signatures are complete. Please submit the document.",
+
+  // Password gate trust footer
+  "sign.password.trustNote": "Securely delivered with SeukSeuk",
+  "sign.password.terms": "Terms of Service",
+  "sign.password.privacy": "Privacy Policy",
+
+  // Invalid / expired link (not-found)
+  "sign.notFoundContact": "Please check that the link is correct. If the problem persists, contact the document issuer.",
+
   // Authentication
   "auth.signOut": "Sign Out",
   "auth.signingOut": "Signing out...",
