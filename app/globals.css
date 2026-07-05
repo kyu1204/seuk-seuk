@@ -122,3 +122,16 @@
   --paddle-button-background: hsl(221, 83%, 53%);
   --paddle-button-text: white;
 }
+
+/* Signature area label — signature areas are sized as a % of the document, so
+   on narrow (mobile) screens they shrink and the "click to sign" hint used to
+   spill outside the box or wrap character-by-character (vertical). Establish a
+   container so the text can be hidden on tiny areas, leaving just the icon. */
+.signature-area-label {
+  container-type: inline-size;
+}
+@container (max-width: 88px) {
+  .signature-area-label-text {
+    display: none;
+  }
+}

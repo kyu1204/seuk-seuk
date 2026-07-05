@@ -978,13 +978,13 @@ export default function SignSingleDocument({
                         </span>
                       </div>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center gap-1 text-primary">
+                      <div className="signature-area-label w-full h-full flex items-center justify-center gap-1 px-1 overflow-hidden text-primary">
                         {(signature as any).area_type === 'text' ? (
-                          <Type className="h-3.5 w-3.5" />
+                          <Type className="h-3.5 w-3.5 shrink-0" />
                         ) : (
-                          <PenLine className="h-3.5 w-3.5" />
+                          <PenLine className="h-3.5 w-3.5 shrink-0" />
                         )}
-                        <span className="text-xs font-medium">
+                        <span className="signature-area-label-text text-xs font-medium truncate min-w-0">
                           {(signature as any).area_type === 'text'
                             ? t("sign.clickToType")
                             : t("sign.clickToSign")}
