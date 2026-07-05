@@ -324,6 +324,38 @@ export default {
   "sign.documentList.readyToSubmit": "서명 완료 - 제출 대기",
   "sign.documentList.submitDocument": "문서 제출하기",
 
+  // Sign progress overlay
+  "sign.progress.title": "문서 처리 중",
+  "sign.progress.warning": "잠시만 기다려주세요. 페이지를 벗어나지 마세요.",
+  "sign.progress.preparing": "문서 처리 준비 중...",
+  "sign.progress.compositingPdf": "서명을 PDF에 합성 중...",
+  "sign.progress.loadingOriginal": "원본 문서 로딩 중...",
+  "sign.progress.processingSignatures": "서명 이미지 처리 중...",
+  "sign.progress.compositing": "문서 합성 중...",
+  "sign.progress.compressing": "이미지 압축 중...",
+  "sign.progress.uploading": "서명된 문서 업로드 중...",
+  "sign.progress.generatingPdf": "PDF 생성 중...",
+  "sign.progress.finalizing": "문서 완료 처리 중...",
+  "sign.progress.imageTimeout": "이미지 로딩 시간이 초과되었습니다.",
+  "sign.progress.imageLoadFailed": "이미지를 불러올 수 없습니다.",
+
+  // Sign gate error codes (server-returned errorCode → message)
+  "sign.gateError.ALREADY_SUBMITTED": "이미 제출된 문서입니다.",
+  "sign.gateError.EXPIRED": "서명 기간이 만료되었습니다.",
+  "sign.gateError.NOT_FOUND": "문서를 찾을 수 없습니다.",
+
+  // Sign progress counter
+  "sign.signProgress": "{{completed}}/{{total}} 서명 완료",
+  "sign.allSignedPrompt": "모든 서명이 완료되었습니다. 문서를 제출해 주세요.",
+
+  // Password gate trust footer
+  "sign.password.trustNote": "슥슥(SeukSeuk)으로 안전하게 전송됩니다",
+  "sign.password.terms": "이용약관",
+  "sign.password.privacy": "개인정보처리방침",
+
+  // Invalid / expired link (not-found)
+  "sign.notFoundContact": "링크가 올바른지 확인하시고, 문제가 계속되면 문서 발행자에게 문의해 주세요.",
+
   // Authentication
   "auth.signOut": "로그아웃",
   "auth.signingOut": "로그아웃 중...",

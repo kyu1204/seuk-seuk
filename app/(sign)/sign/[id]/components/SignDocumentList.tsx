@@ -40,6 +40,10 @@ export default function SignDocumentList({
   onSelectDocument,
 }: SignDocumentListProps) {
   const { t } = useLanguage();
+
+  // Strip a single trailing file extension (e.g. ".webp") from a filename.
+  const stripExtension = (name: string) => name.replace(/\.[^./\\]+$/, "");
+
   const [password, setPassword] = useState<string>("");
   const [isVerifyingPassword, setIsVerifyingPassword] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -208,68 +212,87 @@ export default function SignDocumentList({
   // Show password verification screen if password is required and not verified
   if (!isPasswordVerified) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-4">
-          <Link href="/" className="flex items-center gap-2">
-            <FileSignature className="h-8 w-8 text-primary" />
-            <span className="font-bold text-xl">{t("app.title")}</span>
-          </Link>
-          <LanguageSelector />
+      <div className="flex flex-col min-h-screen">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center">
+            <Link href="/" className="flex items-center gap-2">
+              <FileSignature className="h-8 w-8 text-primary" />
+              <span className="font-bold text-xl">{t("app.title")}</span>
+            </Link>
+            <LanguageSelector />
+          </div>
         </div>
-        <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader className="text-center">
-              <Lock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <CardTitle className="text-xl">
-                {t("sign.password.title")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-center text-gray-600">
-                {t("sign.password.description")}
-                <br />
-                {t("sign.password.instruction")}
-              </p>
-              <div className="space-y-2">
-                <Label htmlFor="document-password">
-                  {t("register.password")}
-                </Label>
-                <Input
-                  id="document-password"
-                  name="document-password"
-                  errors={[]}
-                  type="password"
-                  placeholder={t("sign.password.placeholder")}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handlePasswordSubmit();
-                    }
-                  }}
-                />
-              </div>
-              <Button
-                className="w-full"
-                onClick={handlePasswordSubmit}
-                disabled={isVerifyingPassword || !password.trim()}
-              >
-                {isVerifyingPassword ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    {t("sign.password.verifying")}
-                  </>
-                ) : (
-                  t("sign.password.verify")
-                )}
-              </Button>
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm text-center">
-                  {error}
+        <div className="flex-1 flex items-center justify-center container mx-auto px-4 pb-16">
+          <div className="w-full max-w-md">
+            <Card>
+              <CardHeader className="text-center">
+                <Lock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <CardTitle className="text-xl">
+                  {t("sign.password.title")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-center text-gray-600">
+                  {t("sign.password.description")}
+                  <br />
+                  {t("sign.password.instruction")}
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="document-password">
+                    {t("register.password")}
+                  </Label>
+                  <Input
+                    id="document-password"
+                    name="document-password"
+                    errors={[]}
+                    type="password"
+                    placeholder={t("sign.password.placeholder")}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handlePasswordSubmit();
+                      }
+                    }}
+                  />
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={handlePasswordSubmit}
+                  disabled={isVerifyingPassword || !password.trim()}
+                >
+                  {isVerifyingPassword ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      {t("sign.password.verifying")}
+                    </>
+                  ) : (
+                    t("sign.password.verify")
+                  )}
+                </Button>
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm text-center">
+                    {error}
+                  </div>
+                )}
+                <div className="pt-2 border-t text-center space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    {t("sign.password.trustNote")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <Link href="/term" className="underline hover:text-foreground">
+                      {t("sign.password.terms")}
+                    </Link>
+                    <span className="mx-1.5">·</span>
+                    <Link href="/privacy" className="underline hover:text-foreground">
+                      {t("sign.password.privacy")}
+                    </Link>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -326,7 +349,7 @@ export default function SignDocumentList({
                       <FileText className="h-8 w-8 text-primary flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-lg mb-1 truncate">
-                          {document.alias || document.filename}
+                          {document.alias?.trim() || stripExtension(document.filename)}
                         </h3>
                         <div className="flex items-center gap-2">
                           {isDocumentSubmitted ? (
