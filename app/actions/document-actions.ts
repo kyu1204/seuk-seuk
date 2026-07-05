@@ -395,7 +395,7 @@ export async function markDocumentCompleted(documentId: string) {
     // Update document status to completed
     const { error } = await service
       .from("documents")
-      .update({ status: "completed" })
+      .update({ status: "completed", completed_at: new Date().toISOString() })
       .eq("id", documentId);
 
     if (error) {

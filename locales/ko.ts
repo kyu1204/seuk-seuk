@@ -561,6 +561,7 @@ export default {
   "publicationDetail.status.expired": "만료됨",
   "publicationDetail.status.unknown": "알 수 없음",
   "publicationDetail.createdAt": "생성일",
+  "publicationDetail.completedAt": "서명 완료일",
   "publicationDetail.expiresAt": "만료일",
   "publicationDetail.password": "비밀번호",
   "publicationDetail.passwordSet": "설정됨",
