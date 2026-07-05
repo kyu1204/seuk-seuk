@@ -71,6 +71,16 @@ export async function generateMetadata({
     },
   }[language];
 
+  // Defining `openGraph` here replaces the one inherited from the root layout
+  // wholesale, dropping the file-based /opengraph-image — so re-add it
+  // explicitly (metadataBase in the root layout resolves it to an absolute URL).
+  const ogImage = {
+    url: "/opengraph-image",
+    width: 1200,
+    height: 630,
+    alt: "슥슥 SeukSeuk - 온라인 문서 서명 · Online Document Signing",
+  };
+
   return {
     title,
     description: meta.description,
@@ -81,11 +91,13 @@ export async function generateMetadata({
       type: "website",
       siteName: meta.siteName,
       locale: meta.locale,
+      images: [ogImage],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: meta.description,
+      images: [ogImage],
     },
   };
 }
