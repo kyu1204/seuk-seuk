@@ -21,6 +21,7 @@ import {
   getImageNaturalDimensions,
   ensureRelativeCoordinate,
   convertSignatureAreaToPixels,
+  documentDisplayLabel,
   type RelativeSignatureArea,
 } from "@/lib/utils";
 import {
@@ -84,17 +85,15 @@ export default function SignSingleDocument({
       ? t(`sign.gateError.${result.errorCode}`)
       : result.error ?? t("sign.gateError.NOT_FOUND");
 
-  // Strip a single trailing file extension (e.g. ".webp") from a filename.
-  const stripExtension = (name: string) => name.replace(/\.[^./\\]+$/, "");
-
   // Get signatures for this document
   const documentSignatures = documentData.signatures || [];
 
   // Human-friendly document title: alias → publication name → filename w/o ext.
-  const documentLabel =
-    documentData.alias?.trim() ||
-    publicationData.name?.trim() ||
-    stripExtension(documentData.filename);
+  const documentLabel = documentDisplayLabel(
+    documentData.alias,
+    documentData.filename,
+    publicationData.name
+  );
 
   const [localSignatures, setLocalSignatures] =
     useState<Signature[]>(documentSignatures);

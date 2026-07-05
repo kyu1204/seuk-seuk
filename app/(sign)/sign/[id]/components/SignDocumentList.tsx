@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/language-context";
 import type { PublicationWithDocuments } from "@/lib/supabase/database.types";
+import { documentDisplayLabel } from "@/lib/utils";
 import {
   CheckCircle,
   ChevronRight,
@@ -41,9 +42,6 @@ export default function SignDocumentList({
 }: SignDocumentListProps) {
   const { t } = useLanguage();
 
-  // Strip a single trailing file extension (e.g. ".webp") from a filename.
-  const stripExtension = (name: string) => name.replace(/\.[^./\\]+$/, "");
-
   const [password, setPassword] = useState<string>("");
   const [isVerifyingPassword, setIsVerifyingPassword] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +68,8 @@ export default function SignDocumentList({
       );
 
       if (result.error) {
-        setError(result.error);
+        // Map the raw server error to a localized message for the signer.
+        setError(t("sign.password.error"));
         return;
       }
 
@@ -349,7 +348,7 @@ export default function SignDocumentList({
                       <FileText className="h-8 w-8 text-primary flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-lg mb-1 truncate">
-                          {document.alias?.trim() || stripExtension(document.filename)}
+                          {documentDisplayLabel(document.alias, document.filename)}
                         </h3>
                         <div className="flex items-center gap-2">
                           {isDocumentSubmitted ? (

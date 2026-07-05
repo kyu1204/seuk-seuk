@@ -341,15 +341,17 @@ export async function saveSignature(
   try {
     // Validate signer access and switch to the service client (anon RLS removed)
     const gate = await getSignableDocument(documentId);
+
+    // A completed document is already submitted regardless of the publication's
+    // current state — report that before any expired/inactive gate error.
+    if (gate.document?.status === "completed") {
+      return { error: "이미 제출된 문서입니다.", errorCode: "ALREADY_SUBMITTED" as SignerErrorCode };
+    }
+
     if (gate.error || !gate.document || !gate.service) {
       return { error: gate.error ?? "Document not found", errorCode: gate.errorCode ?? "NOT_FOUND" };
     }
     const { document, publication, service } = gate;
-
-    // Cannot sign a document that is already completed
-    if (document.status === "completed") {
-      return { error: "이미 제출된 문서입니다.", errorCode: "ALREADY_SUBMITTED" as SignerErrorCode };
-    }
 
     // Update signature with data, status, and signed_at
     const { error: updateError } = await service
@@ -498,15 +500,18 @@ export async function createSignedDocumentUploadUrl(
   try {
     // Validate signer access and use the service client (anon RLS removed)
     const gate = await getSignableDocument(documentId);
+
+    // A completed document is already submitted regardless of the publication's
+    // current state — report that before any expired/inactive gate error.
+    if (gate.document?.status === 'completed') {
+      return { error: 'Document already completed', errorCode: 'ALREADY_SUBMITTED' as SignerErrorCode };
+    }
+
     if (gate.error || !gate.document) {
       console.error('[Upload] Document not signable:', gate.error);
       return { error: gate.error ?? 'Document not found', errorCode: gate.errorCode ?? 'NOT_FOUND' };
     }
     const { document } = gate;
-
-    if (document.status === 'completed') {
-      return { error: 'Document already completed', errorCode: 'ALREADY_SUBMITTED' as SignerErrorCode };
-    }
 
     if (!document.user_id) {
       return { error: 'Document owner information missing' };
@@ -949,15 +954,17 @@ export async function getDocumentFileSignedUrl(
   try {
     // Validate signer access and use the service client (anon RLS removed)
     const gate = await getSignableDocument(documentId);
+
+    // A completed document is already submitted regardless of the publication's
+    // current state — report that before any expired/inactive gate error.
+    if (gate.document?.status === "completed") {
+      return { signedUrl: null, error: "Document already completed", errorCode: "ALREADY_SUBMITTED" as SignerErrorCode };
+    }
+
     if (gate.error || !gate.document) {
       return { signedUrl: null, error: gate.error ?? "Document not found", errorCode: gate.errorCode ?? "NOT_FOUND" };
     }
     const { document } = gate;
-
-    // Check completion
-    if (document.status === "completed") {
-      return { signedUrl: null, error: "Document already completed", errorCode: "ALREADY_SUBMITTED" as SignerErrorCode };
-    }
 
     // Generate signed URL (1 hour validity)
     const { url, error: signError } = await getStorage().createSignedDownloadUrl(

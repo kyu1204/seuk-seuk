@@ -147,3 +147,23 @@ export function ensureRelativeCoordinate(
     return convertSignatureAreaToPercent(area, originalImageWidth, originalImageHeight);
   }
 }
+
+/**
+ * Strip a single trailing file extension (e.g. ".webp") from a filename.
+ */
+export function stripExtension(name: string): string {
+  return name.replace(/\.[^./\\]+$/, "");
+}
+
+/**
+ * Human-friendly document label with a shared fallback chain:
+ * alias → publication name (optional) → filename without extension.
+ * Used by the signer screens so the displayed title stays consistent.
+ */
+export function documentDisplayLabel(
+  alias: string | null | undefined,
+  filename: string,
+  publicationName?: string | null
+): string {
+  return alias?.trim() || publicationName?.trim() || stripExtension(filename);
+}
