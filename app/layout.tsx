@@ -47,13 +47,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     generator: "MINT",
     metadataBase: new URL(BASE_URL),
-    alternates: {
-      canonical: "/",
-      languages: {
-        ko: "/",
-        en: "/",
-      },
-    },
     icons: {
       icon: "/favicon.svg",
       apple: "/favicon.svg",
