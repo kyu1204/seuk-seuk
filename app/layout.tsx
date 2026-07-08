@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "@/components/ui/toaster";
-import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/json-ld";
+import { SoftwareApplicationJsonLd, WebSiteJsonLd } from "@/components/json-ld";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -100,7 +100,7 @@ export default async function RootLayout({
           (pdf-page-renderer, document-upload), which is the proven load order.
         */}
         <meta name="naver-site-verification" content="24ae5cf6d9a265c90d7a677e7b820b8fbb00472b" />
-        <OrganizationJsonLd />
+        <SoftwareApplicationJsonLd baseUrl={BASE_URL} />
         <WebSiteJsonLd baseUrl={BASE_URL} />
       </head>
       <body className={inter.className}>
