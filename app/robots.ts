@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           "/dashboard",
           "/upload",
           "/document/",
+          "/publication/",
           "/publish",
           "/mypage",
           "/bills",
