@@ -10,8 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return sitemapRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: route === "/" ? 1.0 : 0.8,
+    changeFrequency: "monthly" as const,
+    priority: route === "/" ? 1.0 : route === "/pricing" ? 0.9 : 0.5,
   }));
 }

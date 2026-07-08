@@ -56,13 +56,11 @@ export const protectedRoutes: Routes = {
  */
 export const sitemapRoutes = [
   "/",
-  "/login",
+  "/pricing",
   "/register",
   "/privacy",
   "/term",
   "/contact",
-  "/forgot-password",
-  "/pricing",
 ] as const;
 
 /**
