@@ -22,6 +22,7 @@ export const publicRoutes: Routes = {
   "/privacy": true,
   "/term": true,
   "/contact": true,
+  "/pricing": true,
   // Metadata file convention routes: crawlers fetch these without auth,
   // and the middleware matcher only excludes extension-based static assets
   "/opengraph-image": true,
@@ -47,7 +48,6 @@ export const publicOnlyRoutes: Routes = {
 export const protectedRoutes: Routes = {
   "/upload": true,
   "/document": true,
-  "/pricing": true,
 };
 
 /**
