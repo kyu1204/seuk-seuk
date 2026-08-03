@@ -15,6 +15,16 @@ import TextInputModal from "@/components/text-input-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/contexts/language-context";
 import type { ClientDocument, Signature, PublicationWithDocuments } from "@/lib/supabase/database.types";
 import {
@@ -33,6 +43,7 @@ import {
   FileSignature,
   PenLine,
   RefreshCw,
+  Stamp,
   Type,
   ZoomIn,
   ZoomOut,
@@ -122,6 +133,9 @@ export default function SignSingleDocument({
   const [touchStartZoom, setTouchStartZoom] = useState<number>(1);
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [documentSignedUrl, setDocumentSignedUrl] = useState<string | null>(null);
+  // Last drawn signature, kept locally so remaining areas can be batch-signed
+  const [lastSignatureData, setLastSignatureData] = useState<string | null>(null);
+  const [isBatchConfirmOpen, setIsBatchConfirmOpen] = useState<boolean>(false);
   const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
 
   const isPdf = (documentData as any).file_type === 'pdf';
@@ -186,6 +200,10 @@ export default function SignSingleDocument({
           signed_at: null,
         };
         setLocalSignatures([...localSignatures, newSignature]);
+      }
+
+      if (selectedAreaType === "signature") {
+        setLastSignatureData(signatureData);
       }
 
       setIsModalOpen(false);
@@ -441,6 +459,54 @@ export default function SignSingleDocument({
       setIsGenerating(false);
       setGeneratingProgress("");
       setProgressValue(0);
+    }
+  };
+
+  // Unsigned signature-type areas on the current page (text areas excluded)
+  const batchSignTargets = localSignatures.filter(
+    (s) =>
+      s.signature_data === null &&
+      (s as any).area_type !== "text" &&
+      (!isPdf || ((s as any).page_number ?? 0) === currentPdfPage - 1)
+  );
+  const canBatchSign = lastSignatureData !== null && batchSignTargets.length > 0;
+
+  const handleBatchSign = async () => {
+    if (!lastSignatureData || batchSignTargets.length === 0 || isSaving) return;
+
+    setIsBatchConfirmOpen(false);
+    setIsSaving(true);
+    setError(null);
+
+    const signedIndexes: number[] = [];
+    try {
+      for (const target of batchSignTargets) {
+        const result = await saveSignature(
+          documentData.id,
+          target.area_index,
+          lastSignatureData
+        );
+        if (result.error) {
+          setError(resolveActionError(result));
+          break;
+        }
+        signedIndexes.push(target.area_index);
+      }
+    } catch (error) {
+      console.error("Error batch signing:", error);
+      setError("Failed to save signature");
+    } finally {
+      // Reflect areas already persisted server-side even if a later save threw
+      if (signedIndexes.length > 0) {
+        setLocalSignatures((prev) =>
+          prev.map((s) =>
+            signedIndexes.includes(s.area_index)
+              ? { ...s, signature_data: lastSignatureData }
+              : s
+          )
+        );
+      }
+      setIsSaving(false);
     }
   };
 
@@ -770,14 +836,26 @@ export default function SignSingleDocument({
               </p>
             )}
           </div>
-          <Button
-            onClick={handleGenerateDocument}
-            disabled={!allAreasSigned || isGenerating}
-            size="lg"
-            className="shrink-0 self-end sm:self-auto"
-          >
-            {t("sign.saveDocument")}
-          </Button>
+          <div className="flex gap-2 shrink-0 self-end sm:self-auto">
+            {lastSignatureData && (
+              <Button
+                variant="outline"
+                onClick={() => setIsBatchConfirmOpen(true)}
+                disabled={!canBatchSign || isSaving}
+                size="lg"
+              >
+                <Stamp className="mr-2 h-4 w-4" />
+                {t("sign.batchSign")}
+              </Button>
+            )}
+            <Button
+              onClick={handleGenerateDocument}
+              disabled={!allAreasSigned || isGenerating}
+              size="lg"
+            >
+              {t("sign.saveDocument")}
+            </Button>
+          </div>
         </div>
 
         {/* PDF Page Navigation */}
@@ -1029,6 +1107,36 @@ export default function SignSingleDocument({
           />
         )
       )}
+
+      {/* Batch sign confirmation */}
+      <AlertDialog open={isBatchConfirmOpen} onOpenChange={setIsBatchConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("sign.batchSign")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("sign.batchSignConfirm").replace(
+                "{{count}}",
+                String(batchSignTargets.length)
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {lastSignatureData && (
+            <div className="flex justify-center rounded-md border bg-muted/30 p-3">
+              <img
+                src={lastSignatureData}
+                alt="Signature preview"
+                className="h-16 object-contain"
+              />
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("sign.batchSignCancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBatchSign}>
+              {t("sign.batchSignAction")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Loading indicator for signature saving */}
       {isSaving && (

@@ -351,6 +351,13 @@ export default {
   "sign.signProgress": "{{completed}}/{{total}} signatures completed",
   "sign.allSignedPrompt": "All signatures are complete. Please submit the document.",
 
+  // Batch sign
+  "sign.batchSign": "Sign all",
+  "sign.batchSignConfirm":
+    "Apply the signature below to the {{count}} remaining signature area(s) on this page. Continue?",
+  "sign.batchSignAction": "Apply to all",
+  "sign.batchSignCancel": "Cancel",
+
   // Password gate trust footer
   "sign.password.trustNote": "Securely delivered with SeukSeuk",
   "sign.password.terms": "Terms of Service",
