@@ -358,6 +358,11 @@ export default {
   "sign.batchSignAction": "Apply to all",
   "sign.batchSignCancel": "Cancel",
 
+  // Sign progress guide
+  "sign.goToNextUnsigned": "Next signature",
+  "sign.pageChipStatus": "{{signed}}/{{total}} signed",
+  "sign.pageChipNoAreas": "No signature areas",
+
   // Password gate trust footer
   "sign.password.trustNote": "Securely delivered with SeukSeuk",
   "sign.password.terms": "Terms of Service",

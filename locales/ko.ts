@@ -355,6 +355,11 @@ export default {
   "sign.batchSignAction": "일괄 적용",
   "sign.batchSignCancel": "취소",
 
+  // Sign progress guide
+  "sign.goToNextUnsigned": "다음 서명 위치로",
+  "sign.pageChipStatus": "{{signed}}/{{total}} 서명 완료",
+  "sign.pageChipNoAreas": "서명 영역 없음",
+
   // Password gate trust footer
   "sign.password.trustNote": "슥슥(SeukSeuk)으로 안전하게 전송됩니다",
   "sign.password.terms": "이용약관",
