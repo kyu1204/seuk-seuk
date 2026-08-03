@@ -348,6 +348,13 @@ export default {
   "sign.signProgress": "{{completed}}/{{total}} 서명 완료",
   "sign.allSignedPrompt": "모든 서명이 완료되었습니다. 문서를 제출해 주세요.",
 
+  // Batch sign
+  "sign.batchSign": "일괄서명",
+  "sign.batchSignConfirm":
+    "이 페이지의 남은 서명 영역 {{count}}곳에 아래 서명을 일괄 적용합니다. 계속할까요?",
+  "sign.batchSignAction": "일괄 적용",
+  "sign.batchSignCancel": "취소",
+
   // Password gate trust footer
   "sign.password.trustNote": "슥슥(SeukSeuk)으로 안전하게 전송됩니다",
   "sign.password.terms": "이용약관",
