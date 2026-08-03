@@ -478,8 +478,8 @@ export default function SignSingleDocument({
     setIsSaving(true);
     setError(null);
 
+    const signedIndexes: number[] = [];
     try {
-      const signedIndexes: number[] = [];
       for (const target of batchSignTargets) {
         const result = await saveSignature(
           documentData.id,
@@ -492,7 +492,11 @@ export default function SignSingleDocument({
         }
         signedIndexes.push(target.area_index);
       }
-
+    } catch (error) {
+      console.error("Error batch signing:", error);
+      setError("Failed to save signature");
+    } finally {
+      // Reflect areas already persisted server-side even if a later save threw
       if (signedIndexes.length > 0) {
         setLocalSignatures((prev) =>
           prev.map((s) =>
@@ -502,10 +506,6 @@ export default function SignSingleDocument({
           )
         );
       }
-    } catch (error) {
-      console.error("Error batch signing:", error);
-      setError("Failed to save signature");
-    } finally {
       setIsSaving(false);
     }
   };
