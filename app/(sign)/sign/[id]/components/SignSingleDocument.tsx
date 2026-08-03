@@ -13,6 +13,7 @@ import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
 import SignatureModal from "@/components/signature-modal";
 import TextInputModal from "@/components/text-input-modal";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import {
@@ -41,6 +42,7 @@ import {
   ChevronRight,
   Clock,
   FileSignature,
+  MapPin,
   PenLine,
   RefreshCw,
   Stamp,
@@ -136,6 +138,8 @@ export default function SignSingleDocument({
   // Last drawn signature, kept locally so remaining areas can be batch-signed
   const [lastSignatureData, setLastSignatureData] = useState<string | null>(null);
   const [isBatchConfirmOpen, setIsBatchConfirmOpen] = useState<boolean>(false);
+  // Area to visually highlight after "go to next unsigned" navigation
+  const [highlightAreaIndex, setHighlightAreaIndex] = useState<number | null>(null);
   const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
 
   const isPdf = (documentData as any).file_type === 'pdf';
@@ -510,6 +514,54 @@ export default function SignSingleDocument({
     }
   };
 
+  // Per-page signature counts for the page status chips (PDF only)
+  const pageStatuses = isPdf
+    ? Array.from({ length: totalPages }, (_, i) => {
+        const areas = localSignatures.filter(
+          (s) => ((s as any).page_number ?? 0) === i
+        );
+        return {
+          page: i + 1,
+          total: areas.length,
+          signed: areas.filter((s) => s.signature_data !== null).length,
+        };
+      })
+    : [];
+
+  const scrollToArea = (areaIndex: number) => {
+    setHighlightAreaIndex(areaIndex);
+    // Wait for a potential page change to render before scrolling
+    setTimeout(() => {
+      const el = documentContainerRef.current?.querySelector(
+        `[data-area-index="${areaIndex}"]`
+      );
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 350);
+    setTimeout(() => setHighlightAreaIndex(null), 2500);
+  };
+
+  const handleGoToNextUnsigned = () => {
+    const unsigned = localSignatures
+      .filter((s) => s.signature_data === null)
+      .sort(
+        (a, b) =>
+          (((a as any).page_number ?? 0) - ((b as any).page_number ?? 0)) ||
+          a.area_index - b.area_index
+      );
+    if (unsigned.length === 0) return;
+
+    // Prefer the first unsigned area on or after the current page, wrap around otherwise
+    const target =
+      unsigned.find(
+        (s) => !isPdf || ((s as any).page_number ?? 0) >= currentPdfPage - 1
+      ) ?? unsigned[0];
+
+    if (isPdf) {
+      setCurrentPdfPage(((target as any).page_number ?? 0) + 1);
+    }
+    scrollToArea(target.area_index);
+  };
+
   const totalAreas = localSignatures.length;
   const signedAreaCount = localSignatures.filter(
     (s) => s.signature_data !== null
@@ -822,19 +874,36 @@ export default function SignSingleDocument({
           <div>
             <h1 className="text-3xl font-bold mb-2">{documentLabel}</h1>
             <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
-            {totalAreas > 0 && (
-              <p
-                className={`mt-2 text-sm font-medium ${
-                  allAreasSigned ? "text-emerald-600" : "text-primary"
-                }`}
-              >
-                {allAreasSigned
-                  ? t("sign.allSignedPrompt")
-                  : t("sign.signProgress")
-                      .replace("{{completed}}", String(signedAreaCount))
-                      .replace("{{total}}", String(totalAreas))}
-              </p>
-            )}
+            {totalAreas > 0 &&
+              (allAreasSigned ? (
+                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                  <CheckCircle className="h-4 w-4" />
+                  {t("sign.allSignedPrompt")}
+                </p>
+              ) : (
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="flex items-center gap-2.5">
+                    <Progress
+                      value={(signedAreaCount / totalAreas) * 100}
+                      className="h-2 w-36 sm:w-48"
+                    />
+                    <span className="text-sm font-medium text-primary tabular-nums whitespace-nowrap">
+                      {t("sign.signProgress")
+                        .replace("{{completed}}", String(signedAreaCount))
+                        .replace("{{total}}", String(totalAreas))}
+                    </span>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleGoToNextUnsigned}
+                    className="h-7 gap-1.5 px-2.5 text-xs"
+                  >
+                    <MapPin className="h-3.5 w-3.5" />
+                    {t("sign.goToNextUnsigned")}
+                  </Button>
+                </div>
+              ))}
           </div>
           <div className="flex gap-2 shrink-0 self-end sm:self-auto">
             {lastSignatureData && (
@@ -860,7 +929,8 @@ export default function SignSingleDocument({
 
         {/* PDF Page Navigation */}
         {isPdf && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 py-2 mb-4 bg-muted/30 rounded-lg">
+          <div className="mb-4 bg-muted/30 rounded-lg">
+          <div className="flex items-center justify-center gap-3 py-2">
             <Button
               variant="outline"
               size="sm"
@@ -884,6 +954,48 @@ export default function SignSingleDocument({
               {t("pdf_next_page")}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
+          </div>
+
+          {/* Per-page signature status chips */}
+          <div className="flex flex-wrap items-center justify-center gap-1.5 px-3 pb-2.5">
+            {pageStatuses.map((ps) => {
+              const isCurrent = ps.page === currentPdfPage;
+              const isComplete = ps.total > 0 && ps.signed === ps.total;
+              const hasRemaining = ps.total > 0 && ps.signed < ps.total;
+              const stateClass = isComplete
+                ? "border-emerald-300 bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                : hasRemaining
+                ? "border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200"
+                : "border-transparent bg-muted text-muted-foreground hover:bg-muted/70";
+              return (
+                <button
+                  key={ps.page}
+                  type="button"
+                  onClick={() => setCurrentPdfPage(ps.page)}
+                  title={
+                    ps.total > 0
+                      ? t("sign.pageChipStatus")
+                          .replace("{{signed}}", String(ps.signed))
+                          .replace("{{total}}", String(ps.total))
+                      : t("sign.pageChipNoAreas")
+                  }
+                  className={`relative flex h-8 min-w-8 items-center justify-center rounded-md border px-1.5 text-xs font-medium tabular-nums transition-colors ${stateClass} ${
+                    isCurrent ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""
+                  }`}
+                >
+                  {ps.page}
+                  {isComplete && (
+                    <Check className="ml-0.5 h-3 w-3" strokeWidth={3} />
+                  )}
+                  {hasRemaining && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[10px] font-semibold text-white shadow-sm">
+                      {ps.total - ps.signed}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
           </div>
         )}
 
@@ -979,10 +1091,15 @@ export default function SignSingleDocument({
                 return (
                   <div
                     key={signature.area_index}
+                    data-area-index={signature.area_index}
                     className={`absolute cursor-pointer rounded-sm border-2 ${
                       isSigned
                         ? "border-emerald-500 bg-emerald-500/15"
                         : "border-primary bg-primary/10 animate-pulse"
+                    } ${
+                      highlightAreaIndex === signature.area_index
+                        ? "z-10 ring-4 ring-primary/60 ring-offset-2"
+                        : ""
                     }`}
                     style={(() => {
                       try {
