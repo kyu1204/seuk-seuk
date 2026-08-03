@@ -21,6 +21,7 @@ import {
   getDocumentDownloadBaseName,
   getDocumentDownloadName,
 } from "@/lib/documents/download-name";
+import { documentDisplayLabel } from "@/lib/utils";
 
 /**
  * Upload a file to Supabase Storage and create a document record
@@ -252,6 +253,7 @@ type SignableDocumentRow = {
   publication_id: string | null;
   user_id: string | null;
   filename: string;
+  alias: string | null;
   file_url: string;
   file_type: string | null;
   page_count: number | null;
@@ -262,6 +264,7 @@ type SignablePublicationRow = {
   short_url: string;
   status: string;
   expires_at: string | null;
+  name: string | null;
 };
 
 /**
@@ -293,7 +296,7 @@ async function getSignableDocument(documentId: string): Promise<{
   const { data: document, error: docError } = await service
     .from("documents")
     .select(
-      "id, status, publication_id, user_id, filename, file_url, file_type, page_count"
+      "id, status, publication_id, user_id, filename, alias, file_url, file_type, page_count"
     )
     .eq("id", documentId)
     .single();
@@ -308,7 +311,7 @@ async function getSignableDocument(documentId: string): Promise<{
 
   const { data: publication, error: pubError } = await service
     .from("publications")
-    .select("id, short_url, status, expires_at")
+    .select("id, short_url, status, expires_at, name")
     .eq("id", document.publication_id)
     .single();
 
@@ -415,7 +418,13 @@ export async function markDocumentCompleted(documentId: string) {
 
     // 🆕 Send email notification asynchronously (fire-and-forget)
     // Email failures won't block document completion
-    sendDocumentCompletionEmail(documentId, document.filename)
+    // Use the same display-label fallback chain as the signer screens
+    // (alias → publication name → filename w/o extension) instead of the
+    // raw storage filename.
+    sendDocumentCompletionEmail(
+      documentId,
+      documentDisplayLabel(document.alias, document.filename, publication?.name)
+    )
       .catch((err) => {
         console.error("❌ Email notification failed (non-blocking):", err);
       });
