@@ -13,6 +13,7 @@
 - testing-library 없음, vitest 환경은 node. 컴포넌트 렌더 테스트 금지. 테스트는 (a) 파일이 export 하는 순수 함수 검증, 또는 (b) `fs.readFileSync` 로 소스 문자열 회귀 검증(금지 클래스·문구 부재, 필수 문구·키 존재) 중 하나로 쓴다. 컴포넌트 파일을 import 하지 않는다.
 - 카피는 항상 locales/ko.ts · en.ts 의 t() 키로. 컴포넌트에 한글·영문 하드코딩 금지. 인라인 폴백 `t("key","한글")` 금지.
 - 색은 Tailwind 토큰(bg-primary, text-muted-foreground, bg-destructive/10, bg-muted, border 등)만. `bg-white`, `text-gray-*`, `bg-red-50`, `bg-green-*`, `text-white` 금지. 완료 상태는 `text-seal bg-seal-soft`, 만료는 `text-amber bg-amber-soft` (R01 에서 정의).
+- 서브에이전트(Agent 도구)에 구현을 위임하지 않는다. 루프 턴은 10분 뒤 백그라운드 작업을 강제 종료하므로, 항상 본 세션에서 직접 구현하고 커밋한다. 워크트리에 커밋되지 않은 변경이 있으면 그것이 진행 중인 태스크의 산출물이니 이어서 완성한다.
 - 태스크 하나 = 커밋 하나. 체크박스와 진행 로그를 같은 커밋에 갱신.
 
 ## Tasks
