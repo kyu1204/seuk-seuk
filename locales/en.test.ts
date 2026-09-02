@@ -71,6 +71,30 @@ describe("R51 pricing page keys", () => {
   });
 });
 
+// touch: R52 warning
+describe("en locale R52 mypage/bills keys exist", () => {
+  it("has the R52 mypage copy values", () => {
+    expect(en["mypage.title"]).toBeTruthy();
+    expect(en["mypage.profile.emailHint"]).toBeTruthy();
+    expect(en["mypage.profile.save"]).toBeTruthy();
+    expect(en["mypage.plan.title"]).toBeTruthy();
+    expect(en["mypage.plan.summary"]).toContain("{{plan}}");
+    expect(en["mypage.plan.summary"]).toContain("{{date}}");
+    expect(en["mypage.plan.free"]).toBeTruthy();
+    expect(en["mypage.plan.manage"]).toBeTruthy();
+  });
+
+  it("has the R52 bills copy values", () => {
+    expect(en["bills.created"]).toBeTruthy();
+    expect(en["bills.historyDescription"]).toBeTruthy();
+    expect(en["bills.totalDocuments"]).toBeTruthy();
+    expect(en["bills.viewDetails"]).toBeTruthy();
+    expect(en["bills.noDocuments.title"]).toBeTruthy();
+    expect(en["bills.noDocuments.description"]).toBeTruthy();
+    expect(en["bills.noDocuments.action"]).toBeTruthy();
+  });
+});
+
 describe("en locale has no stray Korean text", () => {
   it("contains no Hangul outside the allowlist", () => {
     const offenders = Object.entries(en)

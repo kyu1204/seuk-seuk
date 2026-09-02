@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import ko from "./ko";
 import en from "./en";
+// touch: R52 warning
 
 // The old sign-complete/not-found copy told signers to "contact the document
 // issuer" — spelled out via code points so this file itself doesn't
@@ -437,5 +438,46 @@ describe("R51 pricing page keys", () => {
 
   it("keeps pricing.limitPerMonth matching the home page wording", () => {
     expect(ko["pricing.limitPerMonth"]).toBe("월 {{count}}건 문서 발송");
+  });
+});
+
+describe("R52 mypage/bills copy values", () => {
+  it("has the R52 mypage copy values", () => {
+    expect(ko["mypage.title"]).toBe("계정");
+    expect(ko["mypage.profile.title"]).toBe("프로필");
+    expect(ko["mypage.profile.emailHint"]).toBe("로그인과 알림에 사용됩니다.");
+    expect(ko["mypage.profile.save"]).toBe("변경 사항 저장");
+    expect(ko["mypage.plan.title"]).toBe("플랜과 사용량");
+    expect(ko["mypage.plan.summary"]).toBe("{{plan}} 플랜 · 다음 결제 {{date}}");
+    expect(ko["mypage.plan.free"]).toBe("베이직 플랜 · 무료");
+    expect(ko["mypage.plan.manage"]).toBe("결제 관리");
+    expect(ko["mypage.dangerZone.title"]).toBe("계정 삭제");
+    expect(ko["mypage.dangerZone.deleteWarning"]).toBe(
+      "계정을 지우면 문서, 서명본, 템플릿이 모두 영구히 사라집니다. 진행 중인 발행이 있으면 먼저 정리해 주세요."
+    );
+    expect(ko["mypage.dangerZone.deleteAccount"]).toBe("계정 삭제");
+    expect(ko["mypage.dangerZone.deleteSuccess"]).toBe("계정을 삭제했습니다.");
+    expect(ko["mypage.dangerZone.deleteError"]).toBe(
+      "계정을 삭제하지 못했습니다. 다시 시도해 주세요."
+    );
+    expect(ko["mypage.error.loadProfile"]).toBe(
+      "프로필을 불러오지 못했습니다. 새로고침해 주세요."
+    );
+  });
+
+  it("has the R52 bills copy values", () => {
+    expect(ko["bills.noSubscription.title"]).toBe("현재 이용 중인 플랜이 없어요");
+    expect(ko["bills.noSubscription.description"]).toBe(
+      "플랜을 구독하면 문서 한도와 템플릿을 쓸 수 있어요."
+    );
+    expect(ko["bills.noSubscription.action"]).toBe("플랜 둘러보기");
+    expect(ko["bills.noTransactions"]).toBe("아직 결제 내역이 없어요.");
+    expect(ko["bills.created"]).toBeTruthy();
+    expect(ko["bills.historyDescription"]).toBeTruthy();
+    expect(ko["bills.totalDocuments"]).toBeTruthy();
+    expect(ko["bills.viewDetails"]).toBeTruthy();
+    expect(ko["bills.noDocuments.title"]).toBeTruthy();
+    expect(ko["bills.noDocuments.description"]).toBeTruthy();
+    expect(ko["bills.noDocuments.action"]).toBeTruthy();
   });
 });
