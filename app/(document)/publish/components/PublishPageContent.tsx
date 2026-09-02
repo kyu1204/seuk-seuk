@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ProjectBreadcrumb } from "@/components/breadcrumb";
 import PublishForm from "@/components/publish/publish-form";
 import type { Document } from "@/lib/supabase/database.types";
@@ -7,24 +8,50 @@ import { useLanguage } from "@/contexts/language-context";
 import { PublicationsList } from "@/components/dashboard/publications-list";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Upload } from "lucide-react";
+import { ArrowLeft, Upload } from "lucide-react";
 
 interface PublishPageContentProps {
   documents: Document[];
+  error?: string;
+  signatureCounts: Record<string, number>;
+  preselectedDocumentId?: string;
 }
 
-export default function PublishPageContent({ documents }: PublishPageContentProps) {
+export default function PublishPageContent({
+  documents,
+  error,
+  signatureCounts,
+  preselectedDocumentId,
+}: PublishPageContentProps) {
   const { t } = useLanguage();
+  const router = useRouter();
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
-        {/* Breadcrumb */}
         <ProjectBreadcrumb />
 
-        <h1 className="text-2xl font-bold mb-6">{t("publish.title")}</h1>
+        <div className="mb-6 flex items-start gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t("common.back")}
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{t("publish.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("publish.description")}</p>
+          </div>
+        </div>
 
-        {documents.length === 0 ? (
+        {error ? (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded max-w-2xl">
+            {error}
+          </div>
+        ) : documents.length === 0 ? (
           <div className="space-y-8">
             {/* No drafts message */}
             <div className="bg-muted px-4 py-8 rounded-lg text-center max-w-2xl mx-auto">
@@ -46,9 +73,11 @@ export default function PublishPageContent({ documents }: PublishPageContentProp
             </div>
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto">
-            <PublishForm documents={documents} />
-          </div>
+          <PublishForm
+            documents={documents}
+            signatureCounts={signatureCounts}
+            preselectedDocumentId={preselectedDocumentId}
+          />
         )}
       </div>
     </div>

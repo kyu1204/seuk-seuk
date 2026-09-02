@@ -1,9 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/language-context";
 import { createClientSupabase } from "@/lib/supabase/client";
 
 export default function GoogleLoginButton() {
+  const { t } = useLanguage();
 
   const signInWithGoogle = async () => {
     const supabase = createClientSupabase();
@@ -19,7 +21,7 @@ export default function GoogleLoginButton() {
     <Button
       variant="outline"
       type="button"
-      className="w-full"
+      className="w-full h-11"
       onClick={signInWithGoogle}
     >
       <svg
@@ -44,7 +46,7 @@ export default function GoogleLoginButton() {
           fill="#EA4335"
         />
       </svg>
-      Google
+      {t("login.google")}
     </Button>
   );
 }

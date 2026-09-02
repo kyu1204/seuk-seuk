@@ -27,13 +27,11 @@ export default function LanguageSelector() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
-          className="gap-2 border-primary/20 hover:bg-primary/5"
+          size="icon"
+          className="w-9"
+          aria-label={t("header.languageSelect")}
         >
           <Globe className="h-4 w-4" />
-          <span className="sr-only sm:not-sr-only sm:text-xs">
-            {language.toUpperCase()}
-          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

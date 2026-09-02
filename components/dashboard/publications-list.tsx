@@ -37,7 +37,7 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
       const result = await getUserPublications();
 
       if (result.error) {
-        setError(result.error);
+        setError(t("dashboard.publications.error.load"));
       } else {
         // Apply status filter
         let filtered = result.publications || [];
@@ -48,7 +48,7 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
       }
     } catch (err) {
       console.error("Failed to load publications:", err);
-      setError("Failed to load publications");
+      setError(t("dashboard.publications.error.load"));
     } finally {
       setLoading(false);
     }
@@ -108,37 +108,34 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
     setIsBulkDeleteModalOpen(true);
   };
 
+  const selectedPubs = publications.filter((pub) => selectedPublicationIds.has(pub.id));
+  const bulkDeleteItems = selectedPubs.map((pub) => ({
+    id: pub.id,
+    name: pub.name,
+    status: pub.status ?? "active",
+  }));
+
   // Execute bulk delete
   const handleBulkDeleteConfirm = async () => {
     setIsBulkDeleting(true);
 
-    const selectedIds = Array.from(selectedPublicationIds);
-    const selectedPubs = publications.filter((pub) => selectedIds.includes(pub.id));
+    const pubsToDelete = selectedPubs;
 
     let successCount = 0;
-    let failCount = 0;
-    const failures: { name: string; error: string }[] = [];
+    const failedIds = new Set<string>();
 
     // Delete each publication sequentially
-    for (const pub of selectedPubs) {
+    for (const pub of pubsToDelete) {
       try {
         const result = await deletePublication(pub.id);
 
         if (result.error) {
-          failCount++;
-          failures.push({
-            name: pub.name,
-            error: result.error,
-          });
+          failedIds.add(pub.id);
         } else {
           successCount++;
         }
       } catch (error) {
-        failCount++;
-        failures.push({
-          name: pub.name,
-          error: "Unexpected error occurred",
-        });
+        failedIds.add(pub.id);
       }
     }
 
@@ -151,21 +148,17 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
       toast.success(t("dashboard.publications.bulkDelete.successMessage", { count: successCount }));
     }
 
-    if (failCount > 0) {
-      const errorMessage = failures.map((f) => `${f.name}: ${f.error}`).join(", ");
-      toast.error(t("dashboard.publications.bulkDelete.errorMessage", { count: failCount, details: errorMessage }));
+    if (failedIds.size > 0) {
+      toast.error(t("dashboard.publications.bulkDelete.errorMessage", { count: failedIds.size, details: "" }));
     }
 
     // Clear selection and exit selection mode if all succeeded
-    if (failCount === 0) {
+    if (failedIds.size === 0) {
       setSelectedPublicationIds(new Set());
       setIsSelectionMode(false);
     } else {
       // Keep failed publications selected for retry
-      const failedIds = failures
-        .map((f) => selectedPubs.find((p) => p.name === f.name)?.id)
-        .filter(Boolean) as string[];
-      setSelectedPublicationIds(new Set(failedIds));
+      setSelectedPublicationIds(failedIds);
     }
 
     // Reload publications
@@ -178,8 +171,11 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Error: {error}</p>
+      <div className="text-center py-8 space-y-4">
+        <p className="text-destructive">{error}</p>
+        <Button variant="outline" onClick={loadPublications}>
+          {t("common.retry")}
+        </Button>
       </div>
     );
   }
@@ -232,7 +228,7 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
       ) : (
         <div className="space-y-6">
           {/* Publications Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {publications.map((publication) => (
               <PublicationCard
                 key={publication.id}
@@ -253,6 +249,7 @@ export function PublicationsList({ statusFilter = "all" }: PublicationsListProps
         onClose={() => setIsBulkDeleteModalOpen(false)}
         onConfirm={handleBulkDeleteConfirm}
         isLoading={isBulkDeleting}
+        items={bulkDeleteItems}
       />
     </>
   );

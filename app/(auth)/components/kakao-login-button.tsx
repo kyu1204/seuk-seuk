@@ -21,7 +21,7 @@ export default function KakaoLoginButton() {
     <Button
       variant="outline"
       type="button"
-      className="w-full"
+      className="w-full h-11"
       onClick={signInWithKakao}
     >
       <svg

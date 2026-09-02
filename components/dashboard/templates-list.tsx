@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FileX, FileStack, Sparkles, Send, Trash2 } from "lucide-react";
+import { FileX, Send, Trash2, Sparkles } from "lucide-react";
+import { DocumentTile } from "@/components/dashboard/document-tile";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/language-context";
 import {
@@ -16,7 +17,6 @@ import type { DocumentTemplate } from "@/lib/supabase/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 
 export function TemplatesList() {
@@ -44,6 +54,11 @@ export function TemplatesList() {
   const [expiresAt, setExpiresAt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [deleteTarget, setDeleteTarget] = useState<DocumentTemplate | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const loadTemplates = async () => {
     setLoading(true);
     setError(null);
@@ -54,7 +69,7 @@ export function TemplatesList() {
           setAllowed(false);
           return;
         }
-        setError(gate.error || "Failed to load templates");
+        setError(gate.error || t("templates.error.load"));
         return;
       }
       setAllowed(true);
@@ -67,7 +82,7 @@ export function TemplatesList() {
       }
     } catch (err) {
       console.error("Failed to load templates:", err);
-      setError("Failed to load templates");
+      setError(t("templates.error.load"));
     } finally {
       setLoading(false);
     }
@@ -98,7 +113,7 @@ export function TemplatesList() {
   const handlePublish = async () => {
     if (!publishTarget) return;
     if (!name.trim()) {
-      toast.error(t("publish.errorName", "발행 이름을 입력하세요"));
+      toast.error(t("publish.errorName"));
       return;
     }
     setIsSubmitting(true);
@@ -112,33 +127,33 @@ export function TemplatesList() {
         toast.error(result.error);
         return;
       }
-      toast.success(t("templates.publish", "이 템플릿으로 발행"));
+      toast.success(t("templates.publish.success"));
       setPublishTarget(null);
-      router.push("/dashboard");
+      router.push("/dashboard?tab=publications");
     } catch {
-      toast.error(t("publish.errorPublishing", "발행 중 오류가 발생했습니다."));
+      toast.error(t("publish.errorPublishing"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (template: DocumentTemplate) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
-      const result = await deleteTemplate(template.id);
+      const result = await deleteTemplate(deleteTarget.id);
       if (result.error) {
-        toast.error(result.error);
+        toast.error(t("templates.delete.error"));
         return;
       }
-      toast.success(t("templates.delete", "삭제"));
+      toast.success(t("templates.delete.success"));
+      setDeleteTarget(null);
       loadTemplates();
     } catch {
-      toast.error(t("templates.error", "오류가 발생했습니다."));
+      toast.error(t("templates.delete.error"));
+    } finally {
+      setIsDeleting(false);
     }
-  };
-
-  const truncateName = (templateName: string, maxLength: number = 35) => {
-    if (templateName.length <= maxLength) return templateName;
-    return `${templateName.slice(0, maxLength)}...`;
   };
 
   if (loading) {
@@ -147,8 +162,11 @@ export function TemplatesList() {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Error: {error}</p>
+      <div className="text-center py-8 space-y-4">
+        <p className="text-destructive">{t("templates.error.load")}</p>
+        <Button variant="outline" onClick={loadTemplates}>
+          {t("common.retry")}
+        </Button>
       </div>
     );
   }
@@ -197,40 +215,16 @@ export function TemplatesList() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {templates.map((template) => (
-            <Card
+            <DocumentTile
               key={template.id}
-              role="link"
-              tabIndex={0}
-              className="h-64 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              title={template.name}
+              metaLeft={template.file_type.toUpperCase()}
+              metaRight={t("templates.card.areas", { count: template.page_count })}
               onClick={() => router.push(`/templates/${template.id}`)}
-              onKeyDown={(event) => {
-                if (event.target !== event.currentTarget) return;
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  router.push(`/templates/${template.id}`);
-                }
-              }}
-            >
-              <CardHeader className="pt-6 pb-3 flex-1 flex flex-col justify-center">
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <FileStack className="h-8 w-8 text-primary flex-shrink-0" />
-                  <h3
-                    className="font-medium text-sm leading-relaxed text-center px-2 break-words"
-                    title={template.name}
-                  >
-                    {truncateName(template.name)}
-                  </h3>
-                  <div className="text-xs text-muted-foreground">
-                    {template.file_type.toUpperCase()} ·{" "}
-                    {t("templates.pageCount", { count: template.page_count })}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="pt-0 pb-4 mt-auto">
-                <div className="flex items-center justify-center gap-2">
+              actions={
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -249,15 +243,15 @@ export function TemplatesList() {
                     className="h-8 px-2 hover:bg-destructive hover:text-destructive-foreground"
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleDelete(template);
+                      setDeleteTarget(template);
                     }}
                     aria-label={t("templates.delete")}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              }
+            />
           ))}
         </div>
       )}
@@ -273,7 +267,7 @@ export function TemplatesList() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="tpl-pub-name">
-                {t("publish.name", "발행 이름")}
+                {t("publish.name")}
               </Label>
               <Input
                 id="tpl-pub-name"
@@ -283,7 +277,7 @@ export function TemplatesList() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tpl-pub-pw">
-                {t("publish.password", "비밀번호")}
+                {t("publish.password")}
               </Label>
               <Input
                 id="tpl-pub-pw"
@@ -294,7 +288,7 @@ export function TemplatesList() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tpl-pub-exp">
-                {t("publish.expiration", "만료일")}
+                {t("publish.expiration")}
               </Label>
               <Input
                 id="tpl-pub-exp"
@@ -310,16 +304,44 @@ export function TemplatesList() {
               onClick={() => setPublishTarget(null)}
               disabled={isSubmitting}
             >
-              {t("common.cancel", "취소")}
+              {t("common.cancel")}
             </Button>
             <Button onClick={handlePublish} disabled={isSubmitting}>
               {isSubmitting
-                ? t("upload.generating", "생성 중...")
+                ? t("upload.generating")
                 : t("templates.publish")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("templates.delete.confirmTitle", { name: deleteTarget?.name ?? "" })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("templates.delete.confirmDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("templates.delete.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

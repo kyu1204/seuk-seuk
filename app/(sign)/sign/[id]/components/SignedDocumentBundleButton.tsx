@@ -56,7 +56,7 @@ export default function SignedDocumentBundleButton({
         }
         const blob = new Blob([bytes], { type: "application/zip" });
         const objectUrl = URL.createObjectURL(blob);
-        triggerDownload(objectUrl, result.filename || "서명문서.zip");
+        triggerDownload(objectUrl, result.filename || `${t("sign.download.bundleName")}.zip`);
         // Defer revoke so the browser can start reading the blob URL.
         setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
         return;
@@ -85,7 +85,7 @@ export default function SignedDocumentBundleButton({
           </>
         )}
       </Button>
-      {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+      {error && <p className="text-sm text-destructive text-center">{error}</p>}
     </div>
   );
 }

@@ -103,7 +103,7 @@ export default function CreditCheckoutPage() {
                 </div>
               </div>
               <div className="flex justify-between items-center gap-2">
-                <span className="text-muted-foreground flex-shrink-0">{t("checkout.credit.discount", "할인")}</span>
+                <span className="text-muted-foreground flex-shrink-0">{t("checkout.credit.discount")}</span>
                 <span className="text-sm font-medium">50% OFF</span>
               </div>
               <div className="border-t pt-4 flex justify-between items-center gap-2">

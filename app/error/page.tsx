@@ -1,20 +1,33 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/language-context";
 
 export default function ErrorPage() {
+  const { t } = useLanguage();
+  const searchParams = useSearchParams();
+  const isAuthError = searchParams.get("type") === "auth";
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 to-primary/10">
       <div className="w-full max-w-md">
         <div className="bg-background rounded-lg shadow-lg p-8 border text-center space-y-4">
           <h1 className="text-xl font-semibold text-destructive">
-            오류가 발생했습니다
+            {t("error.title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            인증 링크가 유효하지 않거나 만료되었습니다. 다시 시도해주세요.
+            {t("error.description")}
           </p>
-          <Link href="/forgot-password">
-            <Button className="w-full">
-              비밀번호 재설정 다시 요청
+          {isAuthError && (
+            <Link href="/forgot-password">
+              <Button className="w-full">{t("error.retryReset")}</Button>
+            </Link>
+          )}
+          <Link href="/">
+            <Button variant="outline" className="w-full">
+              {t("error.home")}
             </Button>
           </Link>
         </div>

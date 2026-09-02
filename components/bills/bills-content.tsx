@@ -13,54 +13,55 @@ export function BillsContent() {
   const [activeTab, setActiveTab] = useState("subscriptions");
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {t("bills.title")}
-          </h1>
-          <p className="text-muted-foreground">{t("bills.description")}</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{t("bills.title")}</h1>
+        <p className="text-muted-foreground">{t("bills.description")}</p>
       </div>
 
-      {/* Tabs within a card */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="sr-only">{t("bills.title")}</CardTitle>
-          <CardDescription className="sr-only">{`${t("bills.subscriptions")} & ${t("bills.payments")}`}</CardDescription>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-muted p-1 rounded-md">
-              <TabsTrigger
-                value="subscriptions"
-                className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-sm"
-              >
-                <CreditCard className="mr-2 h-4 w-4" />
-                {t("bills.subscriptions")}
-              </TabsTrigger>
-              <TabsTrigger
-                value="payments"
-                className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-sm"
-              >
-                <ReceiptText className="mr-2 h-4 w-4" />
-                {t("bills.payments")}
-              </TabsTrigger>
-            </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
+        <TabsList className="grid w-full grid-cols-2 bg-muted p-1 rounded-md">
+          <TabsTrigger
+            value="subscriptions"
+            className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-sm"
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            {t("bills.subscriptions")}
+          </TabsTrigger>
+          <TabsTrigger
+            value="payments"
+            className="data-[state=active]:bg-background data-[state=active]:text-foreground rounded-sm"
+          >
+            <ReceiptText className="mr-2 h-4 w-4" />
+            {t("bills.payments")}
+          </TabsTrigger>
+        </TabsList>
 
-            <TabsContent value="subscriptions" className="mt-6">
-              <CardContent className="p-0">
-                <SubscriptionsTab />
-              </CardContent>
-            </TabsContent>
+        <TabsContent value="subscriptions" className="mt-6">
+          <Card>
+            <CardHeader className="sr-only">
+              <CardTitle>{t("bills.subscriptions")}</CardTitle>
+              <CardDescription>{t("bills.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SubscriptionsTab />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <TabsContent value="payments" className="mt-6">
-              <CardContent className="p-0">
-                <PaymentsTab />
-              </CardContent>
-            </TabsContent>
-          </Tabs>
-        </CardHeader>
-      </Card>
+        <TabsContent value="payments" className="mt-6">
+          <Card>
+            <CardHeader className="sr-only">
+              <CardTitle>{t("bills.payments")}</CardTitle>
+              <CardDescription>{t("bills.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PaymentsTab />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

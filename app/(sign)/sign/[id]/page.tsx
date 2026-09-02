@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { getPublicationByShortUrl } from "@/app/actions/publication-actions";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import SignPageContainer from "./components/SignPageContainer";
+import ko from "@/locales/ko";
+import en from "@/locales/en";
 
 // Server Component that fetches data and renders SPA container
 interface PageProps {
@@ -45,13 +47,15 @@ export async function generateMetadata({
   const firstDocLabel =
     documents[0]?.alias?.trim() || documents[0]?.filename?.trim() || "";
 
+  const andMoreTemplate = (language === "ko" ? ko : en)["sign.meta.andMore"];
+
   let title = publication.name?.trim() || "";
   if (!title && firstDocLabel) {
     title =
       documents.length > 1
-        ? language === "ko"
-          ? `${firstDocLabel} 외 ${documents.length - 1}건`
-          : `${firstDocLabel} and ${documents.length - 1} more`
+        ? andMoreTemplate
+            .replace("{{name}}", firstDocLabel)
+            .replace("{{count}}", String(documents.length - 1))
         : firstDocLabel;
   }
   if (!title) {
@@ -109,7 +113,7 @@ export default async function SignPage({ params }: PageProps) {
   const { id } = params;
 
   // Fetch publication data server-side (includes all documents)
-  const { publication, requiresPassword, error } =
+  const { publication, requiresPassword, senderName, error } =
     await getPublicationByShortUrl(id);
 
   // Only show 404 if publication doesn't exist
@@ -127,6 +131,7 @@ export default async function SignPage({ params }: PageProps) {
     <SignPageContainer
       publicationData={publication}
       requiresPassword={requiresPassword || false}
+      senderName={senderName || ""}
     />
   );
 }
