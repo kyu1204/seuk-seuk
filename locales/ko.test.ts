@@ -272,5 +272,93 @@ describe("locale parity (ko/en)", () => {
     expect(en["sign.documentList.view"]).toBeTruthy();
     expect(en["sign.password.help"]).toBeTruthy();
   });
+
+  it("has R42 zoom/page-chip keys", () => {
+    expect(ko["sign.zoomIn"]).toBeTruthy();
+    expect(ko["sign.zoomOut"]).toBeTruthy();
+    expect(ko["sign.zoomReset"]).toBeTruthy();
+    expect(ko["sign.pageChip.remaining"]).toBe("{{count}} 남음");
+    expect(en["sign.zoomIn"]).toBeTruthy();
+    expect(en["sign.zoomOut"]).toBeTruthy();
+    expect(en["sign.zoomReset"]).toBeTruthy();
+    expect(en["sign.pageChip.remaining"]).toBeTruthy();
+  });
+
+  it("has the R42 sign screen copy values", () => {
+    expect(ko["sign.header.meta"]).toBe(
+      "{{page}}/{{pages}}쪽 · 서명 {{completed}}/{{total}}"
+    );
+    expect(ko["sign.header.metaSingle"]).toBe("서명 {{completed}}/{{total}}");
+    expect(ko["sign.batchSign"]).toBe("한 번에 서명");
+    expect(ko["sign.clickAreas"]).toBe("파란 칸을 눌러 서명하세요");
+    expect(ko["sign.batchSignHint"]).toBe(
+      "먼저 한 곳에 서명하면 나머지에 한 번에 적용할 수 있어요"
+    );
+    expect(ko["sign.nextArea"]).toBe("다음 칸으로");
+    expect(ko["sign.pageChip"]).toBe("{{page}}쪽");
+    expect(ko["sign.area.label"]).toBe("서명 칸 {{index}}");
+    expect(ko["sign.area.signedAlt"]).toBe("서명됨");
+    expect(ko["sign.clickToType"]).toBe("여기에 입력");
+    expect(ko["sign.clickToSign"]).toBe("여기에 서명");
+    expect(ko["sign.submit.remaining"]).toBe(
+      "서명 {{count}}곳을 더 채우면 제출할 수 있어요"
+    );
+    expect(ko["sign.saveDocument"]).toBe("문서 제출하기");
+    expect(ko["sign.completed.noEdit"]).toBe(
+      "제출하면 서명을 수정할 수 없습니다."
+    );
+    expect(ko["sign.submit.confirmTitle"]).toBe("문서를 제출할까요?");
+    expect(ko["sign.submit.confirmDescription"]).toBe(
+      "제출한 뒤에는 서명을 바꿀 수 없습니다."
+    );
+    expect(ko["sign.submit.confirm"]).toBe("제출하기");
+    expect(ko["sign.progress.title"]).toBe("서명한 문서를 만드는 중이에요");
+    expect(ko["sign.progress.compositing"]).toBe("서명을 문서에 넣는 중…");
+    expect(ko["sign.progress.uploading"]).toBe("문서를 만드는 중…");
+    expect(ko["sign.progress.finalizing"]).toBe("거의 다 됐어요…");
+    expect(ko["sign.progress.description"]).toBe(
+      "창을 닫지 마세요. 보통 10초 안에 끝나요."
+    );
+    expect(ko["sign.error.saveSignature"]).toBe(
+      "서명을 저장하지 못했습니다. 다시 시도해 주세요."
+    );
+    expect(ko["sign.error.upload"]).toBe(
+      "서명한 문서를 만들지 못했습니다. 다시 시도해 주세요."
+    );
+    expect(ko["sign.error.loadDocument"]).toBe(
+      "문서를 불러오지 못했습니다. 새로고침해 주세요."
+    );
+    expect(ko["sign.batchSignConfirm"]).toBe(
+      "남은 {{count}}곳에 같은 서명을 넣습니다. 계속할까요?"
+    );
+    expect(ko["sign.batchSignConfirmPage"]).toBe(
+      "이 쪽의 남은 {{count}}곳에 같은 서명을 넣습니다. 계속할까요?"
+    );
+    expect(ko["sign.batchSign.partial"]).toBe(
+      "{{done}}곳은 적용했고 {{failed}}곳은 실패했어요. 실패한 칸을 다시 눌러 주세요."
+    );
+    expect(ko["sign.pdf.loadError"]).toBe(
+      "문서를 여는 데 실패했습니다. 다시 시도하거나 다른 기기에서 열어 주세요."
+    );
+    expect(ko["sign.pdf.memoryError"]).toBe(
+      "문서를 여는 데 실패했습니다. 다시 시도하거나 다른 기기에서 열어 주세요."
+    );
+    expect(en["sign.header.meta"]).toBeTruthy();
+    expect(en["sign.batchSignHint"]).toBeTruthy();
+    expect(en["sign.nextArea"]).toBeTruthy();
+    expect(en["sign.pageChip"]).toBeTruthy();
+    expect(en["sign.area.label"]).toBeTruthy();
+    expect(en["sign.area.signedAlt"]).toBeTruthy();
+    expect(en["sign.submit.remaining"]).toBeTruthy();
+    expect(en["sign.submit.confirmTitle"]).toBeTruthy();
+    expect(en["sign.progress.description"]).toBeTruthy();
+    expect(en["sign.error.saveSignature"]).toBeTruthy();
+    expect(en["sign.error.upload"]).toBeTruthy();
+    expect(en["sign.error.loadDocument"]).toBeTruthy();
+    expect(en["sign.batchSignConfirmPage"]).toBeTruthy();
+    expect(en["sign.batchSign.partial"]).toBeTruthy();
+    expect(en["sign.pdf.loadError"]).toBeTruthy();
+    expect(en["sign.pdf.memoryError"]).toBeTruthy();
+  });
   // touch
 });

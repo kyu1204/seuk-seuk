@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+// R42 touch 5
 // R22: document tile/card copy covered in ko.test.ts parity assertions (source of truth, 2).
 import en from "./en";
 

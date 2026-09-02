@@ -92,12 +92,12 @@ export default {
   "sign.notFoundDesc":
     "The link has expired or the address is wrong. Please ask the sender for a new link.",
   "sign.returnHome": "Return to Home",
-  "sign.clickAreas": "Click on the highlighted areas to add your signature",
-  "sign.clickToSign": "Click to sign",
-  "sign.clickToType": "Click to type",
+  "sign.clickAreas": "Tap the highlighted boxes to sign",
+  "sign.clickToSign": "Tap to sign",
+  "sign.clickToType": "Tap to type",
   "sign.enterText": "Enter text",
   "sign.generating": "Generating...",
-  "sign.saveDocument": "Submit Document",
+  "sign.saveDocument": "Submit document",
   "sign.signedDocument": "Your Signed Document",
   "sign.close": "Close",
   "sign.download": "Download",
@@ -352,7 +352,7 @@ export default {
   "sign.completed.title": "Document Already Submitted",
   "sign.completed.message":
     "This document has been signed and submitted. You can download the signed document using the button below.",
-  "sign.completed.noEdit": "No further changes can be made.",
+  "sign.completed.noEdit": "You can't change your signature after submitting.",
   "sign.completed.status": "Signature Completed",
   "sign.completed.download": "Download signed document",
   "sign.completed.downloadLoading": "Preparing download...",
@@ -389,17 +389,18 @@ export default {
   "sign.meta.andMore": "{{name}} and {{count}} more",
 
   // Sign progress overlay
-  "sign.progress.title": "Processing document",
+  "sign.progress.title": "Creating your signed document",
   "sign.progress.warning": "Please wait a moment and do not leave this page.",
+  "sign.progress.description": "Don't close this window. This usually takes about 10 seconds.",
   "sign.progress.preparing": "Preparing to process the document...",
   "sign.progress.compositingPdf": "Embedding signatures into the PDF...",
   "sign.progress.loadingOriginal": "Loading the original document...",
   "sign.progress.processingSignatures": "Processing signature images...",
-  "sign.progress.compositing": "Compositing the document...",
+  "sign.progress.compositing": "Adding signatures to the document…",
   "sign.progress.compressing": "Compressing the image...",
-  "sign.progress.uploading": "Uploading the signed document...",
+  "sign.progress.uploading": "Creating the document…",
   "sign.progress.generatingPdf": "Generating the PDF...",
-  "sign.progress.finalizing": "Finalizing the document...",
+  "sign.progress.finalizing": "Almost done…",
   "sign.progress.imageTimeout": "The image took too long to load.",
   "sign.progress.imageLoadFailed": "Unable to load the image.",
 
@@ -413,11 +414,37 @@ export default {
   "sign.allSignedPrompt": "All signatures are complete. Please submit the document.",
 
   // Batch sign
-  "sign.batchSign": "Sign all",
+  "sign.batchSign": "Sign all at once",
   "sign.batchSignConfirm":
-    "Apply the signature below to the {{count}} remaining signature area(s) on this page. Continue?",
+    "Apply the same signature to the {{count}} remaining area(s). Continue?",
+  "sign.batchSignConfirmPage":
+    "Apply the same signature to the {{count}} remaining area(s) on this page. Continue?",
+  "sign.batchSign.partial":
+    "{{done}} area(s) were signed and {{failed}} failed. Tap the failed areas to try again.",
   "sign.batchSignAction": "Apply to all",
   "sign.batchSignCancel": "Cancel",
+  "sign.batchSignHint": "Sign one area first and you can apply it to the rest at once",
+
+  // Sign screen header/progress bar (R42)
+  "sign.header.meta": "Page {{page}}/{{pages}} · Signed {{completed}}/{{total}}",
+  "sign.header.metaSingle": "Signed {{completed}}/{{total}}",
+  "sign.nextArea": "Next area",
+  "sign.pageChip": "Page {{page}}",
+  "sign.pageChip.remaining": "{{count}} left",
+  "sign.zoomIn": "Zoom in",
+  "sign.zoomOut": "Zoom out",
+  "sign.zoomReset": "Reset zoom",
+  "sign.area.label": "Signature area {{index}}",
+  "sign.area.signedAlt": "Signed",
+  "sign.submit.remaining": "Fill {{count}} more area(s) to submit",
+  "sign.submit.confirmTitle": "Submit this document?",
+  "sign.submit.confirmDescription": "You can't change your signature after submitting.",
+  "sign.submit.confirm": "Submit",
+  "sign.error.saveSignature": "Couldn't save your signature. Please try again.",
+  "sign.error.upload": "Couldn't create the signed document. Please try again.",
+  "sign.error.loadDocument": "Couldn't load the document. Please refresh the page.",
+  "sign.pdf.loadError": "Couldn't open the document. Try again or open it on another device.",
+  "sign.pdf.memoryError": "Couldn't open the document. Try again or open it on another device.",
 
   // Password gate trust footer
   "sign.password.trustNote": "Securely delivered with SeukSeuk",

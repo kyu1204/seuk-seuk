@@ -37,7 +37,7 @@
 
 ### Phase 4 — 서명자 화면
 - [x] R41 서명자 게이트·문서 목록: 보낸 사람 표시, 문서 수·마감, 비밀번호 UX·카피 — docs/work-orders/R41.md
-- [ ] R42 서명 화면: sticky 진행 바, 다음 칸 이동, 페이지별 잔여, 스크롤 잠김 해제, 제출 확인, 에러 배너 — docs/work-orders/R42.md
+- [x] R42 서명 화면: sticky 진행 바, 다음 칸 이동, 페이지별 잔여, 스크롤 잠김 해제, 제출 확인, 에러 배너 — docs/work-orders/R42.md
 - [ ] R43 서명 완료 화면 통합·고아 라우트 삭제·카피 — docs/work-orders/R43.md
 - [ ] R44 서명 패드 품질(DPR 보정, 곡선 스무딩, 되돌리기, 닫기 확인) — docs/work-orders/R44.md
 
@@ -56,6 +56,7 @@
 - 2026-09-02 서버 액션 errorCode 전환(R62)은 이번 루프 범위 밖. 별도 계획.
 
 ## Progress log
+- 2026-09-03 R42 완료: lib/sign/progress.ts 신규(remainingByPage/nextUnsignedArea 순수 함수, +progress.test.ts). SignSingleDocument.tsx 전면 재작성: 상단 sticky(뒤로가기 icon-ghost, 문서명+sign.header.meta/metaSingle, totalAreas>=2일 때 항상 노출되는 한 번에 서명 버튼, 4px 진행바) + 안내 줄(sign.clickAreas/batchSignHint 전환, sign.nextArea 링크가 nextUnsignedArea 로 페이지 이동 후 scrollIntoView) + 문서 위 에러 배너(sign.error.saveSignature/upload/loadDocument, common.retry 로 마지막 실패 동작 재시도) + 문서 아래 줌 툴바(aria-label 3개, 절대 오버레이 제거) + PDF 페이지 칩 줄(remainingByPage 기반 sign.pageChip.remaining) + 하단 sticky 제출바(sign.submit.remaining/saveDocument, sign.completed.noEdit). 미서명 칸을 border-2 border-dashed border-primary/60 bg-primary/5(animate-pulse 제거), 서명 칸을 border-seal bg-seal-soft/60 + 우상단 bg-seal 체크 원으로 교체, 칸에 role="button" tabIndex Enter/Space 핸들러 + aria-label(sign.area.label) 부여. 제출은 AlertDialog(sign.submit.confirmTitle/Description/confirm) 확인 후 기존 handleGenerateDocument 호출(PDF·이미지 합성/업로드 로직·좌표 계산 변경 없음), 처리 중 beforeunload 등록/해제 추가, 진행 모달 문구를 sign.progress.title/compositing/uploading/finalizing/description 3단계로 축약, aria-live="polite" 로 진행 텍스트 노출. 일괄서명 확인문구를 sign.batchSignConfirm/ConfirmPage 로 분리하고 부분 실패 시 sign.batchSign.partial 배너로 안내. components/pdf-page-renderer.tsx 의 한글 하드코딩 2곳을 useLanguage()+sign.pdf.loadError/memoryError 로 교체하고 내부 TypeError detail 을 사용자 문구에 연결하던 concat 을 제거(console.error 로만 남김). ko.ts/en.ts 에 sign.header.*, sign.batchSignHint, sign.nextArea, sign.pageChip(.remaining), sign.area.label/signedAlt, sign.submit.*, sign.error.*, sign.batchSignConfirmPage, sign.batchSign.partial, sign.pdf.loadError/memoryError, sign.zoomIn/Out/Reset 추가 및 sign.saveDocument/clickAreas/clickToSign/clickToType/batchSign/batchSignConfirm/completed.noEdit/progress.title·compositing·uploading·finalizing 값 스펙대로 교체. 신규 테스트 3개(progress.test.ts, pdf-page-renderer.test.tsx, SignSingleDocument.test.tsx 갱신) + ko.test.ts/en.test.ts R42 블록. vitest 265개·tsc 통과, `animate-pulse|bg-white|text-gray-` 및 `Failed to ` SignSingleDocument.tsx 0건 확인.
 - 2026-09-02 계획 수립. 루프 시작 대기.
 - 2026-09-02 R01 완료: globals.css 토큰을 잉크 네이비/도장 주홍/앰버로 교체, .bg-dot-pattern/.bg-grid-pattern/.gradient-text 삭제, tailwind.config.ts에 seal/amber 색 추가, layout.tsx enableSystem 활성화(defaultTheme="system"), 4개 화면(로그인/회원가입/가입완료/서명완료)에서 클리셰 클래스 제거, locale 패리티 테스트(ko.test.ts/en.test.ts) 추가. vitest 37개·tsc 통과.
 - 2026-09-02 R02 완료: components/ui/status-badge-utils.ts(statusBadgeClass/statusLabelKey 순수 함수) + status-badge.tsx(StatusBadge, completed 시 Check 아이콘) 신규. document-card.tsx/publication-card.tsx/publication-detail-content.tsx(2곳) 의 ad-hoc getStatusBadge/getStatusColor·Badge variant 를 StatusBadge 로 교체. ko.ts/en.ts 상태 라벨 값(status.published/expired, dashboard.filter.published, dashboard.tabs.publications, publicationDetail.status.expired) 을 스펙 문구로 통일. vitest 55개·tsc 통과.
