@@ -8,16 +8,16 @@ import { InfiniteScrollDocuments } from "@/components/dashboard/infinite-scroll-
 import { PublicationsList } from "@/components/dashboard/publications-list";
 import { TemplatesList } from "@/components/dashboard/templates-list";
 import { StatusFilter } from "@/components/dashboard/status-filter";
+import { resolveTab, type TabType } from "@/components/dashboard/dashboard-tabs";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/contexts/language-context";
 import type { Document } from "@/lib/supabase/database.types";
 import { CheckSquare, FileX, Upload } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-
-type TabType = "documents" | "publications" | "templates";
 
 interface DashboardInitialData {
   documents: Document[];
@@ -38,7 +38,11 @@ interface DashboardContentProps {
 
 export function DashboardContent({ initialData }: DashboardContentProps) {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<TabType>("documents");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTabState] = useState<TabType>(() =>
+    resolveTab(searchParams.get("tab"))
+  );
   const [documents, setDocuments] = useState<Document[]>(initialData.documents);
   const [hasMore, setHasMore] = useState(initialData.hasMore);
   const [total, setTotal] = useState(initialData.total);
@@ -104,11 +108,13 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
   }, [selectedStatus]);
 
   useEffect(() => {
-    const tab = new URLSearchParams(window.location.search).get("tab");
-    if (tab === "documents" || tab === "publications" || tab === "templates") {
-      setActiveTab(tab);
-    }
-  }, []);
+    setActiveTabState(resolveTab(searchParams.get("tab")));
+  }, [searchParams]);
+
+  const setActiveTab = (tab: TabType) => {
+    setActiveTabState(tab);
+    router.replace(`/dashboard?tab=${tab}`, { scroll: false });
+  };
 
   // Toggle individual document selection
   const toggleDocumentSelection = (documentId: string, canDelete: boolean) => {
@@ -246,7 +252,10 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
       {/* Tab Switcher */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)} className="mb-6">
         <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="documents">{t("dashboard.tabs.documents")}</TabsTrigger>
+          <TabsTrigger value="documents">
+            {t("dashboard.tabs.documents")}
+            <span className="text-muted-foreground ml-1">({statusCounts.all})</span>
+          </TabsTrigger>
           <TabsTrigger value="publications">{t("dashboard.tabs.publications")}</TabsTrigger>
           <TabsTrigger value="templates">{t("dashboard.tabs.templates")}</TabsTrigger>
         </TabsList>

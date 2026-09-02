@@ -114,7 +114,7 @@ export function TemplatesList() {
       }
       toast.success(t("templates.publish", "이 템플릿으로 발행"));
       setPublishTarget(null);
-      router.push("/dashboard");
+      router.push("/dashboard?tab=publications");
     } catch {
       toast.error(t("publish.errorPublishing", "발행 중 오류가 발생했습니다."));
     } finally {

@@ -403,7 +403,7 @@ export default {
   "dashboard.description": "You are managing a total of {{total}} documents.",
   "dashboard.header.title": "My Documents",
   "dashboard.header.description":
-    "Manage your documents and collect signatures",
+    "Upload documents and collect signatures.",
   "dashboard.publish": "Publish",
   "dashboard.upload": "Upload",
   "dashboard.upload.document": "Upload document",
@@ -575,6 +575,11 @@ export default {
   "usage.monthly.limit.reached": "Monthly document creation limit reached",
   "usage.active.title": "Active Documents\n(Published + Completed)",
   "usage.active.limit.reached": "Active document limit reached",
+  "usage.summary.sent": "Documents sent this month",
+  "usage.summary.active": "Documents in progress",
+  "usage.managePlan": "Manage plan",
+  "usage.limit.reachedHint":
+    "Limit reached. Change your plan or buy extra documents.",
   "usage.plan.free": "Basic",
   "usage.plan.suffix": "Plan",
   "usage.upgrade.title": "Need more documents?",

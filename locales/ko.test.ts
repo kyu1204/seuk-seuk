@@ -93,4 +93,20 @@ describe("locale parity (ko/en)", () => {
     expect(ko["login.google"]).toBe("구글");
     expect(en["login.google"]).toBe("Google");
   });
+
+  it("has the R21 dashboard header/usage summary values", () => {
+    expect(ko["dashboard.header.description"]).toBe("문서를 올리고 서명을 받아보세요.");
+    expect(ko["dashboard.publish"]).toBe("발행하기");
+    expect(ko["dashboard.upload.document"]).toBe("문서 올리기");
+    expect(ko["usage.summary.sent"]).toBe("이번 달 보낸 문서");
+    expect(ko["usage.summary.active"]).toBe("진행 중인 문서");
+    expect(ko["usage.managePlan"]).toBe("플랜 관리");
+    expect(ko["usage.limit.reachedHint"]).toBe(
+      "한도에 도달했어요. 플랜을 바꾸거나 추가문서를 구매하세요."
+    );
+
+    expect(en["dashboard.publish"]).toBe("Publish");
+    expect(en["dashboard.upload.document"]).toBe("Upload document");
+    expect(en["usage.summary.sent"]).toBeTruthy();
+  });
 });
