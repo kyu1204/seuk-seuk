@@ -8,6 +8,12 @@ export default {
   "header.languageSelect": "언어 선택",
   "app.description": "문서를 쉽게 업로드하고, 서명하고, 공유하세요",
 
+  // Auth shell (R11)
+  "auth.panel.title": "오늘 보낸 계약서,\n오늘 서명받으세요",
+  "auth.panel.description":
+    "문서를 올리고 서명 칸을 찍은 뒤 링크만 보내면 됩니다. 받는 사람은 가입 없이 휴대폰에서 서명해요.",
+  "auth.panel.sampleDoc": "업무 위탁 계약서",
+
   // Document Upload
   "upload.title": "문서 관리",
   "upload.description": "문서를 업로드하고 서명 영역을 지정하세요",
@@ -242,10 +248,12 @@ export default {
   "login.subtitle": "계정에 로그인하여 문서 서명을 시작하세요",
   "login.email": "이메일",
   "login.password": "비밀번호",
-  "login.forgotPassword": "비밀번호를 잊으셨나요?",
+  "login.forgotPassword": "비밀번호 재설정",
   "login.logIn": "로그인",
   "login.loggingIn": "로그인 중...",
   "login.orContinueWith": "또는 다음으로 계속",
+  "login.orEmail": "또는 이메일로",
+  "login.togglePassword": "비밀번호 표시 전환",
   "login.noAccount": "계정이 없으신가요?",
   "login.createAccount": "계정 만들기",
   "login.register": "회원가입",
@@ -254,6 +262,7 @@ export default {
   "login.welcomeMessage":
     "슥슥에 로그인하여 문서 서명 및 관리를 시작하세요. 안전하고 빠른 서명 경험을 제공합니다.",
   "login.kakaoTalk": "카카오",
+  "login.google": "구글",
 
   // Register Page
   "register.title": "계정 만들기",
@@ -274,13 +283,19 @@ export default {
   "register.kakaoTalk": "카카오",
   "register.privacyAgree": "본인은",
   "register.terms": "이용약관",
-  "register.privacyPolicy": "개인정보 처리방침",
+  "register.termsOfService": "이용약관",
+  "register.privacyPolicy": "개인정보처리방침",
   "register.privacyAgree2": "에 동의합니다.",
+  "register.agreeText": "{{terms}}과 {{privacy}}에 동의합니다",
+  "register.passwordHint": "8자 이상, 영문과 숫자를 포함해 주세요.",
+  "register.agreeRequired": "계속하려면 약관에 동의해 주세요.",
 
   // Register Success
   "register.success.title": "회원가입이 완료되었습니다!",
   "register.success.subtitle": "이메일 인증",
-  "register.success.emailSent": "이메일 인증 메일이 발송되었습니다",
+  "register.success.checkEmail": "이메일을 확인해 주세요",
+  "register.success.emailSent":
+    "인증 메일을 보냈어요. 메일의 링크를 누르면 가입이 끝납니다.",
   "register.success.description":
     "가입하신 이메일 주소로 인증 메일이 발송되었습니다. 이메일을 확인하여 계정을 활성화해주세요.",
   "register.success.checkSpam":
@@ -563,7 +578,7 @@ export default {
   "usage.features.title": "현재 플랜 혜택",
 
   // Forgot Password Page
-  "forgotPassword.title": "비밀번호 찾기",
+  "forgotPassword.title": "비밀번호 재설정",
   "forgotPassword.subtitle":
     "이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.",
   "forgotPassword.emailLabel": "이메일 주소",
@@ -574,9 +589,10 @@ export default {
   "forgotPassword.emailSentMessage":
     "비밀번호 재설정 링크가 이메일로 전송되었습니다.",
   "forgotPassword.checkInbox":
-    "이메일 받은함을 확인하시고 링크를 클릭하여 비밀번호를 재설정하세요.",
+    "이메일 받은편지함을 확인하시고 링크를 클릭하여 비밀번호를 재설정하세요.",
   "forgotPassword.didntReceive": "이메일을 받지 못하셨나요?",
   "forgotPassword.sendAnother": "다시 보내기",
+  "forgotPassword.resendIn": "{{seconds}}초 후 다시 보낼 수 있어요",
 
   // Reset Password Page
   "resetPassword.title": "새 비밀번호 설정",

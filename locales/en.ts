@@ -8,6 +8,12 @@ export default {
   "header.languageSelect": "Select language",
   "app.description": "Upload, sign, and share documents online with ease",
 
+  // Auth shell (R11)
+  "auth.panel.title": "Send a contract today,\nget it signed today",
+  "auth.panel.description":
+    "Upload a document, mark the signature spots, and share the link. Signers don't need an account — they can sign right from their phone.",
+  "auth.panel.sampleDoc": "Service Agreement",
+
   // Document Upload
   "upload.title": "Document Management",
   "upload.description": "Upload documents and define signature areas",
@@ -244,10 +250,12 @@ export default {
   "login.subtitle": "Enter your credentials to access your account",
   "login.email": "Email",
   "login.password": "Password",
-  "login.forgotPassword": "Forgot password?",
+  "login.forgotPassword": "Reset password",
   "login.logIn": "Log in",
   "login.loggingIn": "Logging in...",
   "login.orContinueWith": "or continue with",
+  "login.orEmail": "or with email",
+  "login.togglePassword": "Toggle password visibility",
   "login.noAccount": "Don't have an account?",
   "login.createAccount": "Create an account",
   "login.register": "Register",
@@ -256,6 +264,7 @@ export default {
   "login.welcomeMessage":
     "Sign in to SeukSeuk to start signing and managing your documents. We provide a secure and fast signing experience.",
   "login.kakaoTalk": "Kakao",
+  "login.google": "Google",
 
   // Register Page
   "register.title": "Create an account",
@@ -276,13 +285,19 @@ export default {
   "register.kakaoTalk": "Kakao",
   "register.privacyAgree": "I agree to the",
   "register.terms": "Terms of Service",
+  "register.termsOfService": "Terms of Service",
   "register.privacyPolicy": "Privacy Policy",
   "register.privacyAgree2": ".",
+  "register.agreeText": "I agree to the {{terms}} and {{privacy}}",
+  "register.passwordHint": "8+ characters, including letters and numbers.",
+  "register.agreeRequired": "Please agree to the terms to continue.",
 
   // Register Success
   "register.success.title": "Registration Complete!",
   "register.success.subtitle": "Email Verification",
-  "register.success.emailSent": "Verification email has been sent",
+  "register.success.checkEmail": "Check your email",
+  "register.success.emailSent":
+    "We've sent a verification email. Click the link inside to finish signing up.",
   "register.success.description":
     "A verification email has been sent to your registered email address. Please check your email to activate your account.",
   "register.success.checkSpam":
@@ -569,7 +584,7 @@ export default {
   "usage.features.title": "Current Plan Benefits",
 
   // Forgot Password Page
-  "forgotPassword.title": "Forgot Password",
+  "forgotPassword.title": "Reset Password",
   "forgotPassword.subtitle":
     "Enter your email address and we'll send you a password reset link.",
   "forgotPassword.emailLabel": "Email Address",
@@ -583,6 +598,7 @@ export default {
     "Please check your inbox and click the link to reset your password.",
   "forgotPassword.didntReceive": "Didn't receive an email?",
   "forgotPassword.sendAnother": "Send Another",
+  "forgotPassword.resendIn": "You can resend in {{seconds}}s",
 
   // Reset Password Page
   "resetPassword.title": "Set New Password",

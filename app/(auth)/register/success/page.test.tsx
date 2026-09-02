@@ -10,3 +10,15 @@ describe("register/success page.tsx cliche classes", () => {
     expect(src).not.toMatch(/gradient-text/);
   });
 });
+
+describe("register/success page.tsx R11 auth shell wiring", () => {
+  it("uses AuthShell and register.success.checkEmail/emailSent", () => {
+    expect(src).toMatch(/AuthShell/);
+    expect(src).toMatch(/register\.success\.checkEmail/);
+    expect(src).toMatch(/register\.success\.emailSent/);
+  });
+
+  it("does not use the retired register.success.title copy", () => {
+    expect(src).not.toMatch(/register\.success\.title/);
+  });
+});

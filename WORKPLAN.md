@@ -23,7 +23,7 @@
 - [x] R03 사이트 헤더 리뉴얼(앱 내비, aria-label, 스크롤 효과 정리) — docs/work-orders/R03.md
 
 ### Phase 1 — 인증
-- [ ] R11 로그인·회원가입·비밀번호 재설정·가입 완료 화면 리뉴얼과 카피 — docs/work-orders/R11.md
+- [x] R11 로그인·회원가입·비밀번호 재설정·가입 완료 화면 리뉴얼과 카피 — docs/work-orders/R11.md
 
 ### Phase 2 — 대시보드
 - [ ] R21 대시보드 헤더·사용량 요약·탭 URL 동기화·카피 — docs/work-orders/R21.md
@@ -59,3 +59,4 @@
 - 2026-09-02 R01 완료: globals.css 토큰을 잉크 네이비/도장 주홍/앰버로 교체, .bg-dot-pattern/.bg-grid-pattern/.gradient-text 삭제, tailwind.config.ts에 seal/amber 색 추가, layout.tsx enableSystem 활성화(defaultTheme="system"), 4개 화면(로그인/회원가입/가입완료/서명완료)에서 클리셰 클래스 제거, locale 패리티 테스트(ko.test.ts/en.test.ts) 추가. vitest 37개·tsc 통과.
 - 2026-09-02 R02 완료: components/ui/status-badge-utils.ts(statusBadgeClass/statusLabelKey 순수 함수) + status-badge.tsx(StatusBadge, completed 시 Check 아이콘) 신규. document-card.tsx/publication-card.tsx/publication-detail-content.tsx(2곳) 의 ad-hoc getStatusBadge/getStatusColor·Badge variant 를 StatusBadge 로 교체. ko.ts/en.ts 상태 라벨 값(status.published/expired, dashboard.filter.published, dashboard.tabs.publications, publicationDetail.status.expired) 을 스펙 문구로 통일. vitest 55개·tsc 통과.
 - 2026-09-02 R03 완료: site-header.tsx 를 sticky top-0 z-50 h-16 border-b bg-background/95 backdrop-blur 로 고정(스크롤 효과·bg-transparent 분기 삭제, showScrollEffect prop 은 무시하고 유지), 로그인 시 문서/요금제/결제 내비(usePathname prefix 매칭 강조) 추가, 로고·nav 에 aria-label 부여. theme-toggle.tsx/language-selector.tsx 를 아이콘 전용 36px(w-9) 버튼 + aria-label 로 교체. locale에 header.nav.documents/pricing/bills, header.themeToggle, header.languageSelect 추가(ko/en). vitest 65개·tsc 통과.
+- 2026-09-02 R11 완료: app/(auth)/components/auth-shell.tsx 신규(min-h-screen md:grid md:grid-cols-2, 좌측 bg-primary 브랜드 패널 + 완료 상태 미니 카드, 우측 폼 슬롯, 모바일 전용 로고). LoginPage/RegisterPage/ForgotPasswordPage/register/success/page.tsx 를 AuthShell 로 재구성: 로그인엔 카카오·구글(44px, h-11) + or-이메일 구분선 + 비밀번호 옆 재설정 링크(44px 터치 타깃) + 보기 토글(aria-label) + state.error 폼 레벨 배너, 회원가입엔 약관 문구를 register.agreeText 로 통합(& 구분자 제거)하고 비밀번호 힌트·미동의 시 agreeRequired 문구·제출 버튼 항상 활성화, 비밀번호 찾기는 재전송이 실제 forgotPassword 서버 액션을 다시 호출하고 30초 쿨다운(resendIn) 을 두도록, 가입완료는 checkEmail/emailSent 카피로 교체(구 register.success.title 미사용). google-login-button.tsx/kakao-login-button.tsx 도 h-11 + login.google 로케일 키로 정리. ko.ts/en.ts 에 auth.panel.*, login.orEmail/togglePassword/google, register.agreeText/termsOfService/passwordHint/agreeRequired, forgotPassword.title/resendIn/checkInbox, register.success.checkEmail/emailSent 추가·값 수정, ko.test.ts/en.test.ts 에 R11 assertion 추가. vitest 90개·tsc 통과, AuthShell 4개 페이지 각 1건 이상·`" & "` 구분자 0건 확인.

@@ -57,4 +57,40 @@ describe("locale parity (ko/en)", () => {
     expect(en["header.themeToggle"]).toBe("Change theme");
     expect(en["header.languageSelect"]).toBe("Select language");
   });
+
+  it("has the R11 auth shell/copy values", () => {
+    expect(ko["auth.panel.title"]).toBe(
+      "오늘 보낸 계약서,\n오늘 서명받으세요"
+    );
+    expect(ko["auth.panel.description"]).toBe(
+      "문서를 올리고 서명 칸을 찍은 뒤 링크만 보내면 됩니다. 받는 사람은 가입 없이 휴대폰에서 서명해요."
+    );
+    expect(ko["auth.panel.sampleDoc"]).toBe("업무 위탁 계약서");
+    expect(ko["login.forgotPassword"]).toBe("비밀번호 재설정");
+    expect(ko["login.orEmail"]).toBe("또는 이메일로");
+    expect(ko["login.togglePassword"]).toBe("비밀번호 표시 전환");
+    expect(ko["register.termsOfService"]).toBe("이용약관");
+    expect(ko["register.agreeText"]).toBe("{{terms}}과 {{privacy}}에 동의합니다");
+    expect(ko["register.privacyPolicy"]).toBe("개인정보처리방침");
+    expect(ko["register.passwordHint"]).toBe(
+      "8자 이상, 영문과 숫자를 포함해 주세요."
+    );
+    expect(ko["register.agreeRequired"]).toBe(
+      "계속하려면 약관에 동의해 주세요."
+    );
+    expect(ko["forgotPassword.title"]).toBe("비밀번호 재설정");
+    expect(ko["forgotPassword.resendIn"]).toBe(
+      "{{seconds}}초 후 다시 보낼 수 있어요"
+    );
+    expect(ko["forgotPassword.checkInbox"]).toMatch("받은편지함");
+    expect(ko["register.success.checkEmail"]).toBe("이메일을 확인해 주세요");
+    expect(ko["register.success.emailSent"]).toBe(
+      "인증 메일을 보냈어요. 메일의 링크를 누르면 가입이 끝납니다."
+    );
+    expect(en["auth.panel.sampleDoc"]).toBe("Service Agreement");
+    expect(en["forgotPassword.title"]).toBe("Reset Password");
+    expect(en["register.privacyPolicy"]).toBe("Privacy Policy");
+    expect(ko["login.google"]).toBe("구글");
+    expect(en["login.google"]).toBe("Google");
+  });
 });
