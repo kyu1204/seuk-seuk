@@ -85,12 +85,17 @@ export class ProcessWebhook {
       // Log detailed subscription data for debugging
 
       // Calculate ends_at from scheduled_change or next_billed_at
+      // Webhook payloads arrive snake_case; the SDK types only declare camelCase.
+      const raw = eventData.data as typeof eventData.data & {
+        scheduled_change?: { action?: string; effective_at?: string | null } | null;
+        next_billed_at?: string | null;
+      };
       let endsAt: string | null = null;
       let finalStatus = this.mapPaddleStatus(eventData.data.status);
       
       // Priority 1: If subscription has scheduled cancellation, use effective_at
-      if (eventData.data.scheduled_change?.action === 'cancel') {
-        endsAt = eventData.data.scheduled_change.effective_at || null;
+      if (raw.scheduled_change?.action === 'cancel') {
+        endsAt = raw.scheduled_change.effective_at || null;
 
         // Check if subscription has already expired
         if (endsAt && new Date(endsAt) < new Date()) {
@@ -98,8 +103,8 @@ export class ProcessWebhook {
         }
       }
       // Priority 2: Use next_billed_at for active recurring subscriptions
-      else if (eventData.data.next_billed_at) {
-        endsAt = eventData.data.next_billed_at;
+      else if (raw.next_billed_at) {
+        endsAt = raw.next_billed_at;
       }
       // Priority 3: Fallback to current billing period end date
       else if (eventData.data.currentBillingPeriod?.endsAt) {
