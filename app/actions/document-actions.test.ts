@@ -10,4 +10,8 @@ describe("document-actions.ts source", () => {
       .find((line) => line.includes('"id, filename, alias, status, signed_file_url'));
     expect(selectLine).toContain("page_count");
   });
+
+  it("exports getDocumentSignatureCounts for the publish document list", () => {
+    expect(source).toContain("export async function getDocumentSignatureCounts(");
+  });
 });

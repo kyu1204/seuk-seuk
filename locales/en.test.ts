@@ -22,6 +22,14 @@ describe("en locale usage summary keys exist", () => {
   });
 });
 
+// R32: publish.description/publish.password.optional/publish.documents.* values
+// checked via ko.test.ts parity ("R32 publish screen copy values").
+describe("en locale R32 publish keys exist", () => {
+  it("has publish.documents.meta", () => {
+    expect(en["publish.documents.meta"]).toBeTruthy();
+  });
+});
+
 describe("en locale has no stray Korean text", () => {
   it("contains no Hangul outside the allowlist", () => {
     const offenders = Object.entries(en)

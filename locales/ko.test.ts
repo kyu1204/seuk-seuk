@@ -212,4 +212,16 @@ describe("locale parity (ko/en)", () => {
     expect(en["upload.error.capture"]).toBeTruthy();
     expect(en["common.back"]).toBeTruthy();
   });
+
+  it("has the R32 publish screen copy values", () => {
+    expect(ko["publish.description"]).toBe(
+      "선택한 문서를 링크 하나로 묶어 보냅니다. 받는 사람은 링크에서 바로 서명해요."
+    );
+    expect(ko["publish.password.optional"]).toBe("선택");
+    expect(ko["publish.submit"]).toBe("링크 만들기");
+    expect(ko["publish.documents.meta"]).toBe("{{pages}}쪽 · 서명 {{signatures}}");
+    expect(en["publish.description"]).toBeTruthy();
+    expect(en["publish.password.optional"]).toBeTruthy();
+    expect(en["publish.documents.title"]).toBeTruthy();
+  });
 });
