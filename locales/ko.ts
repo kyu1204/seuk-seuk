@@ -112,10 +112,14 @@ export default {
 
   // Signature Modal
   "signature.title": "서명 추가",
-  "signature.instruction": "위에 마우스나 손가락으로 서명을 그리세요",
+  "signature.instruction": "네모 칸 안에 서명해 주세요",
   "signature.clear": "지우기",
-  "signature.sign": "문서 서명",
+  "signature.sign": "이 서명 사용하기",
   "signature.signing": "서명 중...",
+  "signature.undo": "되돌리기",
+  "signature.placeholder": "여기에 서명해 주세요",
+  "signature.discardTitle": "그린 서명을 버릴까요?",
+  "signature.discardConfirm": "버리기",
 
   // Text Modal
   "textModal.title": "텍스트 입력",

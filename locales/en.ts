@@ -112,11 +112,14 @@ export default {
 
   // Signature Modal
   "signature.title": "Add Your Signature",
-  "signature.instruction":
-    "Draw your signature above using your mouse or finger",
+  "signature.instruction": "Sign inside the box",
   "signature.clear": "Clear",
-  "signature.sign": "Sign Document",
+  "signature.sign": "Use This Signature",
   "signature.signing": "Signing...",
+  "signature.undo": "Undo",
+  "signature.placeholder": "Sign here",
+  "signature.discardTitle": "Discard your signature?",
+  "signature.discardConfirm": "Discard",
 
   // Text Modal
   "textModal.title": "Enter Text",

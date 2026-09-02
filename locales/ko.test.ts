@@ -405,4 +405,13 @@ describe("R43 sign complete/download keys", () => {
     );
     expect(offenders).toEqual([]);
   });
+
+  it("has R44 signature pad keys", () => {
+    expect(ko["signature.undo"]).toBe("되돌리기");
+    expect(ko["signature.placeholder"]).toBe("여기에 서명해 주세요");
+    expect(ko["signature.discardTitle"]).toBe("그린 서명을 버릴까요?");
+    expect(ko["signature.discardConfirm"]).toBe("버리기");
+    expect(ko["signature.instruction"]).toBe("네모 칸 안에 서명해 주세요");
+    expect(ko["signature.sign"]).toBe("이 서명 사용하기");
+  });
 });

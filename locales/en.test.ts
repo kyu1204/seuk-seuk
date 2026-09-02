@@ -48,6 +48,13 @@ describe("en locale R43 sign keys exist", () => {
     expect(en["sign.complete.remaining"]).toBeTruthy();
     expect(en["sign.download.bundleName"]).toBeTruthy();
   });
+
+  it("has R44 signature pad keys", () => {
+    expect(en["signature.undo"]).toBeTruthy();
+    expect(en["signature.placeholder"]).toBeTruthy();
+    expect(en["signature.discardTitle"]).toBeTruthy();
+    expect(en["signature.discardConfirm"]).toBeTruthy();
+  });
 });
 
 describe("en locale has no stray Korean text", () => {
