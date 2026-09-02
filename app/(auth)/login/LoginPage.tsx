@@ -22,12 +22,11 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* Left side - Pattern background */}
       <div className="hidden md:block md:w-1/2 relative bg-primary/5 overflow-hidden">
-        <div className="absolute inset-0 bg-dot-pattern opacity-30"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5"></div>
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="max-w-md text-center">
             <FileSignature className="h-20 w-20 text-primary mx-auto mb-6" />
-            <h1 className="text-4xl font-bold mb-4 gradient-text">
+            <h1 className="text-4xl font-bold mb-4">
               {t("login.welcomeBack")}
             </h1>
             <p className="text-lg text-muted-foreground">

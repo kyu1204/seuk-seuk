@@ -109,8 +109,8 @@ export default async function RootLayout({
       <body>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
           <LanguageProvider>{children}</LanguageProvider>

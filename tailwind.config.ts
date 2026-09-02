@@ -53,6 +53,14 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        seal: {
+          DEFAULT: "hsl(var(--seal))",
+          soft: "hsl(var(--seal-soft))",
+        },
+        amber: {
+          DEFAULT: "hsl(var(--amber))",
+          soft: "hsl(var(--amber-soft))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
