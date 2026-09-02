@@ -43,4 +43,18 @@ describe("locale parity (ko/en)", () => {
     expect(en["dashboard.filter.published"]).toBe("Published");
     expect(en["dashboard.tabs.publications"]).toBe("Published");
   });
+
+  it("has the R03 header nav/aria label values", () => {
+    expect(ko["header.nav.documents"]).toBe("내 문서");
+    expect(ko["header.nav.pricing"]).toBe("요금제");
+    expect(ko["header.nav.bills"]).toBe("결제");
+    expect(ko["header.themeToggle"]).toBe("테마 변경");
+    expect(ko["header.languageSelect"]).toBe("언어 선택");
+
+    expect(en["header.nav.documents"]).toBe("Documents");
+    expect(en["header.nav.pricing"]).toBe("Pricing");
+    expect(en["header.nav.bills"]).toBe("Billing");
+    expect(en["header.themeToggle"]).toBe("Change theme");
+    expect(en["header.languageSelect"]).toBe("Select language");
+  });
 });

@@ -1,6 +1,11 @@
 export default {
   // Header
   "app.title": "슥슥",
+  "header.nav.documents": "내 문서",
+  "header.nav.pricing": "요금제",
+  "header.nav.bills": "결제",
+  "header.themeToggle": "테마 변경",
+  "header.languageSelect": "언어 선택",
   "app.description": "문서를 쉽게 업로드하고, 서명하고, 공유하세요",
 
   // Document Upload

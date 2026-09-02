@@ -1,6 +1,11 @@
 export default {
   // Header
   "app.title": "SeukSeuk",
+  "header.nav.documents": "Documents",
+  "header.nav.pricing": "Pricing",
+  "header.nav.bills": "Billing",
+  "header.themeToggle": "Change theme",
+  "header.languageSelect": "Select language",
   "app.description": "Upload, sign, and share documents online with ease",
 
   // Document Upload

@@ -8,66 +8,62 @@ import { Skeleton } from "@/components/ui/skeleton";
 import UserAvatar from "@/components/user-avatar";
 import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
 
 interface SiteHeaderProps {
   showScrollEffect?: boolean;
 }
 
-export default function SiteHeader({
-  showScrollEffect = true,
-}: SiteHeaderProps) {
+export default function SiteHeader({}: SiteHeaderProps) {
   const { t } = useLanguage();
   const { user, loading, isAuthenticated } = useAuth();
-  const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
-  useEffect(() => {
-    if (!showScrollEffect) return;
-
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [showScrollEffect]);
+  const navLinkClass = (href: string) =>
+    cn(
+      pathname?.startsWith(href)
+        ? "text-foreground font-semibold"
+        : "text-muted-foreground"
+    );
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-200",
-        showScrollEffect && scrolled
-          ? "bg-background/80 backdrop-blur-md border-b"
-          : showScrollEffect
-          ? "bg-transparent"
-          : "bg-background border-b"
-      )}
-    >
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <FileSignature className="h-8 w-8 text-primary" />
-            <span className="font-bold text-xl">{t("app.title")}</span>
+    <header className="sticky top-0 z-50 h-16 border-b bg-background/95 backdrop-blur">
+      <div className="container mx-auto px-4 h-full flex justify-between items-center">
+        <div className="flex items-center gap-6">
+          <Link href="/" aria-label={t("app.title")} className="flex items-center gap-2">
+            <FileSignature className="h-[22px] w-[22px] text-primary" />
+            <span className="font-bold text-lg">{t("app.title")}</span>
           </Link>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <LanguageSelector />
-            {loading ? (
-              /* 로딩 중일 때 스켈레톤 표시 - 아바타와 버튼 사이의 중간 크기 */
-              <Skeleton className="h-8 w-12 rounded-md" />
-            ) : isAuthenticated ? (
-              /* 로그인 상태일 때 사용자 아바타 표시 */
-              <UserAvatar user={user!} />
-            ) : (
-              /* 비로그인 상태일 때 로그인 버튼 표시 */
-              <Link href="/login">
-                <Button className="bg-primary hover:bg-primary/90">
-                  {t("login.logIn")}
-                </Button>
+          {isAuthenticated && (
+            <nav aria-label="site navigation" className="hidden md:flex gap-6 text-sm">
+              <Link href="/dashboard" className={navLinkClass("/dashboard")}>
+                {t("header.nav.documents")}
               </Link>
-            )}
-          </div>
+              <Link href="/pricing" className={navLinkClass("/pricing")}>
+                {t("header.nav.pricing")}
+              </Link>
+              <Link href="/bills" className={navLinkClass("/bills")}>
+                {t("header.nav.bills")}
+              </Link>
+            </nav>
+          )}
+        </div>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <LanguageSelector />
+          {loading ? (
+            <Skeleton className="h-8 w-12 rounded-md" />
+          ) : isAuthenticated ? (
+            <UserAvatar user={user!} />
+          ) : (
+            <Link href="/login">
+              <Button variant="default" size="sm">
+                {t("login.logIn")}
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

@@ -5,6 +5,7 @@ import en from "./en";
 // shown in the language switcher regardless of active UI language.
 const HANGUL_ALLOWLIST = new Set(["language.ko"]);
 
+// R03: header.* keys added for site-header renewal, checked via ko.test.ts parity.
 describe("en locale has no stray Korean text", () => {
   it("contains no Hangul outside the allowlist", () => {
     const offenders = Object.entries(en)
