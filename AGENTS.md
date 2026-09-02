@@ -20,3 +20,52 @@ Commits follow Conventional Commits with an optional leading emoji, e.g., `✨ f
 
 ## Security & Configuration Tips
 Copy `.env.example` to `.env.local` and populate Supabase keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and when needed `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`). Keep secrets out of version control; server-only keys belong in Vercel or local shell exports. Paddle webhook handlers under `app/api/` expect verified signatures—use sandbox keys while testing. Sentry DSNs should live in environment config so instrumentation remains active without leaking credentials.
+
+
+<!-- oh-my-harness:start:tdd-workflow -->
+## TDD Rules
+- Write or update the failing test (.test.ts / .test.tsx) BEFORE touching the source file
+- Red → Green → Refactor; never skip the red step
+- Run `npx vitest run` before every commit; all tests must pass
+
+<!-- oh-my-harness:end:tdd-workflow -->
+
+
+<!-- oh-my-harness:start:branch-workflow -->
+## Branch Rules
+- Never commit directly on main
+- Before starting work: `git fetch origin && git checkout -b <type>/<topic> origin/main` (always branch from latest main)
+- If the current branch is already merged into main, create a NEW branch from latest main instead of reusing it
+- Commit per unit of work with a descriptive message (feat/fix/refactor/test prefix)
+
+<!-- oh-my-harness:end:branch-workflow -->
+
+
+<!-- oh-my-harness:start:nextjs-rules -->
+## Next.js Development Rules
+- Use App Router (app/ directory), never Pages Router
+- Components are Server Components by default; add 'use client' only when needed
+- Data mutations go through Server Actions (app/actions/)
+- Use next/image for images, next/link for internal links
+
+<!-- oh-my-harness:end:nextjs-rules -->
+
+
+<!-- oh-my-harness:start:omh-loop-protocol -->
+## Autonomous Loop Protocol
+
+The autonomous loop runs one work order per fresh session. `WORKPLAN.md` is the single source of truth.
+
+- Read `WORKPLAN.md` first; it is the single source of truth.
+- Pick the next unchecked task and implement it exactly as its work order in `docs/work-orders/<ID>.md` says. Make no design decisions.
+- No work order, no work: mark the task "BLOCKED: no work order" and stop. Never write your own work order.
+- Run the work order's acceptance commands before ticking any checkbox.
+- Architect-only, never edited by the loop: `docs/work-orders`, `docs/design`, `app/(home)`, `harness.yaml`.
+- If a task needs a human, or after three failed attempts, mark it "BLOCKED: <reason>" and move on. Never idle waiting for a person.
+- One task, one commit; update the checkbox and the progress log in the same commit.
+- Print exactly OMH_GOAL_COMPLETE as the final line ONLY when every task is done and verified; otherwise never mention that string in any form.
+
+Start: `omh loop start`
+Watch: `omh loop status`, then `tail -f .omh/state/loop/runs/<runId>/events.jsonl`
+Stop: `omh loop stop` (`--now` to skip the grace period)
+<!-- oh-my-harness:end:omh-loop-protocol -->

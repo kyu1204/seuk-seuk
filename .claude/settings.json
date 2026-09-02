@@ -1,0 +1,163 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install*)",
+      "Bash(pnpm build*)",
+      "Bash(npx vitest*)",
+      "Bash(npx tsc*)",
+      "Bash(next lint*)",
+      "Bash(git fetch*)",
+      "Bash(git checkout -b*)",
+      "Bash(git branch*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(sudo *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-branch-guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-tdd-guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-commit-test-gate.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-commit-typecheck-gate.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-path-guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-lockfile-guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-secret-file-guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-command-guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-loop-guard.sh'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-lint-on-save.sh'"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/minkyu/Documents/seuk-seuk/.omh/hooks/catalog-compact-context.sh'"
+          }
+        ]
+      }
+    ]
+  },
+  "_ohMyHarness": {
+    "managedAt": "2026-09-02T13:52:49.353Z",
+    "presets": [
+      "harness"
+    ],
+    "managedPermissions": {
+      "allow": [
+        "Bash(pnpm install*)",
+        "Bash(pnpm build*)",
+        "Bash(npx vitest*)",
+        "Bash(npx tsc*)",
+        "Bash(next lint*)",
+        "Bash(git fetch*)",
+        "Bash(git checkout -b*)",
+        "Bash(git branch*)",
+        "Bash(git status*)",
+        "Bash(git diff*)",
+        "Bash(git log*)",
+        "Bash(git add*)",
+        "Bash(git commit*)"
+      ],
+      "deny": [
+        "Bash(rm -rf /)",
+        "Bash(sudo *)",
+        "Bash(git push --force*)",
+        "Bash(git push -f*)",
+        "Bash(git reset --hard*)"
+      ]
+    }
+  }
+}

@@ -1,0 +1,139 @@
+version: '1.0'
+project:
+  name: seuk-seuk
+  description: Next.js 14 App Router digital document signing app (Supabase). TDD workflow with branch-per-task.
+  stacks:
+    - name: frontend
+      framework: nextjs
+      language: typescript
+      packageManager: pnpm
+      testRunner: vitest
+      linter: eslint
+rules:
+  - id: tdd-workflow
+    title: TDD Workflow
+    content: |
+      ## TDD Rules
+      - Write or update the failing test (.test.ts / .test.tsx) BEFORE touching the source file
+      - Red → Green → Refactor; never skip the red step
+      - Run `npx vitest run` before every commit; all tests must pass
+    priority: 10
+  - id: branch-workflow
+    title: Branch & Commit Workflow
+    content: >
+      ## Branch Rules
+
+      - Never commit directly on main
+
+      - Before starting work: `git fetch origin && git checkout -b <type>/<topic> origin/main` (always branch from
+      latest main)
+
+      - If the current branch is already merged into main, create a NEW branch from latest main instead of reusing it
+
+      - Commit per unit of work with a descriptive message (feat/fix/refactor/test prefix)
+    priority: 11
+  - id: nextjs-rules
+    title: Next.js Rules
+    content: |
+      ## Next.js Development Rules
+      - Use App Router (app/ directory), never Pages Router
+      - Components are Server Components by default; add 'use client' only when needed
+      - Data mutations go through Server Actions (app/actions/)
+      - Use next/image for images, next/link for internal links
+    priority: 20
+enforcement:
+  preCommit: []
+  blockedPaths: []
+  blockedCommands: []
+  postSave: []
+hooks:
+  - block: branch-guard
+    params:
+      mainBranch: main
+    mode: block
+  - block: tdd-guard
+    params:
+      srcPattern: \.(ts|tsx)$
+      testPattern: \.(test|spec)\.(ts|tsx)$
+    mode: block
+  - block: commit-test-gate
+    params:
+      testCommand: npx vitest run
+    mode: block
+  - block: commit-typecheck-gate
+    params:
+      typecheckCommand: npx tsc --noEmit
+    mode: block
+  - block: lint-on-save
+    params:
+      filePattern: '*.{ts,tsx}'
+      command: next lint
+      scope: file
+    mode: block
+  - block: path-guard
+    params:
+      blockedPaths:
+        - node_modules/
+        - dist/
+        - .next/
+    mode: block
+  - block: lockfile-guard
+    params: {}
+    mode: block
+  - block: secret-file-guard
+    params: {}
+    mode: block
+  - block: command-guard
+    params:
+      patterns:
+        - rm -rf /
+        - sudo rm
+        - git push --force
+        - git push -f
+        - git checkout main
+        - git reset --hard
+    mode: block
+  - block: compact-context
+    params:
+      contextFile: CLAUDE.md
+    mode: block
+loop:
+  enabled: true
+  ledger: WORKPLAN.md
+  workOrders: docs/work-orders
+  model: sonnet
+  sentinel: OMH_GOAL_COMPLETE
+  interval: 120
+  blockedBackoff: 1800
+  limitBackoff: 1800
+  emptyBackoff: 300
+  stallStreak: 3
+  turnTimeout: 7200
+  architectOnly:
+    - docs/work-orders
+    - docs/design
+    - app/(home)
+    - harness.yaml
+  isolate: true
+  runtime: claude
+permissions:
+  allow:
+    - Bash(pnpm install*)
+    - Bash(pnpm build*)
+    - Bash(npx vitest*)
+    - Bash(npx tsc*)
+    - Bash(next lint*)
+    - Bash(git fetch*)
+    - Bash(git checkout -b*)
+    - Bash(git branch*)
+    - Bash(git status*)
+    - Bash(git diff*)
+    - Bash(git log*)
+    - Bash(git add*)
+    - Bash(git commit*)
+  deny:
+    - Bash(rm -rf /)
+    - Bash(sudo *)
+    - Bash(git push --force*)
+    - Bash(git push -f*)
+    - Bash(git reset --hard*)
