@@ -415,3 +415,27 @@ describe("R43 sign complete/download keys", () => {
     expect(ko["signature.sign"]).toBe("이 서명 사용하기");
   });
 });
+
+describe("R51 pricing page keys", () => {
+  it("has the R51 pricing copy values", () => {
+    expect(ko["pricingPage.title"]).toBe("요금제");
+    expect(ko["pricingPage.subtitle"]).toBe(
+      "플랜은 한 달에 보내는 문서 수로만 나뉩니다."
+    );
+    expect(ko["pricingPage.currentPlan"]).toBe(
+      "현재 {{planName}} 플랜 · 이번 달 {{used}}/{{limit}}건 보냄"
+    );
+    expect(ko["pricingPage.selectPlan"]).toBe("이 플랜으로 변경");
+    expect(ko["pricingPage.errorTitle"]).toBe("요금제를 불러오지 못했습니다");
+    expect(ko["pricingPage.downgradeNotAllowed"]).toBeTruthy();
+  });
+
+  it("removes pricingPage.alertMessage", () => {
+    expect(ko["pricingPage.alertMessage"]).toBeUndefined();
+    expect(en["pricingPage.alertMessage"]).toBeUndefined();
+  });
+
+  it("keeps pricing.limitPerMonth matching the home page wording", () => {
+    expect(ko["pricing.limitPerMonth"]).toBe("월 {{count}}건 문서 발송");
+  });
+});

@@ -57,6 +57,20 @@ describe("en locale R43 sign keys exist", () => {
   });
 });
 
+describe("R51 pricing page keys", () => {
+  it("has the R51 pricing copy values in English", () => {
+    expect(en["pricingPage.title"]).toBeTruthy();
+    expect(en["pricingPage.subtitle"]).toBeTruthy();
+    expect(en["pricingPage.currentPlan"]).toContain("{{used}}");
+    expect(en["pricingPage.currentPlan"]).toContain("{{limit}}");
+    expect(en["pricingPage.downgradeNotAllowed"]).toBeTruthy();
+  });
+
+  it("removes pricingPage.alertMessage", () => {
+    expect(en["pricingPage.alertMessage"]).toBeUndefined();
+  });
+});
+
 describe("en locale has no stray Korean text", () => {
   it("contains no Hangul outside the allowlist", () => {
     const offenders = Object.entries(en)

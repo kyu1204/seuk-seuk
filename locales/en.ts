@@ -206,10 +206,12 @@ export default {
   "pricing.limitUnlimitedPerMonth": "Unlimited documents",
 
   // Pricing Page Specific Keys
-  "pricingPage.title": "Choose Your Plan",
+  "pricingPage.title": "Pricing",
   "pricingPage.description":
     "Select a plan that fits your needs and unlock more features",
-  "pricingPage.currentPlan": "Currently using {{planName}} plan",
+  "pricingPage.subtitle": "Plans differ only by how many documents you send per month.",
+  "pricingPage.currentPlan": "Currently on {{planName}} plan · {{used}}/{{limit}} sent this month",
+  "pricingPage.currentPlanNoUsage": "Currently on {{planName}} plan",
   "pricingPage.popular": "Popular",
   "pricingPage.currentBadge": "Current Plan",
   "pricingPage.free": "Free",
@@ -219,18 +221,17 @@ export default {
   "pricingPage.unlimited": "Unlimited",
   "pricingPage.currentlyUsing": "Currently Using",
   "pricingPage.lowerPlan": "Using Higher Plan",
+  "pricingPage.downgradeNotAllowed": "Downgrade not allowed",
   "pricingPage.startFree": "Start Free",
   "pricingPage.contactUs": "Contact Us",
-  "pricingPage.selectPlan": "Select Plan",
+  "pricingPage.selectPlan": "Switch to this plan",
   "pricingPage.additionalInfo":
     "All plans include basic electronic signature features.",
   "pricingPage.additionalInfo2":
     "You can change or cancel your plan anytime.",
-  "pricingPage.errorTitle": "An error occurred",
+  "pricingPage.errorTitle": "Failed to load pricing",
   "pricingPage.backButton": "Go Back",
   "pricingPage.loadError": "Failed to load pricing data",
-  "pricingPage.alertMessage":
-    "{planName} plan has been selected. Payment integration coming soon.",
 
   // Pricing Page - Plan Details
   "pricingPage.plans.basic.description": "Basic plan for individual users",

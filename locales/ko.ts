@@ -206,10 +206,12 @@ export default {
   "pricing.limitUnlimitedPerMonth": "문서 발송 무제한",
 
   // Pricing Page Specific Keys
-  "pricingPage.title": "요금제 선택",
+  "pricingPage.title": "요금제",
   "pricingPage.description":
     "필요에 맞는 플랜을 선택하고 더 많은 기능을 이용하세요",
-  "pricingPage.currentPlan": "현재 {{planName}} 플랜을 이용 중입니다",
+  "pricingPage.subtitle": "플랜은 한 달에 보내는 문서 수로만 나뉩니다.",
+  "pricingPage.currentPlan": "현재 {{planName}} 플랜 · 이번 달 {{used}}/{{limit}}건 보냄",
+  "pricingPage.currentPlanNoUsage": "현재 {{planName}} 플랜",
   "pricingPage.popular": "인기",
   "pricingPage.currentBadge": "현재 플랜",
   "pricingPage.free": "무료",
@@ -219,18 +221,17 @@ export default {
   "pricingPage.unlimited": "무제한",
   "pricingPage.currentlyUsing": "현재 이용 중",
   "pricingPage.lowerPlan": "상위 플랜 사용중",
+  "pricingPage.downgradeNotAllowed": "다운그레이드 불가",
   "pricingPage.startFree": "무료로 시작하기",
   "pricingPage.contactUs": "문의하기",
-  "pricingPage.selectPlan": "플랜 선택하기",
+  "pricingPage.selectPlan": "이 플랜으로 변경",
   "pricingPage.additionalInfo":
     "모든 플랜에는 기본 전자서명 기능이 포함되어 있습니다.",
   "pricingPage.additionalInfo2":
     "언제든지 플랜을 변경하거나 취소할 수 있습니다.",
-  "pricingPage.errorTitle": "오류가 발생했습니다",
+  "pricingPage.errorTitle": "요금제를 불러오지 못했습니다",
   "pricingPage.backButton": "뒤로 가기",
   "pricingPage.loadError": "가격 정보를 불러오지 못했습니다",
-  "pricingPage.alertMessage":
-    "{planName} 플랜이 선택되었습니다. 결제 모듈 연동 예정입니다.",
 
   // Pricing Page - Plan Details
   "pricingPage.plans.basic.description": "개인 사용자를 위한 베이직 플랜",
