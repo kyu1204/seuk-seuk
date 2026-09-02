@@ -101,9 +101,14 @@ export default {
   "sign.signedDocument": "Your Signed Document",
   "sign.close": "Close",
   "sign.download": "Download",
-  "sign.complete.title": "Signature Completed",
+  "sign.complete.title": "You're all signed",
   "sign.complete.description":
-    "Your document has been successfully signed and securely saved. If you need the signed document, please contact the document issuer.",
+    "You submitted {{count}} signature(s) on {{name}}. Download your signed document to keep a copy.",
+  "sign.complete.signedAt": "Signed · {{date}}",
+  "sign.complete.remaining": "You still have {{count}} document(s) left to sign",
+  "sign.complete.continue": "Continue signing",
+  "sign.complete.ownerNotified": "The sender has also been notified that this is complete.",
+  "sign.download.bundleName": "Signed documents",
 
   // Signature Modal
   "signature.title": "Add Your Signature",
@@ -356,7 +361,7 @@ export default {
   "sign.completed.status": "Signature Completed",
   "sign.completed.download": "Download signed document",
   "sign.completed.downloadLoading": "Preparing download...",
-  "sign.completed.downloadError": "Failed to generate the download link. Please try again later.",
+  "sign.completed.downloadError": "Couldn't download the file. Please try again.",
   "sign.expired.title": "Signature Period Expired",
   "sign.expired.message":
     "The signing period for this document has passed. Please ask the sender for a new link.",

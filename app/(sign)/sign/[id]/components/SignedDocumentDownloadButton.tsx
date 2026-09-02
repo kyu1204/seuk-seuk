@@ -67,7 +67,7 @@ export default function SignedDocumentDownloadButton({
         )}
       </Button>
       {error && (
-        <p className="text-sm text-red-500 text-center">{error}</p>
+        <p className="text-sm text-destructive text-center">{error}</p>
       )}
     </div>
   );

@@ -38,6 +38,18 @@ describe("en locale R41 sign keys exist", () => {
   });
 });
 
+// R43: sign.complete.*/sign.download.bundleName values checked via ko.test.ts parity.
+describe("en locale R43 sign keys exist", () => {
+  it("has the R43 download-error value", () => {
+    expect(en["sign.completed.downloadError"]).toBeTruthy();
+  });
+
+  it("has sign.complete.remaining and sign.download.bundleName", () => {
+    expect(en["sign.complete.remaining"]).toBeTruthy();
+    expect(en["sign.download.bundleName"]).toBeTruthy();
+  });
+});
+
 describe("en locale has no stray Korean text", () => {
   it("contains no Hangul outside the allowlist", () => {
     const offenders = Object.entries(en)

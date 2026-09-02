@@ -4,22 +4,29 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(new URL("./SignSingleDocument.tsx", import.meta.url), "utf-8");
 
 describe("SignSingleDocument.tsx source", () => {
-  it("uses the shared SignHeader instead of copy-pasted headers", () => {
-    expect(source).toContain("SignHeader");
+  it("drops unused CheckCircle/Clock icon imports now owned by SignComplete/SignDocumentList", () => {
+    expect(source).not.toContain("CheckCircle");
+    expect(source).not.toContain("Clock,");
   });
 
-  it("uses seal/amber tokens for completed/expired states", () => {
-    expect(source).toContain("text-seal");
-    expect(source).toContain("text-amber");
+  it("delegates completed/expired states to the container instead of rendering its own cards", () => {
+    expect(source).not.toContain("sign.completed.title");
+    expect(source).not.toContain("sign.expired.title");
+    expect(source).not.toContain("<Card>");
+  });
+
+  it("hands off to the container's onComplete/onBack instead of rendering its own completed/expired card", () => {
+    expect(source).toMatch(/isPublicationCompleted \|\| isDocumentCompleted/);
+    expect(source).toContain("onComplete(documentLabel, documentData.id)");
+    expect(source).toContain("onBack()");
   });
 
   it("uses destructive tokens for the inline error box", () => {
     expect(source).toContain("bg-destructive/10");
   });
 
-  it("uses seal-soft/amber-soft backgrounds", () => {
+  it("uses the seal-soft background for signed area highlights", () => {
     expect(source).toContain("bg-seal-soft");
-    expect(source).toContain("bg-amber-soft");
   });
 
   it("has no hardcoded gray/green/red/white color classes", () => {

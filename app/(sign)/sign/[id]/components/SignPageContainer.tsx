@@ -6,11 +6,9 @@ import type { PublicationWithDocuments } from "@/lib/supabase/database.types";
 import SignDocumentList from "./SignDocumentList";
 import SignSingleDocument from "./SignSingleDocument";
 import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
+import SignComplete from "./SignComplete";
 import SignHeader from "./SignHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, ArrowLeft } from "lucide-react";
-import { useLanguage } from "@/contexts/language-context";
+import { documentDisplayLabel } from "@/lib/utils";
 
 interface SignPageContainerProps {
   publicationData: PublicationWithDocuments;
@@ -25,7 +23,6 @@ export default function SignPageContainer({
   requiresPassword,
   senderName,
 }: SignPageContainerProps) {
-  const { t } = useLanguage();
   const router = useRouter();
   const [currentView, setCurrentView] = useState<View>("list");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
@@ -101,57 +98,45 @@ export default function SignPageContainer({
 
   // Show document completion view
   if (currentView === "completed") {
+    const completedDocument = publicationData.documents?.find(
+      (doc) => doc.id === completedDocumentId
+    );
+    const signedCount = (completedDocument?.signatures || []).filter(
+      (s) => s.signature_data !== null
+    ).length;
+    const isPublicationCompleted = publicationData.status === "completed";
+    const remainingDocuments = (publicationData.documents || [])
+      .filter((doc) => doc.id !== completedDocumentId && doc.status !== "completed")
+      .map((doc) => {
+        const signatures = doc.signatures || [];
+        return {
+          id: doc.id,
+          name: documentDisplayLabel(doc.alias, doc.filename, publicationData.name),
+          completed: signatures.filter((s) => s.signature_data !== null).length,
+          total: signatures.length,
+        };
+      });
+
     return (
       <div className="flex flex-col min-h-screen bg-background">
         <SignHeader />
-
-        {/* Main content */}
-        <div className="container mx-auto px-4 py-8 flex-1">
-          <div className="max-w-md mx-auto">
-            <Card>
-              <CardHeader className="text-center">
-                <CheckCircle className="mx-auto h-12 w-12 text-seal mb-4" />
-                <CardTitle className="text-xl text-seal">
-                  {t("sign.complete.title")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center space-y-3">
-                  <p className="text-muted-foreground">{t("sign.complete.description")}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("sign.completed.noEdit")}
-                  </p>
-                </div>
-                <div className="bg-seal-soft border rounded-md p-3">
-                  <p className="text-sm text-seal text-center font-medium">
-                    {completedDocumentName}
-                  </p>
-                  <p className="text-xs text-seal text-center mt-1">
-                    {t("sign.completed.status")}
-                  </p>
-                </div>
-                {completedDocumentId && (
-                  <SignedDocumentDownloadButton
-                    shortUrl={publicationData.short_url}
-                    documentId={completedDocumentId}
-                    password={verifiedPassword}
-                  />
-                )}
-                {/* Hide back button if publication is already completed */}
-                {publicationData.status !== "completed" && (
-                  <Button
-                    variant="outline"
-                    onClick={handleBackToList}
-                    className="w-full"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    {t("sign.documentList.backToList")}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        <SignComplete
+          documentName={completedDocumentName}
+          signedCount={signedCount}
+          downloadButton={
+            completedDocumentId ? (
+              <SignedDocumentDownloadButton
+                shortUrl={publicationData.short_url}
+                documentId={completedDocumentId}
+                password={verifiedPassword}
+              />
+            ) : null
+          }
+          remainingDocuments={remainingDocuments}
+          onContinue={handleDocumentSelect}
+          onBackToList={handleBackToList}
+          ownerNotified={isPublicationCompleted}
+        />
       </div>
     );
   }

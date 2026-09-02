@@ -101,9 +101,14 @@ export default {
   "sign.signedDocument": "서명된 문서",
   "sign.close": "닫기",
   "sign.download": "다운로드",
-  "sign.complete.title": "서명이 완료되었습니다",
+  "sign.complete.title": "서명이 끝났습니다",
   "sign.complete.description":
-    "문서 서명이 성공적으로 완료되어 안전하게 저장되었습니다. 서명 완료된 문서가 필요한 경우 문서 발행자에게 문의 부탁드립니다.",
+    "{{name}}에 서명 {{count}}곳을 제출했어요. 서명한 문서를 내려받아 보관하세요.",
+  "sign.complete.signedAt": "서명 포함 · {{date}}",
+  "sign.complete.remaining": "아직 서명할 문서가 {{count}}개 남았어요",
+  "sign.complete.continue": "이어서 서명",
+  "sign.complete.ownerNotified": "보낸 사람에게도 완료 알림이 갔습니다.",
+  "sign.download.bundleName": "서명문서",
 
   // Signature Modal
   "signature.title": "서명 추가",
@@ -354,7 +359,7 @@ export default {
   "sign.completed.status": "서명 완료됨",
   "sign.completed.download": "서명 문서 다운로드",
   "sign.completed.downloadLoading": "다운로드 준비 중...",
-  "sign.completed.downloadError": "다운로드 링크를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  "sign.completed.downloadError": "파일을 내려받지 못했습니다. 다시 시도해 주세요.",
   "sign.expired.title": "서명 기간 만료",
   "sign.expired.message": "이 문서의 서명 기간이 지났습니다. 보낸 사람에게 새 링크를 요청해 주세요.",
   "sign.expired.instruction":
@@ -447,7 +452,7 @@ export default {
   "sign.password.privacy": "개인정보처리방침",
 
   // Invalid / expired link (not-found)
-  "sign.notFoundContact": "링크가 올바른지 확인하시고, 문제가 계속되면 문서 발행자에게 문의해 주세요.",
+  "sign.notFoundContact": "링크가 올바른지 확인해 주세요. 문제가 계속되면 다시 시도해 주세요.",
 
   // Authentication
   "auth.signOut": "로그아웃",

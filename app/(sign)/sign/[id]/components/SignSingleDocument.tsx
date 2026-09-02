@@ -8,12 +8,9 @@ import {
   markDocumentCompleted,
   createSignedDocumentUploadUrl,
 } from "@/app/actions/document-actions";
-import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
-import SignHeader from "./SignHeader";
 import SignatureModal from "@/components/signature-modal";
 import TextInputModal from "@/components/text-input-modal";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import {
   AlertDialog,
@@ -36,10 +33,8 @@ import {
 } from "@/lib/utils";
 import {
   Check,
-  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Clock,
   PenLine,
   Stamp,
   Type,
@@ -714,88 +709,19 @@ export default function SignSingleDocument({
     }
   };
 
-  if (isPublicationCompleted || isDocumentCompleted) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background">
-        <SignHeader />
-        <div className="container mx-auto px-4 py-8 flex-1">
-          <div className="max-w-md mx-auto">
-            <Card>
-              <CardHeader className="text-center">
-                <CheckCircle className="mx-auto h-12 w-12 text-seal mb-4" />
-                <CardTitle className="text-xl text-seal">
-                  {t("sign.completed.title")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center space-y-3">
-                  <p className="text-muted-foreground">{t("sign.completed.message")}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("sign.completed.noEdit")}
-                  </p>
-                </div>
-                <div className="bg-seal-soft border rounded-md p-3">
-                  <p className="text-sm text-seal text-center font-medium">
-                    {documentLabel}
-                  </p>
-                  <p className="text-xs text-seal text-center mt-1">
-                    {t("sign.completed.status")}
-                  </p>
-                </div>
-                {isDocumentCompleted && (
-                  <SignedDocumentDownloadButton
-                    shortUrl={publicationData.short_url}
-                    documentId={documentData.id}
-                    password={verifiedPassword}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Completed/expired states are rendered by the container (SignComplete /
+  // SignDocumentList) so there is one source of truth for those screens.
+  useEffect(() => {
+    if (isPublicationCompleted || isDocumentCompleted) {
+      onComplete(documentLabel, documentData.id);
+    } else if (isExpired) {
+      onBack();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPublicationCompleted, isDocumentCompleted, isExpired]);
 
-  if (isExpired) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background">
-        <SignHeader />
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-md mx-auto">
-            <Card>
-              <CardHeader className="text-center">
-                <Clock className="mx-auto h-12 w-12 text-amber mb-4" />
-                <CardTitle className="text-xl text-amber">
-                  {t("sign.expired.title")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center space-y-3">
-                  <p className="text-muted-foreground">{t("sign.expired.message")}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("sign.expired.instruction")}
-                  </p>
-                </div>
-                <div className="bg-amber-soft border rounded-md p-3">
-                  <p className="text-sm text-amber text-center font-medium">
-                    {documentData.alias || documentData.filename}
-                  </p>
-                  {publicationData.expires_at && (
-                    <p className="text-xs text-amber text-center mt-1">
-                      {t("sign.expired.date")}{" "}
-                      {new Date(publicationData.expires_at).toLocaleDateString(
-                        "ko-KR"
-                      )}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
+  if (isPublicationCompleted || isDocumentCompleted || isExpired) {
+    return null;
   }
 
   const showBatchSignHint =

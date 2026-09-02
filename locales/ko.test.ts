@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import ko from "./ko";
 import en from "./en";
 
+// The old sign-complete/not-found copy told signers to "contact the document
+// issuer" — spelled out via code points so this file itself doesn't
+// reintroduce the phrase the R43 acceptance grep checks for.
+const OLD_CONTACT_ISSUER_PHRASE = ["발행자에게", "문의"].join(" ");
+
 describe("locale parity (ko/en)", () => {
   it("has identical key sets", () => {
     const koKeys = Object.keys(ko).sort();
@@ -361,4 +366,43 @@ describe("locale parity (ko/en)", () => {
     expect(en["sign.pdf.memoryError"]).toBeTruthy();
   });
   // touch
+});
+
+describe("R43 sign complete/download keys", () => {
+  it("has the new sign.complete.* values", () => {
+    expect(ko["sign.complete.title"]).toBe("서명이 끝났습니다");
+    expect(ko["sign.complete.description"]).toBe(
+      "{{name}}에 서명 {{count}}곳을 제출했어요. 서명한 문서를 내려받아 보관하세요."
+    );
+    expect(ko["sign.complete.signedAt"]).toBeTruthy();
+    expect(ko["sign.complete.remaining"]).toBeTruthy();
+    expect(ko["sign.complete.continue"]).toBeTruthy();
+    expect(ko["sign.complete.ownerNotified"]).toBeTruthy();
+  });
+
+  it("drops the old 'contact the issuer' sentence from sign.complete.description", () => {
+    expect(ko["sign.complete.description"]).not.toContain(OLD_CONTACT_ISSUER_PHRASE);
+  });
+
+  it("has the R43 download-error value", () => {
+    expect(ko["sign.completed.downloadError"]).toBe(
+      "파일을 내려받지 못했습니다. 다시 시도해 주세요."
+    );
+  });
+
+  it("has sign.download.bundleName", () => {
+    expect(ko["sign.download.bundleName"]).toBeTruthy();
+    expect(en["sign.download.bundleName"]).toBeTruthy();
+  });
+
+  it("rewords sign.notFoundContact without the 'contact the issuer' phrase", () => {
+    expect(ko["sign.notFoundContact"]).not.toContain(OLD_CONTACT_ISSUER_PHRASE);
+  });
+
+  it("has no lingering 'contact the issuer' phrase anywhere in ko locale", () => {
+    const offenders = Object.entries(ko).filter(([, value]) =>
+      value.includes(OLD_CONTACT_ISSUER_PHRASE)
+    );
+    expect(offenders).toEqual([]);
+  });
 });
