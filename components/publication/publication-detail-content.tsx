@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { PublicationWithDocuments } from "@/lib/supabase/database.types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ProjectBreadcrumb } from "@/components/breadcrumb";
 import {
   Copy,
@@ -99,32 +99,6 @@ export function PublicationDetailContent({
     }
   };
 
-  const getStatusColor = (status: string | null) => {
-    switch (status) {
-      case "active":
-        return "bg-blue-500/10 text-blue-700 dark:text-blue-400";
-      case "completed":
-        return "bg-green-500/10 text-green-700 dark:text-green-400";
-      case "expired":
-        return "bg-red-500/10 text-red-700 dark:text-red-400";
-      default:
-        return "bg-gray-500/10 text-gray-700 dark:text-gray-400";
-    }
-  };
-
-  const getStatusLabel = (status: string | null) => {
-    switch (status) {
-      case "active":
-        return t("publicationDetail.status.active");
-      case "completed":
-        return t("publicationDetail.status.completed");
-      case "expired":
-        return t("publicationDetail.status.expired");
-      default:
-        return status || t("publicationDetail.status.unknown");
-    }
-  };
-
   // Get minimum date (today)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -163,9 +137,9 @@ export function PublicationDetailContent({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge className={getStatusColor(publication.status)}>
-                {getStatusLabel(publication.status)}
-              </Badge>
+              <StatusBadge
+                status={(publication.status ?? "active") as "active" | "completed" | "expired"}
+              />
               <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -419,21 +393,13 @@ export function PublicationDetailContent({
                             )}
                           </div>
                         </div>
-                        <Badge
-                          className={
-                            document.status === "completed"
-                              ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                              : document.status === "published"
-                              ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
-                              : "bg-gray-500/10 text-gray-700 dark:text-gray-400"
+                        <StatusBadge
+                          status={
+                            (document.status === "completed"
+                              ? "completed"
+                              : "published") as "completed" | "published"
                           }
-                        >
-                          {document.status === "completed"
-                            ? t("publicationDetail.documentStatus.completed")
-                            : document.status === "published"
-                            ? t("publicationDetail.documentStatus.published")
-                            : document.status}
-                        </Badge>
+                        />
                       </div>
                     </CardContent>
                   </Card>

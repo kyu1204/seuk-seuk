@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, FileText, Lock, Copy, Trash2, ExternalLink, Check } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
@@ -45,26 +45,6 @@ export function PublicationCard({
   // Publications can always be selected/deleted; non-completed ones are reset to draft.
   const canDelete = true;
 
-  const getStatusBadge = (status: ClientPublication["status"]) => {
-    const statusMap: Record<string, { label: string; variant: "default" | "success" | "secondary" }> = {
-      active: {
-        label: t("dashboard.publications.status.active"),
-        variant: "default",
-      },
-      completed: {
-        label: t("dashboard.publications.status.completed"),
-        variant: "success",
-      },
-      expired: {
-        label: t("dashboard.publications.status.expired"),
-        variant: "secondary",
-      },
-    };
-
-    return statusMap[status ?? "active"] || statusMap.active;
-  };
-
-  const statusBadge = getStatusBadge(publication.status);
   const formattedDate = new Date(publication.created_at ?? "").toLocaleDateString(
     language === "ko" ? "ko-KR" : "en-US",
     {
@@ -163,9 +143,10 @@ export function PublicationCard({
           <CardHeader className="pb-3 flex-1 flex flex-col justify-between">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
-                <Badge variant={statusBadge.variant} className="flex-shrink-0 text-xs">
-                  {statusBadge.label}
-                </Badge>
+                <StatusBadge
+                  status={(publication.status ?? "active") as "active" | "completed" | "expired"}
+                  className="flex-shrink-0"
+                />
                 {(publication as any).requiresPassword && (
                   <Lock className="h-3 w-3 text-muted-foreground" />
                 )}

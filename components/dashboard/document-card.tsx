@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Calendar, FileText } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import type { Document } from "@/lib/supabase/database.types";
@@ -25,26 +25,6 @@ export function DocumentCard({ document, isSelectionMode, isSelected, onToggleSe
     onToggleSelection(document.id, canDelete);
   };
 
-  const getStatusBadge = (status: Document["status"]) => {
-    const statusMap: Record<string, { label: string; variant: "secondary" | "default" | "success" }> = {
-      draft: {
-        label: t("status.draft"),
-        variant: "secondary",
-      },
-      published: {
-        label: t("status.published"),
-        variant: "default",
-      },
-      completed: {
-        label: t("status.completed"),
-        variant: "success",
-      },
-    };
-
-    return statusMap[status ?? "draft"] || statusMap.draft;
-  };
-
-  const statusBadge = getStatusBadge(document.status);
   const formattedDate = new Date(document.created_at).toLocaleDateString(
     language === "ko" ? "ko-KR" : "en-US",
     {
@@ -91,9 +71,10 @@ export function DocumentCard({ document, isSelectionMode, isSelected, onToggleSe
         >
           <CardHeader className="pb-3 flex-1 flex flex-col justify-between">
             <div className="flex items-start justify-between gap-2 mb-2">
-              <Badge variant={statusBadge.variant} className="flex-shrink-0 text-xs">
-                {statusBadge.label}
-              </Badge>
+              <StatusBadge
+                status={(document.status ?? "draft") as "draft" | "published" | "completed"}
+                className="flex-shrink-0"
+              />
 
               {/* Selection Checkbox - only in selection mode, positioned at top-right */}
               {isSelectionMode && (

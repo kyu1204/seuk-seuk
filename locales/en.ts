@@ -434,7 +434,7 @@ export default {
   "dashboard.filter.published": "Published",
   "dashboard.filter.completed": "Completed",
   "dashboard.tabs.documents": "Documents",
-  "dashboard.tabs.publications": "Publications",
+  "dashboard.tabs.publications": "Published",
   "dashboard.tabs.templates": "Templates",
   "dashboard.publications.empty.title": "No Published Documents",
   "dashboard.publications.empty.description": "Publish draft documents to share with others.",

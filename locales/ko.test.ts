@@ -24,4 +24,23 @@ describe("locale parity (ko/en)", () => {
       expect(value, `en["${key}"] should not be empty`).not.toBe("");
     }
   });
+
+  it("has the R02 status label values", () => {
+    expect(ko["status.draft"]).toBe("초안");
+    expect(ko["status.published"]).toBe("발행됨");
+    expect(ko["status.completed"]).toBe("완료");
+    expect(ko["status.expired"]).toBe("만료");
+    expect(ko["dashboard.filter.published"]).toBe("발행됨");
+    expect(ko["dashboard.tabs.publications"]).toBe("발행됨");
+    expect(ko["dashboard.publications.status.expired"]).toBe("만료");
+    expect(ko["publicationDetail.status.expired"]).toBe("만료");
+    expect(ko["publicationDetail.documentStatus.published"]).toBe("발행됨");
+
+    expect(en["status.draft"]).toBe("Draft");
+    expect(en["status.published"]).toBe("Published");
+    expect(en["status.completed"]).toBe("Completed");
+    expect(en["status.expired"]).toBe("Expired");
+    expect(en["dashboard.filter.published"]).toBe("Published");
+    expect(en["dashboard.tabs.publications"]).toBe("Published");
+  });
 });
