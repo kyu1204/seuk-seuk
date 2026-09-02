@@ -196,4 +196,20 @@ describe("locale parity (ko/en)", () => {
     expect(en["common.retry"]).toBeTruthy();
     expect(en["dashboard.bulkDelete.progress"]).toBeTruthy();
   });
+
+  it("has the R31 upload screen copy values", () => {
+    expect(ko["upload.page.title"]).toBe("문서 올리기");
+    expect(ko["upload.page.description"]).toBe(
+      "PDF나 사진을 올리고 서명받을 칸을 지정하세요."
+    );
+    expect(ko["upload.dropzone.title"]).toBe("여기에 문서를 놓으세요");
+    expect(ko["upload.saveAndPublish"]).toBe("저장하고 발행하기");
+    expect(ko["upload.saved"]).toBe("저장했어요");
+    expect(ko["common.back"]).toBe("뒤로");
+    expect(en["upload.page.title"]).toBeTruthy();
+    expect(en["upload.saveAndPublish"]).toBeTruthy();
+    expect(en["upload.noAreas.title"]).toBeTruthy();
+    expect(en["upload.error.capture"]).toBeTruthy();
+    expect(en["common.back"]).toBeTruthy();
+  });
 });

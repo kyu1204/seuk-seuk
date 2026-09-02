@@ -5,7 +5,7 @@ import type React from "react";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileImage, FileText, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, ChevronLeft, ChevronRight, AlertTriangle, Lock } from "lucide-react";
+import { Upload, FileImage, FileText, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, ChevronLeft, ChevronRight, AlertTriangle, Lock, ArrowLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ import {
 } from "@/app/actions/template-actions";
 import { canUploadPdf } from "@/app/actions/subscription-actions";
 import { useLanguage } from "@/contexts/language-context";
+import { toast } from "sonner";
 import type { SignatureArea } from "@/lib/supabase/database.types";
 import {
   getImageNaturalDimensions,
@@ -113,6 +114,10 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
   // Validation modal
   const [showValidationModal, setShowValidationModal] = useState<boolean>(false);
   const [missingAreaIndices, setMissingAreaIndices] = useState<number[]>([]);
+
+  // No-areas-at-all confirmation dialog (R31)
+  const [showNoAreasModal, setShowNoAreasModal] = useState<boolean>(false);
+  const [pendingPublishAfter, setPendingPublishAfter] = useState<boolean>(false);
 
   // Delete image confirmation modal
   const [showDeleteImageModal, setShowDeleteImageModal] = useState<boolean>(false);
@@ -267,7 +272,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
     if (currentFile?.isPdf) {
       const pageImage = await getPdfPageAsImage();
       if (!pageImage) {
-        setError("PDF 페이지를 캡처할 수 없습니다.");
+        setError(t("upload.error.capture"));
         return;
       }
       setPdfPageImageForSelector(pageImage);
@@ -464,7 +469,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
     carouselApi?.scrollTo(index);
   }, [carouselApi]);
 
-  const handleSaveDocument = async () => {
+  const handleSaveDocument = async (publishAfter = false, bypassAreaCheck = false) => {
     if (images.length === 0) {
       setError(
         isTemplateMode
@@ -474,19 +479,28 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
       return;
     }
 
-    // Validation: check every image has at least one signature area
-    const missing: number[] = [];
-    for (let i = 0; i < images.length; i++) {
-      const areas = signatureAreasMap.get(i) || [];
-      if (areas.length === 0) {
-        missing.push(i);
+    if (!bypassAreaCheck) {
+      // Validation: check every image has at least one signature area
+      const missing: number[] = [];
+      for (let i = 0; i < images.length; i++) {
+        const areas = signatureAreasMap.get(i) || [];
+        if (areas.length === 0) {
+          missing.push(i);
+        }
       }
-    }
 
-    if (missing.length > 0) {
-      setMissingAreaIndices(missing);
-      setShowValidationModal(true);
-      return;
+      if (missing.length === images.length) {
+        // No signature area anywhere: ask for confirmation (R31)
+        setPendingPublishAfter(publishAfter);
+        setShowNoAreasModal(true);
+        return;
+      }
+
+      if (missing.length > 0) {
+        setMissingAreaIndices(missing);
+        setShowValidationModal(true);
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -595,10 +609,14 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
         return;
       }
 
-      // Success: single image → document detail, multiple → dashboard
-      if (images.length === 1 && lastDocumentId) {
+      // Success
+      if (publishAfter && lastDocumentId) {
+        router.push(`/publish?doc=${lastDocumentId}`);
+      } else if (images.length === 1 && lastDocumentId) {
+        toast.success(t("upload.saved"));
         router.push(`/document/${lastDocumentId}`);
       } else {
+        toast.success(t("upload.saved"));
         router.push("/dashboard");
         router.refresh();
       }
@@ -636,7 +654,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
         onChange={handleFileChange}
       />
       {error && images.length === 0 && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+        <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
           {error}
         </div>
       )}
@@ -701,10 +719,10 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                   <h3 className="font-medium text-lg">
                     {isTemplateMode
                       ? (uploadMode === 'pdf' ? t("templates.create.pdfTitle") : t("templates.create.imageTitle"))
-                      : (uploadMode === 'pdf' ? t("pdf_document") : t("upload.title"))}
+                      : (uploadMode === 'pdf' ? t("pdf_document") : t("upload.dropzone.title"))}
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    {isTemplateMode ? t("templates.create.dropDescription") : t("upload.description")}
+                    {isTemplateMode ? t("templates.create.dropDescription") : t("upload.dragDrop")}
                   </p>
                   {uploadMode === 'image' && !isTemplateMode && (
                     <p className="text-muted-foreground text-xs">
@@ -725,7 +743,53 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
         </div>
       ) : (
         <div className="space-y-4">
-          {/* 1. Delete / Clear / Save buttons */}
+          {/* Top bar: back + filename/meta + save actions (R31) */}
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <div className="flex items-center gap-3 min-w-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t("common.back")}
+                onClick={() => setShowClearAllModal(true)}
+                disabled={isLoading || isSelecting}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="min-w-0">
+                <p className="text-xl font-bold truncate">
+                  {images[currentIndex]?.fileName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("upload.meta")
+                    .replace("{{pages}}", String(images[currentIndex]?.isPdf ? (images[currentIndex]?.pdfTotalPages || 1) : 1))
+                    .replace("{{signatures}}", String(currentAreas.filter((a) => a.type !== "text").length))
+                    .replace("{{texts}}", String(currentAreas.filter((a) => a.type === "text").length))}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                onClick={() => handleSaveDocument(false)}
+                disabled={isLoading || isSelecting || images.length === 0}
+              >
+                {isLoading && !pendingPublishAfter
+                  ? (savingProgress || (isTemplateMode ? t("templates.create.saving") : t("upload.saving")))
+                  : (isTemplateMode ? t("templates.create.save") : t("upload.save"))}
+              </Button>
+              {!isTemplateMode && (
+                <Button
+                  onClick={() => handleSaveDocument(true)}
+                  disabled={isLoading || isSelecting || images.length === 0}
+                >
+                  {t("upload.saveAndPublish")}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Secondary utilities: delete current image / clear all / add more */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button
@@ -760,37 +824,12 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                   {t("upload.addMore")}
                 </Button>
               )}
-              <Button
-                onClick={handleSaveDocument}
-                disabled={
-                  totalAreasCount === 0 || isLoading || images.length === 0
-                }
-              >
-                {isLoading
-                  ? (savingProgress || (isTemplateMode ? t("templates.create.saving") : t("upload.saving")))
-                  : (isTemplateMode ? t("templates.create.save") : t("upload.save"))}
-              </Button>
             </div>
           </div>
 
-          {/* 2. File Information - per image */}
+          {/* File Information - per image */}
           <Card>
             <CardContent className="p-4 space-y-3">
-              <div>
-                <Label className="text-xs font-medium text-muted-foreground">
-                  {t("upload.filename")}
-                  {images.length > 1 && (
-                    <span className="ml-1">
-                      ({t("upload.imageIndex")
-                        .replace("{current}", String(currentIndex + 1))
-                        .replace("{total}", String(images.length))})
-                    </span>
-                  )}
-                </Label>
-                <p className="text-sm mt-0.5 truncate">
-                  {images[currentIndex]?.fileName}
-                </p>
-              </div>
               <div>
                 <Label htmlFor="document-alias" className="text-xs font-medium text-muted-foreground">
                   {isTemplateMode ? t("templates.create.name") : t("upload.alias")}
@@ -816,140 +855,154 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
             </CardContent>
           </Card>
 
-          {/* 3. Area Action Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
-              disabled={isSelecting}
-              className="flex-1 sm:flex-none"
-            >
-              {t("upload.addSignatureArea")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
-              disabled={isSelecting}
-              className="flex-1 sm:flex-none"
-            >
-              <Type className="mr-1 h-4 w-4" />
-              {t("upload.addTextArea")}
-            </Button>
-          </div>
+          <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-5">
+            {/* Left panel: add-area actions + area list (order-2 on mobile) */}
+            <div className="order-2 lg:order-1 space-y-4">
+              <Card>
+                <CardContent className="p-4 space-y-2">
+                  <Button
+                    onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
+                    disabled={isSelecting}
+                    className="w-full"
+                  >
+                    {t("upload.signature")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
+                    disabled={isSelecting}
+                    className="w-full"
+                  >
+                    <Type className="mr-1 h-4 w-4" />
+                    {t("upload.textArea")}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">{t("upload.areaHint")}</p>
+                </CardContent>
+              </Card>
 
-          {/* 4. PDF Page Navigation */}
-          {images[currentIndex]?.isPdf && images[currentIndex]?.pdfTotalPages && (
-            <div className="flex items-center justify-center gap-3 py-2 bg-muted/30 rounded-lg">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPdfPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPdfPage <= 1 || isSelecting}
-              >
-                {t("pdf_prev_page")}
-              </Button>
-              <span className="text-sm font-medium tabular-nums">
-                {t("pdf_current_page")
-                  .replace("{current}", String(currentPdfPage))
-                  .replace("{total}", String(images[currentIndex].pdfTotalPages))}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPdfPage(prev => Math.min(images[currentIndex].pdfTotalPages || 1, prev + 1))}
-                disabled={currentPdfPage >= (images[currentIndex].pdfTotalPages || 1) || isSelecting}
-              >
-                {t("pdf_next_page")}
-              </Button>
+              <Card>
+                <CardContent className="p-4 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("upload.areaList").replace("{{count}}", String(currentAreas.length))}
+                  </p>
+                  {currentAreas.map((area, index) => (
+                    <div key={index} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="truncate">
+                        {area.type === "text" ? t("upload.textArea") : t("upload.signature")}
+                        {" · "}
+                        {(area.pageNumber ?? 0) + 1}쪽
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        aria-label={t("common.delete")}
+                        onClick={() => handleRemoveArea(index)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
-          )}
 
-          {/* 5. Carousel Navigation */}
-          {images.length > 1 && (
-            <div className="flex items-center justify-center gap-3 py-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={() => goToImage(Math.max(0, currentIndex - 1))}
-                disabled={currentIndex === 0 || isSelecting}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center gap-1.5">
-                {images.map((_, idx) => {
-                  const hasAreas = (signatureAreasMap.get(idx) || []).length > 0;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => !isSelecting && goToImage(idx)}
-                      className={`w-2.5 h-2.5 rounded-full transition-all ${
-                        idx === currentIndex
-                          ? "bg-primary scale-125"
-                          : hasAreas
-                            ? "bg-green-400"
-                            : "bg-muted-foreground/30"
-                      }`}
-                      disabled={isSelecting}
-                    />
-                  );
-                })}
+            {/* Right: canvas toolbar + viewer */}
+            <div className="order-1 lg:order-2 space-y-2">
+              {/* PDF Page Navigation + Zoom Toolbar */}
+              <div className="flex items-center justify-between gap-3 py-2 px-3 bg-muted rounded-lg">
+                {images[currentIndex]?.isPdf && images[currentIndex]?.pdfTotalPages ? (
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={t("pdf_prev_page")}
+                      onClick={() => setCurrentPdfPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPdfPage <= 1 || isSelecting}
+                    >
+                      {t("pdf_prev_page")}
+                    </Button>
+                    <span className="text-sm font-medium tabular-nums">
+                      {t("pdf_current_page")
+                        .replace("{current}", String(currentPdfPage))
+                        .replace("{total}", String(images[currentIndex].pdfTotalPages))}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={t("pdf_next_page")}
+                      onClick={() => setCurrentPdfPage(prev => Math.min(images[currentIndex].pdfTotalPages || 1, prev + 1))}
+                      disabled={currentPdfPage >= (images[currentIndex].pdfTotalPages || 1) || isSelecting}
+                    >
+                      {t("pdf_next_page")}
+                    </Button>
+                  </div>
+                ) : <div />}
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="outline" onClick={handleZoomIn} disabled={zoomLevel >= 3 || isSelecting} className="p-2 h-8 w-8">
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleZoomOut} disabled={zoomLevel <= 0.5 || isSelecting} className="p-2 h-8 w-8">
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleZoomReset} disabled={zoomLevel === 1 || isSelecting} className="p-2 h-8 w-8">
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                  <span className="text-xs font-medium px-1.5 tabular-nums">{Math.round(zoomLevel * 100)}%</span>
+                </div>
               </div>
-              <span className="text-xs font-medium text-muted-foreground tabular-nums">
-                {t("upload.imageIndex")
-                  .replace("{current}", String(currentIndex + 1))
-                  .replace("{total}", String(images.length))}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={() => goToImage(Math.min(images.length - 1, currentIndex + 1))}
-                disabled={currentIndex === images.length - 1 || isSelecting}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
 
-          {/* 6. Document Viewer with Carousel */}
-          <div className="relative border rounded-lg overflow-hidden">
-            {/* Zoom Controls */}
-            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleZoomIn}
-                disabled={zoomLevel >= 3 || isSelecting}
-                className="p-2 h-8 w-8"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleZoomOut}
-                disabled={zoomLevel <= 0.5 || isSelecting}
-                className="p-2 h-8 w-8"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleZoomReset}
-                disabled={zoomLevel === 1 || isSelecting}
-                className="p-2 h-8 w-8"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-              <div className="text-xs text-center font-medium px-1 py-0.5 bg-gray-100 rounded">
-                {Math.round(zoomLevel * 100)}%
-              </div>
-            </div>
+              {/* Carousel Navigation */}
+              {images.length > 1 && (
+                <div className="flex items-center justify-center gap-3 py-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => goToImage(Math.max(0, currentIndex - 1))}
+                    disabled={currentIndex === 0 || isSelecting}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    {images.map((_, idx) => {
+                      const hasAreas = (signatureAreasMap.get(idx) || []).length > 0;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => !isSelecting && goToImage(idx)}
+                          className={`w-2.5 h-2.5 rounded-full transition-all ${
+                            idx === currentIndex
+                              ? "bg-primary scale-125"
+                              : hasAreas
+                                ? "bg-primary/60"
+                                : "bg-muted-foreground/30"
+                          }`}
+                          disabled={isSelecting}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                    {t("upload.imageIndex")
+                      .replace("{current}", String(currentIndex + 1))
+                      .replace("{total}", String(images.length))}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => goToImage(Math.min(images.length - 1, currentIndex + 1))}
+                    disabled={currentIndex === images.length - 1 || isSelecting}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
 
+          {/* Document Viewer with Carousel */}
+          <div className="relative border rounded-lg overflow-hidden bg-muted">
             {isSelecting ? (
               <AreaSelector
                 image={images[currentIndex]?.isPdf ? (pdfPageImageForSelector || "") : images[currentIndex].dataUrl}
@@ -977,7 +1030,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                     );
                     return canScroll ? (isDragging ? 'grabbing' : 'grab') : 'default';
                   })(),
-                  touchAction: 'none'
+                  touchAction: isDragging ? 'none' : 'pan-y'
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
@@ -1093,7 +1146,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                             );
                             return canScroll ? (isDragging ? 'grabbing' : 'grab') : 'default';
                           })(),
-                          touchAction: 'none'
+                          touchAction: isDragging ? 'none' : 'pan-y'
                         }}
                         onMouseDown={imgIdx === currentIndex ? handleMouseDown : undefined}
                         onMouseMove={imgIdx === currentIndex ? handleMouseMove : undefined}
@@ -1196,11 +1249,13 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
             )}
           </div>
 
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
-              {error}
+              {error && (
+                <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+                  {error}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -1288,7 +1343,35 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowValidationModal(false)}>
-              {t("upload.clear") === "지우기" ? "닫기" : "Close"}
+              {t("common.cancel")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* No signature areas at all confirmation (R31) */}
+      <Dialog open={showNoAreasModal} onOpenChange={setShowNoAreasModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber" />
+              {t("upload.noAreas.title")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("upload.noAreas.description")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowNoAreasModal(false)}>
+              {t("upload.noAreas.addAreas")}
+            </Button>
+            <Button
+              onClick={() => {
+                setShowNoAreasModal(false);
+                handleSaveDocument(pendingPublishAfter, true);
+              }}
+            >
+              {t("upload.noAreas.saveAnyway")}
             </Button>
           </DialogFooter>
         </DialogContent>
