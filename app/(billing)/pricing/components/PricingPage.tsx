@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Check, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export function PricingPage() {
   const { t, language } = useLanguage();
@@ -134,7 +135,7 @@ export function PricingPage() {
     // Free plan: no checkout
     if (nameKey === "free" || nameKey === "basic") {
       // Free 플랜은 별도 처리 불필요
-      alert(t("pricingPage.alertMessage", { planName }));
+      toast.error(t("pricingPage.alertMessage", { planName }));
       return;
     }
 
@@ -160,7 +161,7 @@ export function PricingPage() {
     }
 
     // Fallback
-    alert(t("pricingPage.alertMessage", { planName }));
+    toast.error(t("pricingPage.alertMessage", { planName }));
   };
 
   const resolveCurrentPlanId = (): string | undefined => {

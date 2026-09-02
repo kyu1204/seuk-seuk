@@ -74,7 +74,7 @@ export function PublicationCard({
       }
     } catch (err) {
       console.error("Delete error:", err);
-      toast.error(t("dashboard.publications.delete.title"));
+      toast.error(t("dashboard.publications.delete.error"));
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

@@ -35,6 +35,7 @@ import {
 import { cn } from "@/lib/utils";
 import { updatePublication } from "@/app/actions/publication-actions";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface PublicationDetailContentProps {
   publication: PublicationWithDocuments;
@@ -84,7 +85,7 @@ export function PublicationDetailContent({
       );
 
       if (result.error) {
-        alert(result.error);
+        toast.error(result.error);
         return;
       }
 
@@ -93,7 +94,7 @@ export function PublicationDetailContent({
       router.refresh();
     } catch (error) {
       console.error("Update error:", error);
-      alert("Failed to update publication");
+      toast.error(t("publicationDetail.updateError"));
     } finally {
       setIsSubmitting(false);
     }

@@ -7,4 +7,18 @@ describe("publications-list.tsx source", () => {
   it("uses the shared dashboard grid spacing", () => {
     expect(source).toContain("grid gap-5 sm:grid-cols-2 lg:grid-cols-4");
   });
+
+  it("shows a retryable error state instead of raw Error text", () => {
+    expect(source).not.toContain("Error: {error}");
+    expect(source).toContain("dashboard.publications.error.load");
+    expect(source).toContain("common.retry");
+  });
+
+  it("matches bulk delete failures by id, not name", () => {
+    expect(source).toContain("failedIds");
+  });
+
+  it("passes items to the bulk delete modal", () => {
+    expect(source).toContain("items={");
+  });
 });

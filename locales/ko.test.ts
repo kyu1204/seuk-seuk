@@ -126,4 +126,74 @@ describe("locale parity (ko/en)", () => {
     expect(en["dashboard.card.areas"]).toBeTruthy();
     expect(en["dashboard.publications.card.documentCount"]).toBeTruthy();
   });
+
+  it("has the R23 error/empty state/delete safeguard copy values", () => {
+    expect(ko["templates.delete.confirmTitle"]).toBe("'{{name}}' 템플릿을 삭제할까요?");
+    expect(ko["templates.delete.confirmDescription"]).toBe(
+      "템플릿으로 만든 문서는 남고, 템플릿만 사라집니다."
+    );
+    expect(ko["templates.delete.confirm"]).toBe("템플릿 삭제");
+    expect(ko["templates.delete.success"]).toBe("템플릿을 삭제했어요");
+    expect(ko["templates.delete.error"]).toBe(
+      "템플릿을 삭제하지 못했습니다. 다시 시도해 주세요."
+    );
+    expect(ko["templates.publish.success"]).toBe(
+      "발행했어요. 링크를 공유해 보세요."
+    );
+    expect(ko["templates.error.load"]).toBe("템플릿을 불러오지 못했습니다.");
+
+    expect(ko["dashboard.bulkDelete.confirmDelete"]).toBe("{{count}}개 삭제");
+    expect(ko["dashboard.bulkDelete.progress"]).toBe("{{done}}/{{total}} 삭제 중…");
+    expect(ko["dashboard.error.load"]).toBe("문서를 불러오지 못했습니다.");
+    expect(ko["dashboard.publications.error.load"]).toBe(
+      "발행 목록을 불러오지 못했습니다."
+    );
+    expect(ko["dashboard.publications.delete.error"]).toBe(
+      "발행을 삭제하지 못했습니다. 다시 시도해 주세요."
+    );
+
+    expect(ko["documentDetail.delete.title"]).toBe("문서 삭제");
+    expect(ko["documentDetail.delete.confirm"]).toBe("'{{name}}' 문서를 삭제할까요?");
+    expect(ko["documentDetail.delete.description"]).toBe(
+      "문서와 지정한 서명 칸이 함께 삭제되며 되돌릴 수 없습니다."
+    );
+
+    expect(ko["common.cancel"]).toBe("취소");
+    expect(ko["common.retry"]).toBe("다시 시도");
+    expect(ko["common.delete"]).toBe("삭제");
+    expect(ko["common.deleting"]).toBe("삭제 중…");
+
+    expect(ko["dashboard.empty.title"]).toBe("서명받을 문서를 올려보세요");
+    expect(ko["dashboard.empty.description"]).toBe(
+      "문서를 올리고 서명 위치만 찍으면, 링크 하나로 서명을 받을 수 있어요."
+    );
+    expect(ko["dashboard.empty.action"]).toBe("문서 올리기");
+    expect(ko["dashboard.publications.empty.title"]).toBe("아직 보낸 문서가 없어요");
+    expect(ko["dashboard.publications.empty.description"]).toBe(
+      "초안을 발행하면 서명 링크가 만들어집니다."
+    );
+    expect(ko["dashboard.publications.empty.action"]).toBe("초안 발행하기");
+    expect(ko["templates.empty.title"]).toBe("반복해서 쓰는 문서가 있나요?");
+    expect(ko["templates.empty.description"]).toBe(
+      "한 번 저장해 두면 매번 서명 칸을 다시 잡지 않아도 됩니다."
+    );
+    expect(ko["templates.empty.action"]).toBe("첫 템플릿 만들기");
+
+    expect(ko["dashboard.publications.empty.title"]).toBe("아직 보낸 문서가 없어요");
+    expect(en["dashboard.error.load"]).toBeTruthy();
+    expect(en["dashboard.publications.delete.error"]).toBeTruthy();
+    expect(en["documentDetail.delete.title"]).toBeTruthy();
+    expect(en["common.delete"]).toBeTruthy();
+    expect(en["templates.delete.confirmTitle"]).toBeTruthy();
+    expect(en["dashboard.empty.title"]).toBeTruthy();
+    expect(en["dashboard.empty.action"]).toBeTruthy();
+    expect(en["dashboard.publications.empty.title"]).toBeTruthy();
+    expect(en["dashboard.bulkDelete.confirmDelete"]).toBeTruthy();
+    expect(en["documentDetail.delete.confirm"]).toBeTruthy();
+    expect(ko["publicationDetail.updateError"]).toBeTruthy();
+    expect(en["publicationDetail.updateError"]).toBeTruthy();
+    expect(en["common.cancel"]).toBeTruthy();
+    expect(en["common.retry"]).toBeTruthy();
+    expect(en["dashboard.bulkDelete.progress"]).toBeTruthy();
+  });
 });

@@ -29,4 +29,33 @@ describe("templates-list.tsx source", () => {
     expect(source).toContain("DocumentTile");
     expect(source).not.toContain('role="link"');
   });
+
+  it("uses AlertDialog for delete confirmation", () => {
+    expect(source).toContain("AlertDialog");
+    expect(source).toContain("templates.delete.confirmTitle");
+    expect(source).toContain("templates.delete.confirmDescription");
+    expect(source).toContain("templates.delete.confirm");
+    expect(source).toContain("text-destructive");
+    expect(source).toContain("common.cancel");
+  });
+
+  it("shows toasts for delete success/error and publish success", () => {
+    expect(source).toContain("templates.delete.success");
+    expect(source).toContain("templates.delete.error");
+    expect(source).toContain("templates.publish.success");
+  });
+
+  it("shows a retryable error state instead of raw Error text", () => {
+    expect(source).not.toContain("Error: {error}");
+    expect(source).toContain("templates.error.load");
+    expect(source).toContain("common.retry");
+  });
+
+  it("deletion is matched by template id", () => {
+    expect(source).toContain("deleteTarget");
+  });
+
+  it("guards the delete target name against undefined for the type checker", () => {
+    expect(source).toContain('deleteTarget?.name ?? ""');
+  });
 });

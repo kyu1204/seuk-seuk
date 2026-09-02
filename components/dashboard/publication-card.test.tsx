@@ -24,4 +24,10 @@ describe("publication-card.tsx source", () => {
     expect(source).not.toContain("<svg");
     expect(source).not.toContain("border-gray-300");
   });
+
+  it("uses toast instead of alert() for delete errors", () => {
+    expect(source).not.toContain("alert(");
+    expect(source).toContain("dashboard.publications.delete.error");
+    expect(source).toContain("toast.error");
+  });
 });

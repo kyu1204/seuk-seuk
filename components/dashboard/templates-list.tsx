@@ -24,6 +24,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 
 export function TemplatesList() {
@@ -44,6 +54,11 @@ export function TemplatesList() {
   const [expiresAt, setExpiresAt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [deleteTarget, setDeleteTarget] = useState<DocumentTemplate | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const loadTemplates = async () => {
     setLoading(true);
     setError(null);
@@ -54,7 +69,7 @@ export function TemplatesList() {
           setAllowed(false);
           return;
         }
-        setError(gate.error || "Failed to load templates");
+        setError(gate.error || t("templates.error.load"));
         return;
       }
       setAllowed(true);
@@ -67,7 +82,7 @@ export function TemplatesList() {
       }
     } catch (err) {
       console.error("Failed to load templates:", err);
-      setError("Failed to load templates");
+      setError(t("templates.error.load"));
     } finally {
       setLoading(false);
     }
@@ -112,7 +127,7 @@ export function TemplatesList() {
         toast.error(result.error);
         return;
       }
-      toast.success(t("templates.publish", "이 템플릿으로 발행"));
+      toast.success(t("templates.publish.success"));
       setPublishTarget(null);
       router.push("/dashboard?tab=publications");
     } catch {
@@ -122,17 +137,22 @@ export function TemplatesList() {
     }
   };
 
-  const handleDelete = async (template: DocumentTemplate) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
-      const result = await deleteTemplate(template.id);
+      const result = await deleteTemplate(deleteTarget.id);
       if (result.error) {
-        toast.error(result.error);
+        toast.error(t("templates.delete.error"));
         return;
       }
-      toast.success(t("templates.delete", "삭제"));
+      toast.success(t("templates.delete.success"));
+      setDeleteTarget(null);
       loadTemplates();
     } catch {
-      toast.error(t("templates.error", "오류가 발생했습니다."));
+      toast.error(t("templates.delete.error"));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -142,8 +162,11 @@ export function TemplatesList() {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Error: {error}</p>
+      <div className="text-center py-8 space-y-4">
+        <p className="text-destructive">{t("templates.error.load")}</p>
+        <Button variant="outline" onClick={loadTemplates}>
+          {t("common.retry")}
+        </Button>
       </div>
     );
   }
@@ -220,7 +243,7 @@ export function TemplatesList() {
                     className="h-8 px-2 hover:bg-destructive hover:text-destructive-foreground"
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleDelete(template);
+                      setDeleteTarget(template);
                     }}
                     aria-label={t("templates.delete")}
                   >
@@ -281,7 +304,7 @@ export function TemplatesList() {
               onClick={() => setPublishTarget(null)}
               disabled={isSubmitting}
             >
-              {t("common.cancel", "취소")}
+              {t("common.cancel")}
             </Button>
             <Button onClick={handlePublish} disabled={isSubmitting}>
               {isSubmitting
@@ -291,6 +314,34 @@ export function TemplatesList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("templates.delete.confirmTitle", { name: deleteTarget?.name ?? "" })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("templates.delete.confirmDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("templates.delete.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

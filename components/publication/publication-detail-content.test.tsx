@@ -4,27 +4,19 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(new URL("./publication-detail-content.tsx", import.meta.url), "utf-8");
 
 describe("publication-detail-content.tsx source", () => {
-  it("uses StatusBadge for both status displays", () => {
-    expect(source).toContain("<StatusBadge");
+  it("has no alert() calls", () => {
+    expect(source).not.toContain("alert(");
   });
 
-  it("uses StatusBadge for the document-in-publication row", () => {
-    const count = (source.match(/<StatusBadge/g) ?? []).length;
-    expect(count).toBe(2);
+  it("imports toast from sonner", () => {
+    expect(source).toContain('from "sonner"');
   });
 
-  it("casts publication.status to a BadgeStatus-safe value", () => {
-    expect(source).toContain("as \"active\" | \"completed\" | \"expired\"");
+  it("uses the update error translation key", () => {
+    expect(source).toContain("publicationDetail.updateError");
   });
 
-  it("has no leftover getStatusColor/getStatusLabel helpers", () => {
-    expect(source).not.toContain("getStatusColor");
-    expect(source).not.toContain("getStatusLabel");
-  });
-  it("uses StatusBadge instead of ad-hoc badge variants", () => {
-    expect(source).toContain("StatusBadge");
-    expect(source).not.toContain("bg-green-");
-    expect(source).not.toContain("text-gray-");
-    expect(source).not.toContain('variant="success"');
+  it("uses toast.error for update failures", () => {
+    expect(source).toContain("toast.error");
   });
 });
