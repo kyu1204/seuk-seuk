@@ -224,4 +224,53 @@ describe("locale parity (ko/en)", () => {
     expect(en["publish.password.optional"]).toBeTruthy();
     expect(en["publish.documents.title"]).toBeTruthy();
   });
+
+  it("has the R41 sign gate/document list copy values", () => {
+    expect(ko["sign.gate.sentBy"]).toBe("{{sender}}님이 보낸 서명 요청");
+    expect(ko["sign.gate.sentByUnknown"]).toBe("서명 요청");
+    expect(ko["sign.gate.summary"]).toBe(
+      "문서 {{docs}}개 · 서명 칸 {{areas}}곳 · {{date}}까지"
+    );
+    expect(ko["sign.gate.summaryNoExpiry"]).toBe(
+      "문서 {{docs}}개 · 서명 칸 {{areas}}곳"
+    );
+    expect(ko["sign.meta.andMore"]).toBe("{{name}} 외 {{count}}건");
+    expect(ko["sign.password.title"]).toBe("비밀번호를 입력해 주세요");
+    expect(ko["sign.password.description"]).toBe(
+      "보낸 사람에게 받은 비밀번호를 입력하면 문서를 볼 수 있어요."
+    );
+    expect(ko["sign.password.verify"]).toBe("문서 열기");
+    expect(ko["sign.password.help"]).toBe(
+      "비밀번호를 모르시나요? 보낸 사람에게 문의하세요."
+    );
+    expect(ko["sign.password.incorrect"]).toBe(
+      "비밀번호가 맞지 않습니다. 다시 확인해 주세요."
+    );
+    expect(ko["sign.password.error"]).toBe(
+      "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요."
+    );
+    expect(ko["sign.documentList.description"]).toBe(
+      "서명이 필요한 문서 {{count}}건이에요."
+    );
+    expect(ko["sign.documentList.pending"]).toBe("서명 대기");
+    expect(ko["sign.documentList.signaturesCompleted"]).toBe(
+      "서명 {{completed}}/{{total}}"
+    );
+    expect(ko["sign.documentList.sign"]).toBe("서명하기");
+    expect(ko["sign.documentList.view"]).toBe("보기");
+    expect(ko["sign.expired.message"]).toBe(
+      "이 문서의 서명 기간이 지났습니다. 보낸 사람에게 새 링크를 요청해 주세요."
+    );
+    expect(ko["sign.notFoundDesc"]).toBe(
+      "링크가 만료되었거나 주소가 잘못되었습니다. 보낸 사람에게 새 링크를 요청해 주세요."
+    );
+    expect(en["sign.gate.sentBy"]).toBeTruthy();
+    expect(en["sign.gate.summary"]).toBeTruthy();
+    expect(en["sign.meta.andMore"]).toBeTruthy();
+    expect(en["sign.documentList.pending"]).toBeTruthy();
+    expect(en["sign.documentList.sign"]).toBeTruthy();
+    expect(en["sign.documentList.view"]).toBeTruthy();
+    expect(en["sign.password.help"]).toBeTruthy();
+  });
+  // touch
 });

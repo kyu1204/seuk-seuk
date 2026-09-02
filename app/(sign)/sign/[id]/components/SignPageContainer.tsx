@@ -6,16 +6,16 @@ import type { PublicationWithDocuments } from "@/lib/supabase/database.types";
 import SignDocumentList from "./SignDocumentList";
 import SignSingleDocument from "./SignSingleDocument";
 import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
+import SignHeader from "./SignHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, FileSignature, ArrowLeft } from "lucide-react";
+import { CheckCircle, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
-import LanguageSelector from "@/components/language-selector";
-import Link from "next/link";
 
 interface SignPageContainerProps {
   publicationData: PublicationWithDocuments;
   requiresPassword: boolean;
+  senderName: string;
 }
 
 type View = "list" | "document" | "completed";
@@ -23,6 +23,7 @@ type View = "list" | "document" | "completed";
 export default function SignPageContainer({
   publicationData,
   requiresPassword,
+  senderName,
 }: SignPageContainerProps) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -64,6 +65,7 @@ export default function SignPageContainer({
       <SignDocumentList
         publicationData={publicationData}
         requiresPassword={requiresPassword}
+        senderName={senderName}
         isPasswordVerified={isPasswordVerified}
         verifiedPassword={verifiedPassword}
         onPasswordVerified={handlePasswordVerified}
@@ -101,41 +103,30 @@ export default function SignPageContainer({
   if (currentView === "completed") {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        {/* Header with logo */}
-        <header className="w-full">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex justify-between items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <FileSignature className="h-8 w-8 text-primary" />
-                <span className="font-bold text-xl">{t("app.title")}</span>
-              </Link>
-              <LanguageSelector />
-            </div>
-          </div>
-        </header>
+        <SignHeader />
 
         {/* Main content */}
         <div className="container mx-auto px-4 py-8 flex-1">
           <div className="max-w-md mx-auto">
             <Card>
               <CardHeader className="text-center">
-                <CheckCircle className="mx-auto h-12 w-12 text-green-400 mb-4" />
-                <CardTitle className="text-xl text-green-600">
+                <CheckCircle className="mx-auto h-12 w-12 text-seal mb-4" />
+                <CardTitle className="text-xl text-seal">
                   {t("sign.complete.title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center space-y-3">
-                  <p className="text-gray-600">{t("sign.complete.description")}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-muted-foreground">{t("sign.complete.description")}</p>
+                  <p className="text-sm text-muted-foreground">
                     {t("sign.completed.noEdit")}
                   </p>
                 </div>
-                <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                  <p className="text-sm text-green-700 text-center font-medium">
+                <div className="bg-seal-soft border rounded-md p-3">
+                  <p className="text-sm text-seal text-center font-medium">
                     {completedDocumentName}
                   </p>
-                  <p className="text-xs text-green-600 text-center mt-1">
+                  <p className="text-xs text-seal text-center mt-1">
                     {t("sign.completed.status")}
                   </p>
                 </div>

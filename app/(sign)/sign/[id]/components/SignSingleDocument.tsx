@@ -8,8 +8,8 @@ import {
   markDocumentCompleted,
   createSignedDocumentUploadUrl,
 } from "@/app/actions/document-actions";
-import LanguageSelector from "@/components/language-selector";
 import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
+import SignHeader from "./SignHeader";
 import SignatureModal from "@/components/signature-modal";
 import TextInputModal from "@/components/text-input-modal";
 import { Button } from "@/components/ui/button";
@@ -697,41 +697,30 @@ export default function SignSingleDocument({
   if (isPublicationCompleted || isDocumentCompleted) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        {/* Header with logo */}
-        <header className="w-full">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex justify-between items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <FileSignature className="h-8 w-8 text-primary" />
-                <span className="font-bold text-xl">{t("app.title")}</span>
-              </Link>
-              <LanguageSelector />
-            </div>
-          </div>
-        </header>
+        <SignHeader />
 
         {/* Main content */}
         <div className="container mx-auto px-4 py-8 flex-1">
           <div className="max-w-md mx-auto">
             <Card>
               <CardHeader className="text-center">
-                <CheckCircle className="mx-auto h-12 w-12 text-green-400 mb-4" />
-                <CardTitle className="text-xl text-green-600">
+                <CheckCircle className="mx-auto h-12 w-12 text-seal mb-4" />
+                <CardTitle className="text-xl text-seal">
                   {t("sign.completed.title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center space-y-3">
-                  <p className="text-gray-600">{t("sign.completed.message")}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-muted-foreground">{t("sign.completed.message")}</p>
+                  <p className="text-sm text-muted-foreground">
                     {t("sign.completed.noEdit")}
                   </p>
                 </div>
-                <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                  <p className="text-sm text-green-700 text-center font-medium">
+                <div className="bg-seal-soft border rounded-md p-3">
+                  <p className="text-sm text-seal text-center font-medium">
                     {documentLabel}
                   </p>
-                  <p className="text-xs text-green-600 text-center mt-1">
+                  <p className="text-xs text-seal text-center mt-1">
                     {t("sign.completed.status")}
                   </p>
                 </div>
@@ -753,44 +742,40 @@ export default function SignSingleDocument({
   // Show expired document screen if document is expired
   if (isExpired) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-4">
-          <Link href="/" className="flex items-center gap-2">
-            <FileSignature className="h-8 w-8 text-primary" />
-            <span className="font-bold text-xl">{t("app.title")}</span>
-          </Link>
-          <LanguageSelector />
-        </div>
-        <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader className="text-center">
-              <Clock className="mx-auto h-12 w-12 text-red-400 mb-4" />
-              <CardTitle className="text-xl text-red-600">
-                {t("sign.expired.title")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center space-y-3">
-                <p className="text-gray-600">{t("sign.expired.message")}</p>
-                <p className="text-sm text-gray-500">
-                  {t("sign.expired.instruction")}
-                </p>
-              </div>
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                <p className="text-sm text-red-700 text-center font-medium">
-                  {documentData.alias || documentData.filename}
-                </p>
-                {publicationData.expires_at && (
-                  <p className="text-xs text-red-600 text-center mt-1">
-                    {t("sign.expired.date")}{" "}
-                    {new Date(publicationData.expires_at).toLocaleDateString(
-                      "ko-KR"
-                    )}
+      <div className="flex flex-col min-h-screen bg-background">
+        <SignHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto">
+            <Card>
+              <CardHeader className="text-center">
+                <Clock className="mx-auto h-12 w-12 text-amber mb-4" />
+                <CardTitle className="text-xl text-amber">
+                  {t("sign.expired.title")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center space-y-3">
+                  <p className="text-muted-foreground">{t("sign.expired.message")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("sign.expired.instruction")}
                   </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+                <div className="bg-amber-soft border rounded-md p-3">
+                  <p className="text-sm text-amber text-center font-medium">
+                    {documentData.alias || documentData.filename}
+                  </p>
+                  {publicationData.expires_at && (
+                    <p className="text-xs text-amber text-center mt-1">
+                      {t("sign.expired.date")}{" "}
+                      {new Date(publicationData.expires_at).toLocaleDateString(
+                        "ko-KR"
+                      )}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -798,14 +783,9 @@ export default function SignSingleDocument({
 
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-4">
-        <Link href="/" className="flex items-center gap-2">
-          <FileSignature className="h-8 w-8 text-primary" />
-          <span className="font-bold text-xl">{t("app.title")}</span>
-        </Link>
-        <LanguageSelector />
-      </div>
+    <div className="flex flex-col min-h-screen bg-background">
+      <SignHeader />
+      <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto">
         {/* Hide back button if publication or document is already completed */}
         {!isPublicationCompleted && !isDocumentCompleted && (
@@ -889,7 +869,7 @@ export default function SignSingleDocument({
 
         <div className="relative border rounded-lg mb-6">
           {/* Zoom Controls */}
-          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
+          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-background/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
             <Button
               size="sm"
               variant="outline"
@@ -1077,10 +1057,11 @@ export default function SignSingleDocument({
         </div>
 
         {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600">
+          <div className="mt-4 p-3 bg-destructive/10 border rounded-md text-destructive">
             {error}
           </div>
         )}
+      </div>
       </div>
 
       {isModalOpen && selectedArea !== null && (
@@ -1141,7 +1122,7 @@ export default function SignSingleDocument({
       {/* Loading indicator for signature saving */}
       {isSaving && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-40">
-          <div className="bg-white rounded-lg p-4 shadow-lg">
+          <div className="bg-background rounded-lg p-4 shadow-lg border">
             <div className="flex items-center gap-3">
               <RefreshCw className="h-5 w-5 animate-spin" />
               <span>{t("sign.savingSignature")}</span>
@@ -1153,7 +1134,7 @@ export default function SignSingleDocument({
       {/* Full-screen loading modal for document generation */}
       {isGenerating && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4">
+          <div className="bg-background rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4 border">
             <div className="flex flex-col items-center gap-6">
               {/* Circular Progress Bar */}
               <AnimatedCircularProgressBar
@@ -1167,13 +1148,13 @@ export default function SignSingleDocument({
 
               {/* Progress Text */}
               <div className="text-center space-y-2">
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-xl font-semibold text-foreground">
                   {t("sign.progress.title")}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {generatingProgress}
                 </p>
-                <p className="text-xs text-gray-500 mt-4">
+                <p className="text-xs text-muted-foreground mt-4">
                   {t("sign.progress.warning")}
                 </p>
               </div>

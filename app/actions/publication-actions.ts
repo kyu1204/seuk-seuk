@@ -10,6 +10,7 @@ import type {
 import bcrypt from "bcryptjs";
 import { deductCredit } from "./credit-actions";
 import { getUserUsageLimits } from "./subscription-actions";
+import { deriveSenderName } from "@/lib/publications/sender-name";
 
 // Generate random short URL
 function generateShortUrl(): string {
@@ -300,6 +301,10 @@ export async function getPublicationByShortUrl(
   success?: boolean;
   publication?: PublicationWithDocuments;
   requiresPassword?: boolean;
+  senderName?: string;
+  name?: string;
+  documentCount?: number;
+  expiresAt?: string | null;
   error?: string;
 }> {
   try {
@@ -348,10 +353,26 @@ export async function getPublicationByShortUrl(
       }
     }
 
+    // Sender name is best-effort: failure to look up the owning user must
+    // not fail the whole page, so it silently falls back to "".
+    let senderName = "";
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(
+        publication.user_id
+      );
+      senderName = deriveSenderName(userData?.user ?? null);
+    } catch (lookupError) {
+      console.error("Get publication sender name error:", lookupError);
+    }
+
     return {
       success: true,
       publication: publication as PublicationWithDocuments,
-      requiresPassword: !!publication.password
+      requiresPassword: !!publication.password,
+      senderName,
+      name: publication.name,
+      documentCount: publication.documents?.length ?? 0,
+      expiresAt: publication.expires_at
     };
   } catch (error) {
     console.error("Get publication by short URL error:", error);

@@ -30,6 +30,13 @@ describe("en locale R32 publish keys exist", () => {
   });
 });
 
+// R41: sign gate/document list copy values checked via ko.test.ts parity.
+describe("en locale R41 sign keys exist", () => {
+  it("has sign.gate.sentBy value", () => {
+    expect(en["sign.gate.sentBy"]).toBeTruthy();
+  });
+});
+
 describe("en locale has no stray Korean text", () => {
   it("contains no Hangul outside the allowlist", () => {
     const offenders = Object.entries(en)

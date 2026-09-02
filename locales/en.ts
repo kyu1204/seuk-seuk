@@ -90,7 +90,7 @@ export default {
   "sign.loading": "Loading document...",
   "sign.notFound": "Document Not Found",
   "sign.notFoundDesc":
-    "The document you're looking for doesn't exist or has expired.",
+    "The link has expired or the address is wrong. Please ask the sender for a new link.",
   "sign.returnHome": "Return to Home",
   "sign.clickAreas": "Click on the highlighted areas to add your signature",
   "sign.clickToSign": "Click to sign",
@@ -339,15 +339,16 @@ export default {
   "consent.error": "We couldn’t record your consent. Please try again.",
 
   // Sign Page - Password Protection & Status
-  "sign.password.title": "Protected Document",
-  "sign.password.description": "This document is password protected.",
+  "sign.password.title": "Enter the password",
+  "sign.password.description": "Enter the password you got from the sender to view the document.",
   "sign.password.instruction": "Please enter the password to continue.",
   "sign.password.placeholder": "Enter password",
-  "sign.password.verify": "Verify",
+  "sign.password.verify": "Open document",
   "sign.password.verifying": "Verifying...",
   "sign.password.required": "Please enter a password.",
-  "sign.password.incorrect": "The password is incorrect.",
-  "sign.password.error": "An error occurred while verifying the password.",
+  "sign.password.incorrect": "That password isn't right. Please check and try again.",
+  "sign.password.error": "We couldn't verify the password. Please try again shortly.",
+  "sign.password.help": "Don't know the password? Ask the sender.",
   "sign.completed.title": "Document Already Submitted",
   "sign.completed.message":
     "This document has been signed and submitted. You can download the signed document using the button below.",
@@ -358,14 +359,14 @@ export default {
   "sign.completed.downloadError": "Failed to generate the download link. Please try again later.",
   "sign.expired.title": "Signature Period Expired",
   "sign.expired.message":
-    "Sorry, the signing period for this document has expired.",
+    "The signing period for this document has passed. Please ask the sender for a new link.",
   "sign.expired.instruction":
     "Please contact the document issuer to request a new signature request.",
   "sign.expired.date": "Expired on:",
   "sign.savingSignature": "Saving signature...",
   "sign.documentList.title": "Documents to Sign",
-  "sign.documentList.description": "Select a document below to start signing",
-  "sign.documentList.signaturesCompleted": "{{completed}}/{{total}} signatures completed",
+  "sign.documentList.description": "{{count}} document(s) need your signature.",
+  "sign.documentList.signaturesCompleted": "Signed {{completed}}/{{total}}",
   "sign.documentList.allSigned": "All signatures completed",
   "sign.documentList.startSigning": "Start Signing",
   "sign.documentList.continueSign": "Continue Signing",
@@ -374,6 +375,18 @@ export default {
   "sign.documentList.submitted": "Submitted",
   "sign.documentList.readyToSubmit": "Ready to Submit",
   "sign.documentList.submitDocument": "Submit Document",
+  "sign.documentList.pending": "Awaiting signature",
+  "sign.documentList.sign": "Sign",
+  "sign.documentList.view": "View",
+
+  // Sign gate (password screen header/summary)
+  "sign.gate.sentBy": "Signature request from {{sender}}",
+  "sign.gate.sentByUnknown": "Signature request",
+  "sign.gate.summary": "{{docs}} document(s) · {{areas}} signature area(s) · due {{date}}",
+  "sign.gate.summaryNoExpiry": "{{docs}} document(s) · {{areas}} signature area(s)",
+
+  // Sign page metadata title fallback
+  "sign.meta.andMore": "{{name}} and {{count}} more",
 
   // Sign progress overlay
   "sign.progress.title": "Processing document",

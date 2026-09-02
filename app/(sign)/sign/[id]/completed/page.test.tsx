@@ -9,4 +9,9 @@ describe("sign completed page.tsx cliche classes", () => {
     expect(src).not.toMatch(/bg-dot-pattern/);
     expect(src).not.toMatch(/gradient-text/);
   });
+
+  it("uses the shared SignHeader and no bg-white override (R41)", () => {
+    expect(src).toContain("SignHeader");
+    expect(src).not.toMatch(/bg-white/);
+  });
 });

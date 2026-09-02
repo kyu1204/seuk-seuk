@@ -89,7 +89,8 @@ export default {
   // Sign Page
   "sign.loading": "문서 로딩 중...",
   "sign.notFound": "문서를 찾을 수 없음",
-  "sign.notFoundDesc": "찾으시는 문서가 존재하지 않거나 만료되었습니다.",
+  "sign.notFoundDesc":
+    "링크가 만료되었거나 주소가 잘못되었습니다. 보낸 사람에게 새 링크를 요청해 주세요.",
   "sign.returnHome": "홈으로 돌아가기",
   "sign.clickAreas": "강조된 영역을 클릭하여 서명을 추가하세요",
   "sign.clickToSign": "클릭하여 서명",
@@ -337,15 +338,16 @@ export default {
   "consent.error": "약관 동의 처리 중 문제가 발생했습니다. 다시 시도해주세요.",
 
   // Sign Page - Password Protection & Status
-  "sign.password.title": "보안 문서",
-  "sign.password.description": "이 문서는 비밀번호로 보호되어 있습니다.",
+  "sign.password.title": "비밀번호를 입력해 주세요",
+  "sign.password.description": "보낸 사람에게 받은 비밀번호를 입력하면 문서를 볼 수 있어요.",
   "sign.password.instruction": "계속하려면 비밀번호를 입력해주세요.",
   "sign.password.placeholder": "비밀번호를 입력하세요",
-  "sign.password.verify": "확인",
+  "sign.password.verify": "문서 열기",
   "sign.password.verifying": "확인 중...",
   "sign.password.required": "비밀번호를 입력해주세요.",
-  "sign.password.incorrect": "비밀번호가 올바르지 않습니다.",
-  "sign.password.error": "비밀번호 확인 중 오류가 발생했습니다.",
+  "sign.password.incorrect": "비밀번호가 맞지 않습니다. 다시 확인해 주세요.",
+  "sign.password.error": "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.",
+  "sign.password.help": "비밀번호를 모르시나요? 보낸 사람에게 문의하세요.",
   "sign.completed.title": "이미 제출된 문서입니다",
   "sign.completed.message": "이 문서는 서명이 완료되어 제출되었습니다. 아래 버튼을 눌러 서명 완료 문서를 다운로드할 수 있습니다.",
   "sign.completed.noEdit": "더 이상 수정할 수 없습니다.",
@@ -354,14 +356,14 @@ export default {
   "sign.completed.downloadLoading": "다운로드 준비 중...",
   "sign.completed.downloadError": "다운로드 링크를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   "sign.expired.title": "서명 기간 만료",
-  "sign.expired.message": "죄송합니다. 이 문서의 서명 기간이 만료되었습니다.",
+  "sign.expired.message": "이 문서의 서명 기간이 지났습니다. 보낸 사람에게 새 링크를 요청해 주세요.",
   "sign.expired.instruction":
     "문서 발행자에게 연락하여 새로운 서명 요청을 받아주세요.",
   "sign.expired.date": "만료일:",
   "sign.savingSignature": "서명 저장 중...",
   "sign.documentList.title": "서명할 문서 목록",
-  "sign.documentList.description": "아래 문서를 선택하여 서명을 시작하세요",
-  "sign.documentList.signaturesCompleted": "{{completed}}/{{total}} 서명 완료",
+  "sign.documentList.description": "서명이 필요한 문서 {{count}}건이에요.",
+  "sign.documentList.signaturesCompleted": "서명 {{completed}}/{{total}}",
   "sign.documentList.allSigned": "모든 서명 완료",
   "sign.documentList.startSigning": "서명 시작",
   "sign.documentList.continueSign": "서명 계속하기",
@@ -370,6 +372,18 @@ export default {
   "sign.documentList.submitted": "제출 완료",
   "sign.documentList.readyToSubmit": "서명 완료 - 제출 대기",
   "sign.documentList.submitDocument": "문서 제출하기",
+  "sign.documentList.pending": "서명 대기",
+  "sign.documentList.sign": "서명하기",
+  "sign.documentList.view": "보기",
+
+  // Sign gate (password screen header/summary)
+  "sign.gate.sentBy": "{{sender}}님이 보낸 서명 요청",
+  "sign.gate.sentByUnknown": "서명 요청",
+  "sign.gate.summary": "문서 {{docs}}개 · 서명 칸 {{areas}}곳 · {{date}}까지",
+  "sign.gate.summaryNoExpiry": "문서 {{docs}}개 · 서명 칸 {{areas}}곳",
+
+  // Sign page metadata title fallback
+  "sign.meta.andMore": "{{name}} 외 {{count}}건",
 
   // Sign progress overlay
   "sign.progress.title": "문서 처리 중",
