@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+// R22: document tile/card copy covered in ko.test.ts parity assertions (source of truth, 2).
 import en from "./en";
 
 // "language.ko" intentionally holds the native name of Korean ("한국어"),

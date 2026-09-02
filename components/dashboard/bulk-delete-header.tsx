@@ -24,7 +24,7 @@ export function BulkDeleteHeader({
   const { t } = useLanguage();
 
   return (
-    <div className="sticky top-0 z-10 bg-background border-b border-border shadow-sm mb-6 py-3 px-4 animate-in slide-in-from-top duration-200">
+    <div className="sticky top-16 z-10 bg-background border-b border-border shadow-sm mb-6 py-3 px-4 animate-in slide-in-from-top duration-200">
       <div className="flex flex-col gap-3">
         {/* Top row - Selection count and exit button */}
         <div className="flex items-center justify-between">
@@ -37,7 +37,7 @@ export function BulkDeleteHeader({
             onClick={onExitSelectionMode}
             disabled={isDeleting}
             className="h-8"
-            title={t("dashboard.selectionMode.exit")}
+            aria-label={t("dashboard.selectionMode.exit")}
           >
             <X className="h-4 w-4" />
           </Button>

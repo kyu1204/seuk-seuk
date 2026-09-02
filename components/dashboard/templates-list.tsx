@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FileX, FileStack, Sparkles, Send, Trash2 } from "lucide-react";
+import { FileX, Send, Trash2, Sparkles } from "lucide-react";
+import { DocumentTile } from "@/components/dashboard/document-tile";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/language-context";
 import {
@@ -16,7 +17,6 @@ import type { DocumentTemplate } from "@/lib/supabase/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -136,11 +136,6 @@ export function TemplatesList() {
     }
   };
 
-  const truncateName = (templateName: string, maxLength: number = 35) => {
-    if (templateName.length <= maxLength) return templateName;
-    return `${templateName.slice(0, maxLength)}...`;
-  };
-
   if (loading) {
     return <DashboardSkeleton />;
   }
@@ -197,40 +192,16 @@ export function TemplatesList() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {templates.map((template) => (
-            <Card
+            <DocumentTile
               key={template.id}
-              role="link"
-              tabIndex={0}
-              className="h-64 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              title={template.name}
+              metaLeft={template.file_type.toUpperCase()}
+              metaRight={t("templates.card.areas", { count: template.page_count })}
               onClick={() => router.push(`/templates/${template.id}`)}
-              onKeyDown={(event) => {
-                if (event.target !== event.currentTarget) return;
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  router.push(`/templates/${template.id}`);
-                }
-              }}
-            >
-              <CardHeader className="pt-6 pb-3 flex-1 flex flex-col justify-center">
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <FileStack className="h-8 w-8 text-primary flex-shrink-0" />
-                  <h3
-                    className="font-medium text-sm leading-relaxed text-center px-2 break-words"
-                    title={template.name}
-                  >
-                    {truncateName(template.name)}
-                  </h3>
-                  <div className="text-xs text-muted-foreground">
-                    {template.file_type.toUpperCase()} ·{" "}
-                    {t("templates.pageCount", { count: template.page_count })}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="pt-0 pb-4 mt-auto">
-                <div className="flex items-center justify-center gap-2">
+              actions={
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -256,8 +227,8 @@ export function TemplatesList() {
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              }
+            />
           ))}
         </div>
       )}

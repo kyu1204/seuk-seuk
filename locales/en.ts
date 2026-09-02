@@ -462,9 +462,13 @@ export default {
   "dashboard.publications.status.active": "Active",
   "dashboard.publications.status.completed": "Completed",
   "dashboard.publications.status.expired": "Expired",
-  "dashboard.publications.card.documentCount": " documents",
-  "dashboard.publications.card.copied": "Copied",
-  "dashboard.publications.card.copyLink": "Link",
+  "dashboard.publications.card.documentCount": "{{count}} documents",
+  "dashboard.publications.card.copied": "Link copied",
+  "dashboard.publications.card.copyLink": "Copy link",
+  "dashboard.publications.card.open": "Open sign page",
+  "dashboard.card.signatures": "{{completed}}/{{total}} signed",
+  "dashboard.card.areas": "{{count}} areas",
+  "templates.card.areas": "{{count}} areas",
   "dashboard.publications.card.cannotDelete": "Only completed publications can be deleted",
   "dashboard.publications.delete.title": "Delete Publication",
   "dashboard.publications.delete.description": "Are you sure you want to delete \"{name}\"?",
@@ -484,7 +488,7 @@ export default {
   "dashboard.bulkDelete.deleting": "Deleting...",
   "dashboard.bulkDelete.select": "Select",
   "dashboard.bulkDelete.deselect": "Deselect",
-  "dashboard.bulkDelete.cannotDelete": "Published documents cannot be deleted",
+  "dashboard.bulkDelete.cannotDelete": "This document is being published. Delete the publication first.",
   "dashboard.bulkDelete.modalTitle": "Bulk Delete Documents",
   "dashboard.bulkDelete.modalWarning": "Are you sure you want to delete the following documents?",
   "dashboard.bulkDelete.andMore": "and {{count}} more",
@@ -497,8 +501,8 @@ export default {
   "dashboard.bulkDelete.errorMessage": "Failed to delete {{count}} document(s): {{details}}",
 
   // Selection Mode
-  "dashboard.selectionMode.enter": "Select",
-  "dashboard.selectionMode.exit": "Exit Selection Mode",
+  "dashboard.selectionMode.enter": "Select multiple",
+  "dashboard.selectionMode.exit": "Cancel selection",
 
   // Bills
   "bills.title": "Billing & Subscriptions",

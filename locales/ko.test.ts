@@ -109,4 +109,21 @@ describe("locale parity (ko/en)", () => {
     expect(en["dashboard.upload.document"]).toBe("Upload document");
     expect(en["usage.summary.sent"]).toBeTruthy();
   });
+
+  it("has the R22 document tile/card copy values (source of truth 2)", () => {});
+  it("has the R22 document tile/card copy values", () => {
+    expect(ko["dashboard.card.areas"]).toBe("칸 {{count}}개");
+    expect(ko["dashboard.card.signatures"]).toBe("서명 {{completed}}/{{total}}");
+    expect(ko["templates.card.areas"]).toBe("칸 {{count}}개");
+    expect(ko["dashboard.publications.card.documentCount"]).toBe("문서 {{count}}개");
+    expect(ko["dashboard.publications.card.copyLink"]).toBe("링크 복사");
+    expect(ko["dashboard.publications.card.copied"]).toBe("링크를 복사했어요");
+    expect(ko["dashboard.publications.card.open"]).toBe("서명 페이지 열기");
+    expect(ko["dashboard.bulkDelete.cannotDelete"]).toBe("발행 중인 문서예요. 먼저 발행을 삭제해 주세요.");
+    expect(ko["dashboard.selectionMode.enter"]).toBe("여러 개 선택");
+    expect(ko["dashboard.selectionMode.exit"]).toBe("선택 취소");
+
+    expect(en["dashboard.card.areas"]).toBeTruthy();
+    expect(en["dashboard.publications.card.documentCount"]).toBeTruthy();
+  });
 });

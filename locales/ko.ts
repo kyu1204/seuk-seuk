@@ -456,9 +456,13 @@ export default {
   "dashboard.publications.status.active": "활성",
   "dashboard.publications.status.completed": "완료",
   "dashboard.publications.status.expired": "만료",
-  "dashboard.publications.card.documentCount": "개 문서",
-  "dashboard.publications.card.copied": "복사됨",
-  "dashboard.publications.card.copyLink": "링크",
+  "dashboard.publications.card.documentCount": "문서 {{count}}개",
+  "dashboard.publications.card.copied": "링크를 복사했어요",
+  "dashboard.publications.card.copyLink": "링크 복사",
+  "dashboard.publications.card.open": "서명 페이지 열기",
+  "dashboard.card.signatures": "서명 {{completed}}/{{total}}",
+  "dashboard.card.areas": "칸 {{count}}개",
+  "templates.card.areas": "칸 {{count}}개",
   "dashboard.publications.card.cannotDelete": "완료된 발행만 삭제할 수 있습니다",
   "dashboard.publications.delete.title": "발행 삭제",
   "dashboard.publications.delete.description": "\"{name}\" 발행을 삭제하시겠습니까?",
@@ -478,7 +482,7 @@ export default {
   "dashboard.bulkDelete.deleting": "삭제 중...",
   "dashboard.bulkDelete.select": "선택",
   "dashboard.bulkDelete.deselect": "선택 해제",
-  "dashboard.bulkDelete.cannotDelete": "발행된 문서는 삭제할 수 없습니다",
+  "dashboard.bulkDelete.cannotDelete": "발행 중인 문서예요. 먼저 발행을 삭제해 주세요.",
   "dashboard.bulkDelete.modalTitle": "문서 일괄 삭제",
   "dashboard.bulkDelete.modalWarning": "다음 문서들을 삭제하시겠습니까?",
   "dashboard.bulkDelete.andMore": "외 {{count}}개",
@@ -491,8 +495,8 @@ export default {
   "dashboard.bulkDelete.errorMessage": "{{count}}개 문서 삭제 실패: {{details}}",
 
   // Selection Mode
-  "dashboard.selectionMode.enter": "선택",
-  "dashboard.selectionMode.exit": "선택 모드 종료",
+  "dashboard.selectionMode.enter": "여러 개 선택",
+  "dashboard.selectionMode.exit": "선택 취소",
 
   // Bills
   "bills.title": "결제 및 구독",
