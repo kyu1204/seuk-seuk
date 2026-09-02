@@ -93,47 +93,55 @@ export default {
   "language.en": "English",
 
   // Homepage
-  "home.notification": "🎉 New features just released! Check them out now.",
-  "home.nav.features": "Features",
-  "home.nav.pricing": "Pricing",
-  "home.nav.testimonials": "Testimonials",
-  "home.dashboard": "Dashboard",
-  "home.getStarted": "Get Started",
-  "home.hero.title": "Document Signing Made Simple",
+  "home.hero.eyebrow": "Online e-signatures for any document",
+  "home.hero.title": "From contracts to consent forms,\nget it signed with one link",
   "home.hero.description":
-    "Experience paperless document workflows with SeukSeuk. Sign and share documents securely from anywhere.",
-  "home.hero.cta": "Start Now",
-  "home.hero.learnMore": "Learn More",
-  "home.hero.trustedBy": "Trusted by thousands of users",
-  "home.featuresTitle": "Powerful Features",
-  "home.featuresDescription":
-    "SeukSeuk offers a range of features to streamline your document signing process.",
-  "home.features.easy.title": "Easy to Use",
-  "home.features.easy.description":
-    "Intuitive interface that anyone can use without training.",
-  "home.features.secure.title": "Secure & Protected",
-  "home.features.secure.description":
-    "All documents and signatures are encrypted and securely stored.",
-  "home.features.fast.title": "Lightning Fast",
-  "home.features.fast.description":
-    "Upload and sign documents in seconds, not minutes.",
-  "home.testimonialsTitle": "Customer Testimonials",
-  "home.testimonialsDescription":
-    "See what our customers are saying about SeukSeuk.",
-  "home.testimonials.quote1":
-    "SeukSeuk completely transformed our contract process. What used to take days now takes minutes.",
-  "home.testimonials.author1": "John Smith",
-  "home.testimonials.role1": "Startup CEO",
-  "home.testimonials.quote2":
-    "I was looking for an easy-to-use and secure signing solution, and SeukSeuk was perfect. My clients love how easy it is to use.",
-  "home.testimonials.author2": "Sarah Johnson",
-  "home.testimonials.role2": "Freelance Designer",
-  "home.testimonials.quote3":
-    "Document signing was a major pain point in our remote work environment, but SeukSeuk solved that. Highly recommended!",
-  "home.testimonials.author3": "Michael Chen",
-  "home.testimonials.role3": "HR Manager",
-  "home.pricingTitle": "Simple Pricing",
-  "home.pricingDescription": "Choose a plan that works for your needs.",
+    "Upload a PDF or a photo of a document, mark where to sign, and send the link. Signers open it on their phone and sign, with no account or app required.",
+  "home.hero.cta": "Start for free",
+  "home.hero.ctaLoggedIn": "Go to dashboard",
+  "home.hero.secondary": "How does it work?",
+  "home.hero.note": "Free plan available · Signers never need an account",
+  "home.mock.request": "Signature request · 2 fields",
+  "home.mock.docTitle": "Service Agreement",
+  "home.mock.progress": "1/2 signed",
+  "home.mock.partyA": "Client signature",
+  "home.mock.partyB": "Contractor signature",
+  "home.mock.tapToSign": "Tap to sign",
+  "home.mock.linkSent": "Link sent · valid for 7 days",
+  "home.steps.title": "Three steps for you, one tap for them",
+  "home.steps.description":
+    "Move the contracts, consent forms, and quotes you used to print straight online.",
+  "home.steps.upload.title": "Upload the document",
+  "home.steps.upload.description":
+    "PDFs work, and so does a photo of a paper document.",
+  "home.steps.areas.title": "Mark the fields",
+  "home.steps.areas.description":
+    "Drag signature, name, and date fields onto the page where you need them.",
+  "home.steps.send.title": "Send the link",
+  "home.steps.send.description":
+    "Share it by chat or text. Add a password and an expiry date if you like.",
+  "home.steps.after":
+    "When everyone has signed, you get an email and the signed PDF is ready to download.",
+  "home.signer.eyebrow": "For signers",
+  "home.signer.title": "Signatures come back faster when signing is effortless",
+  "home.signer.description":
+    "Ask someone to install an app or create an account and the signature gets postponed. With SeukSeuk, tapping the link is all it takes.",
+  "home.signer.noAccount": "Opens from the link, no sign-up or app",
+  "home.signer.mobile": "Sign with a finger right on the phone",
+  "home.signer.batch": "Fill every matching field with one signature",
+  "home.signer.password": "Password-protected documents stay private",
+  "home.sender.eyebrow": "For senders",
+  "home.sender.title": "Every recurring signature task in one place",
+  "home.sender.description":
+    "From placing the same fields on the same form to keeping every signed copy, SeukSeuk handles it.",
+  "home.sender.templates": "Save frequent documents as templates, fields included",
+  "home.sender.bundle": "Bundle several documents into a single link",
+  "home.sender.expiry": "Set link expiry dates and passwords",
+  "home.sender.signedPdf": "Signed PDFs stored automatically, ready to download",
+  "home.sender.dashboard": "See who has signed what from the dashboard",
+  "home.pricingTitle": "Pay only for what you send",
+  "home.pricingDescription": "Plans differ only by how many documents you send per month.",
+  "home.scrollTop": "Back to top",
   "pricing.free.name": "Basic",
   "pricing.free.description": "Free plan for individual users",
   "pricing.basic.name": "Basic",
@@ -151,11 +159,12 @@ export default {
   "pricing.popular": "Popular",
   "pricing.perMonth": "/month",
   "pricing.perYear": "/year",
-  "pricing.billing.monthly": "monthly",
-  "pricing.billing.yearly": "yearly",
+  "pricing.billing.label": "Billing cycle",
+  "pricing.billing.monthly": "Monthly",
+  "pricing.billing.yearly": "Yearly",
   // Pricing limits (dynamic count)
-  "pricing.limitPerMonth": "Up to {{count}} documents charged per month",
-  "pricing.limitUnlimitedPerMonth": "Unlimited documents per month",
+  "pricing.limitPerMonth": "{{count}} documents per month",
+  "pricing.limitUnlimitedPerMonth": "Unlimited documents",
 
   // Pricing Page Specific Keys
   "pricingPage.title": "Choose Your Plan",
@@ -216,11 +225,10 @@ export default {
     "You will receive a confirmation email shortly with your subscription details.",
   "checkout.success.dashboard": "Go to Dashboard",
 
-  "home.cta.title": "Have Questions?",
+  "home.cta.title": "Send your first document today",
   "home.cta.description":
-    "Our team is here to help. Feel free to reach out anytime.",
-  "home.cta.button": "Contact Us",
-  "home.footer.rights": "All rights reserved.",
+    "Start on the free plan and upgrade when your volume grows. Questions before you commit? Just ask.",
+  "home.cta.contact": "Contact us",
 
   // 테마 전환 버튼
   "theme.light": "Light",

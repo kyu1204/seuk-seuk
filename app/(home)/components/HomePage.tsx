@@ -1,16 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/language-context";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight,
   Check,
   ChevronUp,
   FileSignature,
-  Shield,
-  Zap,
+  Link2,
+  MousePointerClick,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -24,6 +25,7 @@ import { PADDLE_PRICE_TIERS } from "@/lib/paddle/pricing-config";
 
 export default function HomePageComponent() {
   const { t, language } = useLanguage();
+  const { isAuthenticated } = useAuth();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly"
   );
@@ -31,6 +33,11 @@ export default function HomePageComponent() {
   const [paddle, setPaddle] = useState<Paddle | undefined>(undefined);
   const { prices: paddlePrices, loading: paddleLoading } =
     usePaddlePrices(paddle);
+
+  const startHref = isAuthenticated ? "/dashboard" : "/register";
+  const startLabel = isAuthenticated
+    ? t("home.hero.ctaLoggedIn")
+    : t("home.hero.cta");
 
   useEffect(() => {
     async function loadPlans() {
@@ -57,38 +64,19 @@ export default function HomePageComponent() {
     }
   }, []);
 
-  const features = [
-    {
-      icon: <FileSignature className="h-10 w-10 text-primary" />,
-      title: t("home.features.easy.title"),
-      description: t("home.features.easy.description"),
-    },
-    {
-      icon: <Shield className="h-10 w-10 text-primary" />,
-      title: t("home.features.secure.title"),
-      description: t("home.features.secure.description"),
-    },
-    {
-      icon: <Zap className="h-10 w-10 text-primary" />,
-      title: t("home.features.fast.title"),
-      description: t("home.features.fast.description"),
-    },
-  ];
-
   // DB 데이터와 Paddle 가격을 기반으로 pricing plans 생성
-  const pricingPlans = plans.map((plan, index) => {
+  const pricingPlans = plans.map((plan) => {
     const planKey = plan.name.toLowerCase();
+    const isFree = (plan as any).monthly_price === 0;
     const isEnterprise =
       (plan as any).monthly_price === -1 || (plan as any).yearly_price === -1;
 
-    // Paddle 가격 가져오기
     let displayPrice = "";
-    if ((plan as any).monthly_price === 0) {
+    if (isFree) {
       displayPrice = t("pricing.free.price");
     } else if (isEnterprise) {
       displayPrice = t("pricingPage.contact");
     } else {
-      // Pro 플랜인 경우 Paddle 가격 사용
       const paddleTier = PADDLE_PRICE_TIERS.find(
         (tier) =>
           tier.name.toLowerCase() === planKey ||
@@ -100,13 +88,11 @@ export default function HomePageComponent() {
           : paddleTier?.priceId.month;
       if (paddleTier && priceId && paddlePrices[priceId]) {
         const price = paddlePrices[priceId];
-        // 포맷된 가격 문자열에서 숫자만 추출 (예: "$10.00" -> "10.00")
         const numericPrice = price.replace(/[^0-9.]/g, "");
         displayPrice = `$${Math.floor(parseFloat(numericPrice))}`;
       } else if (paddleLoading) {
         displayPrice = "...";
       } else {
-        // Fallback to DB price (USD in monthly_price/yearly_price)
         const dbPrice =
           billingCycle === "yearly"
             ? (plan as any).yearly_price
@@ -115,7 +101,6 @@ export default function HomePageComponent() {
       }
     }
 
-    // Features from DB by language: features column shape { ko: string[]; en: string[] }
     const planFeatures = extractFeaturesByLanguage(plan.features, language);
     const limitFeature =
       plan.monthly_document_limit === -1
@@ -123,15 +108,20 @@ export default function HomePageComponent() {
         : t("pricing.limitPerMonth", {
             count: plan.monthly_document_limit,
           });
-    const mergedFeatures = [limitFeature, ...planFeatures];
+
+    // 플랜 성격에 따라 목적지를 분기한다. 무료는 바로 시작, 유료는 결제 페이지, 엔터프라이즈는 문의.
+    const href = isEnterprise ? "/contact" : isFree ? startHref : "/pricing";
 
     return {
       name: t(`pricing.${planKey}.name`),
       description: t(`pricing.${planKey}.description`),
       price: displayPrice,
-      features: mergedFeatures,
+      showPeriod: !isFree && !isEnterprise,
+      features: [limitFeature, ...planFeatures],
       cta: t(`pricing.${planKey}.cta`),
       popular: !!plan.is_popular,
+      isPro: planKey === "pro",
+      href,
     };
   });
 
@@ -141,11 +131,9 @@ export default function HomePageComponent() {
   ): string[] {
     try {
       if (!raw) return [];
-      // If already an array of strings
       if (Array.isArray(raw) && raw.every((x) => typeof x === "string")) {
         return raw as string[];
       }
-      // If stringified JSON
       if (typeof raw === "string") {
         const parsed = JSON.parse(raw);
         if (
@@ -156,7 +144,6 @@ export default function HomePageComponent() {
           return parsed[lang] as string[];
         }
       }
-      // If JSON object
       if (
         typeof raw === "object" &&
         raw !== null &&
@@ -170,336 +157,413 @@ export default function HomePageComponent() {
     return [];
   }
 
-  const testimonials = [
+  const steps = [
     {
-      quote: t("home.testimonials.quote1"),
-      author: t("home.testimonials.author1"),
-      role: t("home.testimonials.role1"),
+      icon: Upload,
+      title: t("home.steps.upload.title"),
+      description: t("home.steps.upload.description"),
     },
     {
-      quote: t("home.testimonials.quote2"),
-      author: t("home.testimonials.author2"),
-      role: t("home.testimonials.role2"),
+      icon: MousePointerClick,
+      title: t("home.steps.areas.title"),
+      description: t("home.steps.areas.description"),
     },
     {
-      quote: t("home.testimonials.quote3"),
-      author: t("home.testimonials.author3"),
-      role: t("home.testimonials.role3"),
+      icon: Link2,
+      title: t("home.steps.send.title"),
+      description: t("home.steps.send.description"),
     },
+  ];
+
+  const signerPoints = [
+    t("home.signer.noAccount"),
+    t("home.signer.mobile"),
+    t("home.signer.batch"),
+    t("home.signer.password"),
+  ];
+
+  const senderPoints = [
+    t("home.sender.templates"),
+    t("home.sender.bundle"),
+    t("home.sender.expiry"),
+    t("home.sender.signedPdf"),
+    t("home.sender.dashboard"),
   ];
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 md:py-32">
-        <div className="absolute inset-0 bg-dot-pattern opacity-30"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 gradient-text">
-              {t("home.hero.title")}
-            </h1>
-            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-              {t("home.hero.description")}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 gap-2 text-white"
-                >
-                  {t("home.hero.cta")}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+      {/* Hero */}
+      <section className="pt-10 pb-16 md:pt-16 md:pb-24">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 items-center">
+            <div className="max-w-xl">
+              <p className="text-sm font-medium tracking-wide text-primary mb-5">
+                {t("home.hero.eyebrow")}
+              </p>
+              <h1 className="text-4xl md:text-5xl lg:text-[3.4rem] font-bold leading-[1.15] tracking-[-0.02em] mb-6 whitespace-pre-line [text-wrap:balance]">
+                {t("home.hero.title")}
+              </h1>
+              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+                {t("home.hero.description")}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href={startHref}>
+                  <Button size="lg" className="w-full sm:w-auto gap-2">
+                    {startLabel}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <a href="#how-it-works" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    variant="ghost"
+                    className="w-full sm:w-auto text-foreground"
+                  >
+                    {t("home.hero.secondary")}
+                  </Button>
+                </a>
+              </div>
+              <p className="mt-5 text-sm text-muted-foreground">
+                {t("home.hero.note")}
+              </p>
             </div>
+
+            <SigningMock />
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4 gradient-text">
-              {t("home.featuresTitle")}
+      {/* How it works — 실제 순서가 있는 흐름이라 번호를 붙인다 */}
+      <section id="how-it-works" className="py-16 md:py-24 bg-muted/40 border-y">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3 [text-wrap:balance]">
+              {t("home.steps.title")}
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("home.featuresDescription")}
+            <p className="text-muted-foreground">
+              {t("home.steps.description")}
             </p>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                className={cn(
-                  "bg-card border-primary/10 hover:border-primary/30 transition-all duration-300",
-                  index % 2 === 0 ? "card-angled" : "card-angled-right"
-                )}
-              >
-                <CardContent className="p-8">
-                  <div className="rounded-full bg-primary/10 p-4 mb-6 w-fit">
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section
-        id="testimonials"
-        className="py-20 bg-secondary/50 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-dot-pattern opacity-5"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4 gradient-text">
-              {t("home.testimonialsTitle")}
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("home.testimonialsDescription")}
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Card
-                key={index}
-                className={cn(
-                  "bg-card border-primary/10 hover:border-primary/30 transition-all duration-300",
-                  index % 2 === 0 ? "card-angled" : "card-angled-right"
-                )}
-              >
-                <CardContent className="p-8">
-                  <div className="mb-4 text-primary">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M11.3 6.2H6.8C5.8 6.2 5 7 5 8V12.5C5 13.5 5.8 14.3 6.8 14.3H9.3V16.8C9.3 17.8 10.1 18.6 11.1 18.6H11.3C11.5 18.6 11.8 18.5 12 18.3L14.5 15.8C14.7 15.6 14.8 15.3 14.8 15.1V9.7C14.8 7.8 13.2 6.2 11.3 6.2Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M19.3 6.2H17.8V12.8C17.8 13.1 17.7 13.4 17.5 13.6L15.7 15.4C16.2 15.7 16.8 15.8 17.3 15.8H17.8V18.3C17.8 19.3 18.6 20.1 19.6 20.1H19.8C20 20.1 20.3 20 20.5 19.8L23 17.3C23.2 17.1 23.3 16.8 23.3 16.6V9.7C23.3 7.8 21.7 6.2 19.8 6.2H19.3Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-foreground mb-6 italic">
-                    "{testimonial.quote}"
+          <ol className="grid md:grid-cols-3 gap-8 md:gap-6">
+            {steps.map((step, i) => (
+              <li key={step.title} className="relative flex md:block gap-4">
+                <div className="flex items-center gap-3 mb-4 shrink-0">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold tabular-nums">
+                    {i + 1}
+                  </span>
+                  <step.icon
+                    className="hidden md:block h-5 w-5 text-muted-foreground"
+                    aria-hidden
+                  />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1.5">{step.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {step.description}
                   </p>
-                  <div>
-                    <p className="font-semibold">{testimonial.author}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {testimonial.role}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </li>
             ))}
+          </ol>
+          <p className="mt-10 text-sm text-muted-foreground border-t pt-6 max-w-2xl">
+            {t("home.steps.after")}
+          </p>
+        </div>
+      </section>
+
+      {/* For signers / for senders */}
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
+            <div>
+              <p className="text-sm font-medium text-primary mb-3">
+                {t("home.signer.eyebrow")}
+              </p>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4 [text-wrap:balance]">
+                {t("home.signer.title")}
+              </h2>
+              <p className="text-muted-foreground mb-8">
+                {t("home.signer.description")}
+              </p>
+              <ul className="space-y-3">
+                {signerPoints.map((point) => (
+                  <li key={point} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-primary mb-3">
+                {t("home.sender.eyebrow")}
+              </p>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4 [text-wrap:balance]">
+                {t("home.sender.title")}
+              </h2>
+              <p className="text-muted-foreground mb-8">
+                {t("home.sender.description")}
+              </p>
+              <ul className="space-y-3">
+                {senderPoints.map((point) => (
+                  <li key={point} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-4 gradient-text">
-              {t("home.pricingTitle")}
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("home.pricingDescription")}
-            </p>
-          </div>
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center rounded-md border p-1 bg-muted">
-              <button
-                className={`px-3 py-1 rounded-sm text-sm ${
-                  billingCycle === "monthly"
-                    ? "bg-background text-foreground"
-                    : "text-muted-foreground"
-                }`}
-                onClick={() => setBillingCycle("monthly")}
-              >
-                {t("pricing.billing.monthly")}
-              </button>
-              <button
-                className={`px-3 py-1 rounded-sm text-sm ${
-                  billingCycle === "yearly"
-                    ? "bg-background text-foreground"
-                    : "text-muted-foreground"
-                }`}
-                onClick={() => setBillingCycle("yearly")}
-              >
-                {t("pricing.billing.yearly")}
-              </button>
+      {/* Pricing */}
+      <section id="pricing" className="py-16 md:py-24 bg-muted/40 border-y">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+            <div className="max-w-xl">
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
+                {t("home.pricingTitle")}
+              </h2>
+              <p className="text-muted-foreground">
+                {t("home.pricingDescription")}
+              </p>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label={t("pricing.billing.label")}
+              className="inline-flex self-start items-center rounded-md border bg-background p-1"
+            >
+              {(["monthly", "yearly"] as const).map((cycle) => (
+                <button
+                  key={cycle}
+                  type="button"
+                  role="radio"
+                  aria-checked={billingCycle === cycle}
+                  onClick={() => setBillingCycle(cycle)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-sm text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    billingCycle === cycle
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {t(`pricing.billing.${cycle}`)}
+                </button>
+              ))}
             </div>
           </div>
 
-          {paddleLoading ? (
-            <div className="flex justify-center items-center min-h-[400px]">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          {paddleLoading || pricingPlans.length === 0 ? (
+            <div className="grid md:grid-cols-3 gap-6">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-[420px] rounded-lg border bg-background animate-pulse"
+                  aria-hidden
+                />
+              ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {pricingPlans.map((plan, index) => {
-                const isPro = plans[index]?.name.toLowerCase() === "pro";
-                return (
-                <Card
-                  key={index}
+            <div className="grid md:grid-cols-3 gap-6">
+              {pricingPlans.map((plan) => (
+                <div
+                  key={plan.name}
                   className={cn(
-                    "flex flex-col h-full bg-card border-primary/10 hover:border-primary/30 transition-all duration-300",
-                    plan.popular ? "border-primary shadow-lg relative" : "",
-                    index === 0
-                      ? "card-angled"
-                      : index === 2
-                      ? "card-angled-right"
-                      : ""
+                    "relative flex flex-col rounded-lg border bg-background p-7",
+                    plan.popular && "border-primary shadow-md"
                   )}
                 >
-                  {plan.popular && (
-                    <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/3">
-                      <div className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
-                        {t("pricing.popular")}
-                      </div>
-                    </div>
+                  {(plan.popular || plan.isPro) && (
+                    <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
+                      {plan.popular
+                        ? t("pricing.popular")
+                        : t("pricing.pro.freeTrial")}
+                    </span>
                   )}
-                  {isPro && !plan.popular && (
-                    <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/3">
-                      <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                        {t("pricing.pro.freeTrial")}
-                      </div>
-                    </div>
-                  )}
-                  <CardContent className="p-8 h-full flex flex-col">
-                    <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                    <p className="text-muted-foreground text-sm mb-6">
-                      {plan.description}
-                    </p>
-                    <div className="mb-6">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      {plan.price !== t("pricingPage.contact") &&
-                        plan.price !== t("pricing.free.price") && (
-                        <span className="text-muted-foreground ml-2">
-                          {billingCycle === "monthly"
-                            ? t("pricingPage.perMonth")
-                            : t("pricingPage.perYear")}
-                        </span>
-                      )}
-                    </div>
-                    <ul className="space-y-3 mb-8">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start">
-                          <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
-                          <span className="text-sm">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      className="mt-auto block"
-                      href={`${
-                        plan.price === t("pricingPage.contact") ? "/contact" : "/pricing"
-                      }`}
+                  <h3 className="text-lg font-semibold">{plan.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-1 mb-6">
+                    {plan.description}
+                  </p>
+                  <div className="mb-6 flex items-baseline gap-1.5">
+                    <span className="text-4xl font-bold tracking-tight tabular-nums">
+                      {plan.price}
+                    </span>
+                    {plan.showPeriod && (
+                      <span className="text-muted-foreground text-sm">
+                        {billingCycle === "monthly"
+                          ? t("pricingPage.perMonth")
+                          : t("pricingPage.perYear")}
+                      </span>
+                    )}
+                  </div>
+                  <ul className="space-y-2.5 mb-8">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={plan.href} className="mt-auto block">
+                    <Button
+                      variant={plan.popular ? "default" : "outline"}
+                      className="w-full"
                     >
-                      <Button
-                        variant={plan.popular ? "default" : "outline"}
-                        className="w-full"
-                      >
-                        {plan.cta}
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-                );
-              })}
+                      {plan.cta}
+                    </Button>
+                  </Link>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-primary/5 relative overflow-hidden">
-        <div className="absolute inset-0 bg-dot-pattern opacity-10"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4 gradient-text">
+      {/* Final CTA */}
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3 [text-wrap:balance]">
               {t("home.cta.title")}
             </h2>
-            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-muted-foreground mb-8">
               {t("home.cta.description")}
             </p>
-            <Link href="/contact">
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 gap-2 text-white"
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <Link href={startHref}>
+                <Button size="lg" className="w-full sm:w-auto gap-2">
+                  {startLabel}
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link
+                href="/contact"
+                className="text-sm text-muted-foreground underline-offset-4 hover:underline"
               >
-                {t("home.cta.button")}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+                {t("home.cta.contact")}
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-secondary py-12 mt-auto">
+      <footer className="border-t py-10 mt-auto">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-2">
-              <FileSignature className="h-6 w-6 text-primary" />
-              <span className="font-bold">{t("app.title")}</span>
+              <FileSignature className="h-5 w-5 text-primary" />
+              <span className="font-semibold">{t("app.title")}</span>
             </div>
-            <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-muted-foreground">
-              <Link
-                href="/term"
-                className="hover:text-primary transition-colors"
-              >
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              <Link href="/term" className="hover:text-foreground transition-colors">
                 {t("footer.terms")}
               </Link>
-              <span className="hidden md:inline">•</span>
-              <Link
-                href="/privacy"
-                className="hover:text-primary transition-colors"
-              >
+              <Link href="/privacy" className="hover:text-foreground transition-colors">
                 {t("footer.privacy")}
               </Link>
-              <span className="hidden md:inline">•</span>
-              <span>
-                &copy; {new Date().getFullYear()} SeukSeuk.{" "}
-                {t("home.footer.rights")}
-              </span>
+              <Link href="/contact" className="hover:text-foreground transition-colors">
+                {t("home.cta.contact")}
+              </Link>
+              <span>&copy; {new Date().getFullYear()} SeukSeuk</span>
             </div>
           </div>
         </div>
       </footer>
 
-      <ScrollToTopButton />
+      <ScrollToTopButton label={t("home.scrollTop")} />
     </div>
   );
 }
 
-function ScrollToTopButton() {
+/**
+ * 히어로 우측의 제품 미리보기. 서명 요청 문서 한 장과 서명 칸 두 개를 보여주고,
+ * 그중 하나에 손글씨 서명이 "슥" 그어지는 것으로 서비스가 하는 일을 설명한다.
+ * 모션은 이 한 곳에만 쓴다. prefers-reduced-motion에서는 그어진 상태로 정지.
+ */
+function SigningMock() {
+  const { t } = useLanguage();
+  return (
+    <div className="relative mx-auto w-full max-w-md lg:max-w-none" aria-hidden>
+      <div className="rounded-xl border bg-card shadow-[0_24px_60px_-24px_hsl(var(--foreground)/0.25)] p-5 sm:p-7">
+        {/* 문서 상단: 보낸 사람 + 진행 상태 */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground truncate">
+              {t("home.mock.request")}
+            </p>
+            <p className="font-semibold truncate">{t("home.mock.docTitle")}</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium tabular-nums">
+            {t("home.mock.progress")}
+          </span>
+        </div>
+
+        {/* 본문 텍스트 자리 */}
+        <div className="space-y-2.5 mb-7">
+          <div className="h-2 rounded bg-muted w-11/12" />
+          <div className="h-2 rounded bg-muted w-full" />
+          <div className="h-2 rounded bg-muted w-4/5" />
+          <div className="h-2 rounded bg-muted w-full" />
+          <div className="h-2 rounded bg-muted w-2/3" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {/* 서명된 칸 */}
+          <div>
+            <p className="text-[11px] text-muted-foreground mb-1.5">
+              {t("home.mock.partyA")}
+            </p>
+            <div className="relative h-20 rounded-md border border-emerald-500/60 bg-emerald-500/5 overflow-hidden">
+              <svg
+                viewBox="0 0 200 80"
+                className="absolute inset-0 h-full w-full"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path
+                  className="home-signature-stroke text-foreground"
+                  d="M18 52 C 30 20, 44 18, 48 40 S 58 66, 66 44 S 78 14, 88 36 S 100 62, 112 42 C 122 26, 132 28, 138 40 S 150 58, 160 44 S 176 26, 184 40"
+                />
+              </svg>
+              <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <Check className="h-3 w-3" />
+              </span>
+            </div>
+          </div>
+          {/* 아직 비어 있는 칸 */}
+          <div>
+            <p className="text-[11px] text-muted-foreground mb-1.5">
+              {t("home.mock.partyB")}
+            </p>
+            <div className="flex h-20 items-center justify-center rounded-md border-2 border-dashed border-primary/50 bg-primary/5 text-xs font-medium text-primary">
+              {t("home.mock.tapToSign")}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 링크 발송 상태 칩 */}
+      <div className="absolute -bottom-4 left-4 sm:left-8 flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs shadow-sm">
+        <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+        <span>{t("home.mock.linkSent")}</span>
+      </div>
+    </div>
+  );
+}
+
+function ScrollToTopButton({ label }: { label: string }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 600);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -507,8 +571,10 @@ function ScrollToTopButton() {
 
   return (
     <button
+      type="button"
+      aria-label={label}
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      className="fixed bottom-6 right-6 p-3 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all z-50"
+      className="fixed bottom-6 right-6 p-3 rounded-full border bg-background text-foreground shadow-md hover:bg-muted transition-colors z-50"
     >
       <ChevronUp className="h-5 w-5" />
     </button>

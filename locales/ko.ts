@@ -91,48 +91,55 @@ export default {
   "language.en": "English",
 
   // Homepage
-  "home.notification":
-    "🎉 새로운 기능이 출시되었습니다! 지금 바로 확인해보세요.",
-  "home.nav.features": "기능",
-  "home.nav.pricing": "가격",
-  "home.nav.testimonials": "고객 후기",
-  "home.dashboard": "대시보드",
-  "home.getStarted": "시작하기",
-  "home.hero.title": "문서 서명, 더 쉽고 빠르게",
+  "home.hero.eyebrow": "전자문서 온라인 서명",
+  "home.hero.title": "계약서부터 동의서까지,\n링크 하나로 서명받으세요",
   "home.hero.description":
-    "슥슥으로 종이 없는 문서 워크플로우를 경험하세요. 어디서나 안전하게 문서에 서명하고 공유할 수 있습니다.",
-  "home.hero.cta": "지금 시작하기",
-  "home.hero.learnMore": "더 알아보기",
-  "home.hero.trustedBy": "수천 명의 사용자가 신뢰하는 서비스",
-  "home.featuresTitle": "강력한 기능",
-  "home.featuresDescription":
-    "슥슥은 문서 서명 프로세스를 간소화하는 다양한 기능을 제공합니다.",
-  "home.features.easy.title": "간편한 사용",
-  "home.features.easy.description":
-    "직관적인 인터페이스로 누구나 쉽게 사용할 수 있습니다.",
-  "home.features.secure.title": "안전한 보안",
-  "home.features.secure.description":
-    "모든 문서와 서명은 암호화되어 안전하게 보호됩니다.",
-  "home.features.fast.title": "빠른 처리",
-  "home.features.fast.description":
-    "몇 초 만에 문서를 업로드하고 서명할 수 있습니다.",
-  "home.testimonialsTitle": "고객 후기",
-  "home.testimonialsDescription":
-    "슥슥을 사용하는 고객들의 생생한 후기를 확인해보세요.",
-  "home.testimonials.quote1":
-    "슥슥은 우리 회사의 계약 프로세스를 완전히 바꿔놓았습니다. 이전에는 서류 작업에 며칠이 걸렸지만, 이제는 몇 분 만에 완료됩니다.",
-  "home.testimonials.author1": "김민수",
-  "home.testimonials.role1": "스타트업 CEO",
-  "home.testimonials.quote2":
-    "사용하기 쉽고 안전한 서명 솔루션을 찾고 있었는데, 슥슥이 완벽했습니다. 고객들도 사용하기 쉽다고 좋아합니다.",
-  "home.testimonials.author2": "이지현",
-  "home.testimonials.role2": "프리랜서 디자이너",
-  "home.testimonials.quote3":
-    "원격 근무 환경에서 문서 서명이 큰 문제였는데, 슥슥 덕분에 이제는 걱정이 없습니다. 강력히 추천합니다!",
-  "home.testimonials.author3": "박준호",
-  "home.testimonials.role3": "인사 관리자",
-  "home.pricingTitle": "합리적인 가격",
-  "home.pricingDescription": "귀하의 요구에 맞는 플랜을 선택하세요.",
+    "PDF나 사진으로 찍은 문서를 올리고 서명 칸을 지정한 뒤 링크를 보내세요. 받는 사람은 가입도 설치도 없이 휴대폰에서 바로 서명합니다.",
+  "home.hero.cta": "무료로 시작하기",
+  "home.hero.ctaLoggedIn": "대시보드로 이동",
+  "home.hero.secondary": "어떻게 진행되나요?",
+  "home.hero.note": "무료 플랜으로 시작 · 받는 사람은 가입 없이 서명",
+  "home.mock.request": "서명 요청 · 서명 칸 2곳",
+  "home.mock.docTitle": "업무 위탁 계약서",
+  "home.mock.progress": "1/2 완료",
+  "home.mock.partyA": "갑 서명",
+  "home.mock.partyB": "을 서명",
+  "home.mock.tapToSign": "여기를 눌러 서명",
+  "home.mock.linkSent": "링크 보냄 · 7일간 유효",
+  "home.steps.title": "보내는 사람은 3단계, 받는 사람은 한 번의 터치",
+  "home.steps.description":
+    "종이로 주고받던 계약서, 동의서, 견적서를 그대로 온라인으로 옮기세요.",
+  "home.steps.upload.title": "문서 올리기",
+  "home.steps.upload.description":
+    "PDF는 물론 사진으로 찍은 문서도 그대로 올릴 수 있어요.",
+  "home.steps.areas.title": "서명 칸 지정",
+  "home.steps.areas.description":
+    "서명, 이름, 날짜처럼 받아야 할 칸을 문서 위에 끌어서 놓으세요.",
+  "home.steps.send.title": "링크 보내기",
+  "home.steps.send.description":
+    "카카오톡이나 문자로 링크를 보내면 끝. 비밀번호와 유효기간도 걸 수 있어요.",
+  "home.steps.after":
+    "서명이 끝나면 이메일로 알려드리고, 서명이 들어간 PDF를 바로 내려받을 수 있어요.",
+  "home.signer.eyebrow": "받는 사람에게",
+  "home.signer.title": "받는 사람이 편해야 서명이 빨리 돌아옵니다",
+  "home.signer.description":
+    "앱을 깔거나 계정을 만들라고 하는 순간 서명은 미뤄집니다. 슥슥은 링크를 누르는 것으로 끝나요.",
+  "home.signer.noAccount": "가입, 앱 설치 없이 링크만 누르면 열립니다",
+  "home.signer.mobile": "휴대폰 화면에서 손가락으로 바로 서명",
+  "home.signer.batch": "같은 서명이 여러 칸이면 한 번에 채우기",
+  "home.signer.password": "비밀번호가 걸린 문서는 아는 사람만 열람",
+  "home.sender.eyebrow": "보내는 사람에게",
+  "home.sender.title": "반복되는 서명 업무를 한 곳에서",
+  "home.sender.description":
+    "매번 같은 문서에 같은 칸을 찍는 일부터 서명본을 모아 두는 일까지 슥슥이 대신합니다.",
+  "home.sender.templates": "자주 쓰는 문서는 서명 칸까지 템플릿으로 저장",
+  "home.sender.bundle": "여러 문서를 링크 하나로 묶어서 발송",
+  "home.sender.expiry": "링크 유효기간과 비밀번호 설정",
+  "home.sender.signedPdf": "서명이 끝난 PDF 자동 저장과 다운로드",
+  "home.sender.dashboard": "누가 어디까지 서명했는지 대시보드에서 확인",
+  "home.pricingTitle": "필요한 만큼만 쓰세요",
+  "home.pricingDescription": "플랜은 한 달에 보내는 문서 수로만 나뉩니다.",
+  "home.scrollTop": "맨 위로",
   "pricing.free.name": "베이직",
   "pricing.free.description": "개인 사용자를 위한 무료 플랜",
   "pricing.basic.name": "베이직",
@@ -151,10 +158,11 @@ export default {
   "pricing.perMonth": "월",
   "pricing.perYear": "년",
   "pricing.billing.monthly": "월간",
+  "pricing.billing.label": "결제 주기",
   "pricing.billing.yearly": "연간",
   // Pricing limits (dynamic count)
-  "pricing.limitPerMonth": "매 월 최대 {{count}}개 문서 충전",
-  "pricing.limitUnlimitedPerMonth": "문서 무제한 생성",
+  "pricing.limitPerMonth": "월 {{count}}건 문서 발송",
+  "pricing.limitUnlimitedPerMonth": "문서 발송 무제한",
 
   // Pricing Page Specific Keys
   "pricingPage.title": "요금제 선택",
@@ -215,11 +223,10 @@ export default {
     "구독 세부 정보가 포함된 확인 이메일이 곧 발송됩니다.",
   "checkout.success.dashboard": "대시보드로 이동",
 
-  "home.cta.title": "궁금한 점이 있으신가요?",
+  "home.cta.title": "첫 문서를 지금 보내보세요",
   "home.cta.description":
-    "슥슥 팀이 도와드리겠습니다. 언제든지 문의해 주세요.",
-  "home.cta.button": "문의하기",
-  "home.footer.rights": "모든 권리 보유.",
+    "무료 플랜으로 시작하고, 문서가 늘어나면 그때 바꾸면 됩니다. 도입 전에 궁금한 점은 언제든 물어보세요.",
+  "home.cta.contact": "문의하기",
 
   // 테마 전환 버튼
   "theme.light": "라이트",

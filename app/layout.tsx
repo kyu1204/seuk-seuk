@@ -1,7 +1,6 @@
 import type React from "react";
 import * as Sentry from "@sentry/nextjs";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/language-context";
@@ -10,8 +9,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "@/components/ui/toaster";
 import { SoftwareApplicationJsonLd, WebSiteJsonLd } from "@/components/json-ld";
-
-const inter = Inter({ subsets: ["latin"] });
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://seukseuk.com";
 
@@ -100,10 +97,16 @@ export default async function RootLayout({
           (pdf-page-renderer, document-upload), which is the proven load order.
         */}
         <meta name="naver-site-verification" content="24ae5cf6d9a265c90d7a677e7b820b8fbb00472b" />
+        {/* 한글 본문 서체. dynamic-subset 빌드라 실제 쓰인 글자 범위만 내려받는다. */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+          crossOrigin="anonymous"
+        />
         <SoftwareApplicationJsonLd baseUrl={BASE_URL} />
         <WebSiteJsonLd baseUrl={BASE_URL} />
       </head>
-      <body className={inter.className}>
+      <body>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
