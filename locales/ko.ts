@@ -73,21 +73,13 @@ export default {
 
   // PDF
   pdf_document: "PDF 문서",
-  pdf_upload_pro_only: "PDF 문서 업로드는 Pro 플랜 이상에서만 사용할 수 있습니다.",
-  pdf_upgrade_cta: "Pro 플랜으로 업그레이드",
-  pdf_page: "페이지",
-  pdf_page_of: "/ {total} 페이지",
   pdf_current_page: "{current} / {total} 페이지",
   pdf_prev_page: "이전 페이지",
   pdf_next_page: "다음 페이지",
-  pdf_load_error: "PDF 파일을 불러올 수 없습니다.",
-  pdf_render_error: "PDF 페이지를 렌더링할 수 없습니다.",
-  pdf_file_supported: "이미지 및 PDF 파일 지원",
   pdf_pro_badge: "Pro",
-  pdf_signing_page: "{current} / {total} 페이지 서명 중",
 
   // Sign Page
-  "sign.loading": "문서 로딩 중...",
+  "sign.loading": "문서 불러오는 중...",
   "sign.notFound": "문서를 찾을 수 없음",
   "sign.notFoundDesc":
     "링크가 만료되었거나 주소가 잘못되었습니다. 보낸 사람에게 새 링크를 요청해 주세요.",
@@ -186,15 +178,15 @@ export default {
   "pricing.basic.name": "베이직",
   "pricing.basic.description": "개인 사용자를 위한 베이직 플랜",
   "pricing.free.price": "무료",
-  "pricing.free.cta": "시작하기",
+  "pricing.free.cta": "무료로 시작하기",
   "pricing.basic.cta": "시작하기",
   "pricing.starter.name": "스타터",
   "pricing.starter.description": "개인 또는 소규모 팀을 위한 플랜",
-  "pricing.starter.cta": "스타터 시작하기",
+  "pricing.starter.cta": "스타터로 시작하기",
   "pricing.pro.name": "프로",
   "pricing.pro.description": "전문가를 위한 플랜",
   "pricing.pro.freeTrial": "30일 무료체험",
-  "pricing.pro.cta": "프로 시작하기",
+  "pricing.pro.cta": "프로로 시작하기",
   "pricing.popular": "인기",
   "pricing.perMonth": "월",
   "pricing.perYear": "년",
@@ -247,20 +239,12 @@ export default {
   "checkout.dueToday": "오늘 결제",
   "checkout.then": "이후",
   "checkout.incTax": "세금 포함",
-  "checkout.billing.daily": "매일",
-  "checkout.billing.weekly": "매주",
-  "checkout.billing.monthly": "매월",
-  "checkout.billing.yearly": "매년",
-  "checkout.billing.days": "일마다",
-  "checkout.billing.weeks": "주마다",
-  "checkout.billing.months": "개월마다",
-  "checkout.billing.years": "년마다",
   "checkout.billing.every": "매",
 
   // Checkout Success
   "checkout.success.title": "결제가 완료되었습니다!",
   "checkout.success.message":
-    "구독해 주셔서 감사합니다. 결제가 성공적으로 처리되었습니다.",
+    "결제가 완료됐습니다. 바로 이용하실 수 있어요.",
   "checkout.success.emailInfo":
     "구독 세부 정보가 포함된 확인 이메일이 곧 발송됩니다.",
   "checkout.success.dashboard": "대시보드로 이동",
@@ -328,33 +312,33 @@ export default {
   "register.success.emailSent":
     "인증 메일을 보냈어요. 메일의 링크를 누르면 가입이 끝납니다.",
   "register.success.description":
-    "가입하신 이메일 주소로 인증 메일이 발송되었습니다. 이메일을 확인하여 계정을 활성화해주세요.",
+    "가입하신 이메일 주소로 인증 메일이 발송되었습니다. 이메일을 확인하여 계정을 활성화해 주세요.",
   "register.success.checkSpam":
-    "메일이 보이지 않으면 스팸 폴더를 확인해주세요.",
+    "메일이 보이지 않으면 스팸 폴더를 확인해 주세요.",
   "register.success.goToLogin": "로그인 화면으로",
 
   // Consent Page
-  "consent.title": "서비스 이용을 위해 약관에 동의해주세요",
+  "consent.title": "서비스 이용을 위해 약관에 동의해 주세요",
   "consent.subtitle":
-    "카카오 계정으로 로그인하셨다면 슥슥 이용약관과 개인정보 처리방침에 대한 동의가 추가로 필요합니다.",
-  "consent.linksDescription": "아래 문서를 확인한 뒤 동의 여부를 선택해주세요.",
+    "카카오 계정으로 로그인하셨다면 슥슥 이용약관과 개인정보처리방침에 대한 동의가 추가로 필요합니다.",
+  "consent.linksDescription": "아래 문서를 확인한 뒤 동의 여부를 선택해 주세요.",
   "consent.viewTerms": "슥슥 이용약관 보기",
-  "consent.viewPrivacy": "개인정보 처리방침 보기",
-  "consent.checkbox": "슥슥 이용약관과 개인정보 처리방침을 모두 읽었으며 이에 동의합니다.",
+  "consent.viewPrivacy": "개인정보처리방침 보기",
+  "consent.checkbox": "슥슥 이용약관과 개인정보처리방침을 모두 읽었으며 이에 동의합니다.",
   "consent.agreeButton": "동의하고 계속하기",
   "consent.declineNotice":
-    "동의하지 않을 경우 서비스를 이용할 수 없습니다. 동의하지 않는다면 로그아웃 후 이용을 중단해주세요.",
+    "동의하지 않을 경우 서비스를 이용할 수 없습니다. 동의하지 않는다면 로그아웃 후 이용을 중단해 주세요.",
   "consent.declineButton": "동의하지 않고 로그아웃",
-  "consent.error": "약관 동의 처리 중 문제가 발생했습니다. 다시 시도해주세요.",
+  "consent.error": "약관 동의 처리 중 문제가 발생했습니다. 다시 시도해 주세요.",
 
   // Sign Page - Password Protection & Status
   "sign.password.title": "비밀번호를 입력해 주세요",
   "sign.password.description": "보낸 사람에게 받은 비밀번호를 입력하면 문서를 볼 수 있어요.",
-  "sign.password.instruction": "계속하려면 비밀번호를 입력해주세요.",
+  "sign.password.instruction": "계속하려면 비밀번호를 입력해 주세요.",
   "sign.password.placeholder": "비밀번호를 입력하세요",
   "sign.password.verify": "문서 열기",
   "sign.password.verifying": "확인 중...",
-  "sign.password.required": "비밀번호를 입력해주세요.",
+  "sign.password.required": "비밀번호를 입력해 주세요.",
   "sign.password.incorrect": "비밀번호가 맞지 않습니다. 다시 확인해 주세요.",
   "sign.password.error": "비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.",
   "sign.password.help": "비밀번호를 모르시나요? 보낸 사람에게 문의하세요.",
@@ -401,15 +385,15 @@ export default {
   "sign.progress.description": "창을 닫지 마세요. 보통 10초 안에 끝나요.",
   "sign.progress.preparing": "문서 처리 준비 중...",
   "sign.progress.compositingPdf": "서명을 PDF에 합성 중...",
-  "sign.progress.loadingOriginal": "원본 문서 로딩 중...",
+  "sign.progress.loadingOriginal": "원본 문서 불러오는 중...",
   "sign.progress.processingSignatures": "서명 이미지 처리 중...",
   "sign.progress.compositing": "서명을 문서에 넣는 중…",
   "sign.progress.compressing": "이미지 압축 중...",
   "sign.progress.uploading": "문서를 만드는 중…",
   "sign.progress.generatingPdf": "PDF 생성 중...",
   "sign.progress.finalizing": "거의 다 됐어요…",
-  "sign.progress.imageTimeout": "이미지 로딩 시간이 초과되었습니다.",
-  "sign.progress.imageLoadFailed": "이미지를 불러올 수 없습니다.",
+  "sign.progress.imageTimeout": "문서를 불러오는 데 너무 오래 걸립니다. 네트워크를 확인하고 다시 시도해 주세요.",
+  "sign.progress.imageLoadFailed": "문서를 불러오지 못했습니다. 새로고침해 주세요.",
 
   // Sign screen header/progress bar (R42)
   "sign.header.meta": "{{page}}/{{pages}}쪽 · 서명 {{completed}}/{{total}}",
@@ -448,7 +432,7 @@ export default {
   // Batch sign
   "sign.batchSign": "한 번에 서명",
   "sign.batchSignConfirm": "남은 {{count}}곳에 같은 서명을 넣습니다. 계속할까요?",
-  "sign.batchSignAction": "일괄 적용",
+  "sign.batchSignAction": "모두 적용",
   "sign.batchSignCancel": "취소",
 
   // Password gate trust footer
@@ -473,7 +457,7 @@ export default {
   "dashboard.upload.document": "문서 올리기",
   "dashboard.upload.documentDescription": "한 번 발행할 문서 만들기",
   "dashboard.upload.template": "템플릿 만들기",
-  "dashboard.upload.templateDescription": "반복 발행할 양식 저장",
+  "dashboard.upload.templateDescription": "반복 발행할 템플릿 저장",
 
   // Templates (Pro/Enterprise)
   "templates.nav": "템플릿",
@@ -496,8 +480,16 @@ export default {
   "templates.upgrade.title": "Pro 전용 기능",
   "templates.upgrade.description": "템플릿 기능은 Pro 또는 Enterprise 플랜에서 사용할 수 있습니다. 업그레이드하고 발행을 자동화하세요.",
   "templates.upgrade.cta": "요금제 보기",
-  "templates.error": "오류가 발생했습니다.",
+  "templates.error": "템플릿 작업을 완료하지 못했습니다. 다시 시도해 주세요.",
   "templates.loadError.title": "템플릿 정보를 불러오지 못했습니다",
+  "templates.detail.title": "템플릿 상세",
+  "templates.detail.pdfNotReady": "PDF 페이지가 아직 준비되지 않았습니다.",
+  "templates.detail.loadFileError": "템플릿 파일을 불러오지 못했습니다.",
+  "templates.detail.nameRequired": "템플릿 이름을 입력하세요.",
+  "templates.detail.saved": "템플릿이 저장되었습니다.",
+  "templates.detail.deleteConfirm": "이 템플릿을 삭제하시겠습니까?",
+  "templates.detail.pageUnit": "페이지",
+  "templates.detail.areaUnit": "개 영역",
   "templates.create.description": "문서를 업로드하고 반복 사용할 서명 영역 레이아웃을 저장하세요.",
   "templates.create.imageTitle": "이미지 템플릿",
   "templates.create.pdfTitle": "PDF 템플릿",
@@ -510,15 +502,15 @@ export default {
   "templates.create.savingProgress": "템플릿 저장 중... ({{current}}/{{total}})",
   "templates.create.errorNoFile": "템플릿으로 저장할 문서를 업로드하세요",
   "templates.create.error": "템플릿 저장에 실패했습니다.",
-  "templates.create.unexpectedError": "템플릿 저장 중 예상치 못한 오류가 발생했습니다.",
+  "templates.create.unexpectedError": "템플릿을 저장하지 못했습니다. 문제가 계속되면 문의해 주세요.",
   "dashboard.empty.title": "서명받을 문서를 올려보세요",
   "dashboard.empty.description":
     "문서를 올리고 서명 위치만 찍으면, 링크 하나로 서명을 받을 수 있어요.",
   "dashboard.empty.action": "문서 올리기",
-  "dashboard.loading.more": "추가 문서 로딩 중...",
+  "dashboard.loading.more": "추가 문서 불러오는 중...",
   "dashboard.retry": "다시 시도",
   "dashboard.end.message": "모든 문서를 불러왔습니다.",
-  "dashboard.error.loadMore": "추가 문서를 불러오는 중 오류가 발생했습니다.",
+  "dashboard.error.loadMore": "문서를 더 불러오지 못했습니다. 다시 시도를 눌러 주세요.",
   "dashboard.error.load": "문서를 불러오지 못했습니다.",
   "dashboard.filter.all": "전체",
   "dashboard.filter.draft": "초안",
@@ -653,8 +645,8 @@ export default {
   // Usage Widget
   "usage.title": "사용량 현황",
   "usage.description": "현재 월 사용량과 활성 문서 현황을 확인하세요",
-  "usage.error.title": "사용량 정보 오류",
-  "usage.error.message": "사용량 정보를 불러올 수 없습니다.",
+  "usage.error.title": "사용량을 불러오지 못했어요",
+  "usage.error.message": "새로고침해 주세요.",
   "usage.monthly.title": "이번 달 문서 생성",
   "usage.monthly.unlimited": "무제한",
   "usage.monthly.limit.reached": "월별 문서 생성 제한에 도달했습니다",
@@ -699,11 +691,11 @@ export default {
   "resetPassword.backToLogin": "로그인으로 돌아가기",
   "resetPassword.invalidLink": "유효하지 않은 링크",
   "resetPassword.invalidLinkMessage":
-    "이 링크는 유효하지 않거나 만료되었습니다. 새로운 비밀번호 재설정을 요청해주세요.",
+    "이 링크는 유효하지 않거나 만료되었습니다. 새로운 비밀번호 재설정을 요청해 주세요.",
   "resetPassword.requestNew": "새 재설정 링크 요청",
   "resetPassword.successTitle": "비밀번호가 변경되었습니다",
   "resetPassword.successMessage":
-    "새 비밀번호로 로그인해주세요. 잠시 후 로그인 페이지로 이동합니다.",
+    "새 비밀번호로 로그인해 주세요. 잠시 후 로그인 페이지로 이동합니다.",
 
   // Breadcrumb
   "breadcrumb.dashboard": "대시보드",
@@ -752,7 +744,7 @@ export default {
   "publicationDetail.cancelPasswordUpdate": "변경 취소",
   "publicationDetail.editPasswordPlaceholder": "새 비밀번호 (비워두면 비밀번호 없음)",
   "publicationDetail.editPasswordHint":
-    "비밀번호를 입력하면 기존 비밀번호를 덮어씁니다. 비워두면 비밀번호 보호가 제거됩니다.",
+    "비밀번호를 입력하면 기존 비밀번호를 덮어씁니다. 비워두면 비밀번호 보호가 삭제됩니다.",
   "publicationDetail.cancel": "취소",
   "publicationDetail.updateError": "발행 정보를 저장하지 못했습니다. 다시 시도해 주세요.",
   "publicationDetail.save": "저장",
@@ -768,23 +760,25 @@ export default {
   "documentDetail.delete.description": "문서와 지정한 서명 칸이 함께 삭제되며 되돌릴 수 없습니다.",
   "documentDetail.download": "다운로드",
   "documentDetail.cancel": "취소",
-  "documentDetail.addArea": "영역추가",
+  "documentDetail.addArea": "칸 추가",
   "documentDetail.save": "저장",
-  "documentDetail.saving": "저장중",
-  "documentDetail.loading": "문서 로딩 중...",
+  "documentDetail.saving": "저장 중…",
+  "documentDetail.loading": "문서 불러오는 중...",
   "documentDetail.signatureArea": "서명 영역",
   "documentDetail.textArea": "텍스트 영역",
-  "documentDetail.errorUpdateArea": "서명 영역 업데이트 중 오류가 발생했습니다",
-  "documentDetail.errorDownload": "다운로드 중 오류가 발생했습니다.",
-  "documentDetail.errorDelete": "문서 삭제 중 오류가 발생했습니다",
+  "documentDetail.errorUpdateArea": "서명 칸을 저장하지 못했습니다. 다시 시도해 주세요.",
+  "documentDetail.errorDownload": "파일을 내려받지 못했습니다. 다시 시도해 주세요.",
+  "documentDetail.pdfNotReady": "PDF 페이지가 아직 준비되지 않았습니다.",
+  "documentDetail.errorLoadFile": "문서를 불러오지 못했습니다.",
+  "documentDetail.errorDelete": "문서를 삭제하지 못했습니다. 다시 시도해 주세요.",
 
   // Publish Page
   "publish.title": "문서 발행",
   "publish.description": "선택한 문서를 링크 하나로 묶어 보냅니다. 받는 사람은 링크에서 바로 서명해요.",
-  "publish.errorName": "발행 이름을 입력해주세요.",
-  "publish.errorPassword": "비밀번호를 입력해주세요.",
-  "publish.errorExpiration": "만료일을 선택해주세요.",
-  "publish.errorDocuments": "최소 1개 이상의 문서를 선택해주세요.",
+  "publish.errorName": "발행 이름을 입력해 주세요.",
+  "publish.errorPassword": "비밀번호를 입력해 주세요.",
+  "publish.errorExpiration": "만료일을 선택해 주세요.",
+  "publish.errorDocuments": "최소 1개 이상의 문서를 선택해 주세요.",
   "publish.errorPublishing": "발행하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   "publish.name": "발행 이름",
   "publish.namePlaceholder": "예: 9월 신규 계약 · 김지우",
@@ -813,7 +807,7 @@ export default {
 
   // Footer
   "footer.terms": "이용약관",
-  "footer.privacy": "개인정보 처리방침",
+  "footer.privacy": "개인정보처리방침",
 
   // Terms of Service Page
   "term.backToHome": "홈으로 돌아가기",
@@ -865,7 +859,7 @@ export default {
   "term.chapter2.title": "제2장 서비스 이용 계약",
   "term.article5.title": "제5조 (서비스 이용계약의 성립)",
   "term.article5.para1":
-    '서비스 이용계약은 서비스를 이용하고자 하는 자(이하 "가입신청자")가 본 약관과 개인정보 처리방침에 동의하고 회원가입을 신청한 후, 운영자가 이를 승낙함으로써 체결됩니다.',
+    '서비스 이용계약은 서비스를 이용하고자 하는 자(이하 "가입신청자")가 본 약관과 개인정보처리방침에 동의하고 회원가입을 신청한 후, 운영자가 이를 승낙함으로써 체결됩니다.',
   "term.article5.para2":
     "가입신청자는 이름, 이메일, 비밀번호 등 운영자가 요구하는 필수 정보를 정확히 입력해야 하며, 타인의 정보를 도용하거나 허위 정보를 입력해서는 안 됩니다.",
   "term.article5.para3":
@@ -1024,7 +1018,7 @@ export default {
   "term.article21.para2":
     "서비스 이용과 관련하여 운영자와 회원 사이에 분쟁이 발생한 경우, 양 당사자는 원만한 해결을 위해 성실히 협의합니다. 협의가 이루어지지 않을 경우 민사소송법상의 관할법원에 소를 제기할 수 있습니다.",
 
-  "term.article23.title": "제22조 (개인정보 처리방침)",
+  "term.article23.title": "제22조 (개인정보처리방침)",
   "term.article23.content":
     "개인정보의 수집·이용·제공·파기 등 처리에 관한 사항은 별도로 게시하는 개인정보처리방침에 따르며, 본 약관과 개인정보처리방침이 상충할 경우 개인정보처리방침이 우선합니다.",
 
@@ -1039,7 +1033,7 @@ export default {
   "contact.backToHome": "홈으로 돌아가기",
   "contact.title": "문의하기",
   "contact.description":
-    "궁금한 사항이나 제안이 있으시면 언제든지 연락해주세요.",
+    "궁금한 사항이나 제안이 있으시면 언제든지 연락해 주세요.",
   "contact.form.name": "이름",
   "contact.form.namePlaceholder": "홍길동",
   "contact.form.email": "이메일",
@@ -1047,7 +1041,7 @@ export default {
   "contact.form.subject": "제목",
   "contact.form.subjectPlaceholder": "문의 제목을 입력하세요",
   "contact.form.message": "메시지",
-  "contact.form.messagePlaceholder": "문의 내용을 입력해주세요...",
+  "contact.form.messagePlaceholder": "문의 내용을 입력해 주세요...",
   "contact.form.submit": "문의하기",
   "contact.form.submitting": "전송 중...",
   "contact.success.title": "문의가 전송되었습니다",
@@ -1055,13 +1049,13 @@ export default {
     "빠른 시일 내에 답변 드리겠습니다. 감사합니다.",
   "contact.error.title": "전송 실패",
   "contact.error.description":
-    "문의 전송 중 오류가 발생했습니다. 다시 시도해주세요.",
+    "문의를 보내지 못했습니다. 잠시 후 다시 보내 주세요.",
 
   // Privacy Policy Page
   "privacy.backToHome": "홈으로 돌아가기",
-  "privacy.title": "슥슥 개인정보 처리방침",
+  "privacy.title": "슥슥 개인정보처리방침",
   "privacy.intro":
-    '본 개인정보 처리방침은 슥슥(이하 "서비스")이 제공하는 전자 문서 서명 및 관리 서비스와 관련하여 개인정보보호법 제30조에 따라 정보주체의 개인정보를 보호하고 관련한 고충을 신속하고 원활하게 처리하기 위하여 다음과 같이 개인정보 처리방침을 수립·공개합니다.',
+    '본 개인정보처리방침은 슥슥(이하 "서비스")이 제공하는 전자 문서 서명 및 관리 서비스와 관련하여 개인정보보호법 제30조에 따라 정보주체의 개인정보를 보호하고 관련한 고충을 신속하고 원활하게 처리하기 위하여 다음과 같이 개인정보처리방침을 수립·공개합니다.',
 
   // Section 1
   "privacy.section1.title": "1. 개인정보의 처리 목적",
@@ -1161,7 +1155,7 @@ export default {
   "privacy.section5.table.row3.col2": "서비스 알림, 본인 인증, 공지사항 발송",
   "privacy.section5.table.row3.col3": "위탁업무 목적 달성 후 즉시 파기",
   "privacy.section5.outro":
-    "서비스는 추가적인 위탁이 발생할 경우 개인정보 처리방침을 통하여 사전에 고지하고 동의를 받습니다.",
+    "서비스는 추가적인 위탁이 발생할 경우 개인정보처리방침을 통하여 사전에 고지하고 동의를 받습니다.",
 
   // Section 6
   "privacy.section6.title": "6. 개인정보 파기 절차 및 방법",
@@ -1266,14 +1260,14 @@ export default {
   "privacy.section11.item4.phone": "(국번없이) 182",
 
   // Section 12
-  "privacy.section12.title": "12. 개인정보 처리방침의 변경",
+  "privacy.section12.title": "12. 개인정보처리방침의 변경",
   "privacy.section12.content":
-    "본 개인정보 처리방침은 시행일로부터 적용되며, 법령·정책 또는 서비스 내용의 변경에 따라 수정될 수 있습니다. 변경되는 경우에는 시행 7일 전부터 홈페이지 또는 공지사항을 통하여 변경 내용을 알립니다.",
+    "본 개인정보처리방침은 시행일로부터 적용되며, 법령·정책 또는 서비스 내용의 변경에 따라 수정될 수 있습니다. 변경되는 경우에는 시행 7일 전부터 홈페이지 또는 공지사항을 통하여 변경 내용을 알립니다.",
 
   // Effective Date
   "privacy.effectiveDate.title": "시행일",
   "privacy.effectiveDate.date":
-    "이 개인정보 처리방침은 2025년 10월 01일부터 적용됩니다.",
+    "이 개인정보처리방침은 2025년 10월 01일부터 적용됩니다.",
 
   // My Page
   "mypage.title": "계정",
@@ -1297,9 +1291,6 @@ export default {
 
   // Plan Names
   "plan.Basic": "베이직",
-  "plan.Starter": "스타터",
-  "plan.Pro": "프로",
-  "plan.Enterprise": "엔터프라이즈",
   "mypage.usage.title": "사용량 현황",
   "mypage.usage.thisMonth": "이번 달",
   "mypage.usage.documents": "문서",
@@ -1309,7 +1300,7 @@ export default {
   "mypage.dangerZone.deleteWarning":
     "계정을 지우면 문서, 서명본, 템플릿이 모두 영구히 사라집니다. 진행 중인 발행이 있으면 먼저 정리해 주세요.",
   "mypage.dangerZone.deleteDescription":
-    "회원 탈퇴 시 업로드한 모든 문서, 서명, 구독 정보가 즉시 삭제되며 복구할 수 없습니다. 이 작업은 되돌릴 수 없으니 신중하게 결정해주세요.",
+    "회원 탈퇴 시 업로드한 모든 문서, 서명, 구독 정보가 즉시 삭제되며 복구할 수 없습니다. 이 작업은 되돌릴 수 없으니 신중하게 결정해 주세요.",
   "mypage.dangerZone.confirmEmail": "계속하려면 이메일 주소를 입력하세요",
   "mypage.dangerZone.emailPlaceholder": "이메일 주소 입력",
   "mypage.dangerZone.confirmDelete": "계정 삭제",
@@ -1318,8 +1309,6 @@ export default {
   "mypage.dangerZone.deleteSuccess": "계정을 삭제했습니다.",
   "mypage.dangerZone.deleteError": "계정을 삭제하지 못했습니다. 다시 시도해 주세요.",
   "mypage.error.loadProfile": "프로필을 불러오지 못했습니다. 새로고침해 주세요.",
-  "mypage.error.loadSubscription": "구독 정보를 불러올 수 없습니다.",
-  "mypage.error.loadUsage": "사용량 정보를 불러올 수 없습니다.",
 
   // Credit System
   "pricing.credit.title": "추가문서 구매",
@@ -1357,7 +1346,7 @@ export default {
   "checkout.credit.receive": "받게 될 추가문서",
   "checkout.credit.breakdown": "문서 생성 {{count}}개 + 문서 발행 {{count}}개",
   "checkout.credit.pay": "결제하기",
-  "checkout.credit.loading": "로딩 중...",
+  "checkout.credit.loading": "불러오는 중...",
 
   // My Page Credit
   "mypage.creditTitle": "보유 추가문서",
@@ -1367,4 +1356,10 @@ export default {
   "mypage.rechargeButton": "추가문서 구매",
   "mypage.creditPurchaseHint": "추가문서 구매",
   "mypage.countUnit": "개",
+
+  // Error page
+  "error.title": "문제가 생겼어요",
+  "error.description": "요청을 처리하지 못했습니다. 다시 시도하거나 홈으로 돌아가세요.",
+  "error.retryReset": "비밀번호 재설정 다시 요청",
+  "error.home": "홈으로",
 } as Record<string, string>;

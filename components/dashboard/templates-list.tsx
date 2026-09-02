@@ -113,7 +113,7 @@ export function TemplatesList() {
   const handlePublish = async () => {
     if (!publishTarget) return;
     if (!name.trim()) {
-      toast.error(t("publish.errorName", "발행 이름을 입력하세요"));
+      toast.error(t("publish.errorName"));
       return;
     }
     setIsSubmitting(true);
@@ -131,7 +131,7 @@ export function TemplatesList() {
       setPublishTarget(null);
       router.push("/dashboard?tab=publications");
     } catch {
-      toast.error(t("publish.errorPublishing", "발행 중 오류가 발생했습니다."));
+      toast.error(t("publish.errorPublishing"));
     } finally {
       setIsSubmitting(false);
     }
@@ -267,7 +267,7 @@ export function TemplatesList() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="tpl-pub-name">
-                {t("publish.name", "발행 이름")}
+                {t("publish.name")}
               </Label>
               <Input
                 id="tpl-pub-name"
@@ -277,7 +277,7 @@ export function TemplatesList() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tpl-pub-pw">
-                {t("publish.password", "비밀번호")}
+                {t("publish.password")}
               </Label>
               <Input
                 id="tpl-pub-pw"
@@ -288,7 +288,7 @@ export function TemplatesList() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tpl-pub-exp">
-                {t("publish.expiration", "만료일")}
+                {t("publish.expiration")}
               </Label>
               <Input
                 id="tpl-pub-exp"
@@ -308,7 +308,7 @@ export function TemplatesList() {
             </Button>
             <Button onClick={handlePublish} disabled={isSubmitting}>
               {isSubmitting
-                ? t("upload.generating", "생성 중...")
+                ? t("upload.generating")
                 : t("templates.publish")}
             </Button>
           </DialogFooter>

@@ -62,4 +62,7 @@ describe("document-upload.tsx source", () => {
   it("routes to publish page after save-and-publish", () => {
     expect(source).toContain("publish?doc=");
   });
+  it("has no t() fallback with a hardcoded default", () => {
+    expect(source).not.toMatch(/t\("[a-zA-Z.]+",\s*"/);
+  });
 });

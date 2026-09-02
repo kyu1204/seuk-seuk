@@ -95,6 +95,56 @@ describe("en locale R52 mypage/bills keys exist", () => {
   });
 });
 
+describe("R61 error copy / new keys", () => {
+  it("has the new documentDetail/templates.detail/error keys", () => {
+    for (const key of [
+      "documentDetail.pdfNotReady",
+      "templates.detail.pdfNotReady",
+      "templates.detail.loadFileError",
+      "templates.detail.nameRequired",
+      "templates.detail.saved",
+      "templates.detail.deleteConfirm",
+      "templates.detail.pageUnit",
+      "templates.detail.areaUnit",
+      "templates.detail.title",
+      "error.title",
+      "error.description",
+      "error.retryReset",
+      "error.home",
+    ]) {
+      expect(en[key]).toBeTruthy();
+    }
+  });
+
+  it("removes unused keys", () => {
+    for (const key of [
+      "pdf_upload_pro_only",
+      "pdf_upgrade_cta",
+      "pdf_page",
+      "pdf_page_of",
+      "pdf_load_error",
+      "pdf_render_error",
+      "pdf_file_supported",
+      "pdf_signing_page",
+      "checkout.billing.daily",
+      "checkout.billing.weekly",
+      "checkout.billing.monthly",
+      "checkout.billing.yearly",
+      "checkout.billing.days",
+      "checkout.billing.weeks",
+      "checkout.billing.months",
+      "checkout.billing.years",
+      "mypage.error.loadSubscription",
+      "mypage.error.loadUsage",
+      "plan.Starter",
+      "plan.Pro",
+      "plan.Enterprise",
+    ]) {
+      expect(en).not.toHaveProperty(key);
+    }
+  });
+});
+
 describe("en locale has no stray Korean text", () => {
   it("contains no Hangul outside the allowlist", () => {
     const offenders = Object.entries(en)

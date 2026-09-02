@@ -481,3 +481,156 @@ describe("R52 mypage/bills copy values", () => {
     expect(ko["bills.noDocuments.action"]).toBeTruthy();
   });
 });
+
+describe("R61 error copy rewrite (what failed + next action)", () => {
+  it("has no more generic '오류가 발생' phrasing", () => {
+    expect(ko["templates.error"]).not.toMatch(/오류가 발생/);
+  });
+
+  it("has the exact rewritten values", () => {
+    expect(ko["documentDetail.errorUpdateArea"]).toBe(
+      "서명 칸을 저장하지 못했습니다. 다시 시도해 주세요."
+    );
+    expect(ko["documentDetail.errorDownload"]).toBe(
+      "파일을 내려받지 못했습니다. 다시 시도해 주세요."
+    );
+    expect(ko["documentDetail.errorDelete"]).toBe(
+      "문서를 삭제하지 못했습니다. 다시 시도해 주세요."
+    );
+    expect(ko["templates.error"]).toBe(
+      "템플릿 작업을 완료하지 못했습니다. 다시 시도해 주세요."
+    );
+    expect(ko["templates.create.unexpectedError"]).toBe(
+      "템플릿을 저장하지 못했습니다. 문제가 계속되면 문의해 주세요."
+    );
+    expect(ko["usage.error.title"]).toBe("사용량을 불러오지 못했어요");
+    expect(ko["usage.error.message"]).toBe("새로고침해 주세요.");
+    expect(ko["dashboard.error.loadMore"]).toBe(
+      "문서를 더 불러오지 못했습니다. 다시 시도를 눌러 주세요."
+    );
+    expect(ko["contact.error.description"]).toBe(
+      "문의를 보내지 못했습니다. 잠시 후 다시 보내 주세요."
+    );
+    expect(ko["sign.progress.imageTimeout"]).toBe(
+      "문서를 불러오는 데 너무 오래 걸립니다. 네트워크를 확인하고 다시 시도해 주세요."
+    );
+    expect(ko["sign.progress.imageLoadFailed"]).toBe(
+      "문서를 불러오지 못했습니다. 새로고침해 주세요."
+    );
+    expect(ko["checkout.success.message"]).toBe(
+      "결제가 완료됐습니다. 바로 이용하실 수 있어요."
+    );
+  });
+});
+
+describe("R61 terminology standardization", () => {
+  it("uses standardized terms", () => {
+    expect(ko["dashboard.upload.templateDescription"]).toBe(
+      "반복 발행할 템플릿 저장"
+    );
+    expect(ko["documentDetail.saving"]).toBe("저장 중…");
+    expect(ko["documentDetail.addArea"]).toBe("칸 추가");
+    expect(ko["sign.batchSignAction"]).toBe("모두 적용");
+  });
+
+  it("has no more '해주세요' (missing space before 주세요)", () => {
+    const values = Object.values(ko).filter(
+      (v): v is string => typeof v === "string"
+    );
+    expect(values.some((v) => v.includes("해주세요"))).toBe(false);
+  });
+
+  it("uses '개인정보처리방침' without a space", () => {
+    const values = Object.values(ko).filter(
+      (v): v is string => typeof v === "string"
+    );
+    expect(values.some((v) => v.includes("개인정보 처리방침"))).toBe(false);
+  });
+
+  it("has the unified pricing CTAs", () => {
+    expect(ko["pricing.free.cta"]).toBe("무료로 시작하기");
+    expect(ko["pricing.starter.cta"]).toBe("스타터로 시작하기");
+    expect(ko["pricing.pro.cta"]).toBe("프로로 시작하기");
+  });
+});
+
+describe("R61 unused key removal", () => {
+  it("removes unused pdf_* snake_case keys", () => {
+    for (const key of [
+      "pdf_upload_pro_only",
+      "pdf_upgrade_cta",
+      "pdf_page",
+      "pdf_page_of",
+      "pdf_load_error",
+      "pdf_render_error",
+      "pdf_file_supported",
+      "pdf_signing_page",
+    ]) {
+      expect(ko).not.toHaveProperty(key);
+    }
+  });
+
+  it("removes unused checkout.billing.* keys but keeps .every", () => {
+    for (const key of [
+      "checkout.billing.daily",
+      "checkout.billing.weekly",
+      "checkout.billing.monthly",
+      "checkout.billing.yearly",
+      "checkout.billing.days",
+      "checkout.billing.weeks",
+      "checkout.billing.months",
+      "checkout.billing.years",
+    ]) {
+      expect(ko).not.toHaveProperty(key);
+    }
+    expect(ko["checkout.billing.every"]).toBeTruthy();
+  });
+
+  it("removes unused mypage.error.* keys but keeps loadProfile", () => {
+    expect(ko).not.toHaveProperty("mypage.error.loadSubscription");
+    expect(ko).not.toHaveProperty("mypage.error.loadUsage");
+    expect(ko["mypage.error.loadProfile"]).toBeTruthy();
+  });
+
+  it("removes unused plan.* keys", () => {
+    expect(ko).not.toHaveProperty("plan.Starter");
+    expect(ko).not.toHaveProperty("plan.Pro");
+    expect(ko).not.toHaveProperty("plan.Enterprise");
+  });
+});
+
+describe("R61 hardcoded copy replacements", () => {
+  it("has the new documentDetail/templates.detail keys", () => {
+    expect(ko["documentDetail.errorLoadFile"]).toBe(
+      "문서를 불러오지 못했습니다."
+    );
+    expect(ko["documentDetail.pdfNotReady"]).toBe(
+      "PDF 페이지가 아직 준비되지 않았습니다."
+    );
+    expect(ko["templates.detail.pdfNotReady"]).toBe(
+      "PDF 페이지가 아직 준비되지 않았습니다."
+    );
+    expect(ko["templates.detail.loadFileError"]).toBe(
+      "템플릿 파일을 불러오지 못했습니다."
+    );
+    expect(ko["templates.detail.nameRequired"]).toBe(
+      "템플릿 이름을 입력하세요."
+    );
+    expect(ko["templates.detail.saved"]).toBe("템플릿이 저장되었습니다.");
+    expect(ko["templates.detail.deleteConfirm"]).toBe(
+      "이 템플릿을 삭제하시겠습니까?"
+    );
+    expect(ko["templates.detail.pageUnit"]).toBe("페이지");
+    expect(ko["templates.detail.areaUnit"]).toBe("개 영역");
+    expect(ko["templates.detail.title"]).toBe("템플릿 상세");
+  });
+
+  it("has the error page keys", () => {
+    expect(ko["error.title"]).toBe("문제가 생겼어요");
+    expect(ko["error.description"]).toBe(
+      "요청을 처리하지 못했습니다. 다시 시도하거나 홈으로 돌아가세요."
+    );
+    expect(ko["error.retryReset"]).toBe("비밀번호 재설정 다시 요청");
+    expect(ko["error.home"]).toBe("홈으로");
+  });
+});

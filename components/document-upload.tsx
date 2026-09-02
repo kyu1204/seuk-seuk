@@ -473,7 +473,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
     if (images.length === 0) {
       setError(
         isTemplateMode
-          ? t("templates.create.errorNoFile", "템플릿으로 저장할 문서를 업로드하세요")
+          ? t("templates.create.errorNoFile")
           : "Please upload at least one document"
       );
       return;
@@ -514,7 +514,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
 
         setSavingProgress(
           (isTemplateMode
-            ? t("templates.create.savingProgress", "템플릿 저장 중... ({{current}}/{{total}})")
+            ? t("templates.create.savingProgress")
             : t("upload.savingProgress")
           )
             .replace("{{current}}", String(i + 1))
@@ -545,7 +545,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           }
 
           if (!templateResult.success || !templateResult.templateId) {
-            setError(t("templates.create.error", "템플릿 저장에 실패했습니다."));
+            setError(t("templates.create.error"));
             return;
           }
 
@@ -624,7 +624,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
       console.error("Error uploading documents:", error);
       setError(
         isTemplateMode
-          ? t("templates.create.unexpectedError", "템플릿 저장 중 예상치 못한 오류가 발생했습니다.")
+          ? t("templates.create.unexpectedError")
           : "An unexpected error occurred while uploading the documents"
       );
     } finally {

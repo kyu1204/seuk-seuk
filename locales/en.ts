@@ -73,18 +73,10 @@ export default {
 
   // PDF
   pdf_document: "PDF Document",
-  pdf_upload_pro_only: "PDF document upload is available on Pro plan and above.",
-  pdf_upgrade_cta: "Upgrade to Pro",
-  pdf_page: "Page",
-  pdf_page_of: "/ {total} pages",
   pdf_current_page: "{current} / {total} pages",
   pdf_prev_page: "Previous page",
   pdf_next_page: "Next page",
-  pdf_load_error: "Unable to load PDF file.",
-  pdf_render_error: "Unable to render PDF page.",
-  pdf_file_supported: "Image and PDF files supported",
   pdf_pro_badge: "Pro",
-  pdf_signing_page: "Signing page {current} / {total}",
 
   // Sign Page
   "sign.loading": "Loading document...",
@@ -247,20 +239,12 @@ export default {
   "checkout.dueToday": "Due today",
   "checkout.then": "then",
   "checkout.incTax": "inc. tax",
-  "checkout.billing.daily": "daily",
-  "checkout.billing.weekly": "weekly",
-  "checkout.billing.monthly": "monthly",
-  "checkout.billing.yearly": "yearly",
-  "checkout.billing.days": "days",
-  "checkout.billing.weeks": "weeks",
-  "checkout.billing.months": "months",
-  "checkout.billing.years": "years",
   "checkout.billing.every": "every",
 
   // Checkout Success
   "checkout.success.title": "Payment Successful!",
   "checkout.success.message":
-    "Thank you for subscribing. Your payment has been processed successfully.",
+    "Payment complete. You can start using it right away.",
   "checkout.success.emailInfo":
     "You will receive a confirmation email shortly with your subscription details.",
   "checkout.success.dashboard": "Go to Dashboard",
@@ -410,8 +394,8 @@ export default {
   "sign.progress.uploading": "Creating the document…",
   "sign.progress.generatingPdf": "Generating the PDF...",
   "sign.progress.finalizing": "Almost done…",
-  "sign.progress.imageTimeout": "The image took too long to load.",
-  "sign.progress.imageLoadFailed": "Unable to load the image.",
+  "sign.progress.imageTimeout": "The document is taking too long to load. Check your network and try again.",
+  "sign.progress.imageLoadFailed": "Couldn't load the document. Please refresh.",
 
   // Sign gate error codes (server-returned errorCode → message)
   "sign.gateError.ALREADY_SUBMITTED": "This document has already been submitted.",
@@ -501,8 +485,16 @@ export default {
   "templates.upgrade.title": "Pro-only feature",
   "templates.upgrade.description": "Templates are available on the Pro or Enterprise plan. Upgrade to automate your publishing.",
   "templates.upgrade.cta": "View pricing",
-  "templates.error": "Something went wrong.",
+  "templates.error": "Couldn't complete the template action. Please try again.",
   "templates.loadError.title": "Could not load template information",
+  "templates.detail.title": "Template details",
+  "templates.detail.pdfNotReady": "The PDF page isn't ready yet.",
+  "templates.detail.loadFileError": "Couldn't load the template file.",
+  "templates.detail.nameRequired": "Enter a template name.",
+  "templates.detail.saved": "Template saved.",
+  "templates.detail.deleteConfirm": "Delete this template?",
+  "templates.detail.pageUnit": "page",
+  "templates.detail.areaUnit": "areas",
   "templates.create.description": "Upload a document and save reusable signature field layouts.",
   "templates.create.imageTitle": "Image template",
   "templates.create.pdfTitle": "PDF template",
@@ -515,7 +507,7 @@ export default {
   "templates.create.savingProgress": "Saving template... ({{current}}/{{total}})",
   "templates.create.errorNoFile": "Upload a document to save as a template",
   "templates.create.error": "Failed to save template.",
-  "templates.create.unexpectedError": "An unexpected error occurred while saving the template.",
+  "templates.create.unexpectedError": "Couldn't save the template. Contact us if this keeps happening.",
   "dashboard.empty.title": "Upload a document to collect signatures",
   "dashboard.empty.description":
     "Upload a document and mark the signature spots — one link is all it takes to collect signatures.",
@@ -524,7 +516,7 @@ export default {
   "dashboard.retry": "Retry",
   "dashboard.end.message": "All documents have been loaded.",
   "dashboard.error.loadMore":
-    "An error occurred while loading more documents.",
+    "Couldn't load more documents. Tap retry to try again.",
   "dashboard.error.load": "Couldn't load documents.",
   "dashboard.filter.all": "All",
   "dashboard.filter.draft": "Draft",
@@ -659,8 +651,8 @@ export default {
   "usage.title": "Usage Overview",
   "usage.description":
     "Check your current monthly usage and active document status",
-  "usage.error.title": "Usage Information Error",
-  "usage.error.message": "Unable to load usage information.",
+  "usage.error.title": "Couldn't load usage",
+  "usage.error.message": "Please refresh the page.",
   "usage.monthly.title": "Monthly Document Creation",
   "usage.monthly.unlimited": "Unlimited",
   "usage.monthly.limit.reached": "Monthly document creation limit reached",
@@ -781,9 +773,11 @@ export default {
   "documentDetail.loading": "Loading document...",
   "documentDetail.signatureArea": "Signature area",
   "documentDetail.textArea": "Text Area",
-  "documentDetail.errorUpdateArea": "Failed to update signature area",
-  "documentDetail.errorDownload": "Failed to download document.",
-  "documentDetail.errorDelete": "Failed to delete document",
+  "documentDetail.errorUpdateArea": "Couldn't save the signature area. Please try again.",
+  "documentDetail.errorDownload": "Couldn't download the file. Please try again.",
+  "documentDetail.pdfNotReady": "The PDF page isn't ready yet.",
+  "documentDetail.errorLoadFile": "Couldn't load the document.",
+  "documentDetail.errorDelete": "Couldn't delete the document. Please try again.",
 
   // Publish Page
   "publish.title": "Publish Documents",
@@ -1069,7 +1063,7 @@ export default {
     "We'll get back to you as soon as possible. Thank you.",
   "contact.error.title": "Send Failed",
   "contact.error.description":
-    "An error occurred while sending your message. Please try again.",
+    "Couldn't send your message. Please try again shortly.",
 
   // Privacy Policy Page
   "privacy.backToHome": "Back to Home",
@@ -1333,9 +1327,6 @@ export default {
 
   // Plan Names
   "plan.Basic": "Basic",
-  "plan.Starter": "Starter",
-  "plan.Pro": "Pro",
-  "plan.Enterprise": "Enterprise",
   "mypage.usage.title": "Usage",
   "mypage.usage.thisMonth": "This Month",
   "mypage.usage.documents": "Documents",
@@ -1354,8 +1345,6 @@ export default {
   "mypage.dangerZone.deleteSuccess": "Account deleted.",
   "mypage.dangerZone.deleteError": "Couldn't delete your account. Please try again.",
   "mypage.error.loadProfile": "Couldn't load your profile. Please refresh.",
-  "mypage.error.loadSubscription": "Failed to load subscription information.",
-  "mypage.error.loadUsage": "Failed to load usage information.",
 
   // Credit System
   "pricing.credit.title": "Additional Documents",
@@ -1403,4 +1392,10 @@ export default {
   "mypage.rechargeButton": "Buy More",
   "mypage.creditPurchaseHint": "Buy additional docs",
   "mypage.countUnit": " docs",
+
+  // Error page
+  "error.title": "Something went wrong",
+  "error.description": "We couldn't process your request. Try again or go back home.",
+  "error.retryReset": "Request password reset again",
+  "error.home": "Go home",
 } as Record<string, string>;

@@ -58,4 +58,7 @@ describe("templates-list.tsx source", () => {
   it("guards the delete target name against undefined for the type checker", () => {
     expect(source).toContain('deleteTarget?.name ?? ""');
   });
+  it("has no t() fallback with a hardcoded default", () => {
+    expect(source).not.toMatch(/t\("[a-zA-Z.]+",\s*"/);
+  });
 });
