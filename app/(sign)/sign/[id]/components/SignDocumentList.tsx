@@ -406,13 +406,13 @@ export default function SignDocumentList({
                       {isDocumentSubmitted && <StatusBadge status="completed" />}
                     </div>
                     <div className="mt-1.5 flex items-center gap-2">
-                      <div className="h-1.5 w-24 rounded-full bg-muted overflow-hidden">
+                      <div className="h-1.5 flex-1 max-w-[220px] rounded-full bg-muted overflow-hidden">
                         <div
                           className={`h-full rounded-full ${isDocumentSubmitted ? "bg-seal" : "bg-primary"}`}
                           style={{ width: `${isDocumentSubmitted ? 100 : pct}%` }}
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground tabular-nums">
+                      <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                         {t("sign.documentList.signaturesCompleted", { completed, total })}
                       </span>
                     </div>
