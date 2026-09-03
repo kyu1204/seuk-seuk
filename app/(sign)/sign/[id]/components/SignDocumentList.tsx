@@ -329,14 +329,9 @@ export default function SignDocumentList({
       <div className="max-w-lg mx-auto px-5 py-8 flex flex-col gap-6 w-full">
         {/* 보낸 사람 · 요청 요약 */}
         <div className="rounded-xl border bg-card p-5 shadow-sm flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
-              {(senderName || "?").trim().charAt(0).toUpperCase()}
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">{sentByLine}</p>
-              <h1 className="text-xl font-bold truncate">{publicationData.name}</h1>
-            </div>
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">{sentByLine}</p>
+            <h1 className="mt-0.5 text-xl font-bold truncate">{publicationData.name}</h1>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-muted/60 px-2 py-2.5">
