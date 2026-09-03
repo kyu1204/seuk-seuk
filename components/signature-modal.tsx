@@ -31,8 +31,6 @@ interface SignatureModalProps {
   existingSignature?: string;
 }
 
-const BASELINE_OFFSET = 24;
-
 export default function SignatureModal({
   isOpen,
   onClose,
@@ -100,16 +98,6 @@ export default function SignatureModal({
       ctx.drawImage(existingImageRef.current, 0, 0, cssWidth, cssHeight);
     }
 
-    const borderColor = getComputedStyle(canvas).getPropertyValue("--border");
-    ctx.save();
-    ctx.strokeStyle = `hsl(${borderColor})`;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(0, cssHeight - BASELINE_OFFSET);
-    ctx.lineTo(cssWidth, cssHeight - BASELINE_OFFSET);
-    ctx.stroke();
-    ctx.restore();
 
     applyInkStyle(ctx, canvas);
     for (const stroke of strokesRef.current) strokePath(ctx, stroke);
