@@ -533,6 +533,8 @@ export default {
   "dashboard.publications.card.open": "서명 페이지 열기",
   "dashboard.card.signatures": "서명 {{completed}}/{{total}}",
   "dashboard.card.areas": "칸 {{count}}개",
+  "dashboard.card.pages": "{{count}}쪽",
+  "templates.card.pages": "{{count}}쪽",
   "templates.card.areas": "칸 {{count}}개",
   "dashboard.publications.card.cannotDelete": "완료된 발행만 삭제할 수 있습니다",
   "dashboard.publications.delete.title": "발행 삭제",
@@ -567,8 +569,8 @@ export default {
   "dashboard.bulkDelete.errorMessage": "{{count}}개 문서 삭제 실패: {{details}}",
 
   // Selection Mode
-  "dashboard.selectionMode.enter": "여러 개 선택",
-  "dashboard.selectionMode.exit": "선택 취소",
+  "dashboard.selectionMode.enter": "선택",
+  "dashboard.selectionMode.exit": "취소",
 
   // Bills
   "bills.title": "결제 및 구독",
@@ -655,6 +657,8 @@ export default {
   "usage.summary.sent": "이번 달 보낸 문서",
   "usage.summary.active": "진행 중인 문서",
   "usage.managePlan": "플랜 관리",
+  "usage.summary.plan": "현재 플랜",
+  "usage.summary.planHint": "한도는 매월 1일에 초기화됩니다.",
   "usage.limit.reachedHint": "한도에 도달했어요. 플랜을 바꾸거나 추가문서를 구매하세요.",
   "usage.plan.free": "베이직",
   "usage.plan.suffix": "플랜",

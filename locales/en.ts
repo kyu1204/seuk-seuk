@@ -539,6 +539,8 @@ export default {
   "dashboard.publications.card.open": "Open sign page",
   "dashboard.card.signatures": "{{completed}}/{{total}} signed",
   "dashboard.card.areas": "{{count}} areas",
+  "dashboard.card.pages": "{{count}} pages",
+  "templates.card.pages": "{{count}} pages",
   "templates.card.areas": "{{count}} areas",
   "dashboard.publications.card.cannotDelete": "Only completed publications can be deleted",
   "dashboard.publications.delete.title": "Delete Publication",
@@ -573,8 +575,8 @@ export default {
   "dashboard.bulkDelete.errorMessage": "Failed to delete {{count}} document(s): {{details}}",
 
   // Selection Mode
-  "dashboard.selectionMode.enter": "Select multiple",
-  "dashboard.selectionMode.exit": "Cancel selection",
+  "dashboard.selectionMode.enter": "Select",
+  "dashboard.selectionMode.exit": "Cancel",
 
   // Bills
   "bills.title": "Billing & Subscriptions",
@@ -661,6 +663,8 @@ export default {
   "usage.summary.sent": "Documents sent this month",
   "usage.summary.active": "Documents in progress",
   "usage.managePlan": "Manage plan",
+  "usage.summary.plan": "Current plan",
+  "usage.summary.planHint": "Limits reset on the 1st of every month.",
   "usage.limit.reachedHint":
     "Limit reached. Change your plan or buy extra documents.",
   "usage.plan.free": "Basic",

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DocumentTile } from "@/components/dashboard/document-tile";
-import { Lock, Copy, Trash2, ExternalLink } from "lucide-react";
+import { Lock, Copy, Trash2, ExternalLink, Link2 } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import type { ClientPublication } from "@/lib/supabase/database.types";
 import {
@@ -98,9 +98,10 @@ export function PublicationCard({
         selectable={isSelectionMode}
         selected={isSelected}
         onSelectToggle={() => onToggleSelection?.(publication.id, canDelete)}
+        icon={<Link2 className="h-10 w-10" strokeWidth={1.5} />}
         thumbnail={
           (publication as any).requiresPassword ? (
-            <Lock className="h-3 w-3 text-muted-foreground" />
+            <Lock className="h-3.5 w-3.5" />
           ) : undefined
         }
         actions={

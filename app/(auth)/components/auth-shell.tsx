@@ -1,6 +1,7 @@
 "use client";
 
 import { FileSignature } from "lucide-react";
+import Link from "next/link";
 import { useLanguage } from "@/contexts/language-context";
 
 interface AuthShellProps {
@@ -17,10 +18,10 @@ export function AuthShell({ children, title, description }: AuthShellProps) {
     <div className="min-h-screen md:grid md:grid-cols-2">
       {/* Left panel - brand */}
       <div className="hidden md:flex flex-col justify-between bg-primary text-primary-foreground p-12">
-        <div className="flex items-center gap-2">
+        <Link href="/" aria-label={t("login.backToHome")} className="flex w-fit items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60">
           <FileSignature className="h-6 w-6" />
           <span className="font-semibold">{t("app.title")}</span>
-        </div>
+        </Link>
 
         <div className="space-y-6">
           <h1 className="text-4xl font-bold leading-tight whitespace-pre-line">
@@ -44,10 +45,10 @@ export function AuthShell({ children, title, description }: AuthShellProps) {
       {/* Right panel - form */}
       <div className="flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-[380px] flex flex-col gap-6">
-          <div className="md:hidden flex items-center gap-2 mb-6">
+          <Link href="/" aria-label={t("login.backToHome")} className="md:hidden flex w-fit items-center gap-2 mb-6 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <FileSignature className="h-6 w-6 text-primary" />
             <span className="font-semibold">{t("app.title")}</span>
-          </div>
+          </Link>
 
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{title}</h2>

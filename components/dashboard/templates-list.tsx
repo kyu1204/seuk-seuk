@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FileX, Send, Trash2, Sparkles } from "lucide-react";
+import { FileX, Send, Trash2, Sparkles, LayoutTemplate } from "lucide-react";
 import { DocumentTile } from "@/components/dashboard/document-tile";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/language-context";
@@ -221,7 +221,12 @@ export function TemplatesList() {
               key={template.id}
               title={template.name}
               metaLeft={template.file_type.toUpperCase()}
-              metaRight={t("templates.card.areas", { count: template.page_count })}
+              metaRight={
+                template.page_count
+                  ? t("templates.card.pages", { count: template.page_count })
+                  : undefined
+              }
+              icon={<LayoutTemplate className="h-10 w-10" strokeWidth={1.5} />}
               onClick={() => router.push(`/templates/${template.id}`)}
               actions={
                 <div className="flex items-center gap-2">

@@ -12,8 +12,8 @@ describe("document-tile.tsx source", () => {
     expect(source).toContain("Checkbox");
   });
   it("uses the spec card height and hover border", () => {
-    expect(source).toContain("h-36");
-    expect(source).toContain("hover:border-primary/30");
+    expect(source).toContain("h-28");
+    expect(source).toContain("hover:border-primary/40");
   });
   it("status prop is optional so cards without a workflow status render no badge", () => {
     expect(source).toContain("status?: BadgeStatus");
@@ -22,6 +22,6 @@ describe("document-tile.tsx source", () => {
     expect(source).not.toContain("scale-");
   });
   it("only renders StatusBadge when a status is given", () => {
-    expect(source).toContain("{status && <StatusBadge");
+    expect(source).toContain("{status && (");
   });
 });

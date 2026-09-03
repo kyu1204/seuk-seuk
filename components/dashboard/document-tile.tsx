@@ -2,6 +2,7 @@
 
 import type { KeyboardEvent, ReactNode } from "react";
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge, type BadgeStatus } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,9 @@ interface DocumentTileProps {
   selected?: boolean;
   onSelectToggle?: () => void;
   disabledReason?: string;
+  /** 썸네일 영역 중앙에 놓을 아이콘. 기본은 문서 아이콘. */
+  icon?: ReactNode;
+  /** 썸네일 영역 우하단 보조 표시(예: 자물쇠). */
   thumbnail?: ReactNode;
   actions?: ReactNode;
 }
@@ -32,6 +36,7 @@ export function DocumentTile({
   selected = false,
   onSelectToggle,
   disabledReason,
+  icon,
   thumbnail,
   actions,
 }: DocumentTileProps) {
@@ -46,27 +51,44 @@ export function DocumentTile({
   const body = (
     <div
       className={cn(
-        "flex h-36 flex-col justify-between rounded-lg border p-4 transition-colors",
-        !selectable && "hover:border-primary/30",
+        "flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all",
+        selectable && selected && "border-primary ring-1 ring-primary",
+        !selectable && "hover:border-primary/40 hover:shadow-md",
         disabledReason && "opacity-60"
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        {status && <StatusBadge status={status} />}
+      {/* 썸네일 영역: 파일 아이콘 + 상태 배지 + 선택 체크 */}
+      <div className="relative flex h-28 items-center justify-center border-b bg-muted/60">
+        <span className="text-muted-foreground/50">
+          {icon ?? <FileText className="h-10 w-10" strokeWidth={1.5} />}
+        </span>
+        {status && (
+          <div className="absolute left-3 top-3">
+            <StatusBadge status={status} />
+          </div>
+        )}
         {selectable && (
-          <Checkbox
-            aria-label={title}
-            checked={selected}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onSelectToggle?.();
-            }}
-          />
+          <div className="absolute right-3 top-3">
+            <Checkbox
+              aria-label={title}
+              checked={selected}
+              className="bg-background"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onSelectToggle?.();
+              }}
+            />
+          </div>
+        )}
+        {thumbnail && (
+          <div className="absolute bottom-2 right-3 text-muted-foreground">
+            {thumbnail}
+          </div>
         )}
       </div>
-      <div className="space-y-1">
-        <h3 className="truncate text-sm font-medium" title={title}>
+      <div className="flex flex-1 flex-col gap-1 p-4">
+        <h3 className="truncate text-sm font-semibold" title={title}>
           {title}
         </h3>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -76,9 +98,8 @@ export function DocumentTile({
         {disabledReason && (
           <p className="text-xs text-muted-foreground">{disabledReason}</p>
         )}
+        {actions && <div className="mt-2 flex justify-end">{actions}</div>}
       </div>
-      {thumbnail}
-      {actions && <div className="flex justify-end">{actions}</div>}
     </div>
   );
 
@@ -90,7 +111,7 @@ export function DocumentTile({
         aria-pressed={selected}
         onClick={onSelectToggle}
         onKeyDown={handleKeyDown}
-        className="cursor-pointer"
+        className="h-full cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {body}
       </div>
@@ -99,14 +120,14 @@ export function DocumentTile({
 
   if (href) {
     return (
-      <Link href={href} onClick={onClick} className="block">
+      <Link href={href} onClick={onClick} className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         {body}
       </Link>
     );
   }
 
   return (
-    <div onClick={onClick} className={onClick ? "cursor-pointer" : undefined}>
+    <div onClick={onClick} className={cn("h-full", onClick && "cursor-pointer")}>
       {body}
     </div>
   );

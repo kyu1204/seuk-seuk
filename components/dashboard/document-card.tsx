@@ -1,4 +1,5 @@
 import { DocumentTile } from "@/components/dashboard/document-tile";
+import { FileText, Image as ImageIcon } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import type { Document } from "@/lib/supabase/database.types";
 
@@ -33,7 +34,18 @@ export function DocumentCard({ document, isSelectionMode, isSelected, onToggleSe
       status={(document.status ?? "draft") as "draft" | "published" | "completed"}
       title={displayName}
       metaLeft={formattedDate}
-      metaRight={t("dashboard.card.areas", { count: document.page_count })}
+      metaRight={
+        document.page_count
+          ? t("dashboard.card.pages", { count: document.page_count })
+          : undefined
+      }
+      icon={
+        document.file_type === "image" ? (
+          <ImageIcon className="h-10 w-10" strokeWidth={1.5} />
+        ) : (
+          <FileText className="h-10 w-10" strokeWidth={1.5} />
+        )
+      }
       selectable={isSelectionMode}
       selected={isSelected}
       onSelectToggle={() => onToggleSelection(document.id, canDelete)}

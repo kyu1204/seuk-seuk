@@ -1212,7 +1212,7 @@ export async function getUserDocumentsClient(
     // Build query with optimized field selection (exclude soft-deleted documents)
     let query = supabase
       .from("documents")
-      .select("id, filename, alias, status, signed_file_url, signed_pdf_url, created_at, publication_id, page_count", { count: "exact" })
+      .select("id, filename, alias, status, signed_file_url, signed_pdf_url, created_at, publication_id, page_count, file_type", { count: "exact" })
       .eq("user_id", user.id)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
@@ -1944,7 +1944,7 @@ export async function getDashboardData(
       (() => {
         let query = supabase
           .from("documents")
-          .select("id, filename, alias, status, created_at, signed_file_url, signed_pdf_url, publication_id", { count: "exact" })
+          .select("id, filename, alias, status, created_at, signed_file_url, signed_pdf_url, publication_id, page_count, file_type", { count: "exact" })
           .eq("user_id", user.id)
           .eq("is_deleted", false)
           .order("created_at", { ascending: false })
