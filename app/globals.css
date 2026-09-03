@@ -117,3 +117,70 @@
     border-width: 0;
   }
 }
+
+/* Home motion. All entrance/ambient motion is gated behind
+   prefers-reduced-motion: no-preference; without it everything renders at rest. */
+@keyframes home-rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes home-word {
+  to { transform: translateY(0); }
+}
+@keyframes home-pop {
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes home-glow {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-8%, 10%, 0) scale(1.15); }
+}
+@keyframes home-hint {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.28); }
+  60% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); }
+}
+@keyframes home-view-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.home-tilt {
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-rise {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: home-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) forwards;
+  }
+  .home-word {
+    transform: translateY(110%);
+    animation: home-word 0.8s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) forwards;
+  }
+  .home-pop {
+    opacity: 0;
+    transform: scale(0.5);
+    animation: home-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) var(--d, 0ms) forwards;
+  }
+  .home-glow {
+    animation: home-glow 16s ease-in-out infinite alternate;
+  }
+  .home-hint {
+    animation: home-hint 2.4s ease-out 2.4s 3;
+  }
+  /* Scroll-driven reveal (CSS scroll timeline). Browsers without it just show the content. */
+  @supports (animation-timeline: view()) {
+    .home-view {
+      animation: home-view-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+      animation-delay: var(--d, 0ms);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  .home-tilt {
+    transform: none;
+    transition: none;
+  }
+}

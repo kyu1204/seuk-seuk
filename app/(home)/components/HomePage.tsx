@@ -14,7 +14,7 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   getSubscriptionPlans,
   type SubscriptionPlan,
@@ -193,24 +193,38 @@ export default function HomePageComponent() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Hero */}
-      <section className="pt-10 pb-16 md:pt-16 md:pb-24">
+      <section className="relative overflow-hidden pt-10 pb-16 md:pt-16 md:pb-24">
+        {/* 목업 뒤에서 아주 느리게 떠다니는 잉크 번짐 하나. 히어로의 유일한 배경 장식. */}
+        <div
+          aria-hidden
+          className="home-glow pointer-events-none absolute right-[-10%] top-[10%] -z-10 h-[520px] w-[520px] rounded-full bg-primary/10 blur-3xl"
+        />
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 items-center">
             <div className="max-w-xl">
-              <p className="text-sm font-medium tracking-wide text-primary mb-5">
+              <p
+                className="home-rise text-sm font-medium tracking-wide text-primary mb-5"
+                style={delay(0)}
+              >
                 {t("home.hero.eyebrow")}
               </p>
-              <h1 className="text-4xl md:text-5xl lg:text-[3.4rem] font-bold leading-[1.15] tracking-[-0.02em] mb-6 whitespace-pre-line [text-wrap:balance]">
-                {t("home.hero.title")}
+              <h1 className="text-4xl md:text-5xl lg:text-[3.4rem] font-bold leading-[1.15] tracking-[-0.02em] mb-6 [text-wrap:balance]">
+                <KineticTitle text={t("home.hero.title")} startMs={120} />
               </h1>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+              <p
+                className="home-rise text-lg text-muted-foreground leading-relaxed mb-8"
+                style={delay(620)}
+              >
                 {t("home.hero.description")}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div
+                className="home-rise flex flex-col sm:flex-row gap-3"
+                style={delay(760)}
+              >
                 <Link href={startHref}>
-                  <Button size="lg" className="w-full sm:w-auto gap-2">
+                  <Button size="lg" className="group w-full sm:w-auto gap-2">
                     {startLabel}
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </Button>
                 </Link>
                 <a href="#how-it-works" className="w-full sm:w-auto">
@@ -223,12 +237,17 @@ export default function HomePageComponent() {
                   </Button>
                 </a>
               </div>
-              <p className="mt-5 text-sm text-muted-foreground">
+              <p
+                className="home-rise mt-5 text-sm text-muted-foreground"
+                style={delay(900)}
+              >
                 {t("home.hero.note")}
               </p>
             </div>
 
-            <SigningMock />
+            <div className="home-rise" style={delay(300)}>
+              <SigningMock />
+            </div>
           </div>
         </div>
       </section>
@@ -236,7 +255,7 @@ export default function HomePageComponent() {
       {/* How it works — 실제 순서가 있는 흐름이라 번호를 붙인다 */}
       <section id="how-it-works" className="py-16 md:py-24 bg-muted/40 border-y">
         <div className="container mx-auto px-4">
-          <div className="max-w-2xl mb-12">
+          <div className="home-view max-w-2xl mb-12">
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3 [text-wrap:balance]">
               {t("home.steps.title")}
             </h2>
@@ -246,7 +265,11 @@ export default function HomePageComponent() {
           </div>
           <ol className="grid md:grid-cols-3 gap-8 md:gap-6">
             {steps.map((step, i) => (
-              <li key={step.title} className="relative flex md:block gap-4">
+              <li
+                key={step.title}
+                className="home-view relative flex md:block gap-4"
+                style={delay(i * 120)}
+              >
                 <div className="flex items-center gap-3 mb-4 shrink-0">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold tabular-nums">
                     {i + 1}
@@ -275,7 +298,7 @@ export default function HomePageComponent() {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
-            <div>
+            <div className="home-view">
               <p className="text-sm font-medium text-primary mb-3">
                 {t("home.signer.eyebrow")}
               </p>
@@ -294,7 +317,7 @@ export default function HomePageComponent() {
                 ))}
               </ul>
             </div>
-            <div>
+            <div className="home-view" style={delay(120)}>
               <p className="text-sm font-medium text-primary mb-3">
                 {t("home.sender.eyebrow")}
               </p>
@@ -366,11 +389,12 @@ export default function HomePageComponent() {
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
-              {pricingPlans.map((plan) => (
+              {pricingPlans.map((plan, i) => (
                 <div
                   key={plan.name}
+                  style={delay(i * 100)}
                   className={cn(
-                    "relative flex flex-col rounded-lg border bg-background p-7",
+                    "home-view relative flex flex-col rounded-lg border bg-background p-7 transition-shadow duration-300 hover:shadow-md",
                     plan.popular && "border-primary shadow-md"
                   )}
                 >
@@ -423,7 +447,7 @@ export default function HomePageComponent() {
       {/* Final CTA */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <div className="max-w-2xl">
+          <div className="home-view max-w-2xl">
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3 [text-wrap:balance]">
               {t("home.cta.title")}
             </h2>
@@ -484,9 +508,36 @@ export default function HomePageComponent() {
  */
 function SigningMock() {
   const { t } = useLanguage();
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // 마우스 위치에 따라 카드가 아주 살짝(최대 3도) 기운다. 터치·reduced-motion 환경은 CSS에서 무시.
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    el.style.setProperty("--rx", `${(-y * 6).toFixed(2)}deg`);
+    el.style.setProperty("--ry", `${(x * 6).toFixed(2)}deg`);
+  };
+  const handleLeave = () => {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.setProperty("--rx", "0deg");
+    el.style.setProperty("--ry", "0deg");
+  };
+
   return (
-    <div className="relative mx-auto w-full max-w-md lg:max-w-none" aria-hidden>
-      <div className="rounded-xl border bg-card shadow-[0_24px_60px_-24px_hsl(var(--foreground)/0.25)] p-5 sm:p-7">
+    <div
+      className="relative mx-auto w-full max-w-md lg:max-w-none [perspective:1200px]"
+      aria-hidden
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+    >
+      <div
+        ref={cardRef}
+        className="home-tilt rounded-xl border bg-card shadow-[0_24px_60px_-24px_hsl(var(--foreground)/0.25)] p-5 sm:p-7"
+      >
         {/* 문서 상단: 보낸 사람 + 진행 상태 */}
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="min-w-0">
@@ -515,7 +566,7 @@ function SigningMock() {
             <p className="text-[11px] text-muted-foreground mb-1.5">
               {t("home.mock.partyA")}
             </p>
-            <div className="relative h-20 rounded-md border border-emerald-500/60 bg-emerald-500/5 overflow-hidden">
+            <div className="relative h-20 rounded-md border border-seal/60 bg-seal-soft/60 overflow-hidden">
               <svg
                 viewBox="0 0 200 80"
                 className="absolute inset-0 h-full w-full"
@@ -530,7 +581,10 @@ function SigningMock() {
                   d="M18 52 C 30 20, 44 18, 48 40 S 58 66, 66 44 S 78 14, 88 36 S 100 62, 112 42 C 122 26, 132 28, 138 40 S 150 58, 160 44 S 176 26, 184 40"
                 />
               </svg>
-              <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
+              <span
+                className="home-pop absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-seal text-primary-foreground"
+                style={delay(1650)}
+              >
                 <Check className="h-3 w-3" />
               </span>
             </div>
@@ -540,7 +594,7 @@ function SigningMock() {
             <p className="text-[11px] text-muted-foreground mb-1.5">
               {t("home.mock.partyB")}
             </p>
-            <div className="flex h-20 items-center justify-center rounded-md border-2 border-dashed border-primary/50 bg-primary/5 text-xs font-medium text-primary">
+            <div className="home-hint flex h-20 items-center justify-center rounded-md border-2 border-dashed border-primary/50 bg-primary/5 text-xs font-medium text-primary">
               {t("home.mock.tapToSign")}
             </div>
           </div>
@@ -548,11 +602,48 @@ function SigningMock() {
       </div>
 
       {/* 링크 발송 상태 칩 */}
-      <div className="absolute -bottom-4 left-4 sm:left-8 flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs shadow-sm">
+      <div
+        className="home-rise absolute -bottom-4 left-4 sm:left-8 flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs shadow-sm"
+        style={delay(1900)}
+      >
         <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
         <span>{t("home.mock.linkSent")}</span>
       </div>
     </div>
+  );
+}
+
+/** CSS 커스텀 프로퍼티로 등장 지연을 넘긴다. globals.css의 .home-rise/.home-word/.home-pop이 읽는다. */
+function delay(ms: number): CSSProperties {
+  return { "--d": `${ms}ms` } as CSSProperties;
+}
+
+/**
+ * 히어로 제목을 단어 단위로 아래에서 위로 드러낸다(kinetic type, 한 번만).
+ * 줄바꿈(\n)은 그대로 줄로 유지하고, 단어마다 60ms씩 지연을 더한다.
+ */
+function KineticTitle({ text, startMs }: { text: string; startMs: number }) {
+  let index = 0;
+  return (
+    <>
+      {text.split("\n").map((line, li) => (
+        <span key={li} className="block">
+          {line.split(" ").map((word, wi) => {
+            const d = startMs + index++ * 60;
+            return (
+              <span
+                key={`${li}-${wi}`}
+                className="inline-block overflow-hidden align-bottom pb-[0.1em] -mb-[0.1em] mr-[0.25em] last:mr-0"
+              >
+                <span className="home-word block" style={delay(d)}>
+                  {word}
+                </span>
+              </span>
+            );
+          })}
+        </span>
+      ))}
+    </>
   );
 }
 
