@@ -58,7 +58,7 @@ export function DocumentTile({
       )}
     >
       {/* 썸네일 영역: 파일 아이콘 + 상태 배지 + 선택 체크 */}
-      <div className="relative flex h-28 items-center justify-center border-b bg-muted/60">
+      <div className="relative flex h-24 sm:h-28 items-center justify-center border-b bg-muted/60">
         <span className="text-muted-foreground/50">
           {icon ?? <FileText className="h-10 w-10" strokeWidth={1.5} />}
         </span>
@@ -87,11 +87,11 @@ export function DocumentTile({
           </div>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-4">
+      <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
         <h3 className="truncate text-sm font-semibold" title={title}>
           {title}
         </h3>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-muted-foreground">
           <span>{metaLeft}</span>
           {metaRight && <span>{metaRight}</span>}
         </div>

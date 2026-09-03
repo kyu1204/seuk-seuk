@@ -24,13 +24,13 @@ export function StatusFilter({ selectedStatus, onStatusChange, counts }: StatusF
   ] as const;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2 overflow-x-auto md:flex-wrap md:overflow-visible [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0">
       {filterOptions.map((option) => (
         <button
           key={option.key}
           type="button"
           onClick={() => onStatusChange(option.key)}
-          className={`h-[30px] rounded-full px-3 text-sm transition-colors ${
+          className={`h-[30px] shrink-0 whitespace-nowrap rounded-full px-3 text-sm transition-colors ${
             selectedStatus === option.key
               ? "bg-primary/10 text-primary border-primary/30 border"
               : "border text-muted-foreground bg-transparent"

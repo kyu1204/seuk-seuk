@@ -265,7 +265,7 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
       {activeTab === "documents" && (
         <>
           {/* Status Filter and Selection Button */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+          <div className="flex items-center justify-between gap-3 mb-5 min-w-0">
             {/* Status Filter for Documents */}
             <StatusFilter
               selectedStatus={selectedStatus}
@@ -279,7 +279,7 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
                 variant="outline"
                 size="sm"
                 onClick={handleEnterSelectionMode}
-                className="gap-2 self-end"
+                className="gap-2 shrink-0"
               >
                 <CheckSquare className="h-4 w-4" />
                 {t("dashboard.selectionMode.enter")}

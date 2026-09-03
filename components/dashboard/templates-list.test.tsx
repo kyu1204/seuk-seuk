@@ -11,7 +11,7 @@ describe("templates-list.tsx source", () => {
     expect(source).not.toContain('status="draft"');
   });
   it("grid uses gap-5 sm:grid-cols-2 lg:grid-cols-4", () => {
-    expect(source).toContain("grid gap-5 sm:grid-cols-2 lg:grid-cols-4");
+    expect(source).toContain("grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4");
   });
   it("has no leftover Card import for the template grid", () => {
     expect(source).not.toContain('import { Card, CardContent, CardHeader } from "@/components/ui/card"');

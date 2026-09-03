@@ -86,9 +86,48 @@ export function UsageWidget({ data }: { data: UsageWidgetData }) {
     </div>
   );
 
+  const compactStat = (label: string, used: number, limit: number, unlimited: boolean, progress: number, atLimit: boolean) => (
+    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+      <span className="text-[11px] text-muted-foreground truncate">{label}</span>
+      <span className="text-base font-semibold tabular-nums leading-none">
+        {used}
+        <span className="text-xs font-normal text-muted-foreground">
+          {" / "}
+          {unlimited ? t("usage.monthly.unlimited") : `${limit}건`}
+        </span>
+      </span>
+      <div className="h-1 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full ${unlimited ? "bg-primary/30" : progressClass(progress, atLimit)}`}
+          style={{ width: unlimited ? "100%" : `${Math.min(progress, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {tile(t("usage.summary.sent"), limits.currentMonthlyCreated, monthlyLimit, monthlyUnlimited, monthlyProgress, monthlyAtLimit)}
+    <>
+      {/* 모바일: 카드 한 장에 두 지표를 나란히, 플랜은 아래 한 줄 */}
+      <div className="sm:hidden rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3">
+        <div className="flex gap-4">
+          {compactStat(t("usage.summary.sent"), limits.currentMonthlyCreated, monthlyLimit, monthlyUnlimited, monthlyProgress, monthlyAtLimit)}
+          <div className="w-px bg-border" />
+          {compactStat(t("usage.summary.active"), limits.currentActiveDocuments, activeLimit, activeUnlimited, activeProgress, activeAtLimit)}
+        </div>
+        <div className="flex items-center justify-between border-t pt-2.5 text-xs">
+          <span className={anyAtLimit ? "text-seal" : "text-muted-foreground"}>
+            {anyAtLimit
+              ? t("usage.limit.reachedHint")
+              : `${planName} ${t("usage.plan.suffix")}`}
+          </span>
+          <Link href="/pricing" className="font-medium text-primary">
+            {t("usage.managePlan")}
+          </Link>
+        </div>
+      </div>
+
+      {/* 태블릿 이상: 타일 3개 */}
+      <div className="hidden sm:grid gap-4 sm:grid-cols-2 lg:grid-cols-3">      {tile(t("usage.summary.sent"), limits.currentMonthlyCreated, monthlyLimit, monthlyUnlimited, monthlyProgress, monthlyAtLimit)}
       {tile(t("usage.summary.active"), limits.currentActiveDocuments, activeLimit, activeUnlimited, activeProgress, activeAtLimit)}
       <div className="rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3 sm:col-span-2 lg:col-span-1">
         <span className="text-sm text-muted-foreground">{t("usage.summary.plan")}</span>
@@ -106,6 +145,7 @@ export function UsageWidget({ data }: { data: UsageWidgetData }) {
           <p className="text-xs text-muted-foreground">{t("usage.summary.planHint")}</p>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

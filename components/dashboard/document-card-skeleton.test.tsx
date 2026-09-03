@@ -5,6 +5,6 @@ const source = readFileSync(new URL("./document-card-skeleton.tsx", import.meta.
 
 describe("document-card-skeleton.tsx source", () => {
   it("uses the shared dashboard grid spacing", () => {
-    expect(source).toContain("grid gap-5 sm:grid-cols-2 lg:grid-cols-4");
+    expect(source).toContain("grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4");
   });
 });

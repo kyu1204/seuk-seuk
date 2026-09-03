@@ -89,7 +89,7 @@ export function InfiniteScrollDocuments({
   return (
     <div className="space-y-6">
       {/* Documents Grid */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
         {documents.map((document) => (
           <DocumentCard
             key={document.id}
