@@ -457,6 +457,11 @@ export default {
   "sign.pdf.loadError": "Couldn't open the document. Try again or open it on another device.",
   "sign.pdf.memoryError": "Couldn't open the document. Try again or open it on another device.",
 
+  // Sign progress guide
+  "sign.goToNextUnsigned": "Next signature",
+  "sign.pageChipStatus": "{{signed}}/{{total}} signed",
+  "sign.pageChipNoAreas": "No signature areas",
+
   // Password gate trust footer
   "sign.password.trustNote": "Securely delivered with SeukSeuk",
   "sign.password.terms": "Terms of Service",
