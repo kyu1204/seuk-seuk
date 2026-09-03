@@ -45,6 +45,8 @@ export default function SignatureModal({
   const strokesRef = useRef<Point[][]>([]);
   const currentStrokeRef = useRef<Point[]>([]);
   const lastPointRef = useRef<Point | null>(null);
+  const prevMidRef = useRef<Point | null>(null);
+  const existingImageRef = useRef<HTMLImageElement | null>(null);
   const isDrawingRef = useRef(false);
   const [hasSignature, setHasSignature] = useState(!!existingSignature);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +54,36 @@ export default function SignatureModal({
   const [strokeCount, setStrokeCount] = useState(0);
 
   const getCanvasHeight = () => (window.innerWidth < 640 ? 200 : 220);
+
+  const applyInkStyle = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+    const foreground = getComputedStyle(canvas).getPropertyValue("--foreground");
+    ctx.strokeStyle = `hsl(${foreground})`;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.setLineDash([]);
+  };
+
+  // 인접 점의 중점을 잇는 2차 베지어. 실시간 그리기와 재그리기가 같은 수식을 쓴다.
+  const strokePath = (ctx: CanvasRenderingContext2D, stroke: Point[]) => {
+    if (stroke.length === 0) return;
+    ctx.beginPath();
+    if (stroke.length < 3) {
+      ctx.moveTo(stroke[0].x, stroke[0].y);
+      const end = stroke[stroke.length - 1];
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      return;
+    }
+    ctx.moveTo(stroke[0].x, stroke[0].y);
+    for (let i = 1; i < stroke.length - 1; i++) {
+      const mid = midpoint(stroke[i], stroke[i + 1]);
+      ctx.quadraticCurveTo(stroke[i].x, stroke[i].y, mid.x, mid.y);
+    }
+    const last = stroke[stroke.length - 1];
+    ctx.lineTo(last.x, last.y);
+    ctx.stroke();
+  };
 
   const redraw = () => {
     const canvas = canvasRef.current;
@@ -61,6 +93,10 @@ export default function SignatureModal({
     const cssWidth = canvas.clientWidth;
     const cssHeight = canvas.clientHeight;
     ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+    if (existingImageRef.current && strokesRef.current.length === 0) {
+      ctx.drawImage(existingImageRef.current, 0, 0, cssWidth, cssHeight);
+    }
 
     const borderColor = getComputedStyle(canvas).getPropertyValue("--border");
     ctx.save();
@@ -73,22 +109,9 @@ export default function SignatureModal({
     ctx.stroke();
     ctx.restore();
 
-    const foreground = getComputedStyle(canvas).getPropertyValue("--foreground");
-    ctx.strokeStyle = `hsl(${foreground})`;
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    for (const stroke of strokesRef.current) {
-      if (stroke.length < 2) continue;
-      ctx.beginPath();
-      ctx.moveTo(stroke[0].x, stroke[0].y);
-      for (let i = 1; i < stroke.length - 1; i++) {
-        const mid = midpoint(stroke[i], stroke[i + 1]);
-        ctx.quadraticCurveTo(stroke[i].x, stroke[i].y, mid.x, mid.y);
-      }
-      ctx.stroke();
-    }
+    applyInkStyle(ctx, canvas);
+    for (const stroke of strokesRef.current) strokePath(ctx, stroke);
+    if (currentStrokeRef.current.length > 0) strokePath(ctx, currentStrokeRef.current);
   };
 
   const setupCanvas = () => {
@@ -96,18 +119,22 @@ export default function SignatureModal({
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const cssWidth = container.clientWidth;
     const cssHeight = getCanvasHeight();
+    canvas.style.height = `${cssHeight}px`;
+    // 캔버스는 w-full 로 컨테이너 안쪽 폭을 따른다. 레이아웃 전(폭 0)에는 건너뛴다.
+    const cssWidth = canvas.clientWidth;
+    if (cssWidth === 0) return;
+
     const dpr = window.devicePixelRatio || 1;
     const { width, height } = scaleForDpr(cssWidth, cssHeight, dpr);
-
-    canvas.style.width = `${cssWidth}px`;
-    canvas.style.height = `${cssHeight}px`;
-    canvas.width = width;
-    canvas.height = height;
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
 
     const ctx = canvas.getContext("2d");
-    if (ctx) ctx.scale(dpr, dpr);
+    // width/height 재설정은 변환을 초기화하므로 매번 절대값으로 지정한다(누적 방지).
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     redraw();
   };
@@ -120,42 +147,56 @@ export default function SignatureModal({
     setHasSignature(!!existingSignature);
     setStrokeCount(0);
 
+    existingImageRef.current = null;
     if (existingSignature) {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
-        if (ctx && canvas) {
-          ctx.drawImage(img, 0, 0, canvas.clientWidth, canvas.clientHeight);
-        }
+        existingImageRef.current = img;
+        redraw();
       };
       img.src = existingSignature;
     }
 
     setupCanvas();
 
+    // 다이얼로그는 포털로 뜨고 진입 애니메이션이 있어 마운트 직후 폭이 0이거나 바뀔 수 있다.
+    // 실제 크기가 확정될 때마다 다시 맞춘다.
+    const container = containerRef.current;
+    const observer =
+      typeof ResizeObserver !== "undefined" && container
+        ? new ResizeObserver(() => setupCanvas())
+        : null;
+    if (container && observer) observer.observe(container);
     const handleResize = () => setupCanvas();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", handleResize);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingSignature, isOpen]);
 
   const getPoint = (e: React.PointerEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement): Point => {
     const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    // rect 는 CSS 변환(진입 애니메이션 등)이 적용된 크기라, 캔버스 CSS 크기 기준으로 보정한다.
+    const scaleX = rect.width ? canvas.clientWidth / rect.width : 1;
+    const scaleY = rect.height ? canvas.clientHeight / rect.height : 1;
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     canvas.setPointerCapture(e.pointerId);
     isDrawingRef.current = true;
     setHasSignature(true);
 
     const point = getPoint(e, canvas);
     lastPointRef.current = point;
+    prevMidRef.current = point;
     currentStrokeRef.current = [point];
   };
 
@@ -166,17 +207,15 @@ export default function SignatureModal({
     const ctx = canvas.getContext("2d");
     const point = getPoint(e, canvas);
     const last = lastPointRef.current;
-    if (ctx && last) {
-      const foreground = getComputedStyle(canvas).getPropertyValue("--foreground");
-      ctx.strokeStyle = `hsl(${foreground})`;
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+    const prevMid = prevMidRef.current;
+    if (ctx && last && prevMid) {
+      applyInkStyle(ctx, canvas);
       const mid = midpoint(last, point);
       ctx.beginPath();
-      ctx.moveTo(last.x, last.y);
+      ctx.moveTo(prevMid.x, prevMid.y);
       ctx.quadraticCurveTo(last.x, last.y, mid.x, mid.y);
       ctx.stroke();
+      prevMidRef.current = mid;
     }
 
     currentStrokeRef.current.push(point);
@@ -192,6 +231,8 @@ export default function SignatureModal({
     }
     currentStrokeRef.current = [];
     lastPointRef.current = null;
+    prevMidRef.current = null;
+    redraw();
   };
 
   const undo = () => {
