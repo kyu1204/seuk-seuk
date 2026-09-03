@@ -8,16 +8,16 @@ import { InfiniteScrollDocuments } from "@/components/dashboard/infinite-scroll-
 import { PublicationsList } from "@/components/dashboard/publications-list";
 import { TemplatesList } from "@/components/dashboard/templates-list";
 import { StatusFilter } from "@/components/dashboard/status-filter";
+import { resolveTab, type TabType } from "@/components/dashboard/dashboard-tabs";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/contexts/language-context";
 import type { Document } from "@/lib/supabase/database.types";
 import { CheckSquare, FileX, Upload } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-
-type TabType = "documents" | "publications" | "templates";
 
 interface DashboardInitialData {
   documents: Document[];
@@ -38,7 +38,11 @@ interface DashboardContentProps {
 
 export function DashboardContent({ initialData }: DashboardContentProps) {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<TabType>("documents");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTabState] = useState<TabType>(() =>
+    resolveTab(searchParams.get("tab"))
+  );
   const [documents, setDocuments] = useState<Document[]>(initialData.documents);
   const [hasMore, setHasMore] = useState(initialData.hasMore);
   const [total, setTotal] = useState(initialData.total);
@@ -62,6 +66,32 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState<{ done: number; total: number } | null>(null);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load both documents and counts in one optimized call
+      const statusFilter = selectedStatus === "all" ? undefined : selectedStatus;
+      const result = await getDashboardData(1, 12, statusFilter);
+
+      if (result.error) {
+        setError(t("dashboard.error.load"));
+      } else {
+        setDocuments(result.documents);
+        setHasMore(result.hasMore);
+        setTotal(result.total);
+        setStatusCounts(result.counts);
+      }
+    } catch (err) {
+      setError(t("dashboard.error.load"));
+      console.error("Error loading dashboard data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Reload dashboard data (documents + counts) when the status filter changes.
   // The first render is skipped because the server already prefetched the data.
@@ -71,31 +101,6 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
       return;
     }
 
-    const loadDashboardData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Load both documents and counts in one optimized call
-        const statusFilter = selectedStatus === "all" ? undefined : selectedStatus;
-        const result = await getDashboardData(1, 12, statusFilter);
-
-        if (result.error) {
-          setError(result.error);
-        } else {
-          setDocuments(result.documents);
-          setHasMore(result.hasMore);
-          setTotal(result.total);
-          setStatusCounts(result.counts);
-        }
-      } catch (err) {
-        setError("Failed to load dashboard data");
-        console.error("Error loading dashboard data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     // Clear selection and exit selection mode when filter changes
     setSelectedDocumentIds(new Set());
     setIsSelectionMode(false);
@@ -104,11 +109,13 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
   }, [selectedStatus]);
 
   useEffect(() => {
-    const tab = new URLSearchParams(window.location.search).get("tab");
-    if (tab === "documents" || tab === "publications" || tab === "templates") {
-      setActiveTab(tab);
-    }
-  }, []);
+    setActiveTabState(resolveTab(searchParams.get("tab")));
+  }, [searchParams]);
+
+  const setActiveTab = (tab: TabType) => {
+    setActiveTabState(tab);
+    router.replace(`/dashboard?tab=${tab}`, { scroll: false });
+  };
 
   // Toggle individual document selection
   const toggleDocumentSelection = (documentId: string, canDelete: boolean) => {
@@ -156,64 +163,60 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
     setIsBulkDeleteModalOpen(true);
   };
 
+  const selectedDocs = documents.filter((doc) => selectedDocumentIds.has(doc.id));
+  const bulkDeleteItems = selectedDocs.map((doc) => ({
+    id: doc.id,
+    name: doc.alias || doc.filename,
+    status: doc.status ?? "draft",
+  }));
+
   // Execute bulk delete
   const handleBulkDeleteConfirm = async () => {
     setIsBulkDeleting(true);
 
-    const selectedIds = Array.from(selectedDocumentIds);
-    const selectedDocs = documents.filter((doc) => selectedIds.includes(doc.id));
+    const docsToDelete = selectedDocs;
+    setBulkDeleteProgress({ done: 0, total: docsToDelete.length });
 
     let successCount = 0;
-    let failCount = 0;
-    const failures: { name: string; error: string }[] = [];
+    const failedIds = new Set<string>();
 
     // Delete each document sequentially
-    for (const doc of selectedDocs) {
+    for (const [index, doc] of docsToDelete.entries()) {
       try {
         const result = await deleteDocument(doc.id);
 
         if (result.error) {
-          failCount++;
-          failures.push({
-            name: doc.alias || doc.filename,
-            error: result.error,
-          });
+          failedIds.add(doc.id);
         } else {
           successCount++;
         }
       } catch (error) {
-        failCount++;
-        failures.push({
-          name: doc.alias || doc.filename,
-          error: "Unexpected error occurred",
-        });
+        failedIds.add(doc.id);
       }
+      setBulkDeleteProgress({ done: index + 1, total: docsToDelete.length });
     }
 
     // Close modal and reset state
     setIsBulkDeleteModalOpen(false);
     setIsBulkDeleting(false);
+    setBulkDeleteProgress(null);
 
     // Show results
     if (successCount > 0) {
       toast.success(t("dashboard.bulkDelete.successMessage", { count: successCount }));
     }
 
-    if (failCount > 0) {
-      const errorMessage = failures.map((f) => `${f.name}: ${f.error}`).join(", ");
-      toast.error(t("dashboard.bulkDelete.errorMessage", { count: failCount, details: errorMessage }));
+    if (failedIds.size > 0) {
+      toast.error(t("dashboard.bulkDelete.errorMessage", { count: failedIds.size, details: "" }));
     }
 
     // Clear selection and exit selection mode if all succeeded
-    if (failCount === 0) {
+    if (failedIds.size === 0) {
       setSelectedDocumentIds(new Set());
       setIsSelectionMode(false);
     } else {
       // Keep failed documents selected for retry
-      const failedIds = failures
-        .map((f) => selectedDocs.find((d) => (d.alias || d.filename) === f.name)?.id)
-        .filter(Boolean) as string[];
-      setSelectedDocumentIds(new Set(failedIds));
+      setSelectedDocumentIds(failedIds);
     }
 
     // Reload dashboard data
@@ -235,8 +238,11 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Error: {error}</p>
+      <div className="text-center py-8 space-y-4">
+        <p className="text-destructive">{error}</p>
+        <Button variant="outline" onClick={loadDashboardData}>
+          {t("common.retry")}
+        </Button>
       </div>
     );
   }
@@ -246,7 +252,10 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
       {/* Tab Switcher */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)} className="mb-6">
         <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="documents">{t("dashboard.tabs.documents")}</TabsTrigger>
+          <TabsTrigger value="documents">
+            {t("dashboard.tabs.documents")}
+            <span className="text-muted-foreground ml-1">({statusCounts.all})</span>
+          </TabsTrigger>
           <TabsTrigger value="publications">{t("dashboard.tabs.publications")}</TabsTrigger>
           <TabsTrigger value="templates">{t("dashboard.tabs.templates")}</TabsTrigger>
         </TabsList>
@@ -256,7 +265,7 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
       {activeTab === "documents" && (
         <>
           {/* Status Filter and Selection Button */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+          <div className="flex items-center justify-between gap-3 mb-5 min-w-0">
             {/* Status Filter for Documents */}
             <StatusFilter
               selectedStatus={selectedStatus}
@@ -270,7 +279,7 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
                 variant="outline"
                 size="sm"
                 onClick={handleEnterSelectionMode}
-                className="gap-2 self-end"
+                className="gap-2 shrink-0"
               >
                 <CheckSquare className="h-4 w-4" />
                 {t("dashboard.selectionMode.enter")}
@@ -334,6 +343,12 @@ export function DashboardContent({ initialData }: DashboardContentProps) {
         onClose={() => setIsBulkDeleteModalOpen(false)}
         onConfirm={handleBulkDeleteConfirm}
         isLoading={isBulkDeleting}
+        items={bulkDeleteItems}
+        progressLabel={
+          bulkDeleteProgress
+            ? t("dashboard.bulkDelete.progress", bulkDeleteProgress)
+            : undefined
+        }
       />
     </>
   );

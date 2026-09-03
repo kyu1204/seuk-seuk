@@ -127,7 +127,7 @@ export default function DeleteAccountForm({ userEmail }: DeleteAccountFormProps)
             }}
             disabled={isPending}
           >
-            {t("bills.cancel.keep")}
+            {t("common.cancel")}
           </Button>
           <Button
             type="submit"

@@ -117,7 +117,7 @@ export function TemplateDetailPageContent({
         if (!active) return;
         console.error("Failed to load template file:", err);
         setError(
-          t("templates.detail.loadFileError", "템플릿 파일을 불러오지 못했습니다.")
+          t("templates.detail.loadFileError")
         );
       }
     };
@@ -144,7 +144,7 @@ export function TemplateDetailPageContent({
       const canvas = documentContainerRef.current?.querySelector("canvas");
       if (!canvas) {
         setError(
-          t("templates.detail.pdfNotReady", "PDF 페이지가 아직 준비되지 않았습니다.")
+          t("templates.detail.pdfNotReady")
         );
         return;
       }
@@ -183,7 +183,7 @@ export function TemplateDetailPageContent({
 
   const handleSave = async () => {
     if (!templateName.trim()) {
-      setError(t("templates.detail.nameRequired", "템플릿 이름을 입력하세요."));
+      setError(t("templates.detail.nameRequired"));
       return;
     }
 
@@ -210,12 +210,12 @@ export function TemplateDetailPageContent({
         return;
       }
 
-      toast.success(t("templates.detail.saved", "템플릿이 저장되었습니다."));
+      toast.success(t("templates.detail.saved"));
       setIsEditMode(false);
       router.refresh();
     } catch (err) {
       console.error("Template update failed:", err);
-      setError(t("templates.error", "오류가 발생했습니다."));
+      setError(t("templates.error"));
     } finally {
       setIsSaving(false);
     }
@@ -224,7 +224,7 @@ export function TemplateDetailPageContent({
   const handleDelete = async () => {
     if (
       !window.confirm(
-        t("templates.detail.deleteConfirm", "이 템플릿을 삭제하시겠습니까?")
+        t("templates.detail.deleteConfirm")
       )
     ) {
       return;
@@ -240,12 +240,12 @@ export function TemplateDetailPageContent({
         return;
       }
 
-      toast.success(t("templates.delete", "삭제"));
+      toast.success(t("templates.delete"));
       router.push("/dashboard?tab=templates");
       router.refresh();
     } catch (err) {
       console.error("Template delete failed:", err);
-      setError(t("templates.error", "오류가 발생했습니다."));
+      setError(t("templates.error"));
     } finally {
       setIsSaving(false);
     }
@@ -326,7 +326,7 @@ export function TemplateDetailPageContent({
             {isEditMode ? (
               <div className="space-y-2">
                 <Label htmlFor="template-name">
-                  {t("templates.create.name", "템플릿 이름")}
+                  {t("templates.create.name")}
                 </Label>
                 <Input
                   id="template-name"
@@ -343,8 +343,8 @@ export function TemplateDetailPageContent({
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {template.file_type.toUpperCase()} · {template.page_count}
-                  {t("templates.detail.pageUnit", "페이지")} · {areas.length}
-                  {t("templates.detail.areaUnit", "개 영역")}
+                  {t("templates.detail.pageUnit")} · {areas.length}
+                  {t("templates.detail.areaUnit")}
                 </p>
               </>
             )}
@@ -358,12 +358,12 @@ export function TemplateDetailPageContent({
                   onClick={() => setIsEditMode(false)}
                   disabled={isSaving}
                 >
-                  {t("documentDetail.cancel", "취소")}
+                  {t("documentDetail.cancel")}
                 </Button>
                 <Button onClick={handleSave} disabled={isSaving}>
                   {isSaving
-                    ? t("documentDetail.saving", "저장 중...")
-                    : t("documentDetail.save", "저장")}
+                    ? t("documentDetail.saving")
+                    : t("documentDetail.save")}
                 </Button>
               </>
             ) : (
@@ -374,12 +374,12 @@ export function TemplateDetailPageContent({
                   disabled={isSaving}
                 >
                   <Edit className="mr-1.5 h-4 w-4" />
-                  {t("documentDetail.edit", "수정")}
+                  {t("documentDetail.edit")}
                 </Button>
                 <Button asChild variant="outline" disabled={isSaving}>
                   <Link href={`/dashboard?tab=templates&publishTemplate=${template.id}`}>
                     <Send className="mr-1.5 h-4 w-4" />
-                    {t("templates.publish", "이 템플릿으로 발행")}
+                    {t("templates.publish")}
                   </Link>
                 </Button>
                 <Button
@@ -388,7 +388,7 @@ export function TemplateDetailPageContent({
                   disabled={isSaving}
                 >
                   <Trash2 className="mr-1.5 h-4 w-4" />
-                  {t("templates.delete", "삭제")}
+                  {t("templates.delete")}
                 </Button>
               </>
             )}
@@ -401,7 +401,7 @@ export function TemplateDetailPageContent({
               <p className="text-sm text-muted-foreground">
                 {t(
                   "templates.detail.editHelp",
-                  "서명/텍스트 영역을 추가하거나 기존 영역을 클릭해서 제거하세요."
+                  "서명/텍스트 영역을 추가하거나 기존 영역을 클릭해서 삭제하세요."
                 )}
               </p>
               <div className="flex flex-wrap items-center gap-2">
@@ -411,7 +411,7 @@ export function TemplateDetailPageContent({
                   onClick={() => handleAddArea("signature")}
                   disabled={isSaving || isSelecting}
                 >
-                  {t("upload.addSignatureArea", "서명 영역 추가")}
+                  {t("upload.addSignatureArea")}
                 </Button>
                 <Button
                   variant="outline"
@@ -420,7 +420,7 @@ export function TemplateDetailPageContent({
                   disabled={isSaving || isSelecting}
                 >
                   <Type className="mr-1 h-4 w-4" />
-                  {t("upload.addTextArea", "텍스트 영역 추가")}
+                  {t("upload.addTextArea")}
                 </Button>
               </div>
             </CardContent>
@@ -534,7 +534,7 @@ export function TemplateDetailPageContent({
                 {!documentUrl ? (
                   <div className="flex h-96 w-full items-center justify-center bg-gray-100">
                     <p className="text-gray-500">
-                      {t("documentDetail.loading", "로딩 중...")}
+                      {t("documentDetail.loading")}
                     </p>
                   </div>
                 ) : isPdf ? (
@@ -579,8 +579,8 @@ export function TemplateDetailPageContent({
                       >
                         <span className="hidden sm:inline">
                           {isText
-                            ? `${t("upload.textArea", "텍스트")} ${originalIndex + 1}`
-                            : `${t("upload.signature", "서명")} ${originalIndex + 1}`}
+                            ? `${t("upload.textArea")} ${originalIndex + 1}`
+                            : `${t("upload.signature")} ${originalIndex + 1}`}
                         </span>
                         <span className="sm:hidden">{originalIndex + 1}</span>
                       </span>

@@ -1160,6 +1160,32 @@ export async function getUserDocuments(
 }
 
 /**
+ * Get signature area counts for a set of documents (keyed by document id)
+ */
+export async function getDocumentSignatureCounts(
+  documentIds: string[]
+): Promise<Record<string, number>> {
+  if (documentIds.length === 0) {
+    return {};
+  }
+
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("signatures")
+    .select("document_id")
+    .in("document_id", documentIds);
+
+  if (error || !data) {
+    return {};
+  }
+
+  return data.reduce<Record<string, number>>((counts, row) => {
+    counts[row.document_id] = (counts[row.document_id] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+/**
  * Get user's documents for client-side loading (for CSR - infinite scroll)
  */
 export async function getUserDocumentsClient(
@@ -1186,7 +1212,7 @@ export async function getUserDocumentsClient(
     // Build query with optimized field selection (exclude soft-deleted documents)
     let query = supabase
       .from("documents")
-      .select("id, filename, alias, status, signed_file_url, signed_pdf_url, created_at, publication_id", { count: "exact" })
+      .select("id, filename, alias, status, signed_file_url, signed_pdf_url, created_at, publication_id, page_count, file_type", { count: "exact" })
       .eq("user_id", user.id)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
@@ -1918,7 +1944,7 @@ export async function getDashboardData(
       (() => {
         let query = supabase
           .from("documents")
-          .select("id, filename, alias, status, created_at, signed_file_url, signed_pdf_url, publication_id", { count: "exact" })
+          .select("id, filename, alias, status, created_at, signed_file_url, signed_pdf_url, publication_id, page_count, file_type", { count: "exact" })
           .eq("user_id", user.id)
           .eq("is_deleted", false)
           .order("created_at", { ascending: false })

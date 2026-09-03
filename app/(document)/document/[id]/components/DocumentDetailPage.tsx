@@ -137,7 +137,7 @@ export default function DocumentDetailComponent({
       const container = documentContainerRef.current;
       const canvas = container?.querySelector('canvas');
       if (!canvas) {
-        setError("PDF 페이지가 아직 준비되지 않았습니다.");
+        setError(t("documentDetail.pdfNotReady"));
         return;
       }
       setPdfPageImageForSelector(canvas.toDataURL('image/png'));
@@ -308,7 +308,7 @@ export default function DocumentDetailComponent({
       } catch (err) {
         if (!active) return;
         console.error('Failed to load document:', err);
-        setError(t("documentDetail.errorLoadFile", "문서를 불러오지 못했습니다."));
+        setError(t("documentDetail.errorLoadFile"));
       }
     };
 

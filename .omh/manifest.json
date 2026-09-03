@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-09-02T14:02:37.661Z",
+  "omhVersion": "0.19.0",
+  "hooks": [
+    "catalog-branch-guard.sh",
+    "catalog-tdd-guard.sh",
+    "catalog-commit-test-gate.sh",
+    "catalog-commit-typecheck-gate.sh",
+    "catalog-path-guard.sh",
+    "catalog-lockfile-guard.sh",
+    "catalog-secret-file-guard.sh",
+    "catalog-command-guard.sh",
+    "catalog-loop-guard.sh",
+    "catalog-lint-on-save.sh",
+    "catalog-compact-context.sh"
+  ]
+}

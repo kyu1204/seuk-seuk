@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperat
 import "@/lib/pdf-polyfill"; // must come before pdfjs-dist (main-thread Promise.withResolvers)
 import * as pdfjsLib from "pdfjs-dist";
 import * as Sentry from "@sentry/nextjs";
+import { useLanguage } from "@/contexts/language-context";
 
 // Use local worker file from public/ to avoid CDN issues and iOS Safari compatibility problems.
 // The version query string busts stale CDN/browser caches of the (previously non-polyfilled) worker.
@@ -43,6 +44,7 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
     },
     ref
   ) => {
+    const { t } = useLanguage();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -119,8 +121,7 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
           });
           setIsLoading(false);
           setPdfDoc(null);
-          const detail = err?.name || err?.message ? ` (${err?.name || ""}: ${err?.message || ""})` : "";
-          onLoadError?.(`PDF 파일을 불러올 수 없습니다.${detail}`);
+          onLoadError?.(t("sign.pdf.loadError"));
         }
       };
 
@@ -177,8 +178,8 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
 
           const context = canvas.getContext("2d");
           if (!context) {
-            console.error("Failed to get canvas 2d context - device may have insufficient memory");
-            onLoadError?.("이 기기에서 PDF를 표시할 수 없습니다. 메모리가 부족합니다.");
+            console.error("Could not get canvas 2d context - device may have insufficient memory");
+            onLoadError?.(t("sign.pdf.memoryError"));
             setIsLoading(false);
             return;
           }
@@ -220,8 +221,7 @@ const PdfPageRenderer = forwardRef<PdfPageRendererRef, PdfPageRendererProps>(
             },
           });
           setIsLoading(false);
-          const detail = err?.name || err?.message ? ` (${err?.name || ""}: ${err?.message || ""})` : "";
-          onLoadError?.(`PDF 페이지를 렌더링할 수 없습니다.${detail}`);
+          onLoadError?.(t("sign.pdf.loadError"));
         }
       };
 

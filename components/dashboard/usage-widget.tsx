@@ -1,37 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  FileText,
-  TrendingUp,
-  AlertTriangle,
-  ChevronDown,
-  ChevronUp,
-  BookPlus,
-} from "lucide-react";
+import Link from "next/link";
 import type {
   UsageLimits,
   Subscription,
 } from "@/app/actions/subscription-actions";
 import type { CreditBalance } from "@/app/actions/credit-actions";
 import { useLanguage } from "@/contexts/language-context";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export interface UsageWidgetData {
   limits: UsageLimits | null;
@@ -40,242 +15,137 @@ export interface UsageWidgetData {
   error?: string;
 }
 
+function progressClass(progress: number, atLimit: boolean) {
+  if (atLimit) return "bg-seal";
+  if (progress >= 80) return "bg-amber";
+  return "bg-primary";
+}
+
 export function UsageWidget({ data }: { data: UsageWidgetData }) {
   const { t } = useLanguage();
-  const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
-
-  const { limits, subscription, error } = data;
+  const { limits, error } = data;
   const credits = data.credits ?? { create_credits: 0, publish_credits: 0 };
 
   if (error || !limits) {
     return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <Card>
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                {t("usage.error.title")}
-                {isOpen ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                )}
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground">
-                {error || t("usage.error.message")}
-              </p>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+      <div className="rounded-xl border bg-card px-5 py-3.5 text-sm text-muted-foreground">
+        {error || t("usage.error.message")}
+      </div>
     );
   }
 
-  // Use base limits without credits for display
-  // Credits are shown separately as (+N)
-  const displayMonthlyLimit = limits.monthlyCreationLimit;
-  const displayActiveLimit = limits.activeDocumentLimit;
+  const monthlyLimit = limits.monthlyCreationLimit;
+  const activeLimit = limits.activeDocumentLimit;
 
-  // Calculate progress based on base limit only (excluding credits)
+  const monthlyUnlimited = monthlyLimit === -1;
+  const activeUnlimited = activeLimit === -1;
+
   const monthlyProgress =
-    displayMonthlyLimit === -1 || displayMonthlyLimit === 0
+    monthlyUnlimited || monthlyLimit === 0
       ? 0
-      : (limits.currentMonthlyCreated / displayMonthlyLimit) * 100;
-
+      : (limits.currentMonthlyCreated / monthlyLimit) * 100;
   const activeProgress =
-    displayActiveLimit === -1 || displayActiveLimit === 0
+    activeUnlimited || activeLimit === 0
       ? 0
-      : (limits.currentActiveDocuments / displayActiveLimit) * 100;
+      : (limits.currentActiveDocuments / activeLimit) * 100;
 
-  const isMonthlyNearLimit = monthlyProgress >= 80;
-  const isActiveNearLimit = activeProgress >= 80;
+  const monthlyAtLimit = !limits.canCreateNew && credits.create_credits === 0;
+  const activeAtLimit = !limits.canPublishMore && credits.publish_credits === 0;
+  const anyAtLimit = monthlyAtLimit || activeAtLimit;
 
-  const planName = subscription?.plan?.name ?? "Basic";
+  const planName = data.subscription?.plan?.name ?? t("usage.plan.free");
+
+  const tile = (
+    label: string,
+    used: number,
+    limit: number,
+    unlimited: boolean,
+    progress: number,
+    atLimit: boolean
+  ) => (
+    <div className="rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-2xl font-bold tabular-nums tracking-tight">{used}</span>
+        {unlimited ? (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            {t("usage.monthly.unlimited")}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground tabular-nums">/ {limit}건</span>
+        )}
+      </div>
+      {!unlimited && (
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full rounded-full ${progressClass(progress, atLimit)}`}
+            style={{ width: `${Math.min(progress, 100)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  const compactStat = (label: string, used: number, limit: number, unlimited: boolean, progress: number, atLimit: boolean) => (
+    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+      <span className="text-[11px] text-muted-foreground truncate">{label}</span>
+      <span className="text-base font-semibold tabular-nums leading-none">
+        {used}
+        <span className="text-xs font-normal text-muted-foreground">
+          {" / "}
+          {unlimited ? t("usage.monthly.unlimited") : `${limit}건`}
+        </span>
+      </span>
+      <div className="h-1 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full ${unlimited ? "bg-primary/30" : progressClass(progress, atLimit)}`}
+          style={{ width: unlimited ? "100%" : `${Math.min(progress, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                <CardTitle className="text-lg">{t("usage.title")}</CardTitle>
-                {isOpen ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                )}
-              </div>
-              <Badge variant={planName === "Basic" ? "secondary" : "default"}>
-                {planName === "Basic" ? t("usage.plan.free") : planName} {t("usage.plan.suffix")}
-              </Badge>
-            </div>
-            <CardDescription>{t("usage.description")}</CardDescription>
-          </CardHeader>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <CardContent className="space-y-6 pt-0">
-            {/* Monthly Creation Usage */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{t("usage.monthly.title")}</span>
-                <span
-                  className={
-                    isMonthlyNearLimit ? "text-destructive font-medium" : ""
-                  }
-                >
-                  {limits.currentMonthlyCreated}{" "}
-                  {displayMonthlyLimit === -1
-                    ? `/ ${t("usage.monthly.unlimited")}`
-                    : `/ ${displayMonthlyLimit}`}
-                  {credits.create_credits > 0 && (
-                    <span className="text-primary ml-1">
-                      (+{credits.create_credits})
-                    </span>
-                  )}
-                </span>
-              </div>
-              {displayMonthlyLimit !== -1 && (
-                <Progress
-                  value={monthlyProgress}
-                  className={`h-2 ${
-                    isMonthlyNearLimit ? "[&>div]:bg-destructive" : ""
-                  }`}
-                />
-              )}
-              {!limits.canCreateNew && credits.create_credits === 0 && (
-                <p className="mt-1 text-xs text-destructive">
-                  {t("usage.monthly.limit.reached")}
-                </p>
-              )}
-              {!limits.canCreateNew && credits.create_credits > 0 && (
-                <p className="mt-1 text-xs text-primary">
-                  {t("usage.credit.available")}
-                </p>
-              )}
-            </div>
+    <>
+      {/* 모바일: 카드 한 장에 두 지표를 나란히, 플랜은 아래 한 줄 */}
+      <div className="sm:hidden rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3">
+        <div className="flex gap-4">
+          {compactStat(t("usage.summary.sent"), limits.currentMonthlyCreated, monthlyLimit, monthlyUnlimited, monthlyProgress, monthlyAtLimit)}
+          <div className="w-px bg-border" />
+          {compactStat(t("usage.summary.active"), limits.currentActiveDocuments, activeLimit, activeUnlimited, activeProgress, activeAtLimit)}
+        </div>
+        <div className="flex items-center justify-between border-t pt-2.5 text-xs">
+          <span className={anyAtLimit ? "text-seal" : "text-muted-foreground"}>
+            {anyAtLimit
+              ? t("usage.limit.reachedHint")
+              : `${planName} ${t("usage.plan.suffix")}`}
+          </span>
+          <Link href="/pricing" className="font-medium text-primary">
+            {t("usage.managePlan")}
+          </Link>
+        </div>
+      </div>
 
-            {/* Active Documents Usage */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium whitespace-pre-line">{t("usage.active.title")}</span>
-                <span
-                  className={
-                    isActiveNearLimit ? "text-destructive font-medium" : ""
-                  }
-                >
-                  {limits.currentActiveDocuments}{" "}
-                  {displayActiveLimit === -1
-                    ? `/ ${t("usage.monthly.unlimited")}`
-                    : `/ ${displayActiveLimit}`}
-                  {credits.publish_credits > 0 && (
-                    <span className="text-primary ml-1">
-                      (+{credits.publish_credits})
-                    </span>
-                  )}
-                </span>
-              </div>
-              {displayActiveLimit !== -1 && (
-                <Progress
-                  value={activeProgress}
-                  className={`h-2 ${
-                    isActiveNearLimit ? "[&>div]:bg-destructive" : ""
-                  }`}
-                />
-              )}
-              {!limits.canPublishMore && credits.publish_credits === 0 && (
-                <p className="mt-1 text-xs text-destructive">
-                  {t("usage.active.limit.reached")}
-                </p>
-              )}
-              {!limits.canPublishMore && credits.publish_credits > 0 && (
-                <p className="mt-1 text-xs text-primary">
-                  {t("usage.credit.publishAvailable")}
-                </p>
-              )}
-            </div>
-
-            {/* Credit Purchase CTA - Show when any limit is reached */}
-            {((!limits.canCreateNew && credits.create_credits === 0) ||
-              (!limits.canPublishMore && credits.publish_credits === 0)) && (
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">
-                      {t("usage.credit.needMore", "추가 문서가 필요하신가요?")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("usage.credit.purchaseDesc", "추가문서를 구매하여 더 많이 이용하세요")}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2"
-                    onClick={() => router.push("/pricing")}
-                  >
-                    <BookPlus className="h-4 w-4" />
-                    {t("usage.credit.recharge")}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Upgrade CTA - Show only when not Enterprise or when no subscription (treat as Free) */}
-            {planName !== "Enterprise" && (
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">
-                      {t("usage.upgrade.title")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {(() => {
-                        const key = planName.toLowerCase();
-                        return key === "free" || key === "basic";
-                      })()
-                        ? t("usage.upgrade.description.free")
-                        : t("usage.upgrade.description.pro")}
-                    </p>
-                  </div>
-                  <Link href="/pricing">
-                    <Button size="sm" className="gap-2">
-                      <TrendingUp className="h-4 w-4" />
-                      {t("usage.upgrade.button")}
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* Plan Features Summary */}
-            {subscription?.plan?.features &&
-              subscription.plan.features.length > 0 && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium mb-2">
-                    {t("usage.features.title")}
-                  </p>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    {subscription.plan.features
-                      .slice(0, 2)
-                      .map((feature, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <div className="w-1 h-1 bg-primary rounded-full" />
-                          {feature}
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              )}
-          </CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+      {/* 태블릿 이상: 타일 3개 */}
+      <div className="hidden sm:grid gap-4 sm:grid-cols-2 lg:grid-cols-3">      {tile(t("usage.summary.sent"), limits.currentMonthlyCreated, monthlyLimit, monthlyUnlimited, monthlyProgress, monthlyAtLimit)}
+      {tile(t("usage.summary.active"), limits.currentActiveDocuments, activeLimit, activeUnlimited, activeProgress, activeAtLimit)}
+      <div className="rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3 sm:col-span-2 lg:col-span-1">
+        <span className="text-sm text-muted-foreground">{t("usage.summary.plan")}</span>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-2xl font-bold tracking-tight">
+            {planName} {t("usage.plan.suffix")}
+          </span>
+          <Link href="/pricing" className="text-sm font-medium text-primary hover:underline whitespace-nowrap">
+            {t("usage.managePlan")}
+          </Link>
+        </div>
+        {anyAtLimit ? (
+          <p className="text-xs text-seal">{t("usage.limit.reachedHint")}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">{t("usage.summary.planHint")}</p>
+        )}
+      </div>
+      </div>
+    </>
   );
 }

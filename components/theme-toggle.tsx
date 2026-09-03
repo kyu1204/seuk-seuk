@@ -17,13 +17,7 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        className="gap-2 border-primary/20 hover:bg-primary/5 w-[85px]"
-      />
-    );
+    return <Button variant="outline" size="icon" className="w-9" disabled />;
   }
 
   const toggleTheme = () => {
@@ -33,24 +27,15 @@ export function ThemeToggle() {
   return (
     <Button
       variant="outline"
-      size="sm"
-      className="gap-2 border-primary/20 hover:bg-primary/5"
+      size="icon"
+      className="w-9"
+      aria-label={t("header.themeToggle")}
       onClick={toggleTheme}
     >
       {theme === "dark" ? (
-        <>
-          <Sun className="h-4 w-4" />
-          <span className="sr-only sm:not-sr-only sm:text-xs">
-            {t("theme.light")}
-          </span>
-        </>
+        <Sun className="h-4 w-4" />
       ) : (
-        <>
-          <Moon className="h-4 w-4" />
-          <span className="sr-only sm:not-sr-only sm:text-xs">
-            {t("theme.dark")}
-          </span>
-        </>
+        <Moon className="h-4 w-4" />
       )}
     </Button>
   );

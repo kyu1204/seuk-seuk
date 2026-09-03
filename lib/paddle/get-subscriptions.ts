@@ -12,8 +12,9 @@ export async function getSubscriptions(): Promise<SubscriptionResponse> {
       const subscriptionCollection = getPaddleInstance().subscriptions.list({
         customerId: [customerId],
         perPage: 20,
+        // `include` is a valid list param the SDK 3.x types omit.
         include: ['next_transaction', 'recurring_transaction_details'],
-      });
+      } as Parameters<ReturnType<typeof getPaddleInstance>['subscriptions']['list']>[0]);
       const subscriptions = await subscriptionCollection.next();
       return {
         data: parseSDKResponse(subscriptions ?? []),

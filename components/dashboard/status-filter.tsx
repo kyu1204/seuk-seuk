@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/language-context";
 
 interface StatusFilterProps {
@@ -26,21 +24,21 @@ export function StatusFilter({ selectedStatus, onStatusChange, counts }: StatusF
   ] as const;
 
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
+    <div className="flex gap-2 overflow-x-auto md:flex-wrap md:overflow-visible [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0">
       {filterOptions.map((option) => (
-        <Button
+        <button
           key={option.key}
-          variant={selectedStatus === option.key ? "default" : "outline"}
+          type="button"
           onClick={() => onStatusChange(option.key)}
-          className="gap-2"
+          className={`h-[30px] shrink-0 whitespace-nowrap rounded-full px-3 text-sm transition-colors ${
+            selectedStatus === option.key
+              ? "bg-primary/10 text-primary border-primary/30 border"
+              : "border text-muted-foreground bg-transparent"
+          }`}
         >
           {option.label}
-          {counts && option.count !== undefined && (
-            <span className="px-1.5 py-0.5 text-xs rounded-full bg-background/20">
-              {option.count}
-            </span>
-          )}
-        </Button>
+          {counts && option.count !== undefined && ` ${option.count}`}
+        </button>
       ))}
     </div>
   );

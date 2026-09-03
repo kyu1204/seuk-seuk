@@ -14,10 +14,10 @@ export default function UploadPageComponent() {
         <ProjectBreadcrumb />
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
-            {t("upload.title")}
+          <h1 className="text-2xl font-bold tracking-tight mb-2">
+            {t("upload.page.title")}
           </h1>
-          <p className="text-muted-foreground">{t("upload.description")}</p>
+          <p className="text-muted-foreground">{t("upload.page.description")}</p>
         </div>
 
         <DocumentUpload />

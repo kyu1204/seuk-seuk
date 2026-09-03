@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.{test,spec}.ts", "**/*.{test,spec}.tsx"],
-    exclude: [...configDefaults.exclude, ".next/**"],
+    exclude: [...configDefaults.exclude, ".next/**", ".omh/**"],
     globals: false,
   },
 });

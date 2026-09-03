@@ -38,17 +38,14 @@ export default function DeleteDocumentModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-            문서 삭제
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            {t("documentDetail.delete.title")}
           </DialogTitle>
           <DialogDescription className="text-left">
-            정말로 이 문서를 삭제하시겠습니까?
+            {t("documentDetail.delete.confirm", { name: documentName })}
             <br />
             <br />
-            <strong className="text-foreground">"{documentName}"</strong>
-            <br />
-            <br />
-            이 작업은 되돌릴 수 없습니다. 문서와 관련된 모든 서명 영역이 함께 삭제됩니다.
+            {t("documentDetail.delete.description")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2">
@@ -57,14 +54,14 @@ export default function DeleteDocumentModal({
             onClick={onClose}
             disabled={isLoading}
           >
-            취소
+            {t("common.cancel")}
           </Button>
           <Button
             variant="destructive"
             onClick={handleConfirm}
             disabled={isLoading}
           >
-            {isLoading ? "삭제 중..." : "삭제"}
+            {isLoading ? t("common.deleting") : t("common.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -348,7 +348,7 @@ export default function AreaSelector({
     <div className="relative">
       <div
         ref={containerRef}
-        className="relative overflow-auto max-h-[50vh] sm:max-h-[70vh]"
+        className="relative overflow-auto max-h-[70vh]"
         style={{
           touchAction: "none",
           cursor: 'crosshair'

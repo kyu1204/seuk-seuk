@@ -8,13 +8,9 @@ import {
   markDocumentCompleted,
   createSignedDocumentUploadUrl,
 } from "@/app/actions/document-actions";
-import LanguageSelector from "@/components/language-selector";
-import SignedDocumentDownloadButton from "./SignedDocumentDownloadButton";
 import SignatureModal from "@/components/signature-modal";
 import TextInputModal from "@/components/text-input-modal";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import {
   AlertDialog,
@@ -28,23 +24,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/contexts/language-context";
 import type { ClientDocument, Signature, PublicationWithDocuments } from "@/lib/supabase/database.types";
+import { remainingByPage, nextUnsignedArea } from "@/lib/sign/progress";
 import {
   getImageNaturalDimensions,
   ensureRelativeCoordinate,
   convertSignatureAreaToPixels,
   documentDisplayLabel,
-  type RelativeSignatureArea,
 } from "@/lib/utils";
 import {
   Check,
-  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  FileSignature,
-  MapPin,
   PenLine,
-  RefreshCw,
   Stamp,
   Type,
   ZoomIn,
@@ -52,7 +43,6 @@ import {
   RotateCcw,
   ArrowLeft,
 } from "lucide-react";
-import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import type { PdfPageDimensions } from "@/components/pdf-page-renderer";
@@ -98,10 +88,8 @@ export default function SignSingleDocument({
       ? t(`sign.gateError.${result.errorCode}`)
       : result.error ?? t("sign.gateError.NOT_FOUND");
 
-  // Get signatures for this document
   const documentSignatures = documentData.signatures || [];
 
-  // Human-friendly document title: alias → publication name → filename w/o ext.
   const documentLabel = documentDisplayLabel(
     documentData.alias,
     documentData.filename,
@@ -111,12 +99,10 @@ export default function SignSingleDocument({
   const [localSignatures, setLocalSignatures] =
     useState<Signature[]>(documentSignatures);
 
-  // Check if publication is expired or completed
   const isExpired = publicationData.expires_at
     ? new Date(publicationData.expires_at) < new Date()
     : false;
   const isPublicationCompleted = publicationData.status === "completed";
-  // Check if THIS specific document is completed
   const isDocumentCompleted = documentData.status === "completed";
   const [selectedArea, setSelectedArea] = useState<number | null>(null);
   const [selectedAreaType, setSelectedAreaType] = useState<'signature' | 'text'>('signature');
@@ -125,8 +111,11 @@ export default function SignSingleDocument({
   const [generatingProgress, setGeneratingProgress] = useState<string>("");
   const [progressValue, setProgressValue] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [lastFailedAction, setLastFailedAction] = useState<(() => void) | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState<boolean>(false);
   const documentContainerRef = useRef<HTMLDivElement>(null);
+  const areaRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -135,12 +124,10 @@ export default function SignSingleDocument({
   const [touchStartZoom, setTouchStartZoom] = useState<number>(1);
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [documentSignedUrl, setDocumentSignedUrl] = useState<string | null>(null);
-  // Last drawn signature, kept locally so remaining areas can be batch-signed
   const [lastSignatureData, setLastSignatureData] = useState<string | null>(null);
   const [isBatchConfirmOpen, setIsBatchConfirmOpen] = useState<boolean>(false);
-  // Area to visually highlight after "go to next unsigned" navigation
-  const [highlightAreaIndex, setHighlightAreaIndex] = useState<number | null>(null);
   const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
+  const [pendingScrollAreaIndex, setPendingScrollAreaIndex] = useState<number | null>(null);
 
   const isPdf = (documentData as any).file_type === 'pdf';
   const totalPages = (documentData as any).page_count || 1;
@@ -161,7 +148,6 @@ export default function SignSingleDocument({
     setError(null);
 
     try {
-      // Save signature to database
       const result = await saveSignature(
         documentData.id,
         selectedArea,
@@ -173,12 +159,10 @@ export default function SignSingleDocument({
         return;
       }
 
-      // Update local state
       const existingIndex = localSignatures.findIndex(
         (s) => s.area_index === selectedArea
       );
       if (existingIndex >= 0) {
-        // Update existing signature
         const updatedSignatures = [...localSignatures];
         updatedSignatures[existingIndex] = {
           ...updatedSignatures[existingIndex],
@@ -186,9 +170,8 @@ export default function SignSingleDocument({
         };
         setLocalSignatures(updatedSignatures);
       } else {
-        // Add new signature
         const newSignature: Signature = {
-          id: `temp-${Date.now()}`, // Temporary ID
+          id: `temp-${Date.now()}`,
           document_id: documentData.id,
           area_index: selectedArea,
           signature_data: signatureData,
@@ -211,9 +194,9 @@ export default function SignSingleDocument({
       }
 
       setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error saving signature:", error);
-      setError("Failed to save signature");
+    } catch (err) {
+      console.error("Error saving signature:", err);
+      setError(t("sign.error.saveSignature"));
     } finally {
       setIsSaving(false);
     }
@@ -227,16 +210,21 @@ export default function SignSingleDocument({
     setProgressValue(0);
     setGeneratingProgress(t("sign.progress.preparing"));
 
+    const beforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+
     try {
       if (isPdf) {
-        // === PDF Document: Server-side PDF signing ===
         setProgressValue(30);
-        setGeneratingProgress(t("sign.progress.compositingPdf"));
+        setGeneratingProgress(t("sign.progress.compositing"));
 
         const pdfResult = await generateSignedPdfFromPdf(documentData.id);
 
         if (!pdfResult || pdfResult.error) {
-          setError(pdfResult ? resolveActionError(pdfResult) : "Failed to generate signed PDF");
+          setError(pdfResult ? resolveActionError(pdfResult) : t("sign.error.upload"));
           setIsGenerating(false);
           setGeneratingProgress("");
           setProgressValue(0);
@@ -249,7 +237,7 @@ export default function SignSingleDocument({
         const markResult = await markDocumentCompleted(documentData.id);
 
         if (!markResult || markResult.error) {
-          setError(markResult ? resolveActionError(markResult) : "Failed to mark document as completed");
+          setError(markResult ? resolveActionError(markResult) : t("sign.error.upload"));
           setIsGenerating(false);
           setGeneratingProgress("");
           setProgressValue(0);
@@ -262,7 +250,6 @@ export default function SignSingleDocument({
         setProgressValue(0);
         onComplete(documentLabel, documentData.id);
       } else {
-        // === Image Document: Existing client-side canvas compositing ===
         setProgressValue(10);
         if (!documentContainerRef.current) {
           throw new Error("Document container not found");
@@ -317,7 +304,7 @@ export default function SignSingleDocument({
         const signatureImages = await Promise.all(
           localSignatures
             .filter(sig => sig.signature_data)
-            .map((signature, index) => {
+            .map((signature) => {
               return new Promise<{ signature: typeof signature; image: HTMLImageElement }>((resolve, reject) => {
                 const signatureImage = new Image();
                 signatureImage.crossOrigin = "anonymous";
@@ -355,7 +342,7 @@ export default function SignSingleDocument({
               pageNumber: signature.page_number,
             }, naturalWidth, naturalHeight);
             pixelCoords = convertSignatureAreaToPixels(relativeArea, naturalWidth, naturalHeight);
-          } catch (error) {
+          } catch (err) {
             pixelCoords = {
               x: Number(signature.x),
               y: Number(signature.y),
@@ -393,7 +380,7 @@ export default function SignSingleDocument({
           blob = await new Promise<Blob>((resolve, reject) => {
             canvas.toBlob((result) => {
               if (result) resolve(result);
-              else reject(new Error('Failed to create blob'));
+              else reject(new Error('Could not create blob'));
             }, 'image/png');
           });
         } else {
@@ -408,7 +395,7 @@ export default function SignSingleDocument({
         const uploadUrlResult = await createSignedDocumentUploadUrl(documentData.id);
 
         if (uploadUrlResult.error || !uploadUrlResult.uploadUrl) {
-          setError(uploadUrlResult.error ? resolveActionError(uploadUrlResult) : "Failed to get upload URL");
+          setError(uploadUrlResult.error ? resolveActionError(uploadUrlResult) : t("sign.error.upload"));
           setIsGenerating(false);
           setGeneratingProgress("");
           return;
@@ -421,7 +408,7 @@ export default function SignSingleDocument({
         });
 
         if (!uploadResponse.ok) {
-          setError("Failed to upload signed document");
+          setError(t("sign.error.upload"));
           setIsGenerating(false);
           setGeneratingProgress("");
           return;
@@ -430,11 +417,11 @@ export default function SignSingleDocument({
         const filePath = uploadUrlResult.filePath!;
 
         setProgressValue(90);
-        setGeneratingProgress(t("sign.progress.generatingPdf"));
+        setGeneratingProgress(t("sign.progress.uploading"));
         const pdfResult = await generateSignedPdf(documentData.id, filePath);
 
         if (!pdfResult || pdfResult.error) {
-          setError(pdfResult ? resolveActionError(pdfResult) : "Failed to generate PDF");
+          setError(pdfResult ? resolveActionError(pdfResult) : t("sign.error.upload"));
           setIsGenerating(false);
           setGeneratingProgress("");
           return;
@@ -445,7 +432,7 @@ export default function SignSingleDocument({
         const markResult = await markDocumentCompleted(documentData.id);
 
         if (!markResult || markResult.error) {
-          setError(markResult ? resolveActionError(markResult) : "Failed to mark document as completed");
+          setError(markResult ? resolveActionError(markResult) : t("sign.error.upload"));
           setIsGenerating(false);
           setGeneratingProgress("");
           return;
@@ -459,14 +446,16 @@ export default function SignSingleDocument({
       }
     } catch (err) {
       console.error("Error generating signed document:", err);
-      setError(err instanceof Error ? err.message : "Failed to generate signed document");
+      setError(t("sign.error.upload"));
+      setLastFailedAction(() => handleGenerateDocument);
       setIsGenerating(false);
       setGeneratingProgress("");
       setProgressValue(0);
+    } finally {
+      window.removeEventListener("beforeunload", beforeUnload);
     }
   };
 
-  // Unsigned signature-type areas on the current page (text areas excluded)
   const batchSignTargets = localSignatures.filter(
     (s) =>
       s.signature_data === null &&
@@ -483,6 +472,7 @@ export default function SignSingleDocument({
     setError(null);
 
     const signedIndexes: number[] = [];
+    let failedCount = 0;
     try {
       for (const target of batchSignTargets) {
         const result = await saveSignature(
@@ -491,16 +481,15 @@ export default function SignSingleDocument({
           lastSignatureData
         );
         if (result.error) {
-          setError(resolveActionError(result));
-          break;
+          failedCount += 1;
+          continue;
         }
         signedIndexes.push(target.area_index);
       }
-    } catch (error) {
-      console.error("Error batch signing:", error);
-      setError("Failed to save signature");
+    } catch (err) {
+      console.error("Error batch signing:", err);
+      failedCount = batchSignTargets.length - signedIndexes.length;
     } finally {
-      // Reflect areas already persisted server-side even if a later save threw
       if (signedIndexes.length > 0) {
         setLocalSignatures((prev) =>
           prev.map((s) =>
@@ -510,56 +499,16 @@ export default function SignSingleDocument({
           )
         );
       }
+      if (failedCount > 0) {
+        setError(
+          t("sign.batchSign.partial", {
+            done: signedIndexes.length,
+            failed: failedCount,
+          })
+        );
+      }
       setIsSaving(false);
     }
-  };
-
-  // Per-page signature counts for the page status chips (PDF only)
-  const pageStatuses = isPdf
-    ? Array.from({ length: totalPages }, (_, i) => {
-        const areas = localSignatures.filter(
-          (s) => ((s as any).page_number ?? 0) === i
-        );
-        return {
-          page: i + 1,
-          total: areas.length,
-          signed: areas.filter((s) => s.signature_data !== null).length,
-        };
-      })
-    : [];
-
-  const scrollToArea = (areaIndex: number) => {
-    setHighlightAreaIndex(areaIndex);
-    // Wait for a potential page change to render before scrolling
-    setTimeout(() => {
-      const el = documentContainerRef.current?.querySelector(
-        `[data-area-index="${areaIndex}"]`
-      );
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 350);
-    setTimeout(() => setHighlightAreaIndex(null), 2500);
-  };
-
-  const handleGoToNextUnsigned = () => {
-    const unsigned = localSignatures
-      .filter((s) => s.signature_data === null)
-      .sort(
-        (a, b) =>
-          (((a as any).page_number ?? 0) - ((b as any).page_number ?? 0)) ||
-          a.area_index - b.area_index
-      );
-    if (unsigned.length === 0) return;
-
-    // Prefer the first unsigned area on or after the current page, wrap around otherwise
-    const target =
-      unsigned.find(
-        (s) => !isPdf || ((s as any).page_number ?? 0) >= currentPdfPage - 1
-      ) ?? unsigned[0];
-
-    if (isPdf) {
-      setCurrentPdfPage(((target as any).page_number ?? 0) + 1);
-    }
-    scrollToArea(target.area_index);
   };
 
   const totalAreas = localSignatures.length;
@@ -567,6 +516,36 @@ export default function SignSingleDocument({
     (s) => s.signature_data !== null
   ).length;
   const allAreasSigned = totalAreas > 0 && signedAreaCount === totalAreas;
+  const remainingCount = totalAreas - signedAreaCount;
+
+  const progressAreas = localSignatures.map((s) => ({
+    id: String(s.area_index),
+    page: isPdf ? ((s as any).page_number ?? 0) + 1 : 1,
+    signed: s.signature_data !== null,
+  }));
+  const remainingByPageMap = remainingByPage(progressAreas);
+
+  const handleNextArea = () => {
+    const next = nextUnsignedArea(progressAreas, currentPdfPage);
+    if (!next) return;
+    const areaIndex = Number(next.id);
+    if (next.page !== currentPdfPage) {
+      setCurrentPdfPage(next.page);
+      setPendingScrollAreaIndex(areaIndex);
+      return;
+    }
+    const el = areaRefs.current.get(areaIndex);
+    el?.scrollIntoView({ block: "center" });
+  };
+
+  useEffect(() => {
+    if (pendingScrollAreaIndex === null) return;
+    const el = areaRefs.current.get(pendingScrollAreaIndex);
+    if (el) {
+      el.scrollIntoView({ block: "center" });
+      setPendingScrollAreaIndex(null);
+    }
+  }, [pendingScrollAreaIndex, currentPdfPage]);
 
   // Touch gesture helpers
   const getTouchDistance = (touches: TouchList) => {
@@ -579,25 +558,12 @@ export default function SignSingleDocument({
     );
   };
 
-  const getTouchCenter = (touches: TouchList) => {
-    if (touches.length === 0) return { x: 0, y: 0 };
-    if (touches.length === 1) {
-      return { x: touches[0].clientX, y: touches[0].clientY };
-    }
-    const x = (touches[0].clientX + touches[1].clientX) / 2;
-    const y = (touches[0].clientY + touches[1].clientY) / 2;
-    return { x, y };
-  };
-
-  // Touch event handlers for document viewing
   const handleDocumentTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
-      // Single touch - check for double tap
       const currentTime = Date.now();
       const timeDiff = currentTime - lastTapTime;
 
       if (timeDiff < 300 && timeDiff > 0) {
-        // Double tap detected - toggle zoom
         e.preventDefault();
         if (zoomLevel === 1) {
           setZoomLevel(2);
@@ -608,20 +574,18 @@ export default function SignSingleDocument({
       }
       setLastTapTime(currentTime);
 
-      // Allow dragging when content overflows container
       const container = documentContainerRef.current;
       const canScroll = container && (
         container.scrollWidth > container.clientWidth ||
         container.scrollHeight > container.clientHeight
       );
 
-      if (canScroll) {
+      if (canScroll && zoomLevel > 1) {
         e.preventDefault();
         setIsDragging(true);
         setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
       }
     } else if (e.touches.length === 2) {
-      // Pinch gesture start
       e.preventDefault();
       const distance = getTouchDistance(e.touches as unknown as TouchList);
       setLastTouchDistance(distance);
@@ -632,7 +596,6 @@ export default function SignSingleDocument({
 
   const handleDocumentTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 1 && isDragging && documentContainerRef.current) {
-      // Single touch panning
       e.preventDefault();
       const deltaX = e.touches[0].clientX - dragStart.x;
       const deltaY = e.touches[0].clientY - dragStart.y;
@@ -642,7 +605,6 @@ export default function SignSingleDocument({
 
       setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     } else if (e.touches.length === 2) {
-      // Pinch zoom
       e.preventDefault();
       const distance = getTouchDistance(e.touches as unknown as TouchList);
       if (lastTouchDistance > 0) {
@@ -658,7 +620,6 @@ export default function SignSingleDocument({
       setIsDragging(false);
       setLastTouchDistance(0);
     } else if (e.touches.length === 1) {
-      // Switch from pinch to pan
       setLastTouchDistance(0);
       setTouchStartZoom(zoomLevel);
     }
@@ -677,14 +638,13 @@ export default function SignSingleDocument({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Allow dragging when content overflows container
     const container = documentContainerRef.current;
     const canScroll = container && (
       container.scrollWidth > container.clientWidth ||
       container.scrollHeight > container.clientHeight
     );
 
-    if (canScroll) {
+    if (canScroll && zoomLevel > 1) {
       e.preventDefault();
       setIsDragging(true);
       setDragStart({ x: e.clientX, y: e.clientY });
@@ -719,25 +679,22 @@ export default function SignSingleDocument({
 
       setDocumentSignedUrl(result.signedUrl);
     } catch (err) {
-      console.error("Failed to load signed URL:", err);
-      setError("Failed to load document");
+      console.error("Could not load signed URL:", err);
+      setError(t("sign.error.loadDocument"));
+      setLastFailedAction(() => loadDocumentSignedUrl);
     } finally {
       setIsLoadingSignedUrl(false);
     }
   };
 
-
-  // Load signed URL on component mount when password is verified or not required
   useEffect(() => {
     if (isPasswordVerified && !documentSignedUrl) {
       loadDocumentSignedUrl();
     }
   }, [isPasswordVerified, documentSignedUrl]);
 
-  // Force re-render when image loads to ensure signature areas display correctly
   useEffect(() => {
     if (imageLoaded && documentContainerRef.current) {
-      // Trigger a small state update to force re-render
       const timer = setTimeout(() => {
         setLocalSignatures(prev => [...prev]);
       }, 100);
@@ -745,195 +702,125 @@ export default function SignSingleDocument({
     }
   }, [imageLoaded]);
 
-  // Show completed document screen if publication is completed OR this specific document is completed
-  if (isPublicationCompleted || isDocumentCompleted) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background">
-        {/* Header with logo */}
-        <header className="w-full">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex justify-between items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <FileSignature className="h-8 w-8 text-primary" />
-                <span className="font-bold text-xl">{t("app.title")}</span>
-              </Link>
-              <LanguageSelector />
-            </div>
-          </div>
-        </header>
+  const handleAreaKeyDown = (e: React.KeyboardEvent, areaIndex: number) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleAreaClick(areaIndex);
+    }
+  };
 
-        {/* Main content */}
-        <div className="container mx-auto px-4 py-8 flex-1">
-          <div className="max-w-md mx-auto">
-            <Card>
-              <CardHeader className="text-center">
-                <CheckCircle className="mx-auto h-12 w-12 text-green-400 mb-4" />
-                <CardTitle className="text-xl text-green-600">
-                  {t("sign.completed.title")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center space-y-3">
-                  <p className="text-gray-600">{t("sign.completed.message")}</p>
-                  <p className="text-sm text-gray-500">
-                    {t("sign.completed.noEdit")}
-                  </p>
-                </div>
-                <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                  <p className="text-sm text-green-700 text-center font-medium">
-                    {documentLabel}
-                  </p>
-                  <p className="text-xs text-green-600 text-center mt-1">
-                    {t("sign.completed.status")}
-                  </p>
-                </div>
-                {isDocumentCompleted && (
-                  <SignedDocumentDownloadButton
-                    shortUrl={publicationData.short_url}
-                    documentId={documentData.id}
-                    password={verifiedPassword}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
+  // Completed/expired states are rendered by the container (SignComplete /
+  // SignDocumentList) so there is one source of truth for those screens.
+  useEffect(() => {
+    if (isPublicationCompleted || isDocumentCompleted) {
+      onComplete(documentLabel, documentData.id);
+    } else if (isExpired) {
+      onBack();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPublicationCompleted, isDocumentCompleted, isExpired]);
+
+  if (isPublicationCompleted || isDocumentCompleted || isExpired) {
+    return null;
   }
 
-  // Show expired document screen if document is expired
-  if (isExpired) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-4">
-          <Link href="/" className="flex items-center gap-2">
-            <FileSignature className="h-8 w-8 text-primary" />
-            <span className="font-bold text-xl">{t("app.title")}</span>
-          </Link>
-          <LanguageSelector />
-        </div>
-        <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader className="text-center">
-              <Clock className="mx-auto h-12 w-12 text-red-400 mb-4" />
-              <CardTitle className="text-xl text-red-600">
-                {t("sign.expired.title")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center space-y-3">
-                <p className="text-gray-600">{t("sign.expired.message")}</p>
-                <p className="text-sm text-gray-500">
-                  {t("sign.expired.instruction")}
-                </p>
-              </div>
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                <p className="text-sm text-red-700 text-center font-medium">
-                  {documentData.alias || documentData.filename}
-                </p>
-                {publicationData.expires_at && (
-                  <p className="text-xs text-red-600 text-center mt-1">
-                    {t("sign.expired.date")}{" "}
-                    {new Date(publicationData.expires_at).toLocaleDateString(
-                      "ko-KR"
-                    )}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
+  const showBatchSignHint =
+    lastSignatureData !== null && batchSignTargets.length > 0 && !canBatchSign === false && signedAreaCount > 0 && !allAreasSigned;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-4">
-        <Link href="/" className="flex items-center gap-2">
-          <FileSignature className="h-8 w-8 text-primary" />
-          <span className="font-bold text-xl">{t("app.title")}</span>
-        </Link>
-        <LanguageSelector />
-      </div>
-      <div className="max-w-5xl mx-auto">
-        {/* Hide back button if publication or document is already completed */}
-        {!isPublicationCompleted && !isDocumentCompleted && (
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="mb-4 -ml-2"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("sign.documentList.title")}
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Top sticky header */}
+      <div className="sticky top-0 z-30 bg-background border-b">
+        <div className="flex items-center justify-between px-4 py-3 gap-2">
+          <Button variant="ghost" size="icon" aria-label={t("common.back")} onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-        )}
-        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{documentLabel}</h1>
-            <p className="text-muted-foreground">{t("sign.clickAreas")}</p>
-            {totalAreas > 0 &&
-              (allAreasSigned ? (
-                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-emerald-600">
-                  <CheckCircle className="h-4 w-4" />
-                  {t("sign.allSignedPrompt")}
-                </p>
-              ) : (
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <div className="flex items-center gap-2.5">
-                    <Progress
-                      value={(signedAreaCount / totalAreas) * 100}
-                      className="h-2 w-36 sm:w-48"
-                    />
-                    <span className="text-sm font-medium text-primary tabular-nums whitespace-nowrap">
-                      {t("sign.signProgress")
-                        .replace("{{completed}}", String(signedAreaCount))
-                        .replace("{{total}}", String(totalAreas))}
-                    </span>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleGoToNextUnsigned}
-                    className="h-7 gap-1.5 px-2.5 text-xs"
-                  >
-                    <MapPin className="h-3.5 w-3.5" />
-                    {t("sign.goToNextUnsigned")}
-                  </Button>
-                </div>
-              ))}
-          </div>
-          <div className="flex gap-2 shrink-0 self-end sm:self-auto">
-            {lastSignatureData && (
-              <Button
-                variant="outline"
-                onClick={() => setIsBatchConfirmOpen(true)}
-                disabled={!canBatchSign || isSaving}
-                size="lg"
-              >
-                <Stamp className="mr-2 h-4 w-4" />
-                {t("sign.batchSign")}
-              </Button>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="font-semibold text-sm truncate">{documentLabel}</p>
+            {totalAreas > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {isPdf
+                  ? t("sign.header.meta", {
+                      page: currentPdfPage,
+                      pages: totalPages,
+                      completed: signedAreaCount,
+                      total: totalAreas,
+                    })
+                  : t("sign.header.metaSingle", {
+                      completed: signedAreaCount,
+                      total: totalAreas,
+                    })}
+              </p>
             )}
-            <Button
-              onClick={handleGenerateDocument}
-              disabled={!allAreasSigned || isGenerating}
-              size="lg"
-            >
-              {t("sign.saveDocument")}
-            </Button>
           </div>
-        </div>
-
-        {/* PDF Page Navigation */}
-        {isPdf && totalPages > 1 && (
-          <div className="mb-4 bg-muted/30 rounded-lg">
-          <div className="flex items-center justify-center gap-3 py-2">
+          {totalAreas >= 2 ? (
             <Button
               variant="outline"
               size="sm"
+              disabled={!canBatchSign}
+              onClick={() => setIsBatchConfirmOpen(true)}
+            >
+              <Stamp className="mr-1.5 h-4 w-4" />
+              {t("sign.batchSign")}
+            </Button>
+          ) : (
+            <div className="w-9" />
+          )}
+        </div>
+        {totalAreas > 0 && (
+          <div className="h-1 bg-muted">
+            <div
+              className="h-1 bg-primary transition-all"
+              style={{ width: `${(signedAreaCount / totalAreas) * 100}%` }}
+            />
+          </div>
+        )}
+      </div>
+
+      <div aria-live="polite" className="sr-only">
+        {generatingProgress}
+      </div>
+
+      {/* Guidance row */}
+      <div className="px-4 py-2 flex items-center justify-between text-sm gap-2">
+        <span className="text-muted-foreground">
+          {showBatchSignHint ? t("sign.batchSignHint") : t("sign.clickAreas")}
+        </span>
+        {remainingCount > 0 && (
+          <button
+            type="button"
+            className="text-primary font-medium shrink-0"
+            onClick={handleNextArea}
+          >
+            {t("sign.nextArea")}
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div className="mx-4 mb-2 rounded-md bg-destructive/10 text-destructive px-3 py-2 text-sm flex items-center justify-between gap-2">
+          <span>{error}</span>
+          {lastFailedAction && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive shrink-0"
+              onClick={() => lastFailedAction()}
+            >
+              {t("common.retry")}
+            </Button>
+          )}
+        </div>
+      )}
+
+      <div className="px-4 pb-4 flex-1">
+        {/* PDF Page Navigation */}
+        {isPdf && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 py-2 mb-2 bg-muted/30 rounded-lg">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label={t("pdf_prev_page")}
               onClick={() => setCurrentPdfPage(prev => Math.max(1, prev - 1))}
               disabled={currentPdfPage <= 1}
             >
@@ -948,6 +835,7 @@ export default function SignSingleDocument({
             <Button
               variant="outline"
               size="sm"
+              aria-label={t("pdf_next_page")}
               onClick={() => setCurrentPdfPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPdfPage >= totalPages}
             >
@@ -955,90 +843,15 @@ export default function SignSingleDocument({
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
-
-          {/* Per-page signature status chips */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 px-3 pb-2.5">
-            {pageStatuses.map((ps) => {
-              const isCurrent = ps.page === currentPdfPage;
-              const isComplete = ps.total > 0 && ps.signed === ps.total;
-              const hasRemaining = ps.total > 0 && ps.signed < ps.total;
-              const stateClass = isComplete
-                ? "border-emerald-300 bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                : hasRemaining
-                ? "border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200"
-                : "border-transparent bg-muted text-muted-foreground hover:bg-muted/70";
-              return (
-                <button
-                  key={ps.page}
-                  type="button"
-                  onClick={() => setCurrentPdfPage(ps.page)}
-                  title={
-                    ps.total > 0
-                      ? t("sign.pageChipStatus")
-                          .replace("{{signed}}", String(ps.signed))
-                          .replace("{{total}}", String(ps.total))
-                      : t("sign.pageChipNoAreas")
-                  }
-                  className={`relative flex h-8 min-w-8 items-center justify-center rounded-md border px-1.5 text-xs font-medium tabular-nums transition-colors ${stateClass} ${
-                    isCurrent ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""
-                  }`}
-                >
-                  {ps.page}
-                  {isComplete && (
-                    <Check className="ml-0.5 h-3 w-3" strokeWidth={3} />
-                  )}
-                  {hasRemaining && (
-                    <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[10px] font-semibold text-white shadow-sm">
-                      {ps.total - ps.signed}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          </div>
         )}
 
-        <div className="relative border rounded-lg mb-6">
-          {/* Zoom Controls */}
-          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleZoomIn}
-              disabled={zoomLevel >= 3}
-              className="p-2 h-8 w-8"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleZoomOut}
-              disabled={zoomLevel <= 0.5}
-              className="p-2 h-8 w-8"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleZoomReset}
-              disabled={zoomLevel === 1}
-              className="p-2 h-8 w-8"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-            <div className="text-xs text-center font-medium px-1 py-0.5 bg-gray-100 rounded">
-              {Math.round(zoomLevel * 100)}%
-            </div>
-          </div>
+        <div className="relative border rounded-lg mb-3">
           <div
             ref={documentContainerRef}
             className="relative overflow-auto max-h-[70vh]"
             style={{
               cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-              touchAction: 'none'
+              touchAction: zoomLevel > 1 ? "none" : "pan-y",
             }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -1061,16 +874,12 @@ export default function SignSingleDocument({
                   currentPage={currentPdfPage}
                   zoomLevel={1}
                   onPageDimensionsChange={setPdfPageDimensions}
-                  onLoadError={(error) => setError(error)}
+                  onLoadError={(err) => setError(err)}
                 />
               ) : (
                 <img
                   src={documentSignedUrl || documentData.file_url}
-                  alt="Document"
-                  // CORS mode must match the canvas-compositing Image() load:
-                  // without it Chrome caches the response sans ACAO header and
-                  // the later crossOrigin re-request fails (R2 unlike Supabase
-                  // only emits CORS headers when Origin is sent).
+                  alt={documentLabel}
                   crossOrigin="anonymous"
                   className="w-full h-auto object-contain block"
                   draggable="false"
@@ -1091,15 +900,17 @@ export default function SignSingleDocument({
                 return (
                   <div
                     key={signature.area_index}
-                    data-area-index={signature.area_index}
-                    className={`absolute cursor-pointer rounded-sm border-2 ${
+                    ref={(el) => {
+                      if (el) areaRefs.current.set(signature.area_index, el);
+                      else areaRefs.current.delete(signature.area_index);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t("sign.area.label", { index: index + 1 })}
+                    className={`absolute cursor-pointer rounded-sm ${
                       isSigned
-                        ? "border-emerald-500 bg-emerald-500/15"
-                        : "border-primary bg-primary/10 animate-pulse"
-                    } ${
-                      highlightAreaIndex === signature.area_index
-                        ? "z-10 ring-4 ring-primary/60 ring-offset-2"
-                        : ""
+                        ? "border border-seal bg-seal-soft/60"
+                        : "border-2 border-dashed border-primary/60 bg-primary/5"
                     }`}
                     style={(() => {
                       try {
@@ -1149,7 +960,7 @@ export default function SignSingleDocument({
                           width: `${relativeArea.width}%`,
                           height: `${relativeArea.height}%`,
                         };
-                      } catch (error) {
+                      } catch (err) {
                         return {
                           left: `${signature.x}px`,
                           top: `${signature.y}px`,
@@ -1159,15 +970,16 @@ export default function SignSingleDocument({
                       }
                     })()}
                     onClick={() => handleAreaClick(signature.area_index)}
+                    onKeyDown={(e) => handleAreaKeyDown(e, signature.area_index)}
                   >
                     {isSigned ? (
                       <div className="w-full h-full relative">
                         <img
                           src={signature.signature_data!}
-                          alt="Signature"
+                          alt={t("sign.area.signedAlt")}
                           className="w-full h-full object-contain"
                         />
-                        <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm ring-2 ring-background">
+                        <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-seal text-primary-foreground shadow-sm ring-2 ring-background">
                           <Check className="h-3 w-3" strokeWidth={3} />
                         </span>
                       </div>
@@ -1193,9 +1005,63 @@ export default function SignSingleDocument({
           </div>
         </div>
 
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600">
-            {error}
+        {/* Zoom toolbar */}
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <Button
+            size="sm"
+            variant="outline"
+            aria-label={t("sign.zoomOut")}
+            onClick={handleZoomOut}
+            disabled={zoomLevel <= 0.5}
+            className="p-2 h-8 w-8"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <span className="text-xs font-medium tabular-nums w-10 text-center">
+            {Math.round(zoomLevel * 100)}%
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            aria-label={t("sign.zoomIn")}
+            onClick={handleZoomIn}
+            disabled={zoomLevel >= 3}
+            className="p-2 h-8 w-8"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            aria-label={t("sign.zoomReset")}
+            onClick={handleZoomReset}
+            disabled={zoomLevel === 1}
+            className="p-2 h-8 w-8"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* PDF page chips */}
+        {isPdf && totalPages > 1 && (
+          <div className="flex gap-2 justify-center flex-wrap mb-4">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+              const remaining = remainingByPageMap[page] ?? 0;
+              const isCurrent = page === currentPdfPage;
+              return (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPdfPage(page)}
+                  className={`text-xs rounded-full px-3 py-1 border ${
+                    isCurrent ? "bg-primary/10 text-primary border-primary/30" : "text-muted-foreground"
+                  }`}
+                >
+                  {t("sign.pageChip", { page })}
+                  {remaining > 0 ? ` · ${t("sign.pageChip.remaining", { count: remaining })}` : ""}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1231,17 +1097,16 @@ export default function SignSingleDocument({
           <AlertDialogHeader>
             <AlertDialogTitle>{t("sign.batchSign")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("sign.batchSignConfirm").replace(
-                "{{count}}",
-                String(batchSignTargets.length)
-              )}
+              {isPdf
+                ? t("sign.batchSignConfirmPage", { count: batchSignTargets.length })
+                : t("sign.batchSignConfirm", { count: batchSignTargets.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {lastSignatureData && (
             <div className="flex justify-center rounded-md border bg-muted/30 p-3">
               <img
                 src={lastSignatureData}
-                alt="Signature preview"
+                alt={t("sign.area.signedAlt")}
                 className="h-16 object-contain"
               />
             </div>
@@ -1255,12 +1120,51 @@ export default function SignSingleDocument({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Submit confirmation */}
+      <AlertDialog open={isSubmitConfirmOpen} onOpenChange={setIsSubmitConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("sign.submit.confirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("sign.submit.confirmDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setIsSubmitConfirmOpen(false);
+                handleGenerateDocument();
+              }}
+            >
+              {t("sign.submit.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bottom sticky submit bar */}
+      <div className="sticky bottom-0 bg-background border-t px-4 pt-3 pb-5 flex flex-col gap-2">
+        <Button
+          className="h-12"
+          disabled={!allAreasSigned || isGenerating}
+          onClick={() => setIsSubmitConfirmOpen(true)}
+        >
+          {allAreasSigned
+            ? t("sign.saveDocument")
+            : t("sign.submit.remaining", { count: remainingCount })}
+        </Button>
+        <p className="text-xs text-muted-foreground text-center">
+          {t("sign.completed.noEdit")}
+        </p>
+      </div>
+
       {/* Loading indicator for signature saving */}
       {isSaving && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-40">
-          <div className="bg-white rounded-lg p-4 shadow-lg">
+          <div className="bg-background rounded-lg p-4 shadow-lg border">
             <div className="flex items-center gap-3">
-              <RefreshCw className="h-5 w-5 animate-spin" />
+              <RotateCcw className="h-5 w-5 animate-spin" />
               <span>{t("sign.savingSignature")}</span>
             </div>
           </div>
@@ -1270,9 +1174,8 @@ export default function SignSingleDocument({
       {/* Full-screen loading modal for document generation */}
       {isGenerating && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4">
+          <div className="bg-background rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4 border">
             <div className="flex flex-col items-center gap-6">
-              {/* Circular Progress Bar */}
               <AnimatedCircularProgressBar
                 max={100}
                 min={0}
@@ -1281,17 +1184,15 @@ export default function SignSingleDocument({
                 gaugeSecondaryColor="rgba(0, 0, 0, 0.1)"
                 className="w-40 h-40"
               />
-
-              {/* Progress Text */}
               <div className="text-center space-y-2">
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-xl font-semibold text-foreground">
                   {t("sign.progress.title")}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {generatingProgress}
                 </p>
-                <p className="text-xs text-gray-500 mt-4">
-                  {t("sign.progress.warning")}
+                <p className="text-xs text-muted-foreground mt-4">
+                  {t("sign.progress.description")}
                 </p>
               </div>
             </div>
