@@ -375,7 +375,7 @@ export default {
   "sign.savingSignature": "서명 저장 중...",
   "sign.documentList.stat.documents": "문서",
   "sign.documentList.stat.areas": "서명 칸",
-  "sign.documentList.stat.due": "마감",
+  "sign.documentList.stat.due": "서명 기한",
   "sign.documentList.allDone": "모든 문서에 서명했어요.",
   "sign.documentList.title": "서명할 문서 목록",
   "sign.documentList.description": "서명이 필요한 문서 {{count}}건이에요.",

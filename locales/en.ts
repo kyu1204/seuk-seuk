@@ -377,7 +377,7 @@ export default {
   "sign.savingSignature": "Saving signature...",
   "sign.documentList.stat.documents": "Documents",
   "sign.documentList.stat.areas": "Fields",
-  "sign.documentList.stat.due": "Due",
+  "sign.documentList.stat.due": "Sign by",
   "sign.documentList.allDone": "Every document is signed.",
   "sign.documentList.title": "Documents to Sign",
   "sign.documentList.description": "{{count}} document(s) need your signature.",
