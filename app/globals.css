@@ -264,3 +264,33 @@
   .home-bento:hover .home-iso-scene { transform: rotateX(52deg) rotateZ(-34deg); }
   .home-iso-scene { transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
 }
+
+/* Signer view: signature areas must read on top of any document, so the pending
+   state uses a fixed high-visibility yellow (theme-independent by design). */
+.sign-area-pending {
+  border: 2px solid #E0A400;
+  background: rgba(255, 229, 102, 0.55);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.sign-area-pending:hover,
+.sign-area-pending:focus-visible {
+  background: rgba(255, 221, 51, 0.7);
+  outline: none;
+}
+.sign-area-signed {
+  border: 1.5px solid hsl(var(--seal));
+  background: hsl(var(--seal-soft) / 0.55);
+}
+.sign-chip-pending {
+  background: #FFE566;
+  color: #3A2A00;
+}
+@keyframes sign-area-next-pulse {
+  0% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 0 4px rgba(224, 164, 0, 0.9); }
+  100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 0 14px rgba(224, 164, 0, 0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sign-area-next {
+    animation: sign-area-next-pulse 1.6s ease-out 0.4s 3;
+  }
+}

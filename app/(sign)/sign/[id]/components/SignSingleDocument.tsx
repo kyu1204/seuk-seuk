@@ -42,6 +42,7 @@ import {
   ZoomOut,
   RotateCcw,
   ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -524,6 +525,10 @@ export default function SignSingleDocument({
     signed: s.signature_data !== null,
   }));
   const remainingByPageMap = remainingByPage(progressAreas);
+  const nextAreaIndex = (() => {
+    const next = nextUnsignedArea(progressAreas, currentPdfPage);
+    return next ? Number(next.id) : null;
+  })();
 
   const handleNextArea = () => {
     const next = nextUnsignedArea(progressAreas, currentPdfPage);
@@ -781,19 +786,35 @@ export default function SignSingleDocument({
         {generatingProgress}
       </div>
 
-      {/* Guidance row */}
-      <div className="mx-auto w-full max-w-4xl px-4 py-2 flex items-center justify-between text-sm gap-2">
-        <span className="text-muted-foreground">
-          {showBatchSignHint ? t("sign.batchSignHint") : t("sign.clickAreas")}
-        </span>
+      {/* Guidance row: 남은 서명 칩 · 안내 · 다음 칸 버튼 */}
+      <div className="mx-auto w-full max-w-4xl px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
+        <div className="flex items-center gap-3 min-w-0">
+          {remainingCount > 0 ? (
+            <span className="sign-chip-pending inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 h-7 text-xs font-semibold tabular-nums">
+              <PenLine className="h-3.5 w-3.5" />
+              {t("sign.remainingChip", { count: remainingCount })}
+            </span>
+          ) : (
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-seal-soft text-seal px-2.5 h-7 text-xs font-semibold">
+              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+              {t("sign.allSignedChip")}
+            </span>
+          )}
+          <span className="hidden sm:inline text-muted-foreground truncate">
+            {showBatchSignHint ? t("sign.batchSignHint") : t("sign.clickAreas")}
+          </span>
+        </div>
         {remainingCount > 0 && (
-          <button
+          <Button
             type="button"
-            className="text-primary font-medium shrink-0"
+            variant="outline"
+            size="sm"
+            className="shrink-0 gap-1.5"
             onClick={handleNextArea}
           >
             {t("sign.nextArea")}
-          </button>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
         )}
       </div>
 
@@ -909,8 +930,8 @@ export default function SignSingleDocument({
                     aria-label={t("sign.area.label", { index: index + 1 })}
                     className={`absolute cursor-pointer rounded-sm ${
                       isSigned
-                        ? "border border-seal bg-seal-soft/60"
-                        : "border-2 border-dashed border-primary/60 bg-primary/5"
+                        ? "sign-area-signed"
+                        : `sign-area-pending${signature.area_index === nextAreaIndex ? " sign-area-next" : ""}`
                     }`}
                     style={(() => {
                       try {
@@ -984,13 +1005,13 @@ export default function SignSingleDocument({
                         </span>
                       </div>
                     ) : (
-                      <div className="signature-area-label w-full h-full flex items-center justify-center gap-1 px-1 overflow-hidden text-primary">
+                      <div className="signature-area-label w-full h-full flex items-center justify-center gap-1 px-1 overflow-hidden text-[#3A2A00]">
                         {(signature as any).area_type === 'text' ? (
                           <Type className="h-3.5 w-3.5 shrink-0" />
                         ) : (
                           <PenLine className="h-3.5 w-3.5 shrink-0" />
                         )}
-                        <span className="signature-area-label-text text-xs font-medium truncate min-w-0">
+                        <span className="signature-area-label-text text-xs font-semibold truncate min-w-0">
                           {(signature as any).area_type === 'text'
                             ? t("sign.clickToType")
                             : t("sign.clickToSign")}

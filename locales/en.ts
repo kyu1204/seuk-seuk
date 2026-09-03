@@ -84,7 +84,7 @@ export default {
   "sign.notFoundDesc":
     "The link has expired or the address is wrong. Please ask the sender for a new link.",
   "sign.returnHome": "Return to Home",
-  "sign.clickAreas": "Tap the highlighted boxes to sign",
+  "sign.clickAreas": "Tap a yellow box to sign",
   "sign.clickToSign": "Tap to sign",
   "sign.clickToType": "Tap to type",
   "sign.enterText": "Enter text",
@@ -443,6 +443,8 @@ export default {
   // Sign screen header/progress bar (R42)
   "sign.header.meta": "Page {{page}}/{{pages}} · Signed {{completed}}/{{total}}",
   "sign.header.metaSingle": "Signed {{completed}}/{{total}}",
+  "sign.remainingChip": "{{count}} left to sign",
+  "sign.allSignedChip": "All signed",
   "sign.nextArea": "Next area",
   "sign.pageChip": "Page {{page}}",
   "sign.pageChip.remaining": "{{count}} left",

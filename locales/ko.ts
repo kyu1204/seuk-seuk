@@ -84,7 +84,7 @@ export default {
   "sign.notFoundDesc":
     "링크가 만료되었거나 주소가 잘못되었습니다. 보낸 사람에게 새 링크를 요청해 주세요.",
   "sign.returnHome": "홈으로 돌아가기",
-  "sign.clickAreas": "파란 칸을 눌러 서명하세요",
+  "sign.clickAreas": "노란 칸을 누르면 서명할 수 있어요",
   "sign.clickToSign": "여기에 서명",
   "sign.clickToType": "여기에 입력",
   "sign.enterText": "텍스트를 입력하세요",
@@ -421,6 +421,8 @@ export default {
   "sign.header.meta": "{{page}}/{{pages}}쪽 · 서명 {{completed}}/{{total}}",
   "sign.header.metaSingle": "서명 {{completed}}/{{total}}",
   "sign.batchSignHint": "먼저 한 곳에 서명하면 나머지에 한 번에 적용할 수 있어요",
+  "sign.remainingChip": "남은 서명 {{count}}곳",
+  "sign.allSignedChip": "모두 서명했어요",
   "sign.nextArea": "다음 칸으로",
   "sign.pageChip": "{{page}}쪽",
   "sign.pageChip.remaining": "{{count}} 남음",
