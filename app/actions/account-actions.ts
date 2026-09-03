@@ -76,6 +76,7 @@ export async function getUserProfile(): Promise<{
 export async function updateProfileName(
   rawName: string
 ): Promise<{ success?: boolean; error?: string }> {
+  if (typeof rawName !== "string") return { error: "NAME_REQUIRED" };
   const name = rawName.trim();
   if (!name) return { error: "NAME_REQUIRED" };
   if (name.length > 40) return { error: "NAME_TOO_LONG" };

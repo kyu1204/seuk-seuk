@@ -75,10 +75,12 @@ export default function SignatureModal({
       ctx.stroke();
       return;
     }
+    // 실시간 그리기(handlePointerMove)와 같은 수식: 제어점=직전 점, 끝점=직전 점과 현재 점의 중점.
     ctx.moveTo(stroke[0].x, stroke[0].y);
-    for (let i = 1; i < stroke.length - 1; i++) {
-      const mid = midpoint(stroke[i], stroke[i + 1]);
-      ctx.quadraticCurveTo(stroke[i].x, stroke[i].y, mid.x, mid.y);
+    for (let i = 1; i < stroke.length; i++) {
+      const previous = stroke[i - 1];
+      const mid = midpoint(previous, stroke[i]);
+      ctx.quadraticCurveTo(previous.x, previous.y, mid.x, mid.y);
     }
     const last = stroke[stroke.length - 1];
     ctx.lineTo(last.x, last.y);
@@ -148,10 +150,12 @@ export default function SignatureModal({
     setStrokeCount(0);
 
     existingImageRef.current = null;
+    let active = true; // 이펙트가 정리된 뒤 도착하는 이전 이미지 onload 는 무시한다.
     if (existingSignature) {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
+        if (!active) return;
         existingImageRef.current = img;
         redraw();
       };
@@ -171,6 +175,7 @@ export default function SignatureModal({
     const handleResize = () => setupCanvas();
     window.addEventListener("resize", handleResize);
     return () => {
+      active = false;
       observer?.disconnect();
       window.removeEventListener("resize", handleResize);
     };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { updateProfileName } from "@/app/actions/account-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,12 +39,17 @@ export function MyPageContent({ user, profile, usageData }: MyPageContentProps) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const displayName = profile?.name || user.user_metadata?.full_name || user.email || "";
-  const [name, setName] = useState(profile?.name || user.user_metadata?.full_name || "");
-  const [isSavingName, startSaveName] = useTransition();
-  const nameDirty = name.trim() !== (profile?.name || user.user_metadata?.full_name || "").trim();
+  const initialName = profile?.name || user.user_metadata?.full_name || "";
+  const [name, setName] = useState(initialName);
+  const [savedName, setSavedName] = useState(initialName);
+  const [isSavingName, setIsSavingName] = useState(false);
+  const nameDirty = name.trim() !== savedName.trim();
 
-  const saveName = () => {
-    startSaveName(async () => {
+  // useTransition 은 await 이후 구간을 pending 으로 잡지 않아 중복 제출을 막지 못한다. 명시적 상태로 잠근다.
+  const saveName = async () => {
+    if (isSavingName || !nameDirty) return;
+    setIsSavingName(true);
+    try {
       const result = await updateProfileName(name);
       if (result.error) {
         toast.error(
@@ -54,9 +59,12 @@ export function MyPageContent({ user, profile, usageData }: MyPageContentProps) 
         );
         return;
       }
+      setSavedName(name.trim());
       toast.success(t("mypage.profile.saved"));
       router.refresh();
-    });
+    } finally {
+      setIsSavingName(false);
+    }
   };
   const fallbackText = user.email?.charAt(0).toUpperCase() || "U";
   const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url;
