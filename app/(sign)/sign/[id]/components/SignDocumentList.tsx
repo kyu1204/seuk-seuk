@@ -335,20 +335,20 @@ export default function SignDocumentList({
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-muted/60 px-2 py-2.5">
-              <p className="text-lg font-bold tabular-nums leading-none">{documentCount}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{t("sign.documentList.stat.documents")}</p>
+              <p className="text-[11px] text-muted-foreground">{t("sign.documentList.stat.documents")}</p>
+              <p className="mt-1 text-lg font-bold tabular-nums leading-none">{documentCount}</p>
             </div>
             <div className="rounded-lg bg-muted/60 px-2 py-2.5">
-              <p className="text-lg font-bold tabular-nums leading-none">{areaCount}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{t("sign.documentList.stat.areas")}</p>
+              <p className="text-[11px] text-muted-foreground">{t("sign.documentList.stat.areas")}</p>
+              <p className="mt-1 text-lg font-bold tabular-nums leading-none">{areaCount}</p>
             </div>
             <div className="rounded-lg bg-muted/60 px-2 py-2.5">
-              <p className="text-lg font-bold tabular-nums leading-none">
+              <p className="text-[11px] text-muted-foreground">{t("sign.documentList.stat.due")}</p>
+              <p className="mt-1 text-lg font-bold tabular-nums leading-none">
                 {publicationData.expires_at
                   ? formatExpiryDate(publicationData.expires_at, language)
                   : "—"}
               </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{t("sign.documentList.stat.due")}</p>
             </div>
           </div>
           {(() => {
