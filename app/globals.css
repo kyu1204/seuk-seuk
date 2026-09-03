@@ -264,3 +264,67 @@
   .home-bento:hover .home-iso-scene { transform: rotateX(52deg) rotateZ(-34deg); }
   .home-iso-scene { transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
 }
+
+/* Signer view: signature areas must read on top of any document. Violet is rare in
+   real documents, distinct from the navy primary and the seal red, and not the
+   yellow every other e-sign tool uses. Fixed values by design (sits on documents). */
+:root {
+  --sign-ink: 249 84% 60%;       /* #6D5DFC */
+  --sign-ink-deep: 249 70% 40%;  /* #4A3DB8 */
+  --sign-fill: 249 100% 92%;
+}
+.sign-area-pending {
+  border: 2px solid hsl(var(--sign-ink));
+  background: hsl(var(--sign-fill) / 0.55);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.15);
+  overflow: visible;
+}
+.sign-area-pending:hover {
+  background: hsl(var(--sign-fill) / 0.75);
+}
+.sign-area-pending:focus-visible,
+.sign-area-signed:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 5px hsl(var(--sign-ink));
+}
+.sign-area-ink {
+  color: hsl(var(--sign-ink-deep));
+}
+.sign-area-tag {
+  background: hsl(var(--sign-ink));
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.sign-area-focus {
+  border-color: hsl(var(--sign-ink-deep));
+  background: hsl(var(--sign-fill) / 0.85);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 5px hsl(var(--sign-ink)), 0 8px 24px -8px hsl(var(--sign-ink) / 0.6);
+  z-index: 10;
+}
+.sign-area-tag-focus {
+  background: hsl(var(--sign-ink-deep));
+}
+.sign-area-signed {
+  border: 1.5px solid hsl(var(--seal));
+  background: hsl(var(--seal-soft) / 0.55);
+}
+.sign-chip-pending {
+  background: hsl(var(--sign-fill));
+  color: hsl(var(--sign-ink-deep));
+}
+@keyframes sign-area-next-pulse {
+  0% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 0 4px hsl(var(--sign-ink) / 0.9); }
+  100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 0 14px hsl(var(--sign-ink) / 0); }
+}
+@keyframes sign-area-focus-pulse {
+  0% { box-shadow: 0 0 0 2px #fff, 0 0 0 5px hsl(var(--sign-ink)), 0 0 0 5px hsl(var(--sign-ink) / 0.6); }
+  100% { box-shadow: 0 0 0 2px #fff, 0 0 0 5px hsl(var(--sign-ink)), 0 0 0 18px hsl(var(--sign-ink) / 0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sign-area-next {
+    animation: sign-area-next-pulse 1.6s ease-out 0.4s 3;
+  }
+  .sign-area-focus {
+    animation: sign-area-focus-pulse 1.2s ease-out 2;
+  }
+}

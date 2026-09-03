@@ -42,6 +42,7 @@ import {
   ZoomOut,
   RotateCcw,
   ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -128,6 +129,8 @@ export default function SignSingleDocument({
   const [isBatchConfirmOpen, setIsBatchConfirmOpen] = useState<boolean>(false);
   const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
   const [pendingScrollAreaIndex, setPendingScrollAreaIndex] = useState<number | null>(null);
+  // "다음 칸으로"로 이동했거나 사용자가 고른 칸. 포커스 링 + 안내 태그가 붙는다.
+  const [focusedAreaIndex, setFocusedAreaIndex] = useState<number | null>(null);
 
   const isPdf = (documentData as any).file_type === 'pdf';
   const totalPages = (documentData as any).page_count || 1;
@@ -136,6 +139,7 @@ export default function SignSingleDocument({
 
   const handleAreaClick = (areaIndex: number) => {
     setSelectedArea(areaIndex);
+    setFocusedAreaIndex(areaIndex);
     const clickedSignature = localSignatures.find(s => s.area_index === areaIndex);
     setSelectedAreaType((clickedSignature as any)?.area_type === 'text' ? 'text' : 'signature');
     setIsModalOpen(true);
@@ -188,6 +192,9 @@ export default function SignSingleDocument({
         };
         setLocalSignatures([...localSignatures, newSignature]);
       }
+
+      // 서명이 들어간 칸은 더 이상 강조하지 않는다. 다음 미서명 칸이 자동으로 후보가 된다.
+      setFocusedAreaIndex(null);
 
       if (selectedAreaType === "signature") {
         setLastSignatureData(signatureData);
@@ -491,6 +498,7 @@ export default function SignSingleDocument({
       failedCount = batchSignTargets.length - signedIndexes.length;
     } finally {
       if (signedIndexes.length > 0) {
+        setFocusedAreaIndex(null);
         setLocalSignatures((prev) =>
           prev.map((s) =>
             signedIndexes.includes(s.area_index)
@@ -524,6 +532,10 @@ export default function SignSingleDocument({
     signed: s.signature_data !== null,
   }));
   const remainingByPageMap = remainingByPage(progressAreas);
+  const nextAreaIndex = (() => {
+    const next = nextUnsignedArea(progressAreas, currentPdfPage);
+    return next ? Number(next.id) : null;
+  })();
 
   const handleNextArea = () => {
     const next = nextUnsignedArea(progressAreas, currentPdfPage);
@@ -535,14 +547,18 @@ export default function SignSingleDocument({
       return;
     }
     const el = areaRefs.current.get(areaIndex);
-    el?.scrollIntoView({ block: "center" });
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    el?.focus({ preventScroll: true });
+    setFocusedAreaIndex(areaIndex);
   };
 
   useEffect(() => {
     if (pendingScrollAreaIndex === null) return;
     const el = areaRefs.current.get(pendingScrollAreaIndex);
     if (el) {
-      el.scrollIntoView({ block: "center" });
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.focus({ preventScroll: true });
+      setFocusedAreaIndex(pendingScrollAreaIndex);
       setPendingScrollAreaIndex(null);
     }
   }, [pendingScrollAreaIndex, currentPdfPage]);
@@ -781,19 +797,35 @@ export default function SignSingleDocument({
         {generatingProgress}
       </div>
 
-      {/* Guidance row */}
-      <div className="mx-auto w-full max-w-4xl px-4 py-2 flex items-center justify-between text-sm gap-2">
-        <span className="text-muted-foreground">
-          {showBatchSignHint ? t("sign.batchSignHint") : t("sign.clickAreas")}
-        </span>
+      {/* Guidance row: 남은 서명 칩 · 안내 · 다음 칸 버튼 */}
+      <div className="mx-auto w-full max-w-4xl px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
+        <div className="flex items-center gap-3 min-w-0">
+          {totalAreas === 0 ? null : remainingCount > 0 ? (
+            <span className="sign-chip-pending inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 h-7 text-xs font-semibold tabular-nums">
+              <PenLine className="h-3.5 w-3.5" />
+              {t("sign.remainingChip", { count: remainingCount })}
+            </span>
+          ) : (
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-seal-soft text-seal px-2.5 h-7 text-xs font-semibold">
+              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+              {t("sign.allSignedChip")}
+            </span>
+          )}
+          <span className="hidden sm:inline text-muted-foreground truncate">
+            {showBatchSignHint ? t("sign.batchSignHint") : t("sign.clickAreas")}
+          </span>
+        </div>
         {remainingCount > 0 && (
-          <button
+          <Button
             type="button"
-            className="text-primary font-medium shrink-0"
+            variant="outline"
+            size="sm"
+            className="shrink-0 gap-1.5"
             onClick={handleNextArea}
           >
             {t("sign.nextArea")}
-          </button>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
         )}
       </div>
 
@@ -848,7 +880,13 @@ export default function SignSingleDocument({
         <div className="relative border rounded-lg mb-3">
           <div
             ref={documentContainerRef}
-            className="relative overflow-auto max-h-[70vh]"
+            // 기본 배율에서는 문서가 페이지 흐름을 따라 늘어나 페이지 스크롤 하나만 남긴다.
+            // 확대했을 때만 내부 스크롤(패닝) 컨테이너가 된다.
+            className={
+              zoomLevel > 1
+                ? "relative overflow-auto max-h-[70vh]"
+                : "relative overflow-visible"
+            }
             style={{
               cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
               touchAction: zoomLevel > 1 ? "none" : "pan-y",
@@ -906,11 +944,20 @@ export default function SignSingleDocument({
                     }}
                     role="button"
                     tabIndex={0}
-                    aria-label={t("sign.area.label", { index: index + 1 })}
+                    aria-label={t(
+                      (signature as any).area_type === 'text' ? "sign.area.labelText" : "sign.area.label",
+                      { index: index + 1 }
+                    )}
                     className={`absolute cursor-pointer rounded-sm ${
                       isSigned
-                        ? "border border-seal bg-seal-soft/60"
-                        : "border-2 border-dashed border-primary/60 bg-primary/5"
+                        ? "sign-area-signed"
+                        : `sign-area-pending${
+                            signature.area_index === focusedAreaIndex
+                              ? " sign-area-focus"
+                              : signature.area_index === nextAreaIndex && focusedAreaIndex === null
+                                ? " sign-area-next"
+                                : ""
+                          }`
                     }`}
                     style={(() => {
                       try {
@@ -984,7 +1031,17 @@ export default function SignSingleDocument({
                         </span>
                       </div>
                     ) : (
-                      <div className="signature-area-label w-full h-full flex items-center justify-center gap-1 px-1 overflow-hidden text-primary">
+                      <>
+                      <span
+                        className={`sign-area-tag absolute -top-6 left-[-2px] inline-flex h-5 items-center gap-1 rounded-t-md rounded-br-md px-1.5 text-[11px] font-semibold whitespace-nowrap ${
+                          signature.area_index === focusedAreaIndex ? "sign-area-tag-focus" : ""
+                        }`}
+                        aria-hidden
+                      >
+                        <span className="tabular-nums">{index + 1}</span>
+                        {(signature as any).area_type === 'text' ? t("sign.tag.text") : t("sign.tag.sign")}
+                      </span>
+                      <div className="signature-area-label w-full h-full flex items-center justify-center gap-1 px-1 overflow-hidden sign-area-ink">
                         {(signature as any).area_type === 'text' ? (
                           <Type className="h-3.5 w-3.5 shrink-0" />
                         ) : (
@@ -996,6 +1053,7 @@ export default function SignSingleDocument({
                             : t("sign.clickToSign")}
                         </span>
                       </div>
+                      </>
                     )}
                   </div>
                 );
