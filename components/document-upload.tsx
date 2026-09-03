@@ -5,7 +5,7 @@ import type React from "react";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileImage, FileText, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, ChevronLeft, ChevronRight, AlertTriangle, Lock, ArrowLeft, X } from "lucide-react";
+import { Upload, FileImage, FileText, Trash2, ZoomIn, ZoomOut, RotateCcw, Type, PenLine, ChevronLeft, ChevronRight, AlertTriangle, Lock, ArrowLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -865,6 +865,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                     disabled={isSelecting}
                     className="w-full"
                   >
+                    <PenLine className="mr-1 h-4 w-4" />
                     {t("upload.signature")}
                   </Button>
                   <Button
