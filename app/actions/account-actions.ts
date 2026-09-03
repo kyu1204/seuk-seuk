@@ -73,6 +73,35 @@ export async function getUserProfile(): Promise<{
   }
 }
 
+export async function updateProfileName(
+  rawName: string
+): Promise<{ success?: boolean; error?: string }> {
+  if (typeof rawName !== "string") return { error: "NAME_REQUIRED" };
+  const name = rawName.trim();
+  if (!name) return { error: "NAME_REQUIRED" };
+  if (name.length > 40) return { error: "NAME_TOO_LONG" };
+
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) return { error: "UNAUTHENTICATED" };
+
+  // users.name 이 서명자 화면의 "보낸 사람" 표시와 대시보드 프로필의 단일 소스다.
+  const serviceSupabase = createServiceSupabase();
+  const { error } = await serviceSupabase
+    .from("users")
+    .upsert({ id: user.id, name }, { onConflict: "id" });
+  if (error) {
+    console.error("[Profile] update name failed:", error);
+    return { error: "UPDATE_FAILED" };
+  }
+
+  revalidatePath("/mypage");
+  return { success: true };
+}
+
 export async function deleteAccount(
   formData: FormData
 ): Promise<DeleteAccountResult> {

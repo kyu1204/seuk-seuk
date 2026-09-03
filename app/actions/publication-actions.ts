@@ -360,7 +360,12 @@ export async function getPublicationByShortUrl(
       const { data: userData } = await supabase.auth.admin.getUserById(
         publication.user_id
       );
-      senderName = deriveSenderName(userData?.user ?? null);
+      const { data: profile } = await supabase
+        .from("users")
+        .select("name")
+        .eq("id", publication.user_id)
+        .maybeSingle();
+      senderName = deriveSenderName(userData?.user ?? null, profile);
     } catch (lookupError) {
       console.error("Get publication sender name error:", lookupError);
     }

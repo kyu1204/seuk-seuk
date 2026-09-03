@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import { deriveSenderName } from "./sender-name";
 
 describe("deriveSenderName", () => {
+  it("prefers the profile name the user set in 마이페이지", () => {
+    expect(
+      deriveSenderName(
+        { email: "a@example.com", user_metadata: { full_name: "김민규 (MINT)" } },
+        { name: "슥슥 스튜디오" }
+      )
+    ).toBe("슥슥 스튜디오");
+    expect(
+      deriveSenderName({ email: "a@example.com", user_metadata: { full_name: "Alice" } }, { name: "  " })
+    ).toBe("Alice");
+  });
+
   it("prefers user_metadata.full_name", () => {
     expect(
       deriveSenderName({

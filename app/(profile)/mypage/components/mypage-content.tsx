@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
+import { updateProfileName } from "@/app/actions/account-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -37,6 +39,33 @@ export function MyPageContent({ user, profile, usageData }: MyPageContentProps) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const displayName = profile?.name || user.user_metadata?.full_name || user.email || "";
+  const initialName = profile?.name || user.user_metadata?.full_name || "";
+  const [name, setName] = useState(initialName);
+  const [savedName, setSavedName] = useState(initialName);
+  const [isSavingName, setIsSavingName] = useState(false);
+  const nameDirty = name.trim() !== savedName.trim();
+
+  // useTransition 은 await 이후 구간을 pending 으로 잡지 않아 중복 제출을 막지 못한다. 명시적 상태로 잠근다.
+  const saveName = async () => {
+    if (isSavingName || !nameDirty) return;
+    setIsSavingName(true);
+    try {
+      const result = await updateProfileName(name);
+      if (result.error) {
+        toast.error(
+          result.error === "NAME_REQUIRED"
+            ? t("mypage.profile.nameRequired")
+            : t("mypage.profile.saveError")
+        );
+        return;
+      }
+      setSavedName(name.trim());
+      toast.success(t("mypage.profile.saved"));
+      router.refresh();
+    } finally {
+      setIsSavingName(false);
+    }
+  };
   const fallbackText = user.email?.charAt(0).toUpperCase() || "U";
   const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url;
 
@@ -75,7 +104,16 @@ export function MyPageContent({ user, profile, usageData }: MyPageContentProps) 
             <div className="grid flex-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="mypage-name">{t("mypage.profile.name")}</Label>
-                <Input id="mypage-name" value={displayName} disabled />
+                <Input
+                  id="mypage-name"
+                  value={name}
+                  maxLength={40}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && nameDirty && !isSavingName) saveName();
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">{t("mypage.profile.nameHint")}</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="mypage-email">{t("mypage.profile.email")}</Label>
@@ -84,9 +122,13 @@ export function MyPageContent({ user, profile, usageData }: MyPageContentProps) 
               </div>
             </div>
           </div>
-          <div className="flex justify-between text-sm pt-2 border-t">
-            <span className="text-muted-foreground">{t("mypage.profile.joinedAt")}</span>
-            <span className="font-medium">{joinedDate}</span>
+          <div className="flex items-center justify-between gap-4 text-sm pt-2 border-t">
+            <span className="text-muted-foreground">
+              {t("mypage.profile.joinedAt")} <span className="font-medium text-foreground">{joinedDate}</span>
+            </span>
+            <Button size="sm" onClick={saveName} disabled={!nameDirty || isSavingName}>
+              {isSavingName ? t("mypage.profile.saving") : t("mypage.profile.save")}
+            </Button>
           </div>
         </CardContent>
       </Card>
