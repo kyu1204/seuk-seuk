@@ -296,7 +296,7 @@ describe("locale parity (ko/en)", () => {
     );
     expect(ko["sign.header.metaSingle"]).toBe("서명 {{completed}}/{{total}}");
     expect(ko["sign.batchSign"]).toBe("한 번에 서명");
-    expect(ko["sign.clickAreas"]).toBe("보라색 칸을 누르면 서명할 수 있어요");
+    expect(ko["sign.clickAreas"]).toBe("보라색 칸을 눌러 서명하거나 입력하세요");
     expect(ko["sign.batchSignHint"]).toBe(
       "먼저 한 곳에 서명하면 나머지에 한 번에 적용할 수 있어요"
     );

@@ -282,8 +282,10 @@
 .sign-area-pending:hover {
   background: hsl(var(--sign-fill) / 0.75);
 }
-.sign-area-pending:focus-visible {
+.sign-area-pending:focus-visible,
+.sign-area-signed:focus-visible {
   outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 5px hsl(var(--sign-ink));
 }
 .sign-area-ink {
   color: hsl(var(--sign-ink-deep));

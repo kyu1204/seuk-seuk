@@ -139,6 +139,7 @@ export default function SignSingleDocument({
 
   const handleAreaClick = (areaIndex: number) => {
     setSelectedArea(areaIndex);
+    setFocusedAreaIndex(areaIndex);
     const clickedSignature = localSignatures.find(s => s.area_index === areaIndex);
     setSelectedAreaType((clickedSignature as any)?.area_type === 'text' ? 'text' : 'signature');
     setIsModalOpen(true);
@@ -191,6 +192,9 @@ export default function SignSingleDocument({
         };
         setLocalSignatures([...localSignatures, newSignature]);
       }
+
+      // 서명이 들어간 칸은 더 이상 강조하지 않는다. 다음 미서명 칸이 자동으로 후보가 된다.
+      setFocusedAreaIndex(null);
 
       if (selectedAreaType === "signature") {
         setLastSignatureData(signatureData);
@@ -494,6 +498,7 @@ export default function SignSingleDocument({
       failedCount = batchSignTargets.length - signedIndexes.length;
     } finally {
       if (signedIndexes.length > 0) {
+        setFocusedAreaIndex(null);
         setLocalSignatures((prev) =>
           prev.map((s) =>
             signedIndexes.includes(s.area_index)
@@ -795,7 +800,7 @@ export default function SignSingleDocument({
       {/* Guidance row: 남은 서명 칩 · 안내 · 다음 칸 버튼 */}
       <div className="mx-auto w-full max-w-4xl px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
         <div className="flex items-center gap-3 min-w-0">
-          {remainingCount > 0 ? (
+          {totalAreas === 0 ? null : remainingCount > 0 ? (
             <span className="sign-chip-pending inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 h-7 text-xs font-semibold tabular-nums">
               <PenLine className="h-3.5 w-3.5" />
               {t("sign.remainingChip", { count: remainingCount })}
@@ -939,7 +944,10 @@ export default function SignSingleDocument({
                     }}
                     role="button"
                     tabIndex={0}
-                    aria-label={t("sign.area.label", { index: index + 1 })}
+                    aria-label={t(
+                      (signature as any).area_type === 'text' ? "sign.area.labelText" : "sign.area.label",
+                      { index: index + 1 }
+                    )}
                     className={`absolute cursor-pointer rounded-sm ${
                       isSigned
                         ? "sign-area-signed"
