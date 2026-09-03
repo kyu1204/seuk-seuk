@@ -731,7 +731,7 @@ export default function SignSingleDocument({
     <div className="flex flex-col min-h-screen bg-background">
       {/* Top sticky header */}
       <div className="sticky top-0 z-30 bg-background border-b">
-        <div className="flex items-center justify-between px-4 py-3 gap-2">
+        <div className="mx-auto w-full max-w-4xl flex items-center justify-between px-4 py-3 gap-2">
           <Button variant="ghost" size="icon" aria-label={t("common.back")} onClick={onBack}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -782,7 +782,7 @@ export default function SignSingleDocument({
       </div>
 
       {/* Guidance row */}
-      <div className="px-4 py-2 flex items-center justify-between text-sm gap-2">
+      <div className="mx-auto w-full max-w-4xl px-4 py-2 flex items-center justify-between text-sm gap-2">
         <span className="text-muted-foreground">
           {showBatchSignHint ? t("sign.batchSignHint") : t("sign.clickAreas")}
         </span>
@@ -813,7 +813,7 @@ export default function SignSingleDocument({
         </div>
       )}
 
-      <div className="px-4 pb-4 flex-1">
+      <div className="mx-auto w-full max-w-4xl px-4 pb-4 flex-1">
         {/* PDF Page Navigation */}
         {isPdf && totalPages > 1 && (
           <div className="flex items-center justify-center gap-3 py-2 mb-2 bg-muted/30 rounded-lg">
@@ -1144,7 +1144,7 @@ export default function SignSingleDocument({
       </AlertDialog>
 
       {/* Bottom sticky submit bar */}
-      <div className="sticky bottom-0 bg-background border-t px-4 pt-3 pb-5 flex flex-col gap-2">
+      <div className="sticky bottom-0 bg-background border-t px-4 pt-3 pb-5 flex flex-col gap-2 [&>*]:mx-auto [&>*]:w-full [&>*]:max-w-md">
         <Button
           className="h-12"
           disabled={!allAreasSigned || isGenerating}

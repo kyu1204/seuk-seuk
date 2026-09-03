@@ -31,8 +31,6 @@ interface SignatureModalProps {
   existingSignature?: string;
 }
 
-const BASELINE_OFFSET = 24;
-
 export default function SignatureModal({
   isOpen,
   onClose,
@@ -100,16 +98,6 @@ export default function SignatureModal({
       ctx.drawImage(existingImageRef.current, 0, 0, cssWidth, cssHeight);
     }
 
-    const borderColor = getComputedStyle(canvas).getPropertyValue("--border");
-    ctx.save();
-    ctx.strokeStyle = `hsl(${borderColor})`;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(0, cssHeight - BASELINE_OFFSET);
-    ctx.lineTo(cssWidth, cssHeight - BASELINE_OFFSET);
-    ctx.stroke();
-    ctx.restore();
 
     applyInkStyle(ctx, canvas);
     for (const stroke of strokesRef.current) strokePath(ctx, stroke);
@@ -122,10 +110,11 @@ export default function SignatureModal({
     if (!canvas || !container) return;
 
     const cssHeight = getCanvasHeight();
+    // 컨테이너의 content box 폭을 캔버스 CSS 폭으로 명시한다(패딩·보더 제외). 레이아웃 전(폭 0)에는 건너뛴다.
+    const cssWidth = container.clientWidth - (parseFloat(getComputedStyle(container).paddingLeft) || 0) - (parseFloat(getComputedStyle(container).paddingRight) || 0);
+    if (cssWidth <= 0) return;
+    canvas.style.width = `${cssWidth}px`;
     canvas.style.height = `${cssHeight}px`;
-    // 캔버스는 w-full 로 컨테이너 안쪽 폭을 따른다. 레이아웃 전(폭 0)에는 건너뛴다.
-    const cssWidth = canvas.clientWidth;
-    if (cssWidth === 0) return;
 
     const dpr = window.devicePixelRatio || 1;
     const { width, height } = scaleForDpr(cssWidth, cssHeight, dpr);
@@ -183,11 +172,10 @@ export default function SignatureModal({
   }, [existingSignature, isOpen]);
 
   const getPoint = (e: React.PointerEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement): Point => {
+    // 좌표는 CSS 픽셀 그대로 쓴다. 백킹 스토어는 setTransform(dpr) 로 CSS 픽셀 공간에 맞춰져 있다.
+    // (진입 애니메이션 중 rect 크기로 보정하던 로직은 iOS 에서 배율이 틀어져 제거)
     const rect = canvas.getBoundingClientRect();
-    // rect 는 CSS 변환(진입 애니메이션 등)이 적용된 크기라, 캔버스 CSS 크기 기준으로 보정한다.
-    const scaleX = rect.width ? canvas.clientWidth / rect.width : 1;
-    const scaleY = rect.height ? canvas.clientHeight / rect.height : 1;
-    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -195,6 +183,14 @@ export default function SignatureModal({
     if (!canvas) return;
 
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    // 백킹 스토어가 현재 CSS 크기와 어긋나 있으면(관찰자가 놓친 리사이즈 등) 긋기 전에 다시 맞춘다.
+    const dpr = window.devicePixelRatio || 1;
+    if (
+      canvas.width !== Math.round(canvas.clientWidth * dpr) ||
+      canvas.height !== Math.round(canvas.clientHeight * dpr)
+    ) {
+      setupCanvas();
+    }
     canvas.setPointerCapture(e.pointerId);
     isDrawingRef.current = true;
     setHasSignature(true);
@@ -300,7 +296,7 @@ export default function SignatureModal({
           <div ref={containerRef} className="relative border rounded-md p-1 my-4">
             <canvas
               ref={canvasRef}
-              className="w-full cursor-crosshair touch-none"
+              className="block w-full cursor-crosshair touch-none"
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
