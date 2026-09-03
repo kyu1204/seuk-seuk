@@ -875,7 +875,13 @@ export default function SignSingleDocument({
         <div className="relative border rounded-lg mb-3">
           <div
             ref={documentContainerRef}
-            className="relative overflow-auto max-h-[70vh]"
+            // 기본 배율에서는 문서가 페이지 흐름을 따라 늘어나 페이지 스크롤 하나만 남긴다.
+            // 확대했을 때만 내부 스크롤(패닝) 컨테이너가 된다.
+            className={
+              zoomLevel > 1
+                ? "relative overflow-auto max-h-[70vh]"
+                : "relative overflow-visible"
+            }
             style={{
               cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
               touchAction: zoomLevel > 1 ? "none" : "pan-y",
