@@ -194,6 +194,11 @@ export default function SignatureModal({
     isDrawingRef.current = true;
     setHasSignature(true);
 
+    // 새로 그리기 시작하면 기존 서명 이미지는 대체된다.
+    if (existingImageRef.current) {
+      existingImageRef.current = null;
+      redraw();
+    }
     const point = getPoint(e, canvas);
     lastPointRef.current = point;
     prevMidRef.current = point;
@@ -245,6 +250,8 @@ export default function SignatureModal({
   };
 
   const clearCanvas = () => {
+    // 불러온 기존 서명도 함께 버린다. 그대로 두면 redraw 가 다시 그린다.
+    existingImageRef.current = null;
     strokesRef.current = [];
     currentStrokeRef.current = [];
     setStrokeCount(0);
