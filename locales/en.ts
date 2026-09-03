@@ -84,7 +84,7 @@ export default {
   "sign.notFoundDesc":
     "The link has expired or the address is wrong. Please ask the sender for a new link.",
   "sign.returnHome": "Return to Home",
-  "sign.clickAreas": "Tap a yellow box to sign",
+  "sign.clickAreas": "Tap a purple box to sign",
   "sign.clickToSign": "Tap to sign",
   "sign.clickToType": "Tap to type",
   "sign.enterText": "Enter text",
@@ -445,6 +445,8 @@ export default {
   "sign.header.metaSingle": "Signed {{completed}}/{{total}}",
   "sign.remainingChip": "{{count}} left to sign",
   "sign.allSignedChip": "All signed",
+  "sign.tag.sign": "Sign",
+  "sign.tag.text": "Type",
   "sign.nextArea": "Next area",
   "sign.pageChip": "Page {{page}}",
   "sign.pageChip.remaining": "{{count}} left",

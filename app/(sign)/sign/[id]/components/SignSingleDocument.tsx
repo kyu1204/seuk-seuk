@@ -129,6 +129,8 @@ export default function SignSingleDocument({
   const [isBatchConfirmOpen, setIsBatchConfirmOpen] = useState<boolean>(false);
   const [isLoadingSignedUrl, setIsLoadingSignedUrl] = useState<boolean>(false);
   const [pendingScrollAreaIndex, setPendingScrollAreaIndex] = useState<number | null>(null);
+  // "다음 칸으로"로 이동했거나 사용자가 고른 칸. 포커스 링 + 안내 태그가 붙는다.
+  const [focusedAreaIndex, setFocusedAreaIndex] = useState<number | null>(null);
 
   const isPdf = (documentData as any).file_type === 'pdf';
   const totalPages = (documentData as any).page_count || 1;
@@ -540,14 +542,18 @@ export default function SignSingleDocument({
       return;
     }
     const el = areaRefs.current.get(areaIndex);
-    el?.scrollIntoView({ block: "center" });
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    el?.focus({ preventScroll: true });
+    setFocusedAreaIndex(areaIndex);
   };
 
   useEffect(() => {
     if (pendingScrollAreaIndex === null) return;
     const el = areaRefs.current.get(pendingScrollAreaIndex);
     if (el) {
-      el.scrollIntoView({ block: "center" });
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.focus({ preventScroll: true });
+      setFocusedAreaIndex(pendingScrollAreaIndex);
       setPendingScrollAreaIndex(null);
     }
   }, [pendingScrollAreaIndex, currentPdfPage]);
@@ -931,7 +937,13 @@ export default function SignSingleDocument({
                     className={`absolute cursor-pointer rounded-sm ${
                       isSigned
                         ? "sign-area-signed"
-                        : `sign-area-pending${signature.area_index === nextAreaIndex ? " sign-area-next" : ""}`
+                        : `sign-area-pending${
+                            signature.area_index === focusedAreaIndex
+                              ? " sign-area-focus"
+                              : signature.area_index === nextAreaIndex && focusedAreaIndex === null
+                                ? " sign-area-next"
+                                : ""
+                          }`
                     }`}
                     style={(() => {
                       try {
@@ -1005,18 +1017,29 @@ export default function SignSingleDocument({
                         </span>
                       </div>
                     ) : (
-                      <div className="signature-area-label w-full h-full flex items-center justify-center gap-1 px-1 overflow-hidden text-[#3A2A00]">
+                      <>
+                      <span
+                        className={`sign-area-tag absolute -top-6 left-[-2px] inline-flex h-5 items-center gap-1 rounded-t-md rounded-br-md px-1.5 text-[11px] font-semibold whitespace-nowrap ${
+                          signature.area_index === focusedAreaIndex ? "sign-area-tag-focus" : ""
+                        }`}
+                        aria-hidden
+                      >
+                        <span className="tabular-nums">{index + 1}</span>
+                        {(signature as any).area_type === 'text' ? t("sign.tag.text") : t("sign.tag.sign")}
+                      </span>
+                      <div className="signature-area-label w-full h-full flex items-center justify-center gap-1 px-1 overflow-hidden sign-area-ink">
                         {(signature as any).area_type === 'text' ? (
                           <Type className="h-3.5 w-3.5 shrink-0" />
                         ) : (
                           <PenLine className="h-3.5 w-3.5 shrink-0" />
                         )}
-                        <span className="signature-area-label-text text-xs font-semibold truncate min-w-0">
+                        <span className="signature-area-label-text text-xs font-medium truncate min-w-0">
                           {(signature as any).area_type === 'text'
                             ? t("sign.clickToType")
                             : t("sign.clickToSign")}
                         </span>
                       </div>
+                      </>
                     )}
                   </div>
                 );
