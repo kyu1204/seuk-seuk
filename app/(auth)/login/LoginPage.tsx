@@ -65,15 +65,7 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">{t("login.password")}</Label>
-            <Link
-              href="/forgot-password"
-              className="text-sm py-2 hover:underline"
-            >
-              {t("login.forgotPassword")}
-            </Link>
-          </div>
+          <Label htmlFor="password">{t("login.password")}</Label>
           <div className="relative">
             <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -97,6 +89,15 @@ export default function LoginPage() {
                 <Eye className="h-4 w-4" />
               )}
             </button>
+          </div>
+          {/* 탭 순서: 이메일 → 비밀번호 → 보기 토글 → 재설정 링크 → 로그인 */}
+          <div className="flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-muted-foreground py-1.5 hover:text-foreground hover:underline"
+            >
+              {t("login.forgotPassword")}
+            </Link>
           </div>
         </div>
 
