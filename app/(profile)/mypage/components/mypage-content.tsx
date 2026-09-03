@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { updateProfileName } from "@/app/actions/account-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -37,6 +39,25 @@ export function MyPageContent({ user, profile, usageData }: MyPageContentProps) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const displayName = profile?.name || user.user_metadata?.full_name || user.email || "";
+  const [name, setName] = useState(profile?.name || user.user_metadata?.full_name || "");
+  const [isSavingName, startSaveName] = useTransition();
+  const nameDirty = name.trim() !== (profile?.name || user.user_metadata?.full_name || "").trim();
+
+  const saveName = () => {
+    startSaveName(async () => {
+      const result = await updateProfileName(name);
+      if (result.error) {
+        toast.error(
+          result.error === "NAME_REQUIRED"
+            ? t("mypage.profile.nameRequired")
+            : t("mypage.profile.saveError")
+        );
+        return;
+      }
+      toast.success(t("mypage.profile.saved"));
+      router.refresh();
+    });
+  };
   const fallbackText = user.email?.charAt(0).toUpperCase() || "U";
   const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url;
 
@@ -75,7 +96,16 @@ export function MyPageContent({ user, profile, usageData }: MyPageContentProps) 
             <div className="grid flex-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="mypage-name">{t("mypage.profile.name")}</Label>
-                <Input id="mypage-name" value={displayName} disabled />
+                <Input
+                  id="mypage-name"
+                  value={name}
+                  maxLength={40}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && nameDirty && !isSavingName) saveName();
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">{t("mypage.profile.nameHint")}</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="mypage-email">{t("mypage.profile.email")}</Label>
@@ -84,9 +114,13 @@ export function MyPageContent({ user, profile, usageData }: MyPageContentProps) 
               </div>
             </div>
           </div>
-          <div className="flex justify-between text-sm pt-2 border-t">
-            <span className="text-muted-foreground">{t("mypage.profile.joinedAt")}</span>
-            <span className="font-medium">{joinedDate}</span>
+          <div className="flex items-center justify-between gap-4 text-sm pt-2 border-t">
+            <span className="text-muted-foreground">
+              {t("mypage.profile.joinedAt")} <span className="font-medium text-foreground">{joinedDate}</span>
+            </span>
+            <Button size="sm" onClick={saveName} disabled={!nameDirty || isSavingName}>
+              {isSavingName ? t("mypage.profile.saving") : t("mypage.profile.save")}
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -15,6 +15,7 @@ import {
   CheckCircle,
   Clock,
   Eye,
+  Check,
   EyeOff,
   FileText,
   Lock,
@@ -325,13 +326,57 @@ export default function SignDocumentList({
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <SignHeader />
-      <div className="max-w-md mx-auto px-5 py-8 flex flex-col gap-6 w-full">
-        <p className="text-xs text-muted-foreground">{sentByLine}</p>
-        <h1 className="text-2xl font-bold -mt-4">{publicationData.name}</h1>
-        <p className="text-sm text-muted-foreground -mt-4">{summaryLine}</p>
-        <p className="text-muted-foreground -mt-2">
-          {t("sign.documentList.description", { count: documentCount })}
-        </p>
+      <div className="max-w-lg mx-auto px-5 py-8 flex flex-col gap-6 w-full">
+        {/* 보낸 사람 · 요청 요약 */}
+        <div className="rounded-xl border bg-card p-5 shadow-sm flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+              {(senderName || "?").trim().charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">{sentByLine}</p>
+              <h1 className="text-xl font-bold truncate">{publicationData.name}</h1>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg bg-muted/60 px-2 py-2.5">
+              <p className="text-lg font-bold tabular-nums leading-none">{documentCount}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("sign.documentList.stat.documents")}</p>
+            </div>
+            <div className="rounded-lg bg-muted/60 px-2 py-2.5">
+              <p className="text-lg font-bold tabular-nums leading-none">{areaCount}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("sign.documentList.stat.areas")}</p>
+            </div>
+            <div className="rounded-lg bg-muted/60 px-2 py-2.5">
+              <p className="text-lg font-bold tabular-nums leading-none">
+                {publicationData.expires_at
+                  ? formatExpiryDate(publicationData.expires_at, language)
+                  : "—"}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("sign.documentList.stat.due")}</p>
+            </div>
+          </div>
+          {(() => {
+            const docs = publicationData.documents ?? [];
+            const done = docs.filter((d) => d.status === "completed").length;
+            const pct = docs.length ? Math.round((done / docs.length) * 100) : 0;
+            return (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    {done === docs.length && docs.length > 0
+                      ? t("sign.documentList.allDone")
+                      : t("sign.documentList.description", { count: docs.length - done })}
+                  </span>
+                  <span className="font-medium tabular-nums">{done}/{docs.length}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })()}
+        </div>
 
         {/* Document List */}
         <div className="flex flex-col gap-3">
@@ -341,33 +386,46 @@ export default function SignDocumentList({
             );
             // Check if document status is completed (submitted and finalized)
             const isDocumentSubmitted = document.status === "completed";
+            const pct = total ? Math.round((completed / total) * 100) : 0;
 
             return (
               <div
                 key={document.id}
-                className="rounded-xl border bg-card p-4 flex items-center gap-4"
+                className={`rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 ${
+                  isDocumentSubmitted ? "" : "border-primary/30"
+                }`}
               >
-                {isDocumentSubmitted ? (
-                  <StatusBadge status="completed" />
-                ) : (
-                  <span className="inline-flex items-center h-6 px-2.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                    {t("sign.documentList.pending")}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${
+                      isDocumentSubmitted ? "bg-seal-soft text-seal" : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    {isDocumentSubmitted ? <Check className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                   </span>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    {documentDisplayLabel(document.alias, document.filename)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("sign.documentList.signaturesCompleted", {
-                      completed,
-                      total,
-                    })}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold truncate">
+                        {documentDisplayLabel(document.alias, document.filename)}
+                      </p>
+                      {isDocumentSubmitted && <StatusBadge status="completed" />}
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <div className="h-1.5 w-24 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${isDocumentSubmitted ? "bg-seal" : "bg-primary"}`}
+                          style={{ width: `${isDocumentSubmitted ? 100 : pct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {t("sign.documentList.signaturesCompleted", { completed, total })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant={isDocumentSubmitted ? "outline" : "default"}
+                  className="w-full sm:w-auto"
                   disabled={isDocumentSubmitted}
                   onClick={() => onSelectDocument(document.id)}
                 >

@@ -41,12 +41,13 @@ describe("SignDocumentList.tsx source", () => {
 
   it("uses simple row cards for the document list instead of DocumentTile", () => {
     expect(source).not.toContain("DocumentTile");
-    expect(source).toContain("rounded-xl border bg-card p-4 flex items-center gap-4");
+    expect(source).toContain("rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3");
   });
 
-  it("uses StatusBadge and the pending copy key for row status", () => {
+  it("uses StatusBadge and a per-document progress bar for row status", () => {
     expect(source).toContain("StatusBadge");
-    expect(source).toContain("sign.documentList.pending");
+    expect(source).toContain("sign.documentList.signaturesCompleted");
+    expect(source).toContain("sign.documentList.stat.due");
   });
 
   it("uses sign.documentList.sign / .view for row actions, not a full-card onClick", () => {
