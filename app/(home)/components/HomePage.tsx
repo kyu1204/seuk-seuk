@@ -10,11 +10,20 @@ import {
   ChevronUp,
   FileSignature,
   Link2,
-  MousePointerClick,
-  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  ArtBundle,
+  ArtLock,
+  ArtProgress,
+  ArtSealPdf,
+  ArtTemplates,
+  IsoDocStack,
+  StepFieldsArt,
+  StepSendArt,
+  StepUploadArt,
+} from "./home-visuals";
 import {
   getSubscriptionPlans,
   type SubscriptionPlan,
@@ -159,35 +168,20 @@ export default function HomePageComponent() {
 
   const steps = [
     {
-      icon: Upload,
+      art: <StepUploadArt />,
       title: t("home.steps.upload.title"),
       description: t("home.steps.upload.description"),
     },
     {
-      icon: MousePointerClick,
+      art: <StepFieldsArt />,
       title: t("home.steps.areas.title"),
       description: t("home.steps.areas.description"),
     },
     {
-      icon: Link2,
+      art: <StepSendArt />,
       title: t("home.steps.send.title"),
       description: t("home.steps.send.description"),
     },
-  ];
-
-  const signerPoints = [
-    t("home.signer.noAccount"),
-    t("home.signer.mobile"),
-    t("home.signer.batch"),
-    t("home.signer.password"),
-  ];
-
-  const senderPoints = [
-    t("home.sender.templates"),
-    t("home.sender.bundle"),
-    t("home.sender.expiry"),
-    t("home.sender.signedPdf"),
-    t("home.sender.dashboard"),
   ];
 
   return (
@@ -263,25 +257,22 @@ export default function HomePageComponent() {
               {t("home.steps.description")}
             </p>
           </div>
-          <ol className="grid md:grid-cols-3 gap-8 md:gap-6">
+          <ol className="grid md:grid-cols-3 gap-5">
             {steps.map((step, i) => (
               <li
                 key={step.title}
-                className="home-view relative flex md:block gap-4"
+                className="home-view flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm"
                 style={delay(i * 120)}
               >
-                <div className="flex items-center gap-3 mb-4 shrink-0">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold tabular-nums">
-                    {i + 1}
-                  </span>
-                  <step.icon
-                    className="hidden md:block h-5 w-5 text-muted-foreground"
-                    aria-hidden
-                  />
-                </div>
+                {step.art}
                 <div>
-                  <h3 className="text-lg font-semibold mb-1.5">{step.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-semibold tabular-nums text-primary-foreground">
+                      {i + 1}
+                    </span>
+                    <h3 className="text-lg font-semibold">{step.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     {step.description}
                   </p>
                 </div>
@@ -294,48 +285,60 @@ export default function HomePageComponent() {
         </div>
       </section>
 
-      {/* For signers / for senders */}
+      {/* Bento: 받는 사람·보내는 사람 기능을 시각 타일로 */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
-            <div className="home-view">
-              <p className="text-sm font-medium text-primary mb-3">
-                {t("home.signer.eyebrow")}
-              </p>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4 [text-wrap:balance]">
-                {t("home.signer.title")}
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                {t("home.signer.description")}
-              </p>
-              <ul className="space-y-3">
-                {signerPoints.map((point) => (
-                  <li key={point} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="home-view" style={delay(120)}>
-              <p className="text-sm font-medium text-primary mb-3">
-                {t("home.sender.eyebrow")}
-              </p>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4 [text-wrap:balance]">
-                {t("home.sender.title")}
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                {t("home.sender.description")}
-              </p>
-              <ul className="space-y-3">
-                {senderPoints.map((point) => (
-                  <li key={point} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <div className="home-view max-w-2xl mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3 [text-wrap:balance]">
+              {t("home.bento.title")}
+            </h2>
+            <p className="text-muted-foreground">{t("home.bento.description")}</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-6 md:auto-rows-[minmax(0,auto)]">
+            <BentoTile
+              className="md:col-span-3 md:row-span-2"
+              eyebrow={t("home.signer.eyebrow")}
+              title={t("home.bento.signer.title")}
+              description={t("home.bento.signer.description")}
+              art={<IsoDocStack className="mt-4" />}
+              artBelow
+              delayMs={0}
+            />
+            <BentoTile
+              className="md:col-span-3"
+              title={t("home.bento.templates.title")}
+              description={t("home.bento.templates.description")}
+              art={<ArtTemplates />}
+              delayMs={100}
+            />
+            <BentoTile
+              className="md:col-span-3"
+              title={t("home.bento.bundle.title")}
+              description={t("home.bento.bundle.description")}
+              art={<ArtBundle />}
+              delayMs={200}
+            />
+            <BentoTile
+              className="md:col-span-2"
+              title={t("home.bento.lock.title")}
+              description={t("home.bento.lock.description")}
+              art={<ArtLock />}
+              delayMs={0}
+            />
+            <BentoTile
+              className="md:col-span-2"
+              title={t("home.bento.pdf.title")}
+              description={t("home.bento.pdf.description")}
+              art={<ArtSealPdf />}
+              delayMs={100}
+            />
+            <BentoTile
+              className="md:col-span-2"
+              title={t("home.bento.progress.title")}
+              description={t("home.bento.progress.description")}
+              art={<ArtProgress />}
+              delayMs={200}
+            />
           </div>
         </div>
       </section>
@@ -644,6 +647,44 @@ function KineticTitle({ text, startMs }: { text: string; startMs: number }) {
         </span>
       ))}
     </>
+  );
+}
+
+function BentoTile({
+  className,
+  eyebrow,
+  title,
+  description,
+  art,
+  artBelow = false,
+  delayMs = 0,
+}: {
+  className?: string;
+  eyebrow?: string;
+  title: string;
+  description: string;
+  art: React.ReactNode;
+  artBelow?: boolean;
+  delayMs?: number;
+}) {
+  return (
+    <div
+      className={cn(
+        "home-view home-bento flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md",
+        className
+      )}
+      style={delay(delayMs)}
+    >
+      {!artBelow && art}
+      <div className={cn(artBelow && "order-first")}>
+        {eyebrow && (
+          <p className="mb-2 text-xs font-medium tracking-wide text-primary">{eyebrow}</p>
+        )}
+        <h3 className="text-base font-semibold [text-wrap:balance]">{title}</h3>
+        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+      {artBelow && art}
+    </div>
   );
 }
 
