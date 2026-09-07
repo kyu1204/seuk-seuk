@@ -18,7 +18,8 @@ describe("document-actions.ts source", () => {
     // finalize must refuse keys outside the caller's own folder
     expect(source).toContain("key.startsWith(pendingFolder)");
     expect(source).toContain("storage.head(");
-    expect(source).toContain("countPdfPages(");
+    expect(source).toContain("countPdfPagesFromBytes(");
+    expect(source).toContain("sniffFileType(");
   });
 
   it("exports getDocumentSignatureCounts for the publish document list", () => {

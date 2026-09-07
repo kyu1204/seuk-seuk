@@ -1,7 +1,7 @@
 "use client";
 
 import "@/lib/pdf-polyfill";
-import { checkUploadFile, uploadToSignedUrl } from "@/lib/documents/direct-upload"; // Promise.withResolvers polyfill before any pdfjs-dist usage (iOS < 17.4)
+import { checkUploadFile, uploadToSignedUrl, DIRECT_UPLOAD_MAX_BYTES, TEMPLATE_SUPPORTED_MIME } from "@/lib/documents/direct-upload"; // Promise.withResolvers polyfill before any pdfjs-dist usage (iOS < 17.4)
 import type React from "react";
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -180,7 +180,9 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
 
     // 크기·형식은 읽기 전에 거른다. 50MB 넘는 PDF를 Data URL로 읽으면 브라우저가 버거워진다.
     for (const file of fileArray) {
-      const check = checkUploadFile(file);
+      const check = isTemplateMode
+        ? checkUploadFile(file, DIRECT_UPLOAD_MAX_BYTES, TEMPLATE_SUPPORTED_MIME)
+        : checkUploadFile(file);
       if (!check.ok) {
         setError(
           check.reason === "too_large"

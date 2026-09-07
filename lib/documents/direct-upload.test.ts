@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkUploadFile, DIRECT_UPLOAD_MAX_BYTES, uploadToSignedUrl } from "./direct-upload";
+import { checkUploadFile, DIRECT_UPLOAD_MAX_BYTES, TEMPLATE_SUPPORTED_MIME, uploadToSignedUrl } from "./direct-upload";
 
 describe("uploadToSignedUrl", () => {
   it("does not start a PUT when the signal is already aborted", async () => {
@@ -32,6 +32,13 @@ describe("checkUploadFile", () => {
     expect(checkUploadFile({ size: DIRECT_UPLOAD_MAX_BYTES + 1, type: "application/pdf" })).toEqual({
       ok: false,
       reason: "too_large",
+    });
+  });
+  it("rejects gif for templates but accepts it for documents", () => {
+    expect(checkUploadFile({ size: 10, type: "image/gif" })).toEqual({ ok: true });
+    expect(checkUploadFile({ size: 10, type: "image/gif" }, DIRECT_UPLOAD_MAX_BYTES, TEMPLATE_SUPPORTED_MIME)).toEqual({
+      ok: false,
+      reason: "unsupported",
     });
   });
   it("rejects unsupported types and empty files", () => {

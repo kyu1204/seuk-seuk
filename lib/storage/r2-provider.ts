@@ -142,8 +142,13 @@ export class R2StorageProvider implements StorageProvider {
         ContentType: opts?.contentType,
         ContentLength: opts?.contentLength,
       });
+      // Sign the upload headers too, otherwise the presigned URL accepts any body.
+      const signableHeaders = new Set<string>();
+      if (opts?.contentType) signableHeaders.add("content-type");
+      if (opts?.contentLength !== undefined) signableHeaders.add("content-length");
       const url = await getSignedUrl(this.s3, command, {
         expiresIn: opts?.expiresIn ?? 300,
+        ...(signableHeaders.size ? { signableHeaders } : {}),
       });
       return { result: { url, key } };
     } catch (e) {

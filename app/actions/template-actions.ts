@@ -23,6 +23,7 @@ import {
 } from "@/lib/templates/clone";
 import { getCurrentSubscription } from "./subscription-actions";
 import { getStorage } from "@/lib/storage";
+import { sniffFileType } from "@/lib/documents/file-signature";
 
 /**
  * Gate the template feature to Pro / Enterprise plans.
@@ -256,22 +257,19 @@ export async function finalizeTemplateUpload(input: {
       return { error: "지원하지 않는 파일 형식입니다." };
     }
 
-    const finalKey = buildTemplateStoragePath(user.id, ext, baseName.slice(0, 36));
-    const { error: copyError } = await storage.copy("documents", key, finalKey);
-    if (copyError) {
-      console.error("[Template direct upload] copy failed:", copyError);
-      return { error: "Failed to store file" };
+    // Verify the real bytes before accepting the object (see finalizeDocumentUpload).
+    const { data, error: dlError } = await storage.download("documents", key);
+    if (dlError || !data) {
+      await storage.remove("documents", [key]);
+      return { error: "Failed to read uploaded file" };
     }
-    await storage.remove("documents", [key]);
-
+    if (sniffFileType(data) !== ext) {
+      await storage.remove("documents", [key]);
+      return { error: "지원하지 않는 파일 형식입니다." };
+    }
     const isPdf = ext === "pdf";
     let pageCount = 1;
     if (isPdf) {
-      const { data, error: dlError } = await storage.download("documents", finalKey);
-      if (dlError || !data) {
-        await storage.remove("documents", [finalKey]);
-        return { error: "Failed to read uploaded file" };
-      }
       try {
         const { PDFDocument } = await import("pdf-lib");
         const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
@@ -279,10 +277,18 @@ export async function finalizeTemplateUpload(input: {
         if (pageCount < 1 || pageCount > 500) throw new Error("page count out of range");
       } catch (err) {
         console.error("Failed to read PDF page count:", err);
-        await storage.remove("documents", [finalKey]);
+        await storage.remove("documents", [key]);
         return { error: "Failed to process PDF file" };
       }
     }
+
+    const finalKey = buildTemplateStoragePath(user.id, ext, baseName.slice(0, 36));
+    const { error: copyError } = await storage.copy("documents", key, finalKey);
+    if (copyError) {
+      console.error("[Template direct upload] copy failed:", copyError);
+      return { error: "Failed to store file" };
+    }
+    await storage.remove("documents", [key]);
 
     const templateData: DocumentTemplateInsert = {
       user_id: user.id,

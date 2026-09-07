@@ -22,6 +22,7 @@ import {
   getDocumentDownloadName,
 } from "@/lib/documents/download-name";
 import { documentDisplayLabel } from "@/lib/utils";
+import { sniffFileType } from "@/lib/documents/file-signature";
 
 // Allowed upload MIME types mapped to the storage key extension. The extension
 // is derived from the validated MIME type (never from the client-supplied
@@ -45,13 +46,10 @@ const PDF_MAX_PAGES = 500;
 // folder. An R2 lifecycle rule expires anything left under pending/ after a day.
 const PENDING_PREFIX = "pending/";
 
-/** Server-side page count for a stored PDF (never trusts the client). */
-async function countPdfPages(
-  bucket: "documents",
-  key: string
+/** Server-side page count from PDF bytes (never trusts the client). */
+async function countPdfPagesFromBytes(
+  data: Uint8Array
 ): Promise<{ pageCount?: number; error?: string }> {
-  const { data, error } = await getStorage().download(bucket, key);
-  if (error || !data) return { error: "Failed to read uploaded file" };
   try {
     const { PDFDocument } = await import("pdf-lib");
     const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
@@ -177,6 +175,30 @@ export async function finalizeDocumentUpload(input: {
     if (limitError) return { error: limitError };
     if (!canCreate) return { error: reason || "Document creation limit reached" };
 
+    // Read the pending object once: verify the real bytes match the extension
+    // (a renamed HTML file with an image Content-Type must not become a document),
+    // and count PDF pages from the same bytes.
+    const { data: bytes, error: dlError } = await storage.download("documents", key);
+    if (dlError || !bytes) {
+      await storage.remove("documents", [key]);
+      return { error: "Failed to read uploaded file" };
+    }
+    const sniffed = sniffFileType(bytes);
+    if (sniffed !== ext) {
+      await storage.remove("documents", [key]);
+      return { error: "Unsupported file type. Only PDF and image files are allowed." };
+    }
+    const fileType: "pdf" | "image" = ext === "pdf" ? "pdf" : "image";
+    let pageCount = 1;
+    if (fileType === "pdf") {
+      const counted = await countPdfPagesFromBytes(bytes);
+      if (counted.error || !counted.pageCount) {
+        await storage.remove("documents", [key]);
+        return { error: counted.error || "Failed to process PDF file" };
+      }
+      pageCount = counted.pageCount;
+    }
+
     // Move out of pending/ into the user's folder.
     const finalKey = `${user.id}/${baseName}`;
     const { error: copyError } = await storage.copy("documents", key, finalKey);
@@ -185,17 +207,6 @@ export async function finalizeDocumentUpload(input: {
       return { error: "Failed to store file" };
     }
     await storage.remove("documents", [key]);
-
-    const fileType: "pdf" | "image" = ext === "pdf" ? "pdf" : "image";
-    let pageCount = 1;
-    if (fileType === "pdf") {
-      const counted = await countPdfPages("documents", finalKey);
-      if (counted.error || !counted.pageCount) {
-        await storage.remove("documents", [finalKey]);
-        return { error: counted.error || "Failed to process PDF file" };
-      }
-      pageCount = counted.pageCount;
-    }
 
     return await registerDocumentRecord({
       supabase,

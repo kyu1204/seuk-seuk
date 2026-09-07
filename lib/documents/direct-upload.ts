@@ -17,12 +17,20 @@ const SUPPORTED_MIME = new Set([
 ]);
 
 /** Pure pre-flight check so the user gets a clear message before any network call. */
+export const TEMPLATE_SUPPORTED_MIME = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
 export function checkUploadFile(
   file: { size: number; type: string },
-  maxBytes: number = DIRECT_UPLOAD_MAX_BYTES
+  maxBytes: number = DIRECT_UPLOAD_MAX_BYTES,
+  allowed: Set<string> = SUPPORTED_MIME
 ): UploadFileCheck {
   if (!file || file.size <= 0) return { ok: false, reason: "empty" };
-  if (!SUPPORTED_MIME.has(file.type)) return { ok: false, reason: "unsupported" };
+  if (!allowed.has(file.type)) return { ok: false, reason: "unsupported" };
   if (file.size > maxBytes) return { ok: false, reason: "too_large" };
   return { ok: true };
 }
