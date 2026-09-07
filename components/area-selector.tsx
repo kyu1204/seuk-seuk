@@ -64,11 +64,26 @@ export default function AreaSelector({
 
   // Apply initial scroll position when component mounts
   useEffect(() => {
-    if (containerRef.current && !scrollPositionApplied) {
-      containerRef.current.scrollTop = initialScrollPosition.top;
-      containerRef.current.scrollLeft = initialScrollPosition.left;
-      setScrollPositionApplied(true);
-    }
+    if (!containerRef.current || scrollPositionApplied) return;
+    setScrollPositionApplied(true);
+    // 선택용 이미지도 비동기로 로드되므로, 콘텐츠가 커질 때까지(최대 2초) 매 프레임 위치를 다시 맞춘다.
+    const started = performance.now();
+    let settled = 0;
+    let raf = 0;
+    const tick = () => {
+      const el = containerRef.current;
+      if (el) {
+        el.scrollTop = initialScrollPosition.top;
+        el.scrollLeft = initialScrollPosition.left;
+        const reached =
+          Math.abs(el.scrollTop - initialScrollPosition.top) < 2 &&
+          Math.abs(el.scrollLeft - initialScrollPosition.left) < 2;
+        settled = reached ? settled + 1 : 0;
+      }
+      if (settled < 5 && performance.now() - started < 2000) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [initialScrollPosition, scrollPositionApplied]);
 
   const getCoordinates = (clientX: number, clientY: number) => {

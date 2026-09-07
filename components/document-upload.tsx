@@ -344,12 +344,26 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
     setIsSelecting(false);
     setPdfPageImageForSelector(null);
 
-    requestAnimationFrame(() => {
-      if (documentContainerRef.current) {
-        documentContainerRef.current.scrollTop = scrollPosition.top;
-        documentContainerRef.current.scrollLeft = scrollPosition.left;
+    // 뷰어가 다시 마운트되면 이미지/PDF가 비동기로 그려져 한동안 scrollHeight가 작다.
+    // 콘텐츠가 목표 위치만큼 커질 때까지(최대 2초) 매 프레임 내부 스크롤을 다시 맞춘다.
+    // 확대 상태에서 문서를 끌어 내려 둔 위치가 원점으로 튀지 않게 하는 핵심.
+    const started = performance.now();
+    let settled = 0;
+    const tick = () => {
+      const el = documentContainerRef.current;
+      if (el) {
+        el.scrollTop = scrollPosition.top;
+        el.scrollLeft = scrollPosition.left;
+        const reached =
+          Math.abs(el.scrollTop - scrollPosition.top) < 2 &&
+          Math.abs(el.scrollLeft - scrollPosition.left) < 2;
+        settled = reached ? settled + 1 : 0;
       }
-    });
+      if (settled < 5 && performance.now() - started < 2000) {
+        requestAnimationFrame(tick);
+      }
+    };
+    requestAnimationFrame(tick);
     restoreWindowScroll();
   };
 
