@@ -863,8 +863,8 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
       ) : (
         <div className="space-y-4">
           {/* Top bar: back + filename/meta + save actions (R31) */}
-          <div className="flex items-center justify-between gap-4 mb-5">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
                 type="button"
                 variant="ghost"
@@ -876,7 +876,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div className="min-w-0">
-                <p className="text-xl font-bold truncate">
+                <p className="text-lg sm:text-xl font-bold truncate">
                   {images[currentIndex]?.fileName}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -887,7 +887,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:shrink-0">
               <Button
                 variant="outline"
                 onClick={() => handleSaveDocument(false)}
@@ -1033,7 +1033,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
             {/* Right: canvas toolbar + viewer */}
             <div className="order-1 lg:order-2 space-y-2">
               {/* 모바일: 문서 바로 위에 붙는 칸 추가 바. 스크롤 없이 누르고 바로 그린다. */}
-              <div className="lg:hidden sticky top-16 z-20 -mx-4 px-4 py-2 bg-background/95 backdrop-blur border-b">
+              <div className="lg:hidden sticky top-16 z-20 py-2 bg-background/95 backdrop-blur border-b">
                 {isSelecting ? (
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium">
@@ -1064,31 +1064,31 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                 )}
               </div>
               {/* PDF Page Navigation + Zoom Toolbar */}
-              <div className="flex items-center justify-between gap-3 py-2 px-3 bg-muted rounded-lg">
+              <div className="flex items-center justify-between gap-2 py-2 px-2 sm:px-3 bg-muted rounded-lg">
                 {images[currentIndex]?.isPdf && images[currentIndex]?.pdfTotalPages ? (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
                       aria-label={t("pdf_prev_page")}
                       onClick={() => setCurrentPdfPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPdfPage <= 1 || isSelecting}
                     >
-                      {t("pdf_prev_page")}
+                      <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm font-medium tabular-nums">
-                      {t("pdf_current_page")
-                        .replace("{current}", String(currentPdfPage))
-                        .replace("{total}", String(images[currentIndex].pdfTotalPages))}
+                    <span className="text-sm font-medium tabular-nums whitespace-nowrap px-1">
+                      {currentPdfPage} / {images[currentIndex].pdfTotalPages}
                     </span>
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
                       aria-label={t("pdf_next_page")}
                       onClick={() => setCurrentPdfPage(prev => Math.min(images[currentIndex].pdfTotalPages || 1, prev + 1))}
                       disabled={currentPdfPage >= (images[currentIndex].pdfTotalPages || 1) || isSelecting}
                     >
-                      {t("pdf_next_page")}
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 ) : <div />}
