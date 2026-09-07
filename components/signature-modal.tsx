@@ -31,6 +31,8 @@ interface SignatureModalProps {
   existingSignature?: string;
 }
 
+const SIGNATURE_INK = "#14213D";
+
 export default function SignatureModal({
   isOpen,
   onClose,
@@ -54,8 +56,9 @@ export default function SignatureModal({
   const getCanvasHeight = () => (window.innerWidth < 640 ? 200 : 220);
 
   const applyInkStyle = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-    const foreground = getComputedStyle(canvas).getPropertyValue("--foreground");
-    ctx.strokeStyle = `hsl(${foreground})`;
+    // 서명 잉크는 테마와 무관하게 항상 진한 잉크색으로 굽는다.
+    // 테마 foreground 를 쓰면 다크 모드 기기에서 흰 서명이 저장되어 문서 위에서 보이지 않는다.
+    ctx.strokeStyle = SIGNATURE_INK;
     ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -296,7 +299,7 @@ export default function SignatureModal({
           <div ref={containerRef} className="relative border rounded-md p-1 my-4">
             <canvas
               ref={canvasRef}
-              className="block w-full cursor-crosshair touch-none"
+              className="block w-full cursor-crosshair touch-none bg-white"
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
