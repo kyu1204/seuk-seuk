@@ -16,7 +16,9 @@ describe("document-actions.ts source", () => {
     expect(source).toContain("export async function finalizeDocumentUpload(");
     expect(source).toContain("createSignedUploadUrl(");
     // finalize must refuse keys outside the caller's own folder
-    expect(source).toContain("key.startsWith(`${user.id}/`)");
+    expect(source).toContain("key.startsWith(pendingFolder)");
+    expect(source).toContain("storage.head(");
+    expect(source).toContain("countPdfPages(");
   });
 
   it("exports getDocumentSignatureCounts for the publish document list", () => {

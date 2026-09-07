@@ -197,11 +197,11 @@ export async function createTemplateUploadUrl(input: {
     } = await supabase.auth.getUser();
     if (authError || !user) return { error: "User not authenticated" };
 
-    const key = buildTemplateStoragePath(user.id, ext, randomUUID());
+    const key = `pending/${buildTemplateStoragePath(user.id, ext, randomUUID())}`;
     const { result, error: urlError } = await getStorage().createSignedUploadUrl(
       "documents",
       key,
-      { expiresIn: 600 }
+      { expiresIn: 600, contentType, contentLength: size }
     );
     if (urlError || !result) {
       console.error("[Template direct upload] presign failed:", urlError);
@@ -218,19 +218,11 @@ export async function createTemplateUploadUrl(input: {
 export async function finalizeTemplateUpload(input: {
   key: string;
   name: string;
-  contentType: string;
-  pageCount?: number;
 }): Promise<{ success?: boolean; templateId?: string; error?: string }> {
   try {
     const key = typeof input?.key === "string" ? input.key : "";
     const name = typeof input?.name === "string" ? input.name.trim() : "";
-    const contentType = typeof input?.contentType === "string" ? input.contentType : "";
-    const pageCount =
-      Number.isInteger(input?.pageCount) && (input!.pageCount as number) >= 1
-        ? (input!.pageCount as number)
-        : 1;
     if (!key || !name) return { error: "File and name are required" };
-    if (!TEMPLATE_ALLOWED_MIME[contentType]) return { error: "지원하지 않는 파일 형식입니다." };
 
     const { canUse, error: gateError } = await canUseTemplate();
     if (!canUse) return { error: gateError || "Template feature not available" };
@@ -242,18 +234,61 @@ export async function finalizeTemplateUpload(input: {
     } = await supabase.auth.getUser();
     if (authError || !user) return { error: "User not authenticated" };
 
-    if (!key.startsWith(`${user.id}/`) || key.includes("..")) {
+    // pending/<uid>/templates/<uuid>.<ext> only; extension decides the file type.
+    const pendingFolder = `pending/${user.id}/templates/`;
+    const baseName = key.slice(pendingFolder.length);
+    if (!key.startsWith(pendingFolder) || !/^[0-9a-f-]{36}\.(pdf|png|jpg|webp)$/i.test(baseName)) {
       return { error: "Invalid storage key" };
     }
+    const ext = baseName.split(".").pop()!.toLowerCase();
+    const expectedMime = Object.entries(TEMPLATE_ALLOWED_MIME).find(([, e]) => e === ext)?.[0];
+    if (!expectedMime) return { error: "지원하지 않는 파일 형식입니다." };
+
     const storage = getStorage();
-    const { keys } = await storage.list("documents", key);
-    if (!keys.includes(key)) return { error: "Uploaded file not found" };
+    const meta = await storage.head("documents", key);
+    if (meta.error || meta.size === null) return { error: "Uploaded file not found" };
+    if (meta.size <= 0 || meta.size > TEMPLATE_DIRECT_UPLOAD_MAX_BYTES) {
+      await storage.remove("documents", [key]);
+      return { error: "FILE_TOO_LARGE" };
+    }
+    if (meta.contentType && meta.contentType.split(";")[0].trim() !== expectedMime) {
+      await storage.remove("documents", [key]);
+      return { error: "지원하지 않는 파일 형식입니다." };
+    }
+
+    const finalKey = buildTemplateStoragePath(user.id, ext, baseName.slice(0, 36));
+    const { error: copyError } = await storage.copy("documents", key, finalKey);
+    if (copyError) {
+      console.error("[Template direct upload] copy failed:", copyError);
+      return { error: "Failed to store file" };
+    }
+    await storage.remove("documents", [key]);
+
+    const isPdf = ext === "pdf";
+    let pageCount = 1;
+    if (isPdf) {
+      const { data, error: dlError } = await storage.download("documents", finalKey);
+      if (dlError || !data) {
+        await storage.remove("documents", [finalKey]);
+        return { error: "Failed to read uploaded file" };
+      }
+      try {
+        const { PDFDocument } = await import("pdf-lib");
+        const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+        pageCount = pdfDoc.getPageCount();
+        if (pageCount < 1 || pageCount > 500) throw new Error("page count out of range");
+      } catch (err) {
+        console.error("Failed to read PDF page count:", err);
+        await storage.remove("documents", [finalKey]);
+        return { error: "Failed to process PDF file" };
+      }
+    }
 
     const templateData: DocumentTemplateInsert = {
       user_id: user.id,
       name,
-      file_url: key,
-      file_type: contentType === "application/pdf" ? "pdf" : "image",
+      file_url: finalKey,
+      file_type: isPdf ? "pdf" : "image",
       page_count: pageCount,
     };
     const { data: template, error: dbError } = await supabase
@@ -263,7 +298,7 @@ export async function finalizeTemplateUpload(input: {
       .single();
     if (dbError || !template) {
       console.error("Template DB error:", dbError);
-      await storage.remove("documents", [key]);
+      await storage.remove("documents", [finalKey]);
       return { error: "Failed to create template record" };
     }
 

@@ -33,6 +33,10 @@ export function uploadToSignedUrl(
   opts: { contentType: string; onProgress?: (percent: number) => void; signal?: AbortSignal }
 ): Promise<void> {
   return new Promise((resolve, reject) => {
+    if (opts.signal?.aborted) {
+      reject(new Error("Upload aborted"));
+      return;
+    }
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url, true);
     xhr.setRequestHeader("Content-Type", opts.contentType);

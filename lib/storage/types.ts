@@ -45,8 +45,14 @@ export interface StorageProvider {
   createSignedUploadUrl(
     bucket: StorageBucket,
     key: string,
-    opts?: { expiresIn?: number }
+    opts?: { expiresIn?: number; contentType?: string; contentLength?: number }
   ): Promise<{ result: SignedUploadResult | null; error?: string }>;
+
+  /** Object metadata without downloading the body (size in bytes, MIME). */
+  head(
+    bucket: StorageBucket,
+    key: string
+  ): Promise<{ size: number | null; contentType?: string; error?: string }>;
 
   remove(bucket: StorageBucket, keys: string[]): Promise<{ error?: string }>;
 

@@ -177,6 +177,21 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
     e.target.value = "";
 
     setError(null);
+
+    // 크기·형식은 읽기 전에 거른다. 50MB 넘는 PDF를 Data URL로 읽으면 브라우저가 버거워진다.
+    for (const file of fileArray) {
+      const check = checkUploadFile(file);
+      if (!check.ok) {
+        setError(
+          check.reason === "too_large"
+            ? t("upload.error.tooLarge")
+            : check.reason === "unsupported"
+              ? t("upload.error.unsupported")
+              : t("upload.error.uploadFailed")
+        );
+        return;
+      }
+    }
     const newImages: UploadFileData[] = [];
     let loaded = 0;
 
@@ -607,8 +622,6 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           const templateResult = await finalizeTemplateUpload({
             key: put.key,
             name: templateName,
-            contentType: img.file.type,
-            pageCount: img.pdfTotalPages ?? 1,
           });
 
           if (templateResult.error) {
@@ -658,8 +671,6 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           key: put.key,
           filename: img.fileName,
           alias: imgAlias && imgAlias.trim() ? imgAlias.trim() : null,
-          contentType: img.file.type,
-          pageCount: img.pdfTotalPages ?? 1,
         });
 
         if ("error" in uploadResult && uploadResult.error) {

@@ -1,5 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { checkUploadFile, DIRECT_UPLOAD_MAX_BYTES } from "./direct-upload";
+import { checkUploadFile, DIRECT_UPLOAD_MAX_BYTES, uploadToSignedUrl } from "./direct-upload";
+
+describe("uploadToSignedUrl", () => {
+  it("does not start a PUT when the signal is already aborted", async () => {
+    const opened: string[] = [];
+    class FakeXhr {
+      upload = {};
+      open(m: string) { opened.push(m); }
+      setRequestHeader() {}
+      send() { opened.push("send"); }
+      abort() {}
+    }
+    (globalThis as any).XMLHttpRequest = FakeXhr;
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      uploadToSignedUrl("https://example.invalid/put", new Blob(["x"]), {
+        contentType: "text/plain",
+        signal: controller.signal,
+      })
+    ).rejects.toThrow("Upload aborted");
+    expect(opened).toEqual([]);
+  });
+});
 
 describe("checkUploadFile", () => {
   it("accepts a 7MB PDF (over the old 4.5MB Vercel body limit)", () => {
