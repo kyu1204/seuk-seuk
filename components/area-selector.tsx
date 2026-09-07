@@ -52,7 +52,7 @@ export default function AreaSelector({
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [originalOverflow, setOriginalOverflow] = useState<string>("");
-  const [scrollPositionApplied, setScrollPositionApplied] = useState(false);
+  const scrollAppliedRef = useRef(false);
   // 부모로부터 전달받은 zoomLevel을 사용하거나, 없으면 기본값 1 사용
   const zoomLevel = propZoomLevel ?? 1;
   // Two-finger panning state
@@ -64,12 +64,29 @@ export default function AreaSelector({
 
   // Apply initial scroll position when component mounts
   useEffect(() => {
-    if (containerRef.current && !scrollPositionApplied) {
-      containerRef.current.scrollTop = initialScrollPosition.top;
-      containerRef.current.scrollLeft = initialScrollPosition.left;
-      setScrollPositionApplied(true);
-    }
-  }, [initialScrollPosition, scrollPositionApplied]);
+    if (!containerRef.current || scrollAppliedRef.current) return;
+    // ref 로 1회 실행을 보장한다. state 로 하면 갱신 시 cleanup 이 첫 RAF 를 취소해 복원이 건너뛰어진다.
+    scrollAppliedRef.current = true;
+    // 선택용 이미지도 비동기로 로드되므로, 콘텐츠가 커질 때까지(최대 2초) 매 프레임 위치를 다시 맞춘다.
+    const started = performance.now();
+    let settled = 0;
+    let raf = 0;
+    const tick = () => {
+      const el = containerRef.current;
+      if (el) {
+        el.scrollTop = initialScrollPosition.top;
+        el.scrollLeft = initialScrollPosition.left;
+        const reached =
+          Math.abs(el.scrollTop - initialScrollPosition.top) < 2 &&
+          Math.abs(el.scrollLeft - initialScrollPosition.left) < 2;
+        settled = reached ? settled + 1 : 0;
+      }
+      if (settled < 5 && performance.now() - started < 2000) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getCoordinates = (clientX: number, clientY: number) => {
     if (!containerRef.current) return { x: 0, y: 0 };

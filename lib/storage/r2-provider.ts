@@ -131,19 +131,42 @@ export class R2StorageProvider implements StorageProvider {
   async createSignedUploadUrl(
     bucket: StorageBucket,
     key: string,
-    opts?: { expiresIn?: number }
+    opts?: { expiresIn?: number; contentType?: string; contentLength?: number }
   ): Promise<{ result: SignedUploadResult | null; error?: string }> {
     try {
+      // ContentType/ContentLength become signed headers: the PUT is rejected
+      // unless the browser sends exactly what the server approved.
       const command = new PutObjectCommand({
         Bucket: this.physicalBucket(bucket),
         Key: key,
+        ContentType: opts?.contentType,
+        ContentLength: opts?.contentLength,
       });
+      // Sign the upload headers too, otherwise the presigned URL accepts any body.
+      const signableHeaders = new Set<string>();
+      if (opts?.contentType) signableHeaders.add("content-type");
+      if (opts?.contentLength !== undefined) signableHeaders.add("content-length");
       const url = await getSignedUrl(this.s3, command, {
         expiresIn: opts?.expiresIn ?? 300,
+        ...(signableHeaders.size ? { signableHeaders } : {}),
       });
       return { result: { url, key } };
     } catch (e) {
       return { result: null, error: e instanceof Error ? e.message : "Failed to sign upload" };
+    }
+  }
+
+  async head(
+    bucket: StorageBucket,
+    key: string
+  ): Promise<{ size: number | null; contentType?: string; error?: string }> {
+    try {
+      const res = await this.s3.send(
+        new HeadObjectCommand({ Bucket: this.physicalBucket(bucket), Key: key })
+      );
+      return { size: res.ContentLength ?? null, contentType: res.ContentType };
+    } catch (e) {
+      return { size: null, error: e instanceof Error ? e.message : "Head failed" };
     }
   }
 

@@ -59,6 +59,17 @@ describe("document-upload.tsx source", () => {
   it("shows no-areas confirmation instead of blocking save when totally empty", () => {
     expect(source).toContain("showNoAreasModal");
   });
+  it("uploads directly to storage instead of posting the file through a server action", () => {
+    expect(source).toContain("createDocumentUploadUrl(");
+    expect(source).toContain("finalizeDocumentUpload(");
+    expect(source).toContain("uploadToSignedUrl(");
+    expect(source).not.toContain("formData.append(\"file\"");
+  });
+  it("keeps the mobile add-area bar sticky above the viewer and restores page scroll", () => {
+    expect(source).toContain("lg:hidden sticky top-16");
+    expect(source).toContain("restoreWindowScroll");
+    expect(source).toContain("viewerMinHeight");
+  });
   it("routes to publish page after save-and-publish", () => {
     expect(source).toContain("publish?doc=");
   });

@@ -1033,8 +1033,10 @@ export default function SignSingleDocument({
                     ) : (
                       <>
                       <span
-                        className={`sign-area-tag absolute -top-6 left-[-2px] inline-flex h-5 items-center gap-1 rounded-t-md rounded-br-md px-1.5 text-[11px] font-semibold whitespace-nowrap ${
-                          signature.area_index === focusedAreaIndex ? "sign-area-tag-focus" : ""
+                        className={`sign-area-tag absolute -top-6 left-[-2px] h-5 items-center gap-1 rounded-t-md rounded-br-md px-1.5 text-[11px] font-semibold whitespace-nowrap ${
+                          signature.area_index === focusedAreaIndex
+                            ? "sign-area-tag-focus inline-flex"
+                            : "hidden sm:inline-flex"
                         }`}
                         aria-hidden
                       >

@@ -22,6 +22,269 @@ import {
   getDocumentDownloadName,
 } from "@/lib/documents/download-name";
 import { documentDisplayLabel } from "@/lib/utils";
+import { sniffFileType } from "@/lib/documents/file-signature";
+
+// Allowed upload MIME types mapped to the storage key extension. The extension
+// is derived from the validated MIME type (never from the client-supplied
+// file name, which could smuggle path separators into the storage key).
+const ALLOWED_FILE_TYPES: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+// Matches serverActions.bodySizeLimit (10mb) in next.config.mjs
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// Direct-to-storage uploads bypass the Vercel 4.5MB function body limit, so the
+// cap here is a sanity bound on what we are willing to keep per document.
+const DIRECT_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
+const PDF_MAX_PAGES = 500;
+// Browser uploads land under this prefix; finalize moves them to the user's
+// folder. An R2 lifecycle rule expires anything left under pending/ after a day.
+const PENDING_PREFIX = "pending/";
+
+/** Server-side page count from PDF bytes (never trusts the client). */
+async function countPdfPagesFromBytes(
+  data: Uint8Array
+): Promise<{ pageCount?: number; error?: string }> {
+  try {
+    const { PDFDocument } = await import("pdf-lib");
+    const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+    const pageCount = pdfDoc.getPageCount();
+    if (pageCount < 1) return { error: "Failed to process PDF file" };
+    if (pageCount > PDF_MAX_PAGES) return { error: `PDF has too many pages (max ${PDF_MAX_PAGES})` };
+    return { pageCount };
+  } catch (err) {
+    console.error("Failed to read PDF page count:", err);
+    return { error: "Failed to process PDF file" };
+  }
+}
+
+/**
+ * Step 1 of the direct upload flow: hand the browser a short-lived presigned
+ * PUT URL so the file goes straight to storage instead of through a server
+ * action (Vercel rejects function request bodies over 4.5MB with 413).
+ */
+export async function createDocumentUploadUrl(input: {
+  filename: string;
+  contentType: string;
+  size: number;
+}): Promise<{ uploadUrl?: string; key?: string; error?: string }> {
+  try {
+    const contentType = typeof input?.contentType === "string" ? input.contentType : "";
+    const size = typeof input?.size === "number" ? input.size : NaN;
+    const storageExtension = ALLOWED_FILE_TYPES[contentType];
+    if (!storageExtension) {
+      return { error: "Unsupported file type. Only PDF and image files are allowed." };
+    }
+    if (!Number.isFinite(size) || size <= 0) {
+      return { error: "Invalid file size" };
+    }
+    if (size > DIRECT_UPLOAD_MAX_BYTES) {
+      return { error: "FILE_TOO_LARGE" };
+    }
+
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { error: "User not authenticated" };
+    }
+
+    if (contentType === "application/pdf") {
+      const { canUploadPdf } = await import("@/app/actions/subscription-actions");
+      const pdfPermission = await canUploadPdf();
+      if (!pdfPermission.canUpload) {
+        return { error: pdfPermission.error || "PDF upload not allowed for your plan" };
+      }
+    }
+
+    const { canCreate, reason, error: limitError } = await canCreateDocument();
+    if (limitError) return { error: limitError };
+    if (!canCreate) return { error: reason || "Document creation limit reached" };
+
+    const key = `${PENDING_PREFIX}${user.id}/${randomUUID()}.${storageExtension}`;
+    const { result, error: urlError } = await getStorage().createSignedUploadUrl(
+      "documents",
+      key,
+      { expiresIn: 600, contentType, contentLength: size }
+    );
+    if (urlError || !result) {
+      console.error("[Direct upload] presign failed:", urlError);
+      return { error: "Failed to create upload URL" };
+    }
+    return { uploadUrl: result.url, key };
+  } catch (error) {
+    console.error("[Direct upload] createDocumentUploadUrl error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Step 2 of the direct upload flow: the browser has PUT the file to `key`;
+ * verify the object exists under the caller's prefix and create the document
+ * record (same limits/credits path as uploadDocument).
+ */
+export async function finalizeDocumentUpload(input: {
+  key: string;
+  filename: string;
+  alias?: string | null;
+}) {
+  try {
+    const key = typeof input?.key === "string" ? input.key : "";
+    const filename = typeof input?.filename === "string" ? input.filename.trim() : "";
+    const alias = typeof input?.alias === "string" ? input.alias : null;
+    if (!key || !filename) return { error: "File and filename are required" };
+
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "User not authenticated" };
+
+    // pending/<uid>/<uuid>.<ext> — the caller's own pending folder, plain file name only.
+    const pendingFolder = `${PENDING_PREFIX}${user.id}/`;
+    const baseName = key.slice(pendingFolder.length);
+    if (!key.startsWith(pendingFolder) || !/^[0-9a-f-]{36}\.(pdf|jpg|png|webp|gif)$/i.test(baseName)) {
+      return { error: "Invalid storage key" };
+    }
+    const ext = baseName.split(".").pop()!.toLowerCase();
+    const expectedMime = Object.entries(ALLOWED_FILE_TYPES).find(([, e]) => e === ext)?.[0];
+    if (!expectedMime) return { error: "Unsupported file type. Only PDF and image files are allowed." };
+
+    // Verify what actually landed in storage (size and MIME), not what the client claims.
+    const storage = getStorage();
+    const meta = await storage.head("documents", key);
+    if (meta.error || meta.size === null) return { error: "Uploaded file not found" };
+    if (meta.size <= 0 || meta.size > DIRECT_UPLOAD_MAX_BYTES) {
+      await storage.remove("documents", [key]);
+      return { error: "FILE_TOO_LARGE" };
+    }
+    if (meta.contentType && meta.contentType.split(";")[0].trim() !== expectedMime) {
+      await storage.remove("documents", [key]);
+      return { error: "Unsupported file type. Only PDF and image files are allowed." };
+    }
+
+    const { canCreate, usingCredit, reason, error: limitError } = await canCreateDocument();
+    if (limitError) return { error: limitError };
+    if (!canCreate) return { error: reason || "Document creation limit reached" };
+
+    // Read the pending object once: verify the real bytes match the extension
+    // (a renamed HTML file with an image Content-Type must not become a document),
+    // and count PDF pages from the same bytes.
+    const { data: bytes, error: dlError } = await storage.download("documents", key);
+    if (dlError || !bytes) {
+      await storage.remove("documents", [key]);
+      return { error: "Failed to read uploaded file" };
+    }
+    const sniffed = sniffFileType(bytes);
+    if (sniffed !== ext) {
+      await storage.remove("documents", [key]);
+      return { error: "Unsupported file type. Only PDF and image files are allowed." };
+    }
+    const fileType: "pdf" | "image" = ext === "pdf" ? "pdf" : "image";
+    let pageCount = 1;
+    if (fileType === "pdf") {
+      const counted = await countPdfPagesFromBytes(bytes);
+      if (counted.error || !counted.pageCount) {
+        await storage.remove("documents", [key]);
+        return { error: counted.error || "Failed to process PDF file" };
+      }
+      pageCount = counted.pageCount;
+    }
+
+    // Persist exactly the bytes we validated. A copy would re-read the pending key,
+    // which the still-valid presigned URL could have been used to overwrite meanwhile.
+    const finalKey = `${user.id}/${baseName}`;
+    const { error: putError } = await storage.upload("documents", finalKey, bytes, {
+      contentType: expectedMime,
+    });
+    if (putError) {
+      console.error("[Direct upload] store failed:", putError);
+      return { error: "Failed to store file" };
+    }
+    await storage.remove("documents", [key]);
+
+    return await registerDocumentRecord({
+      supabase,
+      userId: user.id,
+      filePath: finalKey,
+      filename,
+      alias,
+      fileType,
+      pageCount,
+      usingCredit: !!usingCredit,
+    });
+  } catch (error) {
+    console.error("[Direct upload] finalizeDocumentUpload error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/** Shared tail of both upload flows: insert the row, bump usage, deduct credit. */
+async function registerDocumentRecord(args: {
+  supabase: Awaited<ReturnType<typeof createServerSupabase>>;
+  userId: string;
+  filePath: string;
+  filename: string;
+  alias: string | null;
+  fileType: "pdf" | "image";
+  pageCount: number;
+  usingCredit: boolean;
+}) {
+  const { supabase, userId, filePath, filename, alias, fileType, pageCount, usingCredit } = args;
+
+  const documentData: DocumentInsert = {
+    filename,
+    alias: alias && alias.trim() ? alias.trim() : null,
+    file_url: filePath,
+    status: "draft",
+    user_id: userId,
+    file_type: fileType,
+    page_count: pageCount,
+    created_month: new Date().toISOString().slice(0, 7),
+  };
+
+  const { data: document, error: dbError } = await supabase
+    .from("documents")
+    .insert(documentData)
+    .select()
+    .single();
+
+  if (dbError) {
+    console.error("Database error:", dbError);
+    await getStorage().remove("documents", [filePath]);
+    return { error: "Failed to create document record" };
+  }
+
+  const { success: usageUpdated, error: usageError } = await incrementDocumentCreated();
+  if (!usageUpdated || usageError) {
+    // 사용량 집계가 안 되면 한도가 무력화되므로 문서를 남기지 않는다.
+    console.error("Failed to update usage:", usageError);
+    await supabase.from("documents").delete().eq("id", document.id);
+    await getStorage().remove("documents", [filePath]);
+    return { error: "Failed to record usage" };
+  }
+
+  if (usingCredit) {
+    const { success, error: creditError } = await deductCredit("create", document.id);
+    if (!success || creditError) {
+      console.error("Failed to deduct credit:", creditError);
+      await decrementDocumentCreated();
+      await supabase.from("documents").delete().eq("id", document.id);
+      await getStorage().remove("documents", [filePath]);
+      return { error: "크레딧 차감 실패" };
+    }
+  }
+
+  return { success: true, document };
+}
 
 /**
  * Upload a file to Supabase Storage and create a document record
@@ -35,6 +298,15 @@ export async function uploadDocument(formData: FormData) {
 
     if (!file || !filename) {
       return { error: "File and filename are required" };
+    }
+
+    const storageExtension = ALLOWED_FILE_TYPES[file.type];
+    if (!storageExtension) {
+      return { error: "Unsupported file type. Only PDF and image files are allowed." };
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return { error: "File too large. Maximum size is 10MB." };
     }
 
     // Detect file type
@@ -80,8 +352,7 @@ export async function uploadDocument(formData: FormData) {
     }
 
     // Generate unique filename using UUID
-    const fileExtension = file.name.split(".").pop() || "";
-    const uniqueFilename = `${randomUUID()}.${fileExtension}`;
+    const uniqueFilename = `${randomUUID()}.${storageExtension}`;
     const filePath = `${user.id}/${uniqueFilename}`;
 
     // Upload file to storage with user_id folder structure
@@ -97,58 +368,16 @@ export async function uploadDocument(formData: FormData) {
       return { error: "Failed to upload file" };
     }
 
-    // Store the file path (not public URL since bucket is now private)
-    const fileUrl = filePath;
-
-    // Create document record with user_id
-    const documentData: DocumentInsert = {
+    return await registerDocumentRecord({
+      supabase,
+      userId: user.id,
+      filePath,
       filename,
-      alias: alias && alias.trim() ? alias.trim() : null,
-      file_url: fileUrl,
-      status: "draft",
-      user_id: user.id,
-      file_type: fileType,
-      page_count: pageCount,
-      created_month: new Date().toISOString().slice(0, 7),
-    };
-
-    const { data: document, error: dbError } = await supabase
-      .from("documents")
-      .insert(documentData)
-      .select()
-      .single();
-
-    if (dbError) {
-      console.error("Database error:", dbError);
-      return { error: "Failed to create document record" };
-    }
-
-    // Increment monthly usage count (regardless of credit usage)
-    // This tracks total documents created this month for analytics
-    const { success: usageUpdated, error: usageError } = await incrementDocumentCreated();
-    if (!usageUpdated || usageError) {
-      console.error("Failed to update usage:", usageError);
-      // Don't fail the entire operation, just log the error
-    }
-
-    // Handle credit deduction if using credit
-    if (usingCredit) {
-      const { success, error: creditError } = await deductCredit("create", document.id);
-      if (!success || creditError) {
-        console.error("Failed to deduct credit:", creditError);
-
-        // Rollback monthly count increment
-        await decrementDocumentCreated();
-
-        // Rollback: delete document and storage file
-        await supabase.from("documents").delete().eq("id", document.id);
-        await getStorage().remove("documents", [filePath]);
-
-        return { error: "크레딧 차감 실패" };
-      }
-    }
-
-    return { success: true, document };
+      alias,
+      fileType,
+      pageCount,
+      usingCredit: !!usingCredit,
+    });
   } catch (error) {
     console.error("Upload document error:", error);
     return { error: "An unexpected error occurred" };

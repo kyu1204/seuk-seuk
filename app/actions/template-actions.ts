@@ -23,6 +23,7 @@ import {
 } from "@/lib/templates/clone";
 import { getCurrentSubscription } from "./subscription-actions";
 import { getStorage } from "@/lib/storage";
+import { sniffFileType } from "@/lib/documents/file-signature";
 
 /**
  * Gate the template feature to Pro / Enterprise plans.
@@ -159,6 +160,161 @@ export async function createTemplate(formData: FormData): Promise<{
     return { success: true, templateId: template.id };
   } catch (error) {
     console.error("Create template error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+const TEMPLATE_DIRECT_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
+const TEMPLATE_ALLOWED_MIME: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+
+/**
+ * Direct upload, step 1: presigned PUT URL for a template source file.
+ * Bypasses the Vercel 4.5MB function body limit (see createDocumentUploadUrl).
+ */
+export async function createTemplateUploadUrl(input: {
+  contentType: string;
+  size: number;
+}): Promise<{ uploadUrl?: string; key?: string; error?: string }> {
+  try {
+    const contentType = typeof input?.contentType === "string" ? input.contentType : "";
+    const size = typeof input?.size === "number" ? input.size : NaN;
+    const ext = TEMPLATE_ALLOWED_MIME[contentType];
+    if (!ext) return { error: "지원하지 않는 파일 형식입니다." };
+    if (!Number.isFinite(size) || size <= 0) return { error: "Invalid file size" };
+    if (size > TEMPLATE_DIRECT_UPLOAD_MAX_BYTES) return { error: "FILE_TOO_LARGE" };
+
+    const { canUse, error: gateError } = await canUseTemplate();
+    if (!canUse) return { error: gateError || "Template feature not available" };
+
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "User not authenticated" };
+
+    const key = `pending/${buildTemplateStoragePath(user.id, ext, randomUUID())}`;
+    const { result, error: urlError } = await getStorage().createSignedUploadUrl(
+      "documents",
+      key,
+      { expiresIn: 600, contentType, contentLength: size }
+    );
+    if (urlError || !result) {
+      console.error("[Template direct upload] presign failed:", urlError);
+      return { error: "Failed to create upload URL" };
+    }
+    return { uploadUrl: result.url, key };
+  } catch (error) {
+    console.error("[Template direct upload] createTemplateUploadUrl error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/** Direct upload, step 2: register the template row for an already uploaded key. */
+export async function finalizeTemplateUpload(input: {
+  key: string;
+  name: string;
+}): Promise<{ success?: boolean; templateId?: string; error?: string }> {
+  try {
+    const key = typeof input?.key === "string" ? input.key : "";
+    const name = typeof input?.name === "string" ? input.name.trim() : "";
+    if (!key || !name) return { error: "File and name are required" };
+
+    const { canUse, error: gateError } = await canUseTemplate();
+    if (!canUse) return { error: gateError || "Template feature not available" };
+
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "User not authenticated" };
+
+    // pending/<uid>/templates/<uuid>.<ext> only; extension decides the file type.
+    const pendingFolder = `pending/${user.id}/templates/`;
+    const baseName = key.slice(pendingFolder.length);
+    if (!key.startsWith(pendingFolder) || !/^[0-9a-f-]{36}\.(pdf|png|jpg|webp)$/i.test(baseName)) {
+      return { error: "Invalid storage key" };
+    }
+    const ext = baseName.split(".").pop()!.toLowerCase();
+    const expectedMime = Object.entries(TEMPLATE_ALLOWED_MIME).find(([, e]) => e === ext)?.[0];
+    if (!expectedMime) return { error: "지원하지 않는 파일 형식입니다." };
+
+    const storage = getStorage();
+    const meta = await storage.head("documents", key);
+    if (meta.error || meta.size === null) return { error: "Uploaded file not found" };
+    if (meta.size <= 0 || meta.size > TEMPLATE_DIRECT_UPLOAD_MAX_BYTES) {
+      await storage.remove("documents", [key]);
+      return { error: "FILE_TOO_LARGE" };
+    }
+    if (meta.contentType && meta.contentType.split(";")[0].trim() !== expectedMime) {
+      await storage.remove("documents", [key]);
+      return { error: "지원하지 않는 파일 형식입니다." };
+    }
+
+    // Verify the real bytes before accepting the object (see finalizeDocumentUpload).
+    const { data, error: dlError } = await storage.download("documents", key);
+    if (dlError || !data) {
+      await storage.remove("documents", [key]);
+      return { error: "Failed to read uploaded file" };
+    }
+    if (sniffFileType(data) !== ext) {
+      await storage.remove("documents", [key]);
+      return { error: "지원하지 않는 파일 형식입니다." };
+    }
+    const isPdf = ext === "pdf";
+    let pageCount = 1;
+    if (isPdf) {
+      try {
+        const { PDFDocument } = await import("pdf-lib");
+        const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+        pageCount = pdfDoc.getPageCount();
+        if (pageCount < 1 || pageCount > 500) throw new Error("page count out of range");
+      } catch (err) {
+        console.error("Failed to read PDF page count:", err);
+        await storage.remove("documents", [key]);
+        return { error: "Failed to process PDF file" };
+      }
+    }
+
+    // Persist the validated bytes themselves (see finalizeDocumentUpload).
+    const finalKey = buildTemplateStoragePath(user.id, ext, baseName.slice(0, 36));
+    const { error: putError } = await storage.upload("documents", finalKey, data, {
+      contentType: expectedMime,
+    });
+    if (putError) {
+      console.error("[Template direct upload] store failed:", putError);
+      return { error: "Failed to store file" };
+    }
+    await storage.remove("documents", [key]);
+
+    const templateData: DocumentTemplateInsert = {
+      user_id: user.id,
+      name,
+      file_url: finalKey,
+      file_type: isPdf ? "pdf" : "image",
+      page_count: pageCount,
+    };
+    const { data: template, error: dbError } = await supabase
+      .from("document_templates")
+      .insert(templateData)
+      .select()
+      .single();
+    if (dbError || !template) {
+      console.error("Template DB error:", dbError);
+      await storage.remove("documents", [finalKey]);
+      return { error: "Failed to create template record" };
+    }
+
+    revalidatePath("/dashboard");
+    return { success: true, templateId: template.id };
+  } catch (error) {
+    console.error("[Template direct upload] finalizeTemplateUpload error:", error);
     return { error: "An unexpected error occurred" };
   }
 }
