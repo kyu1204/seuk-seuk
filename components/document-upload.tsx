@@ -283,12 +283,17 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
 
   const restoreWindowScroll = () => {
     const top = windowScrollRef.current;
-    // 뷰어가 교체되어 문서 높이가 바뀐 뒤(두 프레임 뒤) 원래 위치로 되돌린다.
+    // 뷰어가 교체되고 이미지/PDF가 다시 그려지는 동안 문서 높이가 흔들린다.
+    // 최소 높이(viewerMinHeight)로 높이를 붙들어 두고, 몇 프레임에 걸쳐 원래 위치로 되돌린 뒤
+    // 렌더가 안정되면 최소 높이를 푼다.
+    const restore = () => window.scrollTo({ top, behavior: "instant" as ScrollBehavior });
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top, behavior: "instant" as ScrollBehavior });
-      });
+      restore();
+      requestAnimationFrame(restore);
     });
+    setTimeout(restore, 120);
+    setTimeout(restore, 300);
+    setTimeout(() => setViewerMinHeight(undefined), 1200);
   };
 
   const handleAddSignatureArea = async () => {
@@ -505,6 +510,11 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
       setIsDragging(false);
     }
   };
+
+  // 다른 문서/페이지로 옮기면 붙들어 둔 최소 높이를 푼다(짧은 페이지가 비어 보이지 않게).
+  useEffect(() => {
+    setViewerMinHeight(undefined);
+  }, [currentIndex, currentPdfPage]);
 
   const goToImage = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -1129,7 +1139,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
               )}
 
           {/* Document Viewer with Carousel */}
-          <div className="relative border rounded-lg overflow-hidden bg-muted" style={{ minHeight: isSelecting ? viewerMinHeight : undefined }}>
+          <div className="relative border rounded-lg overflow-hidden bg-muted" style={{ minHeight: viewerMinHeight }}>
             {isSelecting ? (
               <AreaSelector
                 image={images[currentIndex]?.isPdf ? (pdfPageImageForSelector || "") : images[currentIndex].dataUrl}
