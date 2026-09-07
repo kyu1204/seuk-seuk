@@ -1,6 +1,7 @@
 "use client";
 
-import "@/lib/pdf-polyfill"; // Promise.withResolvers polyfill before any pdfjs-dist usage (iOS < 17.4)
+import "@/lib/pdf-polyfill";
+import { checkUploadFile, uploadToSignedUrl } from "@/lib/documents/direct-upload"; // Promise.withResolvers polyfill before any pdfjs-dist usage (iOS < 17.4)
 import type React from "react";
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -26,13 +27,15 @@ import {
 } from "@/components/ui/carousel";
 import AreaSelector from "@/components/area-selector";
 import {
-  uploadDocument,
   createSignatureAreas,
+  createDocumentUploadUrl,
+  finalizeDocumentUpload,
 } from "@/app/actions/document-actions";
 import {
-  createTemplate,
   createTemplateAreas,
   rollbackTemplateCreation,
+  createTemplateUploadUrl,
+  finalizeTemplateUpload,
 } from "@/app/actions/template-actions";
 import { canUploadPdf } from "@/app/actions/subscription-actions";
 import { useLanguage } from "@/contexts/language-context";
@@ -105,6 +108,10 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
   const [canUsePdf, setCanUsePdf] = useState<boolean>(false);
   const [pdfCheckDone, setPdfCheckDone] = useState<boolean>(false);
   const [currentPdfPage, setCurrentPdfPage] = useState<number>(1); // 1-indexed for pdfjs
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
+  // 서명 칸 지정 모드로 들어가고 나올 때 페이지 스크롤이 위로 튀지 않도록 위치를 기억한다.
+  const windowScrollRef = useRef<number>(0);
+  const [viewerMinHeight, setViewerMinHeight] = useState<number | undefined>(undefined);
   const [pdfPageDimensions, setPdfPageDimensions] = useState<PdfPageDimensions | null>(null);
   const [pdfPageImageForSelector, setPdfPageImageForSelector] = useState<string | null>(null);
 
@@ -259,12 +266,25 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
     return canvas.toDataURL("image/png");
   };
 
+  const restoreWindowScroll = () => {
+    const top = windowScrollRef.current;
+    // 뷰어가 교체되어 문서 높이가 바뀐 뒤(두 프레임 뒤) 원래 위치로 되돌린다.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top, behavior: "instant" as ScrollBehavior });
+      });
+    });
+  };
+
   const handleAddSignatureArea = async () => {
+    windowScrollRef.current = window.scrollY;
     if (documentContainerRef.current) {
       scrollPositionRef.current = {
         top: documentContainerRef.current.scrollTop,
         left: documentContainerRef.current.scrollLeft,
       };
+      // 선택 모드로 바뀌는 순간 뷰어 높이가 줄어 페이지가 위로 당겨지는 것을 막는다.
+      setViewerMinHeight(documentContainerRef.current.offsetHeight);
     }
 
     // For PDF, capture current page as image for AreaSelector
@@ -279,6 +299,13 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
     }
 
     setIsSelecting(true);
+    restoreWindowScroll();
+  };
+
+  const handleCancelSelecting = () => {
+    setIsSelecting(false);
+    setPdfPageImageForSelector(null);
+    restoreWindowScroll();
   };
 
   const handleAreaSelected = (area: RelativeSignatureArea, scrollPosition: { top: number; left: number }) => {
@@ -303,6 +330,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
         documentContainerRef.current.scrollLeft = scrollPosition.left;
       }
     });
+    restoreWindowScroll();
   };
 
   const handleRemoveArea = (areaIndex: number) => {
@@ -512,6 +540,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
         const img = images[i];
         const areas = signatureAreasMap.get(i) || [];
 
+        setUploadPercent(null);
         setSavingProgress(
           (isTemplateMode
             ? t("templates.create.savingProgress")
@@ -532,12 +561,55 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           pageNumber: area.pageNumber ?? 0,
         }));
 
-        if (isTemplateMode) {
-          const formData = new FormData();
-          formData.append("file", img.file);
-          formData.append("name", aliasMap.get(i)?.trim() || img.fileName);
+        // 파일 사전 검사: 서버로 가기 전에 크기·형식을 확인한다.
+        const check = checkUploadFile(img.file);
+        if (!check.ok) {
+          setError(
+            check.reason === "too_large"
+              ? t("upload.error.tooLarge")
+              : check.reason === "unsupported"
+                ? t("upload.error.unsupported")
+                : t("upload.error.uploadFailed")
+          );
+          return;
+        }
 
-          const templateResult = await createTemplate(formData);
+        // 브라우저 → 스토리지 직접 업로드. 서버 액션 본문 한도(4.5MB)를 우회한다.
+        const uploadTo = async (getUrl: () => Promise<{ uploadUrl?: string; key?: string; error?: string }>) => {
+          const signed = await getUrl();
+          if (signed.error || !signed.uploadUrl || !signed.key) {
+            return { error: signed.error === "FILE_TOO_LARGE" ? t("upload.error.tooLarge") : signed.error || t("upload.error.uploadFailed") };
+          }
+          setUploadPercent(0);
+          try {
+            await uploadToSignedUrl(signed.uploadUrl, img.file, {
+              contentType: img.file.type,
+              onProgress: setUploadPercent,
+            });
+          } catch (e) {
+            console.error("Direct upload failed:", e);
+            return { error: t("upload.error.uploadFailed") };
+          } finally {
+            setUploadPercent(null);
+          }
+          return { key: signed.key };
+        };
+
+        if (isTemplateMode) {
+          const templateName = aliasMap.get(i)?.trim() || img.fileName;
+          const put = await uploadTo(() =>
+            createTemplateUploadUrl({ contentType: img.file.type, size: img.file.size })
+          );
+          if (put.error || !put.key) {
+            setError(put.error || t("upload.error.uploadFailed"));
+            return;
+          }
+          const templateResult = await finalizeTemplateUpload({
+            key: put.key,
+            name: templateName,
+            contentType: img.file.type,
+            pageCount: img.pdfTotalPages ?? 1,
+          });
 
           if (templateResult.error) {
             setError(templateResult.error);
@@ -568,24 +640,34 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           continue;
         }
 
-        // Step 1: Upload document
-        const formData = new FormData();
-        formData.append("file", img.file);
-        formData.append("filename", img.fileName);
-        const imgAlias = aliasMap.get(i);
-        if (imgAlias && imgAlias.trim()) {
-          formData.append("alias", imgAlias.trim());
-        }
-
-        const uploadResult = await uploadDocument(formData);
-
-        if (uploadResult.error) {
-          setError(uploadResult.error);
+        // Step 1: presigned URL 발급 → 브라우저에서 직접 PUT → 문서 레코드 등록
+        const put = await uploadTo(() =>
+          createDocumentUploadUrl({
+            filename: img.fileName,
+            contentType: img.file.type,
+            size: img.file.size,
+          })
+        );
+        if (put.error || !put.key) {
+          setError(put.error || t("upload.error.uploadFailed"));
           return;
         }
 
-        if (!uploadResult.success || !uploadResult.document) {
-          setError("Failed to upload document");
+        const imgAlias = aliasMap.get(i);
+        const uploadResult = await finalizeDocumentUpload({
+          key: put.key,
+          filename: img.fileName,
+          alias: imgAlias && imgAlias.trim() ? imgAlias.trim() : null,
+          contentType: img.file.type,
+          pageCount: img.pdfTotalPages ?? 1,
+        });
+
+        if ("error" in uploadResult && uploadResult.error) {
+          setError(uploadResult.error);
+          return;
+        }
+        if (!("document" in uploadResult) || !uploadResult.document) {
+          setError(t("upload.error.uploadFailed"));
           return;
         }
 
@@ -625,7 +707,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
       setError(
         isTemplateMode
           ? t("templates.create.unexpectedError")
-          : "An unexpected error occurred while uploading the documents"
+          : t("upload.error.uploadFailed")
       );
     } finally {
       setIsLoading(false);
@@ -775,7 +857,9 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                 disabled={isLoading || isSelecting || images.length === 0}
               >
                 {isLoading && !pendingPublishAfter
-                  ? (savingProgress || (isTemplateMode ? t("templates.create.saving") : t("upload.saving")))
+                  ? (uploadPercent !== null
+                      ? t("upload.uploadingPercent", { percent: uploadPercent })
+                      : savingProgress || (isTemplateMode ? t("templates.create.saving") : t("upload.saving")))
                   : (isTemplateMode ? t("templates.create.save") : t("upload.save"))}
               </Button>
               {!isTemplateMode && (
@@ -858,7 +942,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
           <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-5">
             {/* Left panel: add-area actions + area list (order-2 on mobile) */}
             <div className="order-2 lg:order-1 space-y-4">
-              <Card>
+              <Card className="hidden lg:block">
                 <CardContent className="p-4 space-y-2">
                   <Button
                     onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
@@ -911,6 +995,37 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
 
             {/* Right: canvas toolbar + viewer */}
             <div className="order-1 lg:order-2 space-y-2">
+              {/* 모바일: 문서 바로 위에 붙는 칸 추가 바. 스크롤 없이 누르고 바로 그린다. */}
+              <div className="lg:hidden sticky top-16 z-20 -mx-4 px-4 py-2 bg-background/95 backdrop-blur border-b">
+                {isSelecting ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium">
+                      {currentAreaType === "text" ? t("upload.drawHint.text") : t("upload.drawHint.signature")}
+                    </p>
+                    <Button variant="outline" size="sm" onClick={handleCancelSelecting}>
+                      {t("common.cancel")}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={() => { setCurrentAreaType('signature'); handleAddSignatureArea(); }}
+                      className="h-11"
+                    >
+                      <PenLine className="mr-1.5 h-4 w-4" />
+                      {t("upload.signature")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setCurrentAreaType('text'); handleAddSignatureArea(); }}
+                      className="h-11"
+                    >
+                      <Type className="mr-1.5 h-4 w-4" />
+                      {t("upload.textArea")}
+                    </Button>
+                  </div>
+                )}
+              </div>
               {/* PDF Page Navigation + Zoom Toolbar */}
               <div className="flex items-center justify-between gap-3 py-2 px-3 bg-muted rounded-lg">
                 {images[currentIndex]?.isPdf && images[currentIndex]?.pdfTotalPages ? (
@@ -1003,12 +1118,12 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
               )}
 
           {/* Document Viewer with Carousel */}
-          <div className="relative border rounded-lg overflow-hidden bg-muted">
+          <div className="relative border rounded-lg overflow-hidden bg-muted" style={{ minHeight: isSelecting ? viewerMinHeight : undefined }}>
             {isSelecting ? (
               <AreaSelector
                 image={images[currentIndex]?.isPdf ? (pdfPageImageForSelector || "") : images[currentIndex].dataUrl}
                 onAreaSelected={handleAreaSelected}
-                onCancel={() => { setIsSelecting(false); setPdfPageImageForSelector(null); }}
+                onCancel={handleCancelSelecting}
                 existingAreas={images[currentIndex]?.isPdf
                   ? currentAreas.filter(a => (a.pageNumber ?? 0) === currentPdfPage - 1)
                   : currentAreas}

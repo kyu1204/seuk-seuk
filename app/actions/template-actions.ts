@@ -163,6 +163,118 @@ export async function createTemplate(formData: FormData): Promise<{
   }
 }
 
+const TEMPLATE_DIRECT_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
+const TEMPLATE_ALLOWED_MIME: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+
+/**
+ * Direct upload, step 1: presigned PUT URL for a template source file.
+ * Bypasses the Vercel 4.5MB function body limit (see createDocumentUploadUrl).
+ */
+export async function createTemplateUploadUrl(input: {
+  contentType: string;
+  size: number;
+}): Promise<{ uploadUrl?: string; key?: string; error?: string }> {
+  try {
+    const contentType = typeof input?.contentType === "string" ? input.contentType : "";
+    const size = typeof input?.size === "number" ? input.size : NaN;
+    const ext = TEMPLATE_ALLOWED_MIME[contentType];
+    if (!ext) return { error: "지원하지 않는 파일 형식입니다." };
+    if (!Number.isFinite(size) || size <= 0) return { error: "Invalid file size" };
+    if (size > TEMPLATE_DIRECT_UPLOAD_MAX_BYTES) return { error: "FILE_TOO_LARGE" };
+
+    const { canUse, error: gateError } = await canUseTemplate();
+    if (!canUse) return { error: gateError || "Template feature not available" };
+
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "User not authenticated" };
+
+    const key = buildTemplateStoragePath(user.id, ext, randomUUID());
+    const { result, error: urlError } = await getStorage().createSignedUploadUrl(
+      "documents",
+      key,
+      { expiresIn: 600 }
+    );
+    if (urlError || !result) {
+      console.error("[Template direct upload] presign failed:", urlError);
+      return { error: "Failed to create upload URL" };
+    }
+    return { uploadUrl: result.url, key };
+  } catch (error) {
+    console.error("[Template direct upload] createTemplateUploadUrl error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
+/** Direct upload, step 2: register the template row for an already uploaded key. */
+export async function finalizeTemplateUpload(input: {
+  key: string;
+  name: string;
+  contentType: string;
+  pageCount?: number;
+}): Promise<{ success?: boolean; templateId?: string; error?: string }> {
+  try {
+    const key = typeof input?.key === "string" ? input.key : "";
+    const name = typeof input?.name === "string" ? input.name.trim() : "";
+    const contentType = typeof input?.contentType === "string" ? input.contentType : "";
+    const pageCount =
+      Number.isInteger(input?.pageCount) && (input!.pageCount as number) >= 1
+        ? (input!.pageCount as number)
+        : 1;
+    if (!key || !name) return { error: "File and name are required" };
+    if (!TEMPLATE_ALLOWED_MIME[contentType]) return { error: "지원하지 않는 파일 형식입니다." };
+
+    const { canUse, error: gateError } = await canUseTemplate();
+    if (!canUse) return { error: gateError || "Template feature not available" };
+
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "User not authenticated" };
+
+    if (!key.startsWith(`${user.id}/`) || key.includes("..")) {
+      return { error: "Invalid storage key" };
+    }
+    const storage = getStorage();
+    const { keys } = await storage.list("documents", key);
+    if (!keys.includes(key)) return { error: "Uploaded file not found" };
+
+    const templateData: DocumentTemplateInsert = {
+      user_id: user.id,
+      name,
+      file_url: key,
+      file_type: contentType === "application/pdf" ? "pdf" : "image",
+      page_count: pageCount,
+    };
+    const { data: template, error: dbError } = await supabase
+      .from("document_templates")
+      .insert(templateData)
+      .select()
+      .single();
+    if (dbError || !template) {
+      console.error("Template DB error:", dbError);
+      await storage.remove("documents", [key]);
+      return { error: "Failed to create template record" };
+    }
+
+    revalidatePath("/dashboard");
+    return { success: true, templateId: template.id };
+  } catch (error) {
+    console.error("[Template direct upload] finalizeTemplateUpload error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
 /**
  * Persist the layout (signature areas) for a template.
  */

@@ -11,6 +11,14 @@ describe("document-actions.ts source", () => {
     expect(selectLine).toContain("page_count");
   });
 
+  it("exposes the direct-to-storage upload flow (presign + finalize) so files skip the 4.5MB Vercel body limit", () => {
+    expect(source).toContain("export async function createDocumentUploadUrl(");
+    expect(source).toContain("export async function finalizeDocumentUpload(");
+    expect(source).toContain("createSignedUploadUrl(");
+    // finalize must refuse keys outside the caller's own folder
+    expect(source).toContain("key.startsWith(`${user.id}/`)");
+  });
+
   it("exports getDocumentSignatureCounts for the publish document list", () => {
     expect(source).toContain("export async function getDocumentSignatureCounts(");
   });
