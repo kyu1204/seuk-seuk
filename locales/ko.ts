@@ -41,6 +41,8 @@ export default {
   "upload.uploadingPercent": "파일 올리는 중 {{percent}}%",
   "upload.drawHint.signature": "문서 위에서 서명 칸을 끌어서 그리세요",
   "upload.drawHint.text": "문서 위에서 입력 칸을 끌어서 그리세요",
+  "upload.mode.image": "이미지 문서",
+  "upload.mode.pdf": "PDF 문서",
   "upload.error.capture": "PDF 페이지를 읽지 못했습니다. 다른 파일로 다시 시도해 주세요.",
   "common.back": "뒤로",
   "upload.backToHome": "홈으로 돌아가기",

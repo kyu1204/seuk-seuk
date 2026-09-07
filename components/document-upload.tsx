@@ -778,10 +778,12 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
       {images.length === 0 ? (
         <div className="space-y-4">
           {/* Upload Mode Selector */}
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <button
+              type="button"
               onClick={() => setUploadMode('image')}
-              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+              aria-pressed={uploadMode === 'image'}
+              className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${
                 uploadMode === 'image'
                   ? 'border-primary bg-primary/5'
                   : 'border-muted hover:border-muted-foreground/30'
@@ -789,12 +791,15 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
             >
               <FileImage className={`h-6 w-6 ${uploadMode === 'image' ? 'text-primary' : 'text-muted-foreground'}`} />
               <span className={`text-sm font-medium ${uploadMode === 'image' ? 'text-primary' : 'text-muted-foreground'}`}>
-                {t("upload.title")}
+                {t("upload.mode.image")}
               </span>
             </button>
             <button
+              type="button"
               onClick={() => canUsePdf && setUploadMode('pdf')}
-              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all relative ${
+              aria-pressed={uploadMode === 'pdf'}
+              aria-disabled={!canUsePdf}
+              className={`relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${
                 !canUsePdf
                   ? 'border-muted opacity-60 cursor-not-allowed'
                   : uploadMode === 'pdf'
@@ -802,22 +807,19 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
                     : 'border-muted hover:border-muted-foreground/30 cursor-pointer'
               }`}
             >
+              {/* 플랜 배지는 라벨 옆이 아니라 타일 모서리에. 라벨 정렬을 흔들지 않는다. */}
+              <span
+                className={`absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                  canUsePdf ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {!canUsePdf && <Lock className="h-2.5 w-2.5" />}
+                {t("pdf_pro_badge")}
+              </span>
               <FileText className={`h-6 w-6 ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <div className="flex items-center justify-center w-full">
-                <span className={`relative text-sm font-medium ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {t("pdf_document")}
-                  {!canUsePdf ? (
-                    <span className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap">
-                      <Lock className="h-3 w-3" />
-                      {t("pdf_pro_badge")}
-                    </span>
-                  ) : (
-                    <span className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary whitespace-nowrap">
-                      {t("pdf_pro_badge")}
-                    </span>
-                  )}
-                </span>
-              </div>
+              <span className={`text-sm font-medium ${uploadMode === 'pdf' ? 'text-primary' : 'text-muted-foreground'}`}>
+                {t("upload.mode.pdf")}
+              </span>
             </button>
           </div>
 

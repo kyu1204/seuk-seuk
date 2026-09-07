@@ -41,6 +41,8 @@ export default {
   "upload.uploadingPercent": "Uploading {{percent}}%",
   "upload.drawHint.signature": "Drag on the document to draw a signature field",
   "upload.drawHint.text": "Drag on the document to draw a text field",
+  "upload.mode.image": "Image",
+  "upload.mode.pdf": "PDF",
   "upload.error.capture": "Couldn't read the PDF page. Please try a different file.",
   "common.back": "Back",
   "upload.backToHome": "Back to Home",
