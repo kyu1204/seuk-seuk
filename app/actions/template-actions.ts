@@ -282,10 +282,13 @@ export async function finalizeTemplateUpload(input: {
       }
     }
 
+    // Persist the validated bytes themselves (see finalizeDocumentUpload).
     const finalKey = buildTemplateStoragePath(user.id, ext, baseName.slice(0, 36));
-    const { error: copyError } = await storage.copy("documents", key, finalKey);
-    if (copyError) {
-      console.error("[Template direct upload] copy failed:", copyError);
+    const { error: putError } = await storage.upload("documents", finalKey, data, {
+      contentType: expectedMime,
+    });
+    if (putError) {
+      console.error("[Template direct upload] store failed:", putError);
       return { error: "Failed to store file" };
     }
     await storage.remove("documents", [key]);

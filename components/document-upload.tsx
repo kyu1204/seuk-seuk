@@ -111,6 +111,14 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
   const [uploadPercent, setUploadPercent] = useState<number | null>(null);
   // 서명 칸 지정 모드로 들어가고 나올 때 페이지 스크롤이 위로 튀지 않도록 위치를 기억한다.
   const windowScrollRef = useRef<number>(0);
+  // 칸 지정 후 내부 스크롤 복원 루프의 RAF id. 문서/페이지 전환·새 선택·취소·언마운트 시 취소한다.
+  const restoreRafRef = useRef<number>(0);
+  const cancelInnerScrollRestore = () => {
+    if (restoreRafRef.current) {
+      cancelAnimationFrame(restoreRafRef.current);
+      restoreRafRef.current = 0;
+    }
+  };
   const [viewerMinHeight, setViewerMinHeight] = useState<number | undefined>(undefined);
   const [pdfPageDimensions, setPdfPageDimensions] = useState<PdfPageDimensions | null>(null);
   const [pdfPageImageForSelector, setPdfPageImageForSelector] = useState<string | null>(null);
@@ -299,6 +307,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
   };
 
   const handleAddSignatureArea = async () => {
+    cancelInnerScrollRestore();
     windowScrollRef.current = window.scrollY;
     if (documentContainerRef.current) {
       scrollPositionRef.current = {
@@ -325,6 +334,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
   };
 
   const handleCancelSelecting = () => {
+    cancelInnerScrollRestore();
     setIsSelecting(false);
     setPdfPageImageForSelector(null);
     restoreWindowScroll();
@@ -349,6 +359,7 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
     // 뷰어가 다시 마운트되면 이미지/PDF가 비동기로 그려져 한동안 scrollHeight가 작다.
     // 콘텐츠가 목표 위치만큼 커질 때까지(최대 2초) 매 프레임 내부 스크롤을 다시 맞춘다.
     // 확대 상태에서 문서를 끌어 내려 둔 위치가 원점으로 튀지 않게 하는 핵심.
+    cancelInnerScrollRestore();
     const started = performance.now();
     let settled = 0;
     const tick = () => {
@@ -362,10 +373,12 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
         settled = reached ? settled + 1 : 0;
       }
       if (settled < 5 && performance.now() - started < 2000) {
-        requestAnimationFrame(tick);
+        restoreRafRef.current = requestAnimationFrame(tick);
+      } else {
+        restoreRafRef.current = 0;
       }
     };
-    requestAnimationFrame(tick);
+    restoreRafRef.current = requestAnimationFrame(tick);
     restoreWindowScroll();
   };
 
@@ -529,8 +542,11 @@ export default function DocumentUpload({ mode = "document" }: DocumentUploadProp
 
   // 다른 문서/페이지로 옮기면 붙들어 둔 최소 높이를 푼다(짧은 페이지가 비어 보이지 않게).
   useEffect(() => {
+    cancelInnerScrollRestore();
     setViewerMinHeight(undefined);
   }, [currentIndex, currentPdfPage]);
+
+  useEffect(() => cancelInnerScrollRestore, []);
 
   const goToImage = useCallback((index: number) => {
     setCurrentIndex(index);

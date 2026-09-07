@@ -199,11 +199,14 @@ export async function finalizeDocumentUpload(input: {
       pageCount = counted.pageCount;
     }
 
-    // Move out of pending/ into the user's folder.
+    // Persist exactly the bytes we validated. A copy would re-read the pending key,
+    // which the still-valid presigned URL could have been used to overwrite meanwhile.
     const finalKey = `${user.id}/${baseName}`;
-    const { error: copyError } = await storage.copy("documents", key, finalKey);
-    if (copyError) {
-      console.error("[Direct upload] copy failed:", copyError);
+    const { error: putError } = await storage.upload("documents", finalKey, bytes, {
+      contentType: expectedMime,
+    });
+    if (putError) {
+      console.error("[Direct upload] store failed:", putError);
       return { error: "Failed to store file" };
     }
     await storage.remove("documents", [key]);
@@ -256,6 +259,7 @@ async function registerDocumentRecord(args: {
 
   if (dbError) {
     console.error("Database error:", dbError);
+    await getStorage().remove("documents", [filePath]);
     return { error: "Failed to create document record" };
   }
 
