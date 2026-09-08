@@ -61,6 +61,18 @@
   * {
     @apply border-border;
   }
+  /* 모바일에서 어떤 요소가 뷰포트보다 살짝 넓어도 가로 스크롤이 생기지 않게 한다.
+     clip 은 스크롤 컨테이너를 만들지 않아 position: sticky 가 그대로 동작한다. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+  @supports not (overflow-x: clip) {
+    html,
+    body {
+      overflow-x: hidden;
+    }
+  }
   body {
     @apply bg-background text-foreground;
     font-family: "Pretendard Variable", Pretendard, -apple-system,
