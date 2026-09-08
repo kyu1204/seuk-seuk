@@ -31,7 +31,10 @@ interface SignatureModalProps {
   existingSignature?: string;
 }
 
-const SIGNATURE_INK = "#14213D";
+// 출력물에서도 또렷하게 보이도록 거의 검정에 가까운 잉크. 네이비는 인쇄 시 흐리게 나온다.
+const SIGNATURE_INK = "#111827";
+// 서명 이미지는 문서 위 작은 칸으로 축소되므로 화면에서 보이는 것보다 굵게 긋는다.
+const SIGNATURE_LINE_WIDTH = 4;
 
 export default function SignatureModal({
   isOpen,
@@ -59,7 +62,7 @@ export default function SignatureModal({
     // 서명 잉크는 테마와 무관하게 항상 진한 잉크색으로 굽는다.
     // 테마 foreground 를 쓰면 다크 모드 기기에서 흰 서명이 저장되어 문서 위에서 보이지 않는다.
     ctx.strokeStyle = SIGNATURE_INK;
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = SIGNATURE_LINE_WIDTH;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.setLineDash([]);
