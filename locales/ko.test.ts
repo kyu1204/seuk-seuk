@@ -155,7 +155,7 @@ describe("locale parity (ko/en)", () => {
       "발행 목록을 불러오지 못했습니다."
     );
     expect(ko["dashboard.publications.delete.error"]).toBe(
-      "발행을 삭제하지 못했습니다. 다시 시도해 주세요."
+      "서명 요청을 삭제하지 못했습니다. 다시 시도해 주세요."
     );
 
     expect(ko["documentDetail.delete.title"]).toBe("문서 삭제");
