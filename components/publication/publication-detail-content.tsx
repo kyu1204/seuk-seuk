@@ -14,7 +14,18 @@ import {
   FileText,
   ExternalLink,
   Edit,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/contexts/language-context";
 import {
   Dialog,
@@ -33,7 +44,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { updatePublication } from "@/app/actions/publication-actions";
+import { updatePublication, deletePublication } from "@/app/actions/publication-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -56,8 +67,30 @@ export function PublicationDetailContent({
   );
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [updatePasswordMode, setUpdatePasswordMode] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { t, language } = useLanguage();
   const router = useRouter();
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const result = await deletePublication(publication.id);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(t("dashboard.publications.delete.success"));
+      router.push("/dashboard?tab=publications");
+      router.refresh();
+    } catch (err) {
+      console.error("Delete error:", err);
+      toast.error(t("dashboard.publications.delete.error"));
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   // Generate share URL
   const shareUrl = `${window.location.origin}/sign/${shortUrl}`;
@@ -265,6 +298,15 @@ export function PublicationDetailContent({
                   </form>
                 </DialogContent>
               </Dialog>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t("dashboard.publications.delete.confirm")}
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -414,6 +456,30 @@ export function PublicationDetailContent({
           )}
         </CardContent>
       </Card>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("dashboard.publications.delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("dashboard.publications.delete.description", { name: publication.name })}
+              <br />
+              {publication.status === "completed"
+                ? t("dashboard.publications.delete.warningCompleted")
+                : t("dashboard.publications.delete.warningReset")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>{t("dashboard.publications.delete.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? t("dashboard.publications.delete.deleting") : t("dashboard.publications.delete.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -20,7 +20,7 @@ describe("statusLabelKey", () => {
     const cases: Record<BadgeStatus, string> = {
       draft: "status.draft",
       published: "status.published",
-      active: "status.published",
+      active: "status.active",
       completed: "status.completed",
       expired: "status.expired",
     };
