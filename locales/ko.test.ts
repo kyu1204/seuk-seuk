@@ -37,7 +37,7 @@ describe("locale parity (ko/en)", () => {
     expect(ko["status.completed"]).toBe("완료");
     expect(ko["status.expired"]).toBe("만료");
     expect(ko["dashboard.filter.published"]).toBe("발행됨");
-    expect(ko["dashboard.tabs.publications"]).toBe("발행됨");
+    expect(ko["dashboard.tabs.publications"]).toBe("서명 요청");
     expect(ko["dashboard.publications.status.expired"]).toBe("만료");
     expect(ko["publicationDetail.status.expired"]).toBe("만료");
     expect(ko["publicationDetail.documentStatus.published"]).toBe("발행됨");
@@ -47,7 +47,7 @@ describe("locale parity (ko/en)", () => {
     expect(en["status.completed"]).toBe("Completed");
     expect(en["status.expired"]).toBe("Expired");
     expect(en["dashboard.filter.published"]).toBe("Published");
-    expect(en["dashboard.tabs.publications"]).toBe("Published");
+    expect(en["dashboard.tabs.publications"]).toBe("Requests");
   });
 
   it("has the R03 header nav/aria label values", () => {
@@ -174,18 +174,18 @@ describe("locale parity (ko/en)", () => {
       "문서를 올리고 서명 위치만 찍으면, 링크 하나로 서명을 받을 수 있어요."
     );
     expect(ko["dashboard.empty.action"]).toBe("문서 올리기");
-    expect(ko["dashboard.publications.empty.title"]).toBe("아직 보낸 문서가 없어요");
+    expect(ko["dashboard.publications.empty.title"]).toBe("아직 보낸 서명 요청이 없어요");
     expect(ko["dashboard.publications.empty.description"]).toBe(
-      "초안을 발행하면 서명 링크가 만들어집니다."
+      "문서를 발행하면 서명 요청 링크가 만들어집니다."
     );
-    expect(ko["dashboard.publications.empty.action"]).toBe("초안 발행하기");
+    expect(ko["dashboard.publications.empty.action"]).toBe("문서 발행하기");
     expect(ko["templates.empty.title"]).toBe("반복해서 쓰는 문서가 있나요?");
     expect(ko["templates.empty.description"]).toBe(
       "한 번 저장해 두면 매번 서명 칸을 다시 잡지 않아도 됩니다."
     );
     expect(ko["templates.empty.action"]).toBe("첫 템플릿 만들기");
 
-    expect(ko["dashboard.publications.empty.title"]).toBe("아직 보낸 문서가 없어요");
+    expect(ko["dashboard.publications.empty.title"]).toBe("아직 보낸 서명 요청이 없어요");
     expect(en["dashboard.error.load"]).toBeTruthy();
     expect(en["dashboard.publications.delete.error"]).toBeTruthy();
     expect(en["documentDetail.delete.title"]).toBeTruthy();

@@ -19,8 +19,10 @@ export function statusLabelKey(status: BadgeStatus): string {
     case "draft":
       return "status.draft";
     case "published":
-    case "active":
       return "status.published";
+    case "active":
+      // 발행 건(서명 요청)의 active 는 "서명 진행 중"이라는 뜻. 문서 상태 "발행됨"과 구분한다.
+      return "status.active";
     case "completed":
       return "status.completed";
     case "expired":
